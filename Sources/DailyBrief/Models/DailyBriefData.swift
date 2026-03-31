@@ -5,6 +5,7 @@ struct DailyBriefData: Sendable {
     var workOrders: [WorkOrder]
     var todoItems: [ReminderItem]
     var gameScore: GameScore?
+    var upcomingGame: UpcomingGame?
     var standings: [StandingsEntry]
     var affirmation: String
 

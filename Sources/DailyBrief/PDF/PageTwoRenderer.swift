@@ -50,7 +50,33 @@ enum PageTwoRenderer {
             y += S.bodySize
         }
 
-        y += 8
+        y += 4
+
+        // Upcoming Game
+        if let next = data.upcomingGame {
+            PDFGenerator.drawText(
+                "Next Game",
+                at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.smallSize)),
+                font: S.monoFont(), color: S.medGray, context: context
+            )
+            y += S.smallSize + 3
+
+            PDFGenerator.drawText(
+                next.summaryLine,
+                at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.bodySize)),
+                font: S.bodyFont(), color: S.black, context: context
+            )
+            y += S.bodySize + 2
+
+            PDFGenerator.drawText(
+                "\(next.venue)  |  \(next.gameType)",
+                at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.smallSize)),
+                font: S.monoFont(), color: S.darkGray, context: context
+            )
+            y += S.smallSize
+        }
+
+        y += 6
 
         // Divider
         context.setStrokeColor(S.lightGray)

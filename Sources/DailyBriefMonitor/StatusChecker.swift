@@ -13,10 +13,10 @@ final class StatusChecker: @unchecked Sendable {
 
     init() {
         // Find the CLI binary relative to this app's location, or use a known path
-        let knownPath = NSString("~/Desktop/Local AI/DailyBrief/.build/release/DailyBrief").expandingTildeInPath
+        let knownPath = NSString("~/Desktop/Local AI/dailybrief/.build/release/DailyBrief").expandingTildeInPath
         self.cliBinary = FileManager.default.fileExists(atPath: knownPath)
             ? knownPath
-            : NSString("~/Desktop/Local AI/DailyBrief/.build/debug/DailyBrief").expandingTildeInPath
+            : NSString("~/Desktop/Local AI/dailybrief/.build/debug/DailyBrief").expandingTildeInPath
         refresh()
     }
 
@@ -88,7 +88,7 @@ final class StatusChecker: @unchecked Sendable {
         Task.detached { [cliBinary] in
             let process = Process()
             process.executableURL = URL(fileURLWithPath: cliBinary)
-            process.arguments = ["--no-print"]
+            process.arguments = []
 
             let pipe = Pipe()
             process.standardOutput = pipe

@@ -126,9 +126,23 @@ private actor IMAPClient {
         process.arguments = ["-c", script]
 
         try process.run()
+        // Read stdout before waiting to avoid pipe buffer deadlocks
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        let errData = errPipe.fileHandleForReading.readDataToEndOfFile()
         process.waitUntilExit()
 
-        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        if process.terminationStatus != 0 {
+            let stderr = String(data: errData, encoding: .utf8) ?? "(no output)"
+            Logger.error("Gmail IMAP script failed (exit \(process.terminationStatus)): \(stderr)")
+        } else if let stderr = String(data: errData, encoding: .utf8), !stderr.isEmpty {
+            Logger.error("Gmail IMAP warning: \(stderr)")
+        }
+
+        guard !data.isEmpty else {
+            Logger.error("Gmail IMAP returned no data")
+            return []
+        }
+
         let bodies = try JSONDecoder().decode([String].self, from: data)
         return bodies
     }

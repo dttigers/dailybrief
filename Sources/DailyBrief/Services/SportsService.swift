@@ -42,6 +42,48 @@ actor SportsService {
         )
     }
 
+    func fetchUpcomingGame() async throws -> UpcomingGame? {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        let today = formatter.string(from: Date())
+        // Look ahead 7 days to find the next game
+        let weekOut = formatter.string(from: Calendar.current.date(byAdding: .day, value: 7, to: Date())!)
+
+        let urlStr = "https://statsapi.mlb.com/api/v1/schedule?sportId=1&startDate=\(today)&endDate=\(weekOut)&teamId=\(config.teamId)&hydrate=team"
+        guard let url = URL(string: urlStr) else { return nil }
+
+        let (data, _) = try await URLSession.shared.data(from: url)
+        let schedule = try JSONDecoder().decode(MLBScheduleResponse.self, from: data)
+
+        // Find the first game that hasn't started yet (or today's game)
+        let now = Date()
+        let isoFormatter = ISO8601DateFormatter()
+        isoFormatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let isoFallback = ISO8601DateFormatter()
+        isoFallback.formatOptions = [.withInternetDateTime]
+
+        for date in schedule.dates {
+            for game in date.games {
+                guard let dateStr = game.gameDate,
+                      let gameTime = isoFormatter.date(from: dateStr) ?? isoFallback.date(from: dateStr) else { continue }
+                // Skip games that have already finished (score exists and game is in the past)
+                let hasScore = game.teams.home.score != nil
+                if hasScore && gameTime < now { continue }
+
+                let isHome = game.teams.home.team.id == config.teamId
+                return UpcomingGame(
+                    homeTeam: game.teams.home.team.name,
+                    awayTeam: game.teams.away.team.name,
+                    isHome: isHome,
+                    venue: game.venue?.name ?? "Unknown",
+                    gameType: game.gameType == "R" ? "Regular Season" : game.gameType == "S" ? "Spring Training" : game.gameType ?? "Unknown",
+                    gameDate: gameTime
+                )
+            }
+        }
+        return nil
+    }
+
     func fetchStandings() async throws -> [StandingsEntry] {
         let year = Calendar.current.component(.year, from: Date())
         let urlStr = "https://statsapi.mlb.com/api/v1/standings?leagueId=\(config.leagueId)&season=\(year)&standingsTypes=regularSeason"
@@ -83,6 +125,7 @@ struct MLBGame: Codable, Sendable {
     var teams: MLBTeams
     var venue: MLBVenue?
     var gameType: String?
+    var gameDate: String?
 
     struct MLBTeams: Codable, Sendable {
         var home: MLBTeamResult

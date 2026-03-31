@@ -9,14 +9,21 @@ actor RemindersService {
     }
 
     func fetchTodoItems() async throws -> [ReminderItem] {
-        // Try EventKit first, fall back to AppleScript
         let store = EKEventStore()
-        let granted = try await store.requestFullAccessToReminders()
+        let status = EKEventStore.authorizationStatus(for: .reminder)
 
-        if granted {
+        switch status {
+        case .fullAccess, .authorized:
             return try await fetchViaEventKit(store: store)
-        } else {
-            Logger.log("EventKit denied, trying AppleScript fallback")
+        case .notDetermined:
+            let granted = try await store.requestFullAccessToReminders()
+            if granted {
+                return try await fetchViaEventKit(store: store)
+            }
+            Logger.log("EventKit denied after prompt, using AppleScript fallback")
+            return try fetchViaAppleScript()
+        default:
+            Logger.log("EventKit status: \(status.rawValue), using AppleScript fallback")
             return try fetchViaAppleScript()
         }
     }

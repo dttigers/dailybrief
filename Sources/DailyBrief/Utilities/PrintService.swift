@@ -17,6 +17,7 @@ enum PrintService {
         if config.copies > 1 {
             args += ["-#", String(config.copies)]
         }
+        args += ["-o", "sides=one-sided"]
         args.append(path)
 
         process.arguments = args

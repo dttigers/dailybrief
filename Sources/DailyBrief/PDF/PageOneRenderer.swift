@@ -40,6 +40,7 @@ enum PageOneRenderer {
         )
         y += S.headerSize + 4
 
+        let cbIndent = S.checkboxSize + 4
         if data.workOrders.isEmpty {
             PDFGenerator.drawText(
                 "No active work orders",
@@ -49,13 +50,19 @@ enum PageOneRenderer {
             y += S.bodySize + 6
         } else {
             for wo in data.workOrders.prefix(6) {
-                // Case number + store header line
+                // Checkbox
+                let cbY = PDFGenerator.cgY(y + S.tableRowHeight - 1)
+                context.setStrokeColor(S.darkGray)
+                context.setLineWidth(0.5)
+                context.stroke(CGRect(x: leftX, y: cbY, width: S.checkboxSize, height: S.checkboxSize))
+
+                // Case number + store header line (with background)
                 context.setFillColor(S.veryLightGray)
-                context.fill(CGRect(x: leftX - 2, y: PDFGenerator.cgY(y + S.tableRowHeight), width: usableWidth + 4, height: S.tableRowHeight))
+                context.fill(CGRect(x: leftX + cbIndent - 2, y: PDFGenerator.cgY(y + S.tableRowHeight), width: usableWidth - cbIndent + 4, height: S.tableRowHeight))
 
                 PDFGenerator.drawText(
                     "\(wo.caseNumber)  \(wo.store)",
-                    at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.smallSize + 2)),
+                    at: CGPoint(x: leftX + cbIndent, y: PDFGenerator.cgY(y + S.smallSize + 2)),
                     font: S.monoFont(), color: S.black, context: context
                 )
                 y += S.tableRowHeight + 2
@@ -65,7 +72,7 @@ enum PageOneRenderer {
                 if desc.count <= 40 {
                     PDFGenerator.drawText(
                         desc,
-                        at: CGPoint(x: leftX + 4, y: PDFGenerator.cgY(y + S.bodySize)),
+                        at: CGPoint(x: leftX + cbIndent, y: PDFGenerator.cgY(y + S.bodySize)),
                         font: S.bodyFont(), color: S.darkGray, context: context
                     )
                     y += S.bodySize + 2
@@ -76,13 +83,13 @@ enum PageOneRenderer {
                     let rest = String(desc[breakIdx...].dropFirst()).prefix(40)
                     PDFGenerator.drawText(
                         first,
-                        at: CGPoint(x: leftX + 4, y: PDFGenerator.cgY(y + S.bodySize)),
+                        at: CGPoint(x: leftX + cbIndent, y: PDFGenerator.cgY(y + S.bodySize)),
                         font: S.bodyFont(), color: S.darkGray, context: context
                     )
                     y += S.bodySize + 1
                     PDFGenerator.drawText(
                         String(rest),
-                        at: CGPoint(x: leftX + 4, y: PDFGenerator.cgY(y + S.bodySize)),
+                        at: CGPoint(x: leftX + cbIndent, y: PDFGenerator.cgY(y + S.bodySize)),
                         font: S.bodyFont(), color: S.darkGray, context: context
                     )
                     y += S.bodySize + 2
@@ -93,7 +100,7 @@ enum PageOneRenderer {
                 if !details.isEmpty {
                     PDFGenerator.drawText(
                         details,
-                        at: CGPoint(x: leftX + 4, y: PDFGenerator.cgY(y + S.tinySize)),
+                        at: CGPoint(x: leftX + cbIndent, y: PDFGenerator.cgY(y + S.tinySize)),
                         font: CTFontCreateWithName("Menlo" as CFString, S.tinySize, nil), color: S.medGray, context: context
                     )
                     y += S.tinySize + 2
@@ -103,7 +110,7 @@ enum PageOneRenderer {
                 let meta = "Pri: \(wo.priority.prefix(1))  |  Contact: \(wo.contact)"
                 PDFGenerator.drawText(
                     meta,
-                    at: CGPoint(x: leftX + 4, y: PDFGenerator.cgY(y + S.tinySize)),
+                    at: CGPoint(x: leftX + cbIndent, y: PDFGenerator.cgY(y + S.tinySize)),
                     font: CTFontCreateWithName("Menlo" as CFString, S.tinySize, nil), color: S.medGray, context: context
                 )
                 y += S.tinySize + 6
