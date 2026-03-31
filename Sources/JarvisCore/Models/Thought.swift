@@ -22,7 +22,7 @@ public enum ThoughtCategory: String, Codable, Sendable, DatabaseValueConvertible
 // MARK: - Thought Model
 
 /// A captured thought — the core data unit of Jarvis.
-public struct Thought: Codable, Sendable, FetchableRecord, MutablePersistableRecord {
+public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, MutablePersistableRecord {
 
     // MARK: Database Table
 

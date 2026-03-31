@@ -8,8 +8,8 @@ public actor DatabaseManager {
 
     private let dbQueue: DatabaseQueue
 
-    /// Read-only access to the database.
-    public var reader: any DatabaseReader {
+    /// Read-only access to the database (nonisolated — DatabaseQueue is thread-safe).
+    public nonisolated var reader: any DatabaseReader {
         dbQueue
     }
 
@@ -42,8 +42,8 @@ public actor DatabaseManager {
 
     // MARK: Database Access
 
-    /// Perform a write transaction on the database.
-    public func write<T: Sendable>(
+    /// Perform a write transaction on the database (nonisolated — DatabaseQueue is thread-safe).
+    public nonisolated func write<T: Sendable>(
         _ block: @Sendable (Database) throws -> T
     ) throws -> T {
         try dbQueue.write(block)
