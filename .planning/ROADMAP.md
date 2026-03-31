@@ -10,7 +10,7 @@ None
 
 ## Phases
 
-- [ ] **Phase 1: Foundation** - Shared JarvisCore library + GRDB data layer
+- [x] **Phase 1: Foundation** - Shared JarvisCore library + GRDB data layer
 - [ ] **Phase 2: Text Capture** - Menu bar popover with global hotkey for instant thought capture
 - [ ] **Phase 3: AI Triage** - Claude-powered auto-categorization with confidence scores
 - [ ] **Phase 4: Dashboard** - Central SwiftUI dashboard + settings UI
@@ -28,9 +28,9 @@ None
 **Plans**: TBD
 
 Plans:
-- [ ] 01-01: SPM multi-target setup + JarvisCore library scaffold
-- [ ] 01-02: GRDB schema, models, ThoughtStore actor with FTS5 search
-- [ ] 01-03: Migrate existing CLI services into JarvisCore
+- [x] 01-01: SPM multi-target setup + JarvisCore library scaffold
+- [x] 01-02: GRDB schema, models, ThoughtStore actor with FTS5 search
+- [x] 01-03: Migrate existing CLI services into JarvisCore
 
 ### Phase 2: Text Capture
 **Goal**: Instant text capture via menu bar popover (< 1s) with global keyboard shortcut and automatic timestamps — proving the core capture loop
@@ -107,7 +107,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 0/3 | Not started | - |
+| 1. Foundation | 3/3 | Complete | 2026-03-31 |
 | 2. Text Capture | 0/2 | Not started | - |
 | 3. AI Triage | 0/2 | Not started | - |
 | 4. Dashboard | 0/2 | Not started | - |
