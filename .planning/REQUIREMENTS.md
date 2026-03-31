@@ -96,27 +96,27 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CAPT-01 | — | Pending |
-| CAPT-02 | — | Pending |
-| CAPT-03 | — | Pending |
-| CAPT-04 | — | Pending |
-| CAPT-05 | — | Pending |
-| TRIAGE-01 | — | Pending |
-| TRIAGE-02 | — | Pending |
-| TRIAGE-03 | — | Pending |
-| STORE-01 | — | Pending |
-| STORE-02 | — | Pending |
-| DASH-01 | — | Pending |
-| DASH-02 | — | Pending |
-| BRIEF-01 | — | Pending |
-| BRIEF-02 | — | Pending |
-| INTEG-01 | — | Pending |
+| STORE-01 | Phase 1 | Pending |
+| STORE-02 | Phase 1 | Pending |
+| CAPT-01 | Phase 2 | Pending |
+| CAPT-02 | Phase 2 | Pending |
+| CAPT-05 | Phase 2 | Pending |
+| TRIAGE-01 | Phase 3 | Pending |
+| TRIAGE-02 | Phase 3 | Pending |
+| TRIAGE-03 | Phase 3 | Pending |
+| DASH-01 | Phase 4 | Pending |
+| DASH-02 | Phase 4 | Pending |
+| CAPT-03 | Phase 5 | Pending |
+| CAPT-04 | Phase 5 | Pending |
+| BRIEF-01 | Phase 6 | Pending |
+| BRIEF-02 | Phase 6 | Pending |
+| INTEG-01 | Phase 7 | Pending |
 
 **Coverage:**
 - v1 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15 ⚠️
+- Mapped to phases: 15
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-31*
-*Last updated: 2026-03-31 after initial definition*
+*Last updated: 2026-03-31 after roadmap creation*
