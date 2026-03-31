@@ -1,10 +1,10 @@
 import Foundation
 
-enum ConfigLoader {
-    static let configDirectory = NSString("~/.config/dailybrief").expandingTildeInPath
-    static let configPath = (configDirectory as NSString).appendingPathComponent("config.json")
+public enum ConfigLoader {
+    public static let configDirectory = NSString("~/.config/dailybrief").expandingTildeInPath
+    public static let configPath = (configDirectory as NSString).appendingPathComponent("config.json")
 
-    static func load(from path: String? = nil) throws -> AppConfig {
+    public static func load(from path: String? = nil) throws -> AppConfig {
         let filePath = path ?? configPath
         let url = URL(fileURLWithPath: filePath)
 
@@ -23,11 +23,11 @@ enum ConfigLoader {
         }
     }
 
-    static func expandPath(_ path: String) -> String {
+    public static func expandPath(_ path: String) -> String {
         NSString(string: path).expandingTildeInPath
     }
 
-    static func ensureDirectoryExists(_ path: String) throws {
+    public static func ensureDirectoryExists(_ path: String) throws {
         let expanded = expandPath(path)
         try FileManager.default.createDirectory(
             atPath: expanded,
@@ -36,11 +36,11 @@ enum ConfigLoader {
     }
 }
 
-enum ConfigError: LocalizedError {
+public enum ConfigError: LocalizedError {
     case fileNotFound(String)
     case invalidFormat(String)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .fileNotFound(let path):
             return "Config file not found at \(path). Run with --setup to create one."
