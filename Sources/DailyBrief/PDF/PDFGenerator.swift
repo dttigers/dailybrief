@@ -1,6 +1,7 @@
 import CoreGraphics
 import CoreText
 import Foundation
+import JarvisCore
 
 enum PDFGenerator {
     static func generate(data: DailyBriefData, outputPath: String) throws {

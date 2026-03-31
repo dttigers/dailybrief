@@ -1,6 +1,7 @@
 import CoreGraphics
 import CoreText
 import Foundation
+import JarvisCore
 
 enum PageTwoRenderer {
     static func draw(context: CGContext, data: DailyBriefData) {

@@ -1,4 +1,5 @@
 import Foundation
+import JarvisCore
 
 enum CompletionStore {
     private static let path = ConfigLoader.expandPath("~/.config/dailybrief/completed_workorders.json")

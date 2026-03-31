@@ -1,4 +1,5 @@
 import Foundation
+import JarvisCore
 
 actor SportsService {
     private let config: AppConfig.SportsConfig

@@ -1,4 +1,5 @@
 import Foundation
+import JarvisCore
 
 actor GmailService {
     private let config: AppConfig.GmailConfig

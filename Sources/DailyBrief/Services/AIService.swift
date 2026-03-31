@@ -1,4 +1,5 @@
 import Foundation
+import JarvisCore
 
 protocol AIProvider: Sendable {
     func generateAffirmation() async throws -> String

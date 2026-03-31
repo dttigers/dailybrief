@@ -1,4 +1,5 @@
 import Foundation
+import JarvisCore
 
 enum PrintService {
     static func printPDF(at path: String, config: AppConfig.PrintingConfig) throws {
