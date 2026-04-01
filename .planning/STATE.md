@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 3 — AI Triage (complete)
+**Current focus:** Phase 4 — Dashboard (in progress)
 
 ## Current Position
 
-Phase: 3 of 7 (AI Triage) — COMPLETE
-Plan: 02 complete (all 2 plans done)
-Status: Phase complete, ready for Phase 4 planning
-Last activity: 2026-04-01 — Phase 03-ai-triage complete (TriageService + confidence UX + category override)
+Phase: 4 of 7 (Dashboard) — IN PROGRESS
+Plan: 01 in progress (checkpoint: human-verify pending)
+Status: Tasks 1-2 complete, awaiting user verification before plan completion
+Last activity: 2026-04-01 — Dashboard views + wiring complete, awaiting verification
 
-Progress: ████░░░░░░ ~43%
+Progress: █████░░░░░ ~50%
 
 ## Performance Metrics
 
@@ -62,6 +62,10 @@ Recent decisions affecting current work:
 - 03-02: Category pill colors: task=blue, therapy=purple, idea=orange, reflection=green, project=indigo
 - 03-02: User override sets confidence to 1.0 (explicit user choice = highest confidence)
 - 03-02: Auto-dismiss timer pauses while category picker is open (bumped to 2.5s)
+- 04-01: DashboardViewModel uses @Observable + @MainActor with Task-based debounce for search
+- 04-01: NavigationSplitView for sidebar + detail layout with .searchable modifier
+- 04-01: Dashboard window managed as NSWindow property on AppDelegate (reused if visible)
+- 04-01: ThoughtCategory displayColor/displayName extension reused from CaptureView.swift (same target)
 
 ### Pending Todos
 
@@ -74,5 +78,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-01
-Stopped at: Phase 03-ai-triage complete — ready for Phase 4 planning
-Resume file: .planning/phases/03-ai-triage/03-02-SUMMARY.md
+Stopped at: Phase 04-dashboard plan 01 — checkpoint:human-verify pending (tasks 1-2 complete)
+Resume file: .planning/phases/04-dashboard/04-01-PLAN.md
