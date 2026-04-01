@@ -1,0 +1,52 @@
+import SwiftUI
+import JarvisCore
+
+/// Displays a single thought entry in the dashboard list.
+struct ThoughtRowView: View {
+
+    let thought: Thought
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            // Content text — 2-line truncation
+            Text(thought.content)
+                .font(.body)
+                .lineLimit(2)
+                .truncationMode(.tail)
+
+            // Metadata row: category pill + confidence + timestamp
+            HStack(spacing: 8) {
+                if let category = thought.category {
+                    Text(category.displayName)
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 3)
+                        .background(category.displayColor.opacity(0.85))
+                        .clipShape(Capsule())
+                }
+
+                if let confidence = thought.confidence {
+                    Text("\(Int(confidence * 100))%")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                Text(thought.createdAt, formatter: Self.relativeFormatter)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(.vertical, 4)
+    }
+
+    // MARK: - Formatters
+
+    private static let relativeFormatter: RelativeDateTimeFormatter = {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter
+    }()
+}
