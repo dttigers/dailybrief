@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Current Position
 
 Phase: 5 of 7 (Voice & Image Capture) — IN PROGRESS
-Plan: 01 complete (VoiceCaptureService + TranscriptionService + CaptureService extension)
-Status: Plan 05-01 done — voice recording and on-device transcription pipeline shipped
-Last activity: 2026-04-01 — Plan 05-01 executed (2 tasks, 2 commits)
+Plan: 03 in progress (UI wiring complete, awaiting human verification)
+Status: Plan 05-03 tasks 1-2 done — CaptureView three-mode UI + AppDelegate service wiring. Checkpoint: human-verify.
+Last activity: 2026-04-01 — Plan 05-03 tasks 1-2 executed (2 tasks, 2 commits)
 
-Progress: ███████░░░ ~70%
+Progress: ████████░░ ~80%
 
 ## Performance Metrics
 
@@ -80,6 +80,10 @@ Recent decisions affecting current work:
 - 05-01: @preconcurrency import AVFoundation for Swift 6 AVAudioPCMBuffer Sendable compliance
 - 05-01: AVAudioConverter for 16kHz mono Float32 format conversion from hardware format
 - 05-01: CaptureService.capture(_:source:) added; captureText() delegates to it
+- 05-03: CaptureMode enum with segmented picker for text/voice/image mode switching
+- 05-03: Voice/image closures on CaptureView (onStartRecording, onStopRecording, onImageCapture) keep orchestration in AppDelegate
+- 05-03: Voice triage result returned via Thought.category/confidence (avoids second triage overlay callback)
+- 05-03: Image capture with no API key gracefully falls back to filename-only capture
 
 ### Pending Todos
 
@@ -92,5 +96,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-01
-Stopped at: Plan 05-01 complete (voice capture + transcription pipeline)
-Resume file: .planning/phases/05-voice-image-capture/05-01-SUMMARY.md
+Stopped at: Plan 05-03 task 3 — checkpoint:human-verify for three-mode capture panel
+Resume file: .planning/phases/05-voice-image-capture/05-03-PLAN.md (task 3 checkpoint)
