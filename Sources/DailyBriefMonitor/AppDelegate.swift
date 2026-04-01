@@ -133,6 +133,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         window.contentView = hostingView
         window.minSize = NSSize(width: 600, height: 400)
         window.center()
+        window.isReleasedWhenClosed = false
+
+        // MenuBarExtra apps are accessory-type by default — promote to regular
+        // so the window can accept keyboard focus (search field, etc.)
+        NSApp.setActivationPolicy(.regular)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
 

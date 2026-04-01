@@ -15,7 +15,7 @@ struct DashboardView: View {
         .task {
             await viewModel.refresh()
         }
-        .onChange(of: viewModel.selectedCategory) {
+        .onChange(of: viewModel.selectedFilter) {
             Task { await viewModel.loadThoughts() }
         }
     }
@@ -24,10 +24,7 @@ struct DashboardView: View {
 
     @ViewBuilder
     private var sidebar: some View {
-        List(selection: Binding(
-            get: { viewModel.selectedCategory },
-            set: { viewModel.selectedCategory = $0 }
-        )) {
+        List(selection: $viewModel.selectedFilter) {
             // "All" row
             Label {
                 HStack {
@@ -45,7 +42,7 @@ struct DashboardView: View {
                 Image(systemName: "tray.full")
                     .foregroundStyle(.secondary)
             }
-            .tag(ThoughtCategory?.none)
+            .tag(CategoryFilter.all)
 
             Section("Categories") {
                 ForEach(ThoughtCategory.allCases, id: \.self) { category in
@@ -66,7 +63,7 @@ struct DashboardView: View {
                             .foregroundStyle(category.displayColor)
                             .font(.caption2)
                     }
-                    .tag(ThoughtCategory?.some(category))
+                    .tag(CategoryFilter.specific(category))
                 }
             }
         }

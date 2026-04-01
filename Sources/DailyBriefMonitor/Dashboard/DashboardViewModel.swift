@@ -1,6 +1,19 @@
 import Foundation
 import JarvisCore
 
+/// Sidebar filter: wraps optional ThoughtCategory so "All" is a concrete selectable value.
+enum CategoryFilter: Hashable {
+    case all
+    case specific(ThoughtCategory)
+
+    var category: ThoughtCategory? {
+        switch self {
+        case .all: return nil
+        case .specific(let c): return c
+        }
+    }
+}
+
 /// View model for the central dashboard — fetches, filters, and searches thoughts.
 @MainActor @Observable
 final class DashboardViewModel {
@@ -11,7 +24,7 @@ final class DashboardViewModel {
     var searchQuery: String = "" {
         didSet { debouncedSearch() }
     }
-    var selectedCategory: ThoughtCategory?
+    var selectedFilter: CategoryFilter = .all
     var isLoading = false
     var totalCount = 0
     var categoryCounts: [ThoughtCategory: Int] = [:]
@@ -41,12 +54,13 @@ final class DashboardViewModel {
     func loadThoughts() async {
         do {
             let trimmed = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+            let category = selectedFilter.category
             if trimmed.isEmpty {
-                thoughts = try await store.fetchAll(category: selectedCategory)
+                thoughts = try await store.fetchAll(category: category)
             } else {
                 // FTS5 search — then client-side filter by category if needed
                 var results = try await store.search(query: trimmed)
-                if let category = selectedCategory {
+                if let category {
                     results = results.filter { $0.category == category }
                 }
                 thoughts = results
