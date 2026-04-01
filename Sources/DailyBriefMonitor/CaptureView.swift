@@ -123,6 +123,11 @@ struct CaptureView: View {
                             withAnimation(.easeInOut(duration: 0.2)) {
                                 showCategoryPicker.toggle()
                             }
+                            if showCategoryPicker {
+                                cancelDismissTimer()
+                            } else {
+                                scheduleDismiss()
+                            }
                         } label: {
                             let category = selectedCategory ?? result.category
                             Text(category.displayName)
@@ -256,8 +261,8 @@ struct CaptureView: View {
     private func scheduleDismiss() {
         cancelDismissTimer()
         dismissTask = Task {
-            try? await Task.sleep(for: .milliseconds(1500))
-            guard !Task.isCancelled else { return }
+            try? await Task.sleep(for: .milliseconds(2500))
+            guard !Task.isCancelled, !showCategoryPicker else { return }
             resetAndDismiss()
         }
     }
