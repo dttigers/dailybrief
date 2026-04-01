@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Current Position
 
 Phase: 3 of 7 (AI Triage) — IN PROGRESS
-Plan: 01 complete (1 of N plans done)
-Status: TriageService created, auto-triage wired into capture flow
-Last activity: 2026-04-01 — Plan 03-01 complete (TriageService + auto-triage)
+Plan: 02 complete (2 of N plans done)
+Status: Triage result display + category override in capture panel
+Last activity: 2026-04-01 — Plan 03-02 complete (confidence score UX + category override)
 
-Progress: ███░░░░░░░ ~35%
+Progress: ████░░░░░░ ~40%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 3.7 min
-- Total execution time: 0.4 hours
+- Total plans completed: 7
+- Average duration: 4.1 min
+- Total execution time: 0.5 hours
 
 **By Phase:**
 
@@ -29,10 +29,10 @@ Progress: ███░░░░░░░ ~35%
 |-------|-------|-------|----------|
 | 01-foundation | 3 | 10 min | 3.3 min |
 | 02-text-capture | 2 | 10 min | 5.0 min |
-| 03-ai-triage | 1 | 5 min | 5.0 min |
+| 03-ai-triage | 2 | 13 min | 6.5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-03 (2 min), 02-01 (5 min), 02-02 (5 min), 03-01 (5 min)
+- Last 5 plans: 01-03 (2 min), 02-01 (5 min), 02-02 (5 min), 03-01 (5 min), 03-02 (8 min)
 - Trend: stable
 
 ## Accumulated Context
@@ -58,6 +58,10 @@ Recent decisions affecting current work:
 - 03-01: ThoughtStore.update() without inout for cross-actor updates (Swift 6 prohibits inout across actor boundaries)
 - 03-01: Triage is fire-and-forget from capture — user gets immediate feedback, background Task handles triage
 - 03-01: ConfigLoader.load() failure silently disables triage (graceful degradation)
+- 03-02: onTriage callback awaited by CaptureView (changed from fire-and-forget to display result)
+- 03-02: Category pill colors: task=blue, therapy=purple, idea=orange, reflection=green, project=indigo
+- 03-02: User override sets confidence to 1.0 (explicit user choice = highest confidence)
+- 03-02: Auto-dismiss timer pauses while category picker is open (bumped to 2.5s)
 
 ### Pending Todos
 
@@ -70,5 +74,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-01
-Stopped at: Plan 03-01 complete — TriageService + auto-triage wired into capture flow
-Resume file: .planning/phases/03-ai-triage/03-01-SUMMARY.md
+Stopped at: Plan 03-02 complete — confidence score UX + category override in capture panel
+Resume file: .planning/phases/03-ai-triage/03-02-SUMMARY.md
