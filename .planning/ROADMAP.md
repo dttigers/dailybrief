@@ -12,7 +12,7 @@ None
 
 - [x] **Phase 1: Foundation** - Shared JarvisCore library + GRDB data layer
 - [ ] **Phase 2: Text Capture** - Menu bar popover with global hotkey for instant thought capture
-- [ ] **Phase 3: AI Triage** - Claude-powered auto-categorization with confidence scores
+- [x] **Phase 3: AI Triage** - Claude-powered auto-categorization with confidence scores
 - [ ] **Phase 4: Dashboard** - Central SwiftUI dashboard + settings UI
 - [ ] **Phase 5: Voice & Image Capture** - WhisperKit transcription + multimodal photo capture
 - [ ] **Phase 6: Evolved Daily Brief** - Captured thoughts and contextual affirmations in PDF
@@ -52,8 +52,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 03-01: TriageService actor + Claude API integration with SwiftAnthropic
-- [ ] 03-02: Confidence score UX + category override flow
+- [x] 03-01: TriageService actor + Claude API integration with SwiftAnthropic
+- [x] 03-02: Confidence score UX + category override flow
 
 ### Phase 4: Dashboard
 **Goal**: Central SwiftUI dashboard displaying all captured entries with search, and settings UI for configuring data source integrations
@@ -109,7 +109,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-03-31 |
 | 2. Text Capture | 2/2 | Complete | 2026-04-01 |
-| 3. AI Triage | 0/2 | Not started | - |
+| 3. AI Triage | 2/2 | Complete | 2026-04-01 |
 | 4. Dashboard | 0/2 | Not started | - |
 | 5. Voice & Image Capture | 0/2 | Not started | - |
 | 6. Evolved Daily Brief | 0/2 | Not started | - |

@@ -17,9 +17,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### AI Triage
 
-- [ ] **TRIAGE-01**: Every captured thought is auto-categorized by Claude into one of 5 types (task, therapy, idea, reflection, project)
-- [ ] **TRIAGE-02**: Each categorization displays a confidence score so the user can gauge accuracy
-- [ ] **TRIAGE-03**: User can override the AI-assigned category on any entry
+- [x] **TRIAGE-01**: Every captured thought is auto-categorized by Claude into one of 5 types (task, therapy, idea, reflection, project)
+- [x] **TRIAGE-02**: Each categorization displays a confidence score so the user can gauge accuracy
+- [x] **TRIAGE-03**: User can override the AI-assigned category on any entry
 
 ### Storage & Search
 
@@ -101,9 +101,9 @@ Which phases cover which requirements. Updated by create-roadmap.
 | CAPT-01 | Phase 2 | Complete |
 | CAPT-02 | Phase 2 | Complete |
 | CAPT-05 | Phase 2 | Complete |
-| TRIAGE-01 | Phase 3 | Pending |
-| TRIAGE-02 | Phase 3 | Pending |
-| TRIAGE-03 | Phase 3 | Pending |
+| TRIAGE-01 | Phase 3 | Complete |
+| TRIAGE-02 | Phase 3 | Complete |
+| TRIAGE-03 | Phase 3 | Complete |
 | DASH-01 | Phase 4 | Pending |
 | DASH-02 | Phase 4 | Pending |
 | CAPT-03 | Phase 5 | Pending |
