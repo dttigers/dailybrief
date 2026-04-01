@@ -28,8 +28,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Dashboard
 
-- [ ] **DASH-01**: User can view all captured entries in a central SwiftUI dashboard
-- [ ] **DASH-02**: User can configure data source integrations via settings UI (toggle sources, select teams, manage connections)
+- [x] **DASH-01**: User can view all captured entries in a central SwiftUI dashboard
+- [x] **DASH-02**: User can configure data source integrations via settings UI (toggle sources, select teams, manage connections)
 
 ### Daily Brief
 
@@ -104,8 +104,8 @@ Which phases cover which requirements. Updated by create-roadmap.
 | TRIAGE-01 | Phase 3 | Complete |
 | TRIAGE-02 | Phase 3 | Complete |
 | TRIAGE-03 | Phase 3 | Complete |
-| DASH-01 | Phase 4 | Pending |
-| DASH-02 | Phase 4 | Pending |
+| DASH-01 | Phase 4 | Complete |
+| DASH-02 | Phase 4 | Complete |
 | CAPT-03 | Phase 5 | Pending |
 | CAPT-04 | Phase 5 | Pending |
 | BRIEF-01 | Phase 6 | Pending |

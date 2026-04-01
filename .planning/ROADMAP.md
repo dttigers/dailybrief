@@ -13,7 +13,7 @@ None
 - [x] **Phase 1: Foundation** - Shared JarvisCore library + GRDB data layer
 - [ ] **Phase 2: Text Capture** - Menu bar popover with global hotkey for instant thought capture
 - [x] **Phase 3: AI Triage** - Claude-powered auto-categorization with confidence scores
-- [ ] **Phase 4: Dashboard** - Central SwiftUI dashboard + settings UI
+- [x] **Phase 4: Dashboard** - Central SwiftUI dashboard + settings UI
 - [ ] **Phase 5: Voice & Image Capture** - WhisperKit transcription + multimodal photo capture
 - [ ] **Phase 6: Evolved Daily Brief** - Captured thoughts and contextual affirmations in PDF
 - [ ] **Phase 7: Google Calendar** - Pull calendar events into brief and dashboard
@@ -63,8 +63,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 04-01: Dashboard window with entry list, category views, and FTS5 search
-- [ ] 04-02: Settings UI for data source configuration
+- [x] 04-01: Dashboard window with entry list, category views, and FTS5 search
+- [x] 04-02: Settings UI for data source configuration
 
 ### Phase 5: Voice & Image Capture
 **Goal**: In-app voice recording with WhisperKit on-device transcription and photo/image capture with AI-generated descriptions via multimodal Claude
@@ -110,7 +110,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 1. Foundation | 3/3 | Complete | 2026-03-31 |
 | 2. Text Capture | 2/2 | Complete | 2026-04-01 |
 | 3. AI Triage | 2/2 | Complete | 2026-04-01 |
-| 4. Dashboard | 0/2 | Not started | - |
+| 4. Dashboard | 2/2 | Complete | 2026-04-01 |
 | 5. Voice & Image Capture | 0/2 | Not started | - |
 | 6. Evolved Daily Brief | 0/2 | Not started | - |
 | 7. Google Calendar | 0/1 | Not started | - |

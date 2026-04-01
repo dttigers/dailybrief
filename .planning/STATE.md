@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 ## Current Position
 
-Phase: 4 of 7 (Dashboard) — IN PROGRESS
-Plan: 02 auto tasks complete, checkpoint pending
-Status: Plan 04-02 auto tasks done — settings UI built, awaiting human verification
-Last activity: 2026-04-01 — Plan 04-02 tasks 1-2 complete (checkpoint pending)
+Phase: 4 of 7 (Dashboard) — COMPLETE
+Plan: 02 complete (all tasks + checkpoint verified)
+Status: Phase 04-dashboard done — dashboard window and settings UI shipped
+Last activity: 2026-04-01 — Plan 04-02 checkpoint approved, tab overflow fixed
 
-Progress: █████░░░░░ ~55%
+Progress: ██████░░░░ ~60%
 
 ## Performance Metrics
 
@@ -69,8 +69,9 @@ Recent decisions affecting current work:
 - 04-01: CategoryFilter enum wraps optional ThoughtCategory for SwiftUI List selection (nil tag not selectable)
 - 04-01: NSApp.setActivationPolicy(.regular) when opening dashboard for keyboard focus in MenuBarExtra apps
 - 04-02: ConfigLoader.save() uses .convertToSnakeCase to match load()'s .convertFromSnakeCase
-- 04-02: Settings window .titled + .closable only (not resizable) — fixed 500x400 for settings
+- 04-02: Settings window .titled + .closable only (not resizable) — fixed 600x420 for settings
 - 04-02: Replaced "Open Config" (text editor) with "Settings" (SwiftUI window) in menu bar
+- 04-02: Widened settings window from 500x400 to 600x420 to fit all 6 tabs
 
 ### Pending Todos
 
@@ -83,5 +84,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-01
-Stopped at: Phase 04-dashboard plan 02 checkpoint pending
+Stopped at: Phase 04-dashboard complete
 Resume file: .planning/phases/04-dashboard/04-02-SUMMARY.md
