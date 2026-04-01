@@ -1,5 +1,5 @@
 #if canImport(AVFoundation)
-import AVFoundation
+@preconcurrency import AVFoundation
 import Foundation
 
 // MARK: - Errors
