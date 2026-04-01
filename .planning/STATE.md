@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Current Position
 
 Phase: 5 of 7 (Voice & Image Capture) — IN PROGRESS
-Plan: 02 complete (ImageDescriptionService + ImagePicker)
-Status: Plan 05-02 done — image description service and picker shipped
-Last activity: 2026-04-01 — Plan 05-02 executed (2 tasks, 2 commits)
+Plan: 01 complete (VoiceCaptureService + TranscriptionService + CaptureService extension)
+Status: Plan 05-01 done — voice recording and on-device transcription pipeline shipped
+Last activity: 2026-04-01 — Plan 05-01 executed (2 tasks, 2 commits)
 
 Progress: ███████░░░ ~70%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
-- Average duration: 4.1 min
-- Total execution time: 0.5 hours
+- Total plans completed: 8
+- Average duration: 4.6 min
+- Total execution time: 0.6 hours
 
 **By Phase:**
 
@@ -76,6 +76,10 @@ Recent decisions affecting current work:
 - 05-02: ImageMediaType enum with mimeType computed property for type-safe media types
 - 05-02: 20MB size validation before base64 encoding (fail fast)
 - 05-02: ImagePicker as enum with static method (project convention for stateless utilities)
+- 05-01: nonisolated(unsafe) for WhisperKit property (not Sendable but manages internal thread safety)
+- 05-01: @preconcurrency import AVFoundation for Swift 6 AVAudioPCMBuffer Sendable compliance
+- 05-01: AVAudioConverter for 16kHz mono Float32 format conversion from hardware format
+- 05-01: CaptureService.capture(_:source:) added; captureText() delegates to it
 
 ### Pending Todos
 
@@ -88,5 +92,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-01
-Stopped at: Plan 05-02 complete (image description service + picker)
-Resume file: .planning/phases/05-voice-image-capture/05-02-SUMMARY.md
+Stopped at: Plan 05-01 complete (voice capture + transcription pipeline)
+Resume file: .planning/phases/05-voice-image-capture/05-01-SUMMARY.md
