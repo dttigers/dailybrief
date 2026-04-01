@@ -34,9 +34,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                         return try await service.captureText(text)
                     },
                     onTriage: triageService.map { triage in
-                        return { content in
+                        return { thoughtId, content in
                             do {
                                 let result = try await triage.triage(content)
+                                // Persist triage result to database
+                                if var thought = try await thoughtStore.fetch(id: thoughtId) {
+                                    thought.category = result.category
+                                    thought.confidence = result.confidence
+                                    try await thoughtStore.update(thought)
+                                }
                                 return result
                             } catch {
                                 NSLog("Triage failed: \(error.localizedDescription)")

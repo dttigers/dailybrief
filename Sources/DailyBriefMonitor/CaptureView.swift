@@ -41,8 +41,8 @@ struct CaptureView: View {
     /// Called when the user submits text. Returns the saved Thought.
     var onCapture: (String) async throws -> Thought
 
-    /// Called after capture to triage the thought content. Returns nil on failure.
-    var onTriage: ((String) async -> TriageResult?)?
+    /// Called after capture to triage the thought content. Takes (thoughtId, content), persists result, returns it.
+    var onTriage: ((Int64, String) async -> TriageResult?)?
 
     /// Called when the user overrides the AI-assigned category.
     var onOverride: ((Int64, ThoughtCategory) async -> Void)?
@@ -204,7 +204,7 @@ struct CaptureView: View {
                         isTriaging = true
                     }
 
-                    let result = await onTriage(text)
+                    let result = await onTriage(thought.id!, text)
 
                     withAnimation {
                         isTriaging = false
