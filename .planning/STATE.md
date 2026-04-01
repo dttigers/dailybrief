@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 4 — Dashboard (in progress)
+**Current focus:** Phase 5 — Voice & Image Capture (in progress)
 
 ## Current Position
 
-Phase: 4 of 7 (Dashboard) — COMPLETE
-Plan: 02 complete (all tasks + checkpoint verified)
-Status: Phase 04-dashboard done — dashboard window and settings UI shipped
-Last activity: 2026-04-01 — Plan 04-02 checkpoint approved, tab overflow fixed
+Phase: 5 of 7 (Voice & Image Capture) — IN PROGRESS
+Plan: 02 complete (ImageDescriptionService + ImagePicker)
+Status: Plan 05-02 done — image description service and picker shipped
+Last activity: 2026-04-01 — Plan 05-02 executed (2 tasks, 2 commits)
 
-Progress: ██████░░░░ ~60%
+Progress: ███████░░░ ~70%
 
 ## Performance Metrics
 
@@ -72,6 +72,10 @@ Recent decisions affecting current work:
 - 04-02: Settings window .titled + .closable only (not resizable) — fixed 600x420 for settings
 - 04-02: Replaced "Open Config" (text editor) with "Settings" (SwiftUI window) in menu bar
 - 04-02: Widened settings window from 500x400 to 600x420 to fit all 6 tabs
+- 05-02: Followed TriageService URLSession+JSONSerialization pattern for ImageDescriptionService
+- 05-02: ImageMediaType enum with mimeType computed property for type-safe media types
+- 05-02: 20MB size validation before base64 encoding (fail fast)
+- 05-02: ImagePicker as enum with static method (project convention for stateless utilities)
 
 ### Pending Todos
 
@@ -84,5 +88,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-01
-Stopped at: Phase 04-dashboard complete
-Resume file: .planning/phases/04-dashboard/04-02-SUMMARY.md
+Stopped at: Plan 05-02 complete (image description service + picker)
+Resume file: .planning/phases/05-voice-image-capture/05-02-SUMMARY.md
