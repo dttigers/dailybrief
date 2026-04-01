@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 2 — Text Capture (complete)
+**Current focus:** Phase 3 — AI Triage (in progress)
 
 ## Current Position
 
-Phase: 2 of 7 (Text Capture) — COMPLETE
-Plan: 02 complete (all 2 plans done)
-Status: Phase complete, ready for Phase 3 planning
-Last activity: 2026-04-01 — Phase 02-text-capture complete (capture UI + global hotkey)
+Phase: 3 of 7 (AI Triage) — IN PROGRESS
+Plan: 01 complete (1 of N plans done)
+Status: TriageService created, auto-triage wired into capture flow
+Last activity: 2026-04-01 — Plan 03-01 complete (TriageService + auto-triage)
 
-Progress: ███░░░░░░░ ~30%
+Progress: ███░░░░░░░ ~35%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
-- Average duration: 3.8 min
-- Total execution time: 0.3 hours
+- Total plans completed: 6
+- Average duration: 3.7 min
+- Total execution time: 0.4 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: ███░░░░░░░ ~30%
 |-------|-------|-------|----------|
 | 01-foundation | 3 | 10 min | 3.3 min |
 | 02-text-capture | 2 | 10 min | 5.0 min |
+| 03-ai-triage | 1 | 5 min | 5.0 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (5 min), 01-03 (2 min), 02-01 (5 min), 02-02 (5 min)
+- Last 5 plans: 01-03 (2 min), 02-01 (5 min), 02-02 (5 min), 03-01 (5 min)
 - Trend: stable
 
 ## Accumulated Context
@@ -54,6 +55,9 @@ Recent decisions affecting current work:
 - 02-02: Carbon RegisterEventHotKey over NSEvent.addGlobalMonitorForEvents (no Accessibility permissions)
 - 02-02: Direct panel capture in hotkey closure (avoids Swift 6 Sendable data race errors)
 - 02-02: Task { @MainActor } bridge for calling UI from Carbon callback
+- 03-01: ThoughtStore.update() without inout for cross-actor updates (Swift 6 prohibits inout across actor boundaries)
+- 03-01: Triage is fire-and-forget from capture — user gets immediate feedback, background Task handles triage
+- 03-01: ConfigLoader.load() failure silently disables triage (graceful degradation)
 
 ### Pending Todos
 
@@ -66,5 +70,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-01
-Stopped at: Phase 02-text-capture complete — capture UI + global hotkey, ready for Phase 3
-Resume file: .planning/phases/02-text-capture/02-02-SUMMARY.md
+Stopped at: Plan 03-01 complete — TriageService + auto-triage wired into capture flow
+Resume file: .planning/phases/03-ai-triage/03-01-SUMMARY.md
