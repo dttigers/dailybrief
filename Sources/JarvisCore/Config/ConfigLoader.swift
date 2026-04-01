@@ -23,6 +23,23 @@ public enum ConfigLoader {
         }
     }
 
+    public static func save(_ config: AppConfig) throws {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+
+        let data = try encoder.encode(config)
+
+        // Ensure directory exists
+        try FileManager.default.createDirectory(
+            atPath: configDirectory,
+            withIntermediateDirectories: true
+        )
+
+        let url = URL(fileURLWithPath: configPath)
+        try data.write(to: url)
+    }
+
     public static func expandPath(_ path: String) -> String {
         NSString(string: path).expandingTildeInPath
     }
