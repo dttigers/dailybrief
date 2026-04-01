@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 2 — Text Capture (in progress)
+**Current focus:** Phase 2 — Text Capture (complete)
 
 ## Current Position
 
-Phase: 2 of 7 (Text Capture) — IN PROGRESS
-Plan: 02 complete (global hotkey for capture panel)
-Status: Plan 02-02 done, ready for Plan 02-03
-Last activity: 2026-04-01 — Plan 02-02 complete (Cmd+Shift+J global hotkey via Carbon API)
+Phase: 2 of 7 (Text Capture) — COMPLETE
+Plan: 02 complete (all 2 plans done)
+Status: Phase complete, ready for Phase 3 planning
+Last activity: 2026-04-01 — Phase 02-text-capture complete (capture UI + global hotkey)
 
-Progress: ██▓░░░░░░░ ~25%
+Progress: ███░░░░░░░ ~30%
 
 ## Performance Metrics
 
@@ -66,5 +66,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-01
-Stopped at: Plan 02-02 complete — Cmd+Shift+J global hotkey via Carbon API toggles floating capture panel from any app
+Stopped at: Phase 02-text-capture complete — capture UI + global hotkey, ready for Phase 3
 Resume file: .planning/phases/02-text-capture/02-02-SUMMARY.md

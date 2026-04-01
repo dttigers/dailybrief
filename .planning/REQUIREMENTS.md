@@ -9,11 +9,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Capture
 
-- [ ] **CAPT-01**: User can capture a thought via menu bar popover in under 1 second with zero required fields
-- [ ] **CAPT-02**: User can trigger capture from anywhere via global keyboard shortcut
+- [x] **CAPT-01**: User can capture a thought via menu bar popover in under 1 second with zero required fields
+- [x] **CAPT-02**: User can trigger capture from anywhere via global keyboard shortcut
 - [ ] **CAPT-03**: User can record voice and have it transcribed on-device via WhisperKit
 - [ ] **CAPT-04**: User can capture a photo/image and receive an AI-generated text description via multimodal Claude
-- [ ] **CAPT-05**: All captured entries have automatic creation and modification timestamps
+- [x] **CAPT-05**: All captured entries have automatic creation and modification timestamps
 
 ### AI Triage
 
@@ -98,9 +98,9 @@ Which phases cover which requirements. Updated by create-roadmap.
 |-------------|-------|--------|
 | STORE-01 | Phase 1 | Complete |
 | STORE-02 | Phase 1 | Complete |
-| CAPT-01 | Phase 2 | Pending |
-| CAPT-02 | Phase 2 | Pending |
-| CAPT-05 | Phase 2 | Pending |
+| CAPT-01 | Phase 2 | Complete |
+| CAPT-02 | Phase 2 | Complete |
+| CAPT-05 | Phase 2 | Complete |
 | TRIAGE-01 | Phase 3 | Pending |
 | TRIAGE-02 | Phase 3 | Pending |
 | TRIAGE-03 | Phase 3 | Pending |

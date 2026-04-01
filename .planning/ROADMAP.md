@@ -40,8 +40,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 02-01: Menu bar popover UI + CaptureService actor
-- [ ] 02-02: Global keyboard shortcut + timestamp automation
+- [x] 02-01: Menu bar popover UI + CaptureService actor
+- [x] 02-02: Global keyboard shortcut + timestamp automation
 
 ### Phase 3: AI Triage
 **Goal**: Every captured thought is auto-categorized by Claude into task/therapy/idea/reflection/project with confidence scores, and users can override
@@ -108,7 +108,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Foundation | 3/3 | Complete | 2026-03-31 |
-| 2. Text Capture | 0/2 | Not started | - |
+| 2. Text Capture | 2/2 | Complete | 2026-04-01 |
 | 3. AI Triage | 0/2 | Not started | - |
 | 4. Dashboard | 0/2 | Not started | - |
 | 5. Voice & Image Capture | 0/2 | Not started | - |
