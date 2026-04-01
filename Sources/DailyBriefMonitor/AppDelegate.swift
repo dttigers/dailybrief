@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private var triageService: TriageService?
     private var thoughtStore: ThoughtStore?
     private var globalHotKey: GlobalHotKey?
+    private var dashboardWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Load config for AI credentials (optional — triage disabled without config)
@@ -97,6 +98,45 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     @MainActor
     func toggleCapture() {
         capturePanel?.toggle()
+    }
+
+    /// Opens (or brings to front) the central dashboard window.
+    @MainActor
+    func openDashboard() {
+        // Bring existing window to front if visible
+        if let window = dashboardWindow, window.isVisible {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        guard let store = thoughtStore else {
+            let alert = NSAlert()
+            alert.messageText = "Dashboard Unavailable"
+            alert.informativeText = "The database failed to initialize. Please check logs and restart."
+            alert.alertStyle = .warning
+            alert.runModal()
+            return
+        }
+
+        let viewModel = DashboardViewModel(store: store)
+        let dashboardView = DashboardView(viewModel: viewModel)
+        let hostingView = NSHostingView(rootView: dashboardView)
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+            styleMask: [.titled, .closable, .miniaturizable, .resizable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Jarvis Dashboard"
+        window.contentView = hostingView
+        window.minSize = NSSize(width: 600, height: 400)
+        window.center()
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        dashboardWindow = window
     }
 
     // MARK: - Private

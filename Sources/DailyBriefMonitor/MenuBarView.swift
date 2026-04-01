@@ -3,6 +3,7 @@ import AppKit
 
 struct MenuBarView: View {
     @Bindable var checker: StatusChecker
+    var onDashboard: () -> Void
     var onCapture: () -> Void
 
     var body: some View {
@@ -27,6 +28,13 @@ struct MenuBarView: View {
             Divider()
 
             // Actions
+            Button {
+                onDashboard()
+            } label: {
+                Label("Dashboard", systemImage: "rectangle.grid.1x2")
+            }
+            .keyboardShortcut("d", modifiers: .command)
+
             Button {
                 onCapture()
             } label: {

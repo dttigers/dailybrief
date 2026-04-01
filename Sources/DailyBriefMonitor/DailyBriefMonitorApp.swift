@@ -8,7 +8,7 @@ struct DailyBriefMonitorApp: App {
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarView(checker: checker, onCapture: { appDelegate.toggleCapture() })
+            MenuBarView(checker: checker, onDashboard: { appDelegate.openDashboard() }, onCapture: { appDelegate.toggleCapture() })
                 .onReceive(timer) { _ in
                     checker.refresh()
                 }
