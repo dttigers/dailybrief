@@ -28,6 +28,18 @@ public actor ThoughtStore {
         }
     }
 
+    /// Update a thought and return the saved version. Sets `modifiedAt` to now.
+    /// Use this variant when calling across actor boundaries (no `inout` parameter).
+    @discardableResult
+    public func update(_ thought: Thought) throws -> Thought {
+        try db.write { db in
+            var t = thought
+            t.modifiedAt = Date()
+            try t.save(db)
+            return t
+        }
+    }
+
     /// Delete a thought by ID. Returns true if a row was deleted.
     @discardableResult
     public func delete(id: Int64) async throws -> Bool {

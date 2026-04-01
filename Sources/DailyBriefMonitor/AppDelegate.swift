@@ -8,12 +8,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
     private(set) var capturePanel: CapturePanel!
     private var captureService: CaptureService?
+    private var triageService: TriageService?
+    private var thoughtStore: ThoughtStore?
     private var globalHotKey: GlobalHotKey?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Load config for AI credentials (optional — triage disabled without config)
+        var triageService: TriageService?
+        if let config = try? ConfigLoader.load() {
+            triageService = TriageService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+            self.triageService = triageService
+        }
+
         do {
             let dbManager = try DatabaseManager()
             let thoughtStore = ThoughtStore(database: dbManager)
+            self.thoughtStore = thoughtStore
             let service = CaptureService(store: thoughtStore)
             captureService = service
 
@@ -21,7 +31,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             panel.contentView = NSHostingView(
                 rootView: CaptureView(
                     onCapture: { text in
-                        try await service.captureText(text)
+                        let thought = try await service.captureText(text)
+                        // Fire-and-forget triage — capture succeeds regardless of triage outcome
+                        if let triageService {
+                            Task {
+                                do {
+                                    let result = try await triageService.triage(thought.content)
+                                    var updated = thought
+                                    updated.category = result.category
+                                    updated.confidence = result.confidence
+                                    try await thoughtStore.update(updated)
+                                } catch {
+                                    NSLog("Triage failed: \(error.localizedDescription)")
+                                }
+                            }
+                        }
                     },
                     onDismiss: { [weak panel] in
                         panel?.hidePanel()
