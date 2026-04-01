@@ -2,12 +2,13 @@ import SwiftUI
 
 @main
 struct DailyBriefMonitorApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var checker = StatusChecker()
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarView(checker: checker)
+            MenuBarView(checker: checker, onCapture: { appDelegate.toggleCapture() })
                 .onReceive(timer) { _ in
                     checker.refresh()
                 }

@@ -3,6 +3,7 @@ import AppKit
 
 struct MenuBarView: View {
     @Bindable var checker: StatusChecker
+    var onCapture: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -26,6 +27,13 @@ struct MenuBarView: View {
             Divider()
 
             // Actions
+            Button {
+                onCapture()
+            } label: {
+                Label("Quick Capture", systemImage: "plus.bubble")
+            }
+            .keyboardShortcut("n", modifiers: .command)
+
             Button {
                 if let path = checker.todaysPDFPath() ?? checker.latestPDFPath() {
                     NSWorkspace.shared.open(URL(fileURLWithPath: path))
