@@ -63,4 +63,9 @@ final class CapturePanel: NSPanel {
     // MARK: - Key Handling
 
     override var canBecomeKey: Bool { true }
+
+    /// Dismiss the panel when Escape is pressed (fallback if SwiftUI doesn't handle it).
+    override func cancelOperation(_ sender: Any?) {
+        hidePanel()
+    }
 }

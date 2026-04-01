@@ -1,4 +1,5 @@
 import AppKit
+import Carbon
 import SwiftUI
 import JarvisCore
 
@@ -7,6 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
     private(set) var capturePanel: CapturePanel!
     private var captureService: CaptureService?
+    private var globalHotKey: GlobalHotKey?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         do {
@@ -45,11 +47,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             )
             capturePanel = panel
         }
+
+        registerGlobalHotKey()
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        globalHotKey?.unregister()
     }
 
     /// Toggles the floating capture panel.
     @MainActor
     func toggleCapture() {
         capturePanel?.toggle()
+    }
+
+    // MARK: - Private
+
+    private func registerGlobalHotKey() {
+        // kVK_ANSI_J = 0x26, Cmd+Shift
+        let panel = capturePanel!
+        let hotKey = GlobalHotKey(
+            keyCode: 0x26,
+            modifiers: GlobalHotKey.cmdShiftModifiers
+        ) {
+            Task { @MainActor in
+                panel.toggle()
+            }
+        }
+        hotKey.register()
+        globalHotKey = hotKey
     }
 }
