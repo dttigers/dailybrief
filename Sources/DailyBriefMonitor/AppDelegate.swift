@@ -12,6 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private var thoughtStore: ThoughtStore?
     private var globalHotKey: GlobalHotKey?
     private var dashboardWindow: NSWindow?
+    private var settingsWindow: NSWindow?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Load config for AI credentials (optional — triage disabled without config)
@@ -142,6 +143,37 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         NSApp.activate(ignoringOtherApps: true)
 
         dashboardWindow = window
+    }
+
+    /// Opens (or brings to front) the settings window.
+    @MainActor
+    func openSettings() {
+        if let window = settingsWindow, window.isVisible {
+            window.makeKeyAndOrderFront(nil)
+            NSApp.activate(ignoringOtherApps: true)
+            return
+        }
+
+        let viewModel = SettingsViewModel()
+        let settingsView = SettingsView(viewModel: viewModel)
+        let hostingView = NSHostingView(rootView: settingsView)
+
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
+            styleMask: [.titled, .closable],
+            backing: .buffered,
+            defer: false
+        )
+        window.title = "Jarvis Settings"
+        window.contentView = hostingView
+        window.center()
+        window.isReleasedWhenClosed = false
+
+        NSApp.setActivationPolicy(.regular)
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        settingsWindow = window
     }
 
     // MARK: - Private

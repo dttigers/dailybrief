@@ -5,6 +5,7 @@ struct MenuBarView: View {
     @Bindable var checker: StatusChecker
     var onDashboard: () -> Void
     var onCapture: () -> Void
+    var onSettings: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -69,9 +70,9 @@ struct MenuBarView: View {
             }
 
             Button {
-                NSWorkspace.shared.open(URL(fileURLWithPath: checker.configFilePath))
+                onSettings()
             } label: {
-                Label("Open Config", systemImage: "gear")
+                Label("Settings", systemImage: "gear")
             }
 
             Divider()
