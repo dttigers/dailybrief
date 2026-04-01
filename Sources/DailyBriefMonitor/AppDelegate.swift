@@ -31,20 +31,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             panel.contentView = NSHostingView(
                 rootView: CaptureView(
                     onCapture: { text in
-                        let thought = try await service.captureText(text)
-                        // Fire-and-forget triage — capture succeeds regardless of triage outcome
-                        if let triageService {
-                            Task {
-                                do {
-                                    let result = try await triageService.triage(thought.content)
-                                    var updated = thought
-                                    updated.category = result.category
-                                    updated.confidence = result.confidence
-                                    try await thoughtStore.update(updated)
-                                } catch {
-                                    NSLog("Triage failed: \(error.localizedDescription)")
-                                }
+                        return try await service.captureText(text)
+                    },
+                    onTriage: triageService.map { triage in
+                        return { content in
+                            do {
+                                let result = try await triage.triage(content)
+                                return result
+                            } catch {
+                                NSLog("Triage failed: \(error.localizedDescription)")
+                                return nil
                             }
+                        }
+                    },
+                    onOverride: { thoughtId, category in
+                        do {
+                            if var thought = try await thoughtStore.fetch(id: thoughtId) {
+                                thought.category = category
+                                thought.confidence = 1.0
+                                try await thoughtStore.update(thought)
+                            }
+                        } catch {
+                            NSLog("Category override failed: \(error.localizedDescription)")
                         }
                     },
                     onDismiss: { [weak panel] in

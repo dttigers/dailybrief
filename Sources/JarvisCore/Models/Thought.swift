@@ -11,7 +11,7 @@ public enum CaptureSource: String, Codable, Sendable, DatabaseValueConvertible {
 }
 
 /// AI-assigned category for a triaged thought.
-public enum ThoughtCategory: String, Codable, Sendable, DatabaseValueConvertible {
+public enum ThoughtCategory: String, Codable, Sendable, CaseIterable, DatabaseValueConvertible {
     case task
     case therapy
     case idea
