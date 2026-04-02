@@ -16,7 +16,7 @@ None
 - [x] **Phase 4: Dashboard** - Central SwiftUI dashboard + settings UI
 - [ ] **Phase 5: Voice & Image Capture** - WhisperKit transcription + multimodal photo capture
 - [x] **Phase 6: Evolved Daily Brief** - Captured thoughts and contextual affirmations in PDF
-- [ ] **Phase 7: Google Calendar** - Pull calendar events into brief and dashboard
+- [x] **Phase 7: Google Calendar** - Pull calendar events into brief and dashboard
 
 ## Phase Details
 
@@ -98,9 +98,9 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 07-01: CalendarEvent model + GoogleCalendarService with OAuth2 token management
-- [ ] 07-02: OAuth2 authorization flow + Calendar settings tab
-- [ ] 07-03: Wire calendar events into PDF brief + dashboard
+- [x] 07-01: CalendarEvent model + GoogleCalendarService with OAuth2 token management
+- [x] 07-02: OAuth2 authorization flow + Calendar settings tab
+- [x] 07-03: Wire calendar events into PDF brief + dashboard
 
 ## Progress
 
@@ -115,4 +115,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 4. Dashboard | 2/2 | Complete | 2026-04-01 |
 | 5. Voice & Image Capture | 0/2 | Not started | - |
 | 6. Evolved Daily Brief | 2/2 | Complete | 2026-04-02 |
-| 7. Google Calendar | 0/3 | Not started | - |
+| 7. Google Calendar | 3/3 | Complete | 2026-04-02 |

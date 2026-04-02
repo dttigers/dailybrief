@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 7 — Google Calendar Integration (in progress)
+**Current focus:** Phase 7 — Google Calendar Integration (complete)
 
 ## Current Position
 
-Phase: 7 of 7 (Google Calendar) — IN PROGRESS
-Plan: 03 complete (of 3)
-Status: Calendar events wired into PDF and dashboard. End-to-end integration complete.
-Last activity: 2026-04-02 — Plan 07-03 completed
+Phase: 7 of 7 (Google Calendar) — COMPLETE
+Plan: 03 complete (all plans done)
+Status: Phase 7 complete. Google Calendar OAuth2 flow, event fetching, PDF rendering, and dashboard integration all working.
+Last activity: 2026-04-02 — Phase 07 completed
 
 Progress: ██████████ 100%
 
@@ -120,5 +120,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Phase 07 plan 03 complete — all plans done
-Resume file: .planning/phases/07-google-calendar/07-03-SUMMARY.md
+Stopped at: Phase 07 complete — all milestone phases done
+Resume file: .planning/ROADMAP.md
