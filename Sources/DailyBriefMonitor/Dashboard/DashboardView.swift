@@ -12,6 +12,25 @@ struct DashboardView: View {
         } detail: {
             detail
         }
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) {
+                Button {
+                    viewModel.importAudio()
+                } label: {
+                    Label("Import Audio", systemImage: "waveform")
+                }
+                .disabled(!viewModel.canImportAudio || viewModel.isImporting)
+                .help("Transcribe an audio file")
+
+                Button {
+                    viewModel.importImage()
+                } label: {
+                    Label("Import Image", systemImage: "photo")
+                }
+                .disabled(!viewModel.canImportImage || viewModel.isImporting)
+                .help("Describe and capture an image")
+            }
+        }
         .task {
             await viewModel.refresh()
         }
@@ -75,6 +94,38 @@ struct DashboardView: View {
     @ViewBuilder
     private var detail: some View {
         VStack(spacing: 0) {
+            // Import status bar
+            if let status = viewModel.importStatus {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text(status)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 8)
+                .background(Color(nsColor: .controlBackgroundColor))
+            }
+
+            if let error = viewModel.importError {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.yellow)
+                    Text(error)
+                        .font(.subheadline)
+                        .foregroundStyle(.red)
+                    Spacer()
+                    Button("Dismiss") {
+                        viewModel.importError = nil
+                    }
+                    .controlSize(.small)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(nsColor: .controlBackgroundColor))
+            }
+
             if viewModel.isLoading && viewModel.thoughts.isEmpty {
                 Spacer()
                 ProgressView("Loading...")

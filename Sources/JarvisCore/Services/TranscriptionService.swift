@@ -1,12 +1,14 @@
 import Foundation
-import WhisperKit
+import Speech
 
 // MARK: - Errors
 
 /// Errors that can occur during audio transcription.
 public enum TranscriptionError: Error, LocalizedError {
-    /// The WhisperKit model failed to load.
-    case modelLoadFailed(String)
+    /// Speech recognition is not available on this device.
+    case notAvailable
+    /// The user denied speech recognition authorization.
+    case notAuthorized
     /// Transcription of the audio file failed.
     case transcriptionFailed(String)
     /// Transcription produced no text.
@@ -14,8 +16,10 @@ public enum TranscriptionError: Error, LocalizedError {
 
     public var errorDescription: String? {
         switch self {
-        case .modelLoadFailed(let reason):
-            return "Model load failed: \(reason)"
+        case .notAvailable:
+            return "Speech recognition is not available."
+        case .notAuthorized:
+            return "Speech recognition access was denied."
         case .transcriptionFailed(let reason):
             return "Transcription failed: \(reason)"
         case .emptyResult:
@@ -26,52 +30,52 @@ public enum TranscriptionError: Error, LocalizedError {
 
 // MARK: - TranscriptionService
 
-/// On-device speech-to-text using WhisperKit. Lazy-loads the model on first use.
+/// On-device speech-to-text using Apple's SFSpeechRecognizer.
 public actor TranscriptionService {
-
-    // WhisperKit manages its own thread safety internally.
-    nonisolated(unsafe) private var whisperKit: WhisperKit?
 
     public init() {}
 
-    /// Loads the WhisperKit model if not already loaded.
-    ///
-    /// Uses the default (smallest) model which auto-downloads on first run.
-    /// Subsequent calls are no-ops.
-    public func loadModel() async throws {
-        guard whisperKit == nil else { return }
-
-        do {
-            whisperKit = try await WhisperKit()
-        } catch {
-            throw TranscriptionError.modelLoadFailed(error.localizedDescription)
+    /// Requests speech recognition authorization if not already granted.
+    public func requestAuthorization() async -> Bool {
+        await withCheckedContinuation { continuation in
+            SFSpeechRecognizer.requestAuthorization { status in
+                continuation.resume(returning: status == .authorized)
+            }
         }
     }
 
     /// Transcribes audio from a file URL to text.
     ///
-    /// Loads the model on first call if needed.
-    /// - Parameter audioURL: URL of the audio file (WAV, 16 kHz mono recommended).
+    /// - Parameter audioURL: URL of the audio file (WAV, MP3, M4A, AIFF supported).
     /// - Returns: The transcribed text, trimmed of whitespace.
-    /// - Throws: `TranscriptionError` if the model fails to load, transcription fails, or result is empty.
+    /// - Throws: `TranscriptionError` if recognition fails or result is empty.
     public func transcribe(audioURL: URL) async throws -> String {
-        try await loadModel()
-
-        guard let kit = whisperKit else {
-            throw TranscriptionError.modelLoadFailed("WhisperKit instance is nil after loading.")
+        guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else {
+            throw TranscriptionError.notAvailable
         }
 
-        let results: [TranscriptionResult]
-        do {
-            results = try await kit.transcribe(audioPath: audioURL.path())
-        } catch {
-            throw TranscriptionError.transcriptionFailed(error.localizedDescription)
+        let authorized = await requestAuthorization()
+        guard authorized else {
+            throw TranscriptionError.notAuthorized
         }
 
-        let text = results
-            .compactMap { $0.text }
-            .joined(separator: " ")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let didAccess = audioURL.startAccessingSecurityScopedResource()
+        defer { if didAccess { audioURL.stopAccessingSecurityScopedResource() } }
+
+        let request = SFSpeechURLRecognitionRequest(url: audioURL)
+        request.shouldReportPartialResults = false
+
+        let text: String = try await withCheckedThrowingContinuation { continuation in
+            recognizer.recognitionTask(with: request) { result, error in
+                if let error {
+                    continuation.resume(throwing: TranscriptionError.transcriptionFailed(error.localizedDescription))
+                } else if let result, result.isFinal {
+                    let formatted = result.bestTranscription.formattedString
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                    continuation.resume(returning: formatted)
+                }
+            }
+        }
 
         guard !text.isEmpty else {
             throw TranscriptionError.emptyResult

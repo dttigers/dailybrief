@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 // MARK: - ImageMediaType
@@ -64,13 +65,25 @@ public actor ImageDescriptionService {
     ///   - mediaType: The image format.
     /// - Returns: A concise text description of the image.
     /// - Throws: `ImageDescriptionError` on failure.
+    /// Maximum base64-encoded size the Claude API accepts (5MB).
+    private static let maxBase64Size = 5_242_880
+
     public func describe(imageData: Data, mediaType: ImageMediaType) async throws -> String {
-        // Validate size (20MB limit)
-        guard imageData.count < 20_000_000 else {
-            throw ImageDescriptionError.imageTooLarge
+        // Compress if the image exceeds Claude's 5MB base64 limit
+        let finalData: Data
+        let finalMediaType: ImageMediaType
+        if imageData.count > Self.maxBase64Size {
+            guard let compressed = Self.compress(imageData, targetSize: Self.maxBase64Size) else {
+                throw ImageDescriptionError.imageTooLarge
+            }
+            finalData = compressed
+            finalMediaType = .jpeg
+        } else {
+            finalData = imageData
+            finalMediaType = mediaType
         }
 
-        let base64String = imageData.base64EncodedString()
+        let base64String = finalData.base64EncodedString()
 
         let url = URL(string: "https://api.anthropic.com/v1/messages")!
         var request = URLRequest(url: url)
@@ -90,7 +103,7 @@ public actor ImageDescriptionService {
                             "type": "image",
                             "source": [
                                 "type": "base64",
-                                "media_type": mediaType.mimeType,
+                                "media_type": finalMediaType.mimeType,
                                 "data": base64String
                             ]
                         ],
@@ -110,7 +123,9 @@ public actor ImageDescriptionService {
         guard let httpResponse = response as? HTTPURLResponse,
               httpResponse.statusCode == 200 else {
             let statusCode = (response as? HTTPURLResponse)?.statusCode ?? 0
-            throw ImageDescriptionError.apiError("Claude API returned status \(statusCode)")
+            let errorBody = String(data: data, encoding: .utf8) ?? "(no body)"
+            NSLog("ImageDescriptionService: HTTP \(statusCode) — \(errorBody)")
+            throw ImageDescriptionError.apiError("Claude API returned status \(statusCode): \(errorBody)")
         }
 
         // Parse outer Claude API response to extract text content
@@ -136,9 +151,51 @@ public actor ImageDescriptionService {
     /// - Returns: A concise text description of the image.
     /// - Throws: `ImageDescriptionError` on failure.
     public func describe(imageURL: URL) async throws -> String {
+        let didAccess = imageURL.startAccessingSecurityScopedResource()
+        defer { if didAccess { imageURL.stopAccessingSecurityScopedResource() } }
+
         let data = try Data(contentsOf: imageURL)
         let mediaType = Self.mediaType(for: imageURL)
         return try await describe(imageData: data, mediaType: mediaType)
+    }
+
+    /// Downscales and JPEG-compresses image data to fit within `targetSize` bytes.
+    private static func compress(_ data: Data, targetSize: Int) -> Data? {
+        guard let image = NSImage(data: data),
+              let tiffData = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData) else {
+            return nil
+        }
+
+        // Try progressively lower JPEG quality
+        for quality in stride(from: 0.7, through: 0.1, by: -0.1) {
+            if let jpeg = bitmap.representation(using: .jpeg, properties: [.compressionFactor: quality]),
+               jpeg.count <= targetSize {
+                return jpeg
+            }
+        }
+
+        // Still too big — downscale to 50% and retry
+        let newW = image.size.width * 0.5
+        let newH = image.size.height * 0.5
+        let resized = NSImage(size: NSSize(width: newW, height: newH))
+        resized.lockFocus()
+        image.draw(in: NSRect(x: 0, y: 0, width: newW, height: newH))
+        resized.unlockFocus()
+
+        guard let resizedTiff = resized.tiffRepresentation,
+              let resizedBitmap = NSBitmapImageRep(data: resizedTiff) else {
+            return nil
+        }
+
+        for quality in stride(from: 0.7, through: 0.1, by: -0.1) {
+            if let jpeg = resizedBitmap.representation(using: .jpeg, properties: [.compressionFactor: quality]),
+               jpeg.count <= targetSize {
+                return jpeg
+            }
+        }
+
+        return nil
     }
 
     /// Detects the image media type from a file extension.

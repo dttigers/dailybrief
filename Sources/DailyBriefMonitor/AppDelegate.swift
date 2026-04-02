@@ -14,8 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private var dashboardWindow: NSWindow?
     private var settingsWindow: NSWindow?
 
-    // Voice & image services
-    private var voiceCaptureService: VoiceCaptureService?
+    // Audio & image services
     private var transcriptionService: TranscriptionService?
     private var imageDescriptionService: ImageDescriptionService?
 
@@ -31,10 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             self.imageDescriptionService = imageDescService
         }
 
-        // Create voice services (no config needed — on-device via WhisperKit)
-        let voiceService = VoiceCaptureService()
-        self.voiceCaptureService = voiceService
-
+        // Create transcription service (uses Apple SFSpeechRecognizer)
         let transcription = TranscriptionService()
         self.transcriptionService = transcription
 
@@ -55,7 +51,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                         return { thoughtId, content in
                             do {
                                 let result = try await triage.triage(content)
-                                // Persist triage result to database
                                 if var thought = try await thoughtStore.fetch(id: thoughtId) {
                                     thought.category = result.category
                                     thought.confidence = result.confidence
@@ -78,68 +73,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                         } catch {
                             NSLog("Category override failed: \(error.localizedDescription)")
                         }
-                    },
-                    onStartRecording: {
-                        let granted = await voiceService.requestMicrophoneAccess()
-                        guard granted else {
-                            throw VoiceCaptureError.microphoneAccessDenied
-                        }
-                        try await voiceService.startRecording()
-                    },
-                    onStopRecording: {
-                        let audioURL = try await voiceService.stopRecording()
-                        let text = try await transcription.transcribe(audioURL: audioURL)
-                        let thought = try await service.capture(text, source: .voice)
-
-                        // Run triage if available
-                        if let triage = triageService {
-                            do {
-                                let result = try await triage.triage(text)
-                                if var t = try await thoughtStore.fetch(id: thought.id!) {
-                                    t.category = result.category
-                                    t.confidence = result.confidence
-                                    try await thoughtStore.update(t)
-                                    // Return thought with triage info
-                                    return t
-                                }
-                            } catch {
-                                NSLog("Voice triage failed: \(error.localizedDescription)")
-                            }
-                        }
-                        return thought
-                    },
-                    onImageCapture: {
-                        guard let imageURL = await ImagePicker.pickImage() else {
-                            return nil
-                        }
-
-                        guard let descService = imageDescService else {
-                            // No API key — just capture the filename as content
-                            let thought = try await service.capture(
-                                "Image: \(imageURL.lastPathComponent)",
-                                source: .image
-                            )
-                            return thought
-                        }
-
-                        let description = try await descService.describe(imageURL: imageURL)
-                        let thought = try await service.capture(description, source: .image)
-
-                        // Run triage if available
-                        if let triage = triageService {
-                            do {
-                                let result = try await triage.triage(description)
-                                if var t = try await thoughtStore.fetch(id: thought.id!) {
-                                    t.category = result.category
-                                    t.confidence = result.confidence
-                                    try await thoughtStore.update(t)
-                                    return t
-                                }
-                            } catch {
-                                NSLog("Image triage failed: \(error.localizedDescription)")
-                            }
-                        }
-                        return thought
                     },
                     onDismiss: { [weak panel] in
                         panel?.hidePanel()
@@ -198,7 +131,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             return
         }
 
-        let viewModel = DashboardViewModel(store: store)
+        let viewModel = DashboardViewModel(
+            store: store,
+            captureService: captureService,
+            transcriptionService: transcriptionService,
+            imageDescriptionService: imageDescriptionService,
+            triageService: triageService
+        )
         let dashboardView = DashboardView(viewModel: viewModel)
         let hostingView = NSHostingView(rootView: dashboardView)
 

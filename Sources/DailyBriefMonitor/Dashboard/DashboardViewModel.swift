@@ -14,7 +14,7 @@ enum CategoryFilter: Hashable {
     }
 }
 
-/// View model for the central dashboard — fetches, filters, and searches thoughts.
+/// View model for the central dashboard — fetches, filters, searches thoughts, and handles file imports.
 @MainActor @Observable
 final class DashboardViewModel {
 
@@ -29,15 +29,37 @@ final class DashboardViewModel {
     var totalCount = 0
     var categoryCounts: [ThoughtCategory: Int] = [:]
 
+    // Import state
+    var isImporting = false
+    var importStatus: String?
+    var importError: String?
+
     // MARK: - Private
 
     private let store: ThoughtStore
+    private let captureService: CaptureService?
+    private let transcriptionService: TranscriptionService?
+    private let imageDescriptionService: ImageDescriptionService?
+    private let triageService: TriageService?
     private var searchTask: Task<Void, Never>?
+
+    var canImportAudio: Bool { transcriptionService != nil && captureService != nil }
+    var canImportImage: Bool { captureService != nil }
 
     // MARK: - Initialization
 
-    init(store: ThoughtStore) {
+    init(
+        store: ThoughtStore,
+        captureService: CaptureService? = nil,
+        transcriptionService: TranscriptionService? = nil,
+        imageDescriptionService: ImageDescriptionService? = nil,
+        triageService: TriageService? = nil
+    ) {
         self.store = store
+        self.captureService = captureService
+        self.transcriptionService = transcriptionService
+        self.imageDescriptionService = imageDescriptionService
+        self.triageService = triageService
     }
 
     // MARK: - Public Methods
@@ -80,6 +102,101 @@ final class DashboardViewModel {
             }
         } catch {
             NSLog("Dashboard: failed to load counts — \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Import Audio
+
+    func importAudio() {
+        guard let captureService, let transcriptionService else { return }
+
+        let audioURL = FilePicker.pickAudioFile()
+        guard let audioURL else { return }
+
+        isImporting = true
+        importStatus = "Transcribing \(audioURL.lastPathComponent)..."
+        importError = nil
+
+        Task {
+            do {
+                let text = try await transcriptionService.transcribe(audioURL: audioURL)
+
+                importStatus = "Saving..."
+                var thought = try await captureService.capture(text, source: .voice)
+
+                if let triageService {
+                    importStatus = "Categorizing..."
+                    do {
+                        let result = try await triageService.triage(text)
+                        if var t = try await store.fetch(id: thought.id!) {
+                            t.category = result.category
+                            t.confidence = result.confidence
+                            try await store.update(t)
+                            thought = t
+                        }
+                    } catch {
+                        NSLog("Audio triage failed: \(error.localizedDescription)")
+                    }
+                }
+
+                isImporting = false
+                importStatus = nil
+                await refresh()
+            } catch {
+                isImporting = false
+                importStatus = nil
+                importError = error.localizedDescription
+            }
+        }
+    }
+
+    // MARK: - Import Image
+
+    func importImage() {
+        guard let captureService else { return }
+
+        let imageURL = FilePicker.pickImage()
+        guard let imageURL else { return }
+
+        isImporting = true
+        importError = nil
+
+        Task {
+            do {
+                let description: String
+                if let descService = imageDescriptionService {
+                    importStatus = "Analyzing \(imageURL.lastPathComponent)..."
+                    description = try await descService.describe(imageURL: imageURL)
+                } else {
+                    description = "Image: \(imageURL.lastPathComponent)"
+                }
+
+                importStatus = "Saving..."
+                var thought = try await captureService.capture(description, source: .image)
+
+                if let triageService {
+                    importStatus = "Categorizing..."
+                    do {
+                        let result = try await triageService.triage(description)
+                        if var t = try await store.fetch(id: thought.id!) {
+                            t.category = result.category
+                            t.confidence = result.confidence
+                            try await store.update(t)
+                            thought = t
+                        }
+                    } catch {
+                        NSLog("Image triage failed: \(error.localizedDescription)")
+                    }
+                }
+
+                isImporting = false
+                importStatus = nil
+                await refresh()
+            } catch {
+                isImporting = false
+                importStatus = nil
+                importError = error.localizedDescription
+            }
         }
     }
 
