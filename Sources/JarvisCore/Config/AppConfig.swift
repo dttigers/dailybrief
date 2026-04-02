@@ -7,6 +7,7 @@ public struct AppConfig: Codable, Sendable {
     public var ai: AIConfig
     public var pdf: PDFConfig
     public var printing: PrintingConfig
+    public var googleCalendar: GoogleCalendarConfig
 
     public init(
         gmail: GmailConfig,
@@ -14,7 +15,8 @@ public struct AppConfig: Codable, Sendable {
         sports: SportsConfig,
         ai: AIConfig,
         pdf: PDFConfig,
-        printing: PrintingConfig
+        printing: PrintingConfig,
+        googleCalendar: GoogleCalendarConfig = .init()
     ) {
         self.gmail = gmail
         self.reminders = reminders
@@ -22,6 +24,19 @@ public struct AppConfig: Codable, Sendable {
         self.ai = ai
         self.pdf = pdf
         self.printing = printing
+        self.googleCalendar = googleCalendar
+    }
+
+    // Custom Decodable to make googleCalendar optional for backward compatibility
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        gmail = try container.decode(GmailConfig.self, forKey: .gmail)
+        reminders = try container.decode(RemindersConfig.self, forKey: .reminders)
+        sports = try container.decode(SportsConfig.self, forKey: .sports)
+        ai = try container.decode(AIConfig.self, forKey: .ai)
+        pdf = try container.decode(PDFConfig.self, forKey: .pdf)
+        printing = try container.decode(PrintingConfig.self, forKey: .printing)
+        googleCalendar = try container.decodeIfPresent(GoogleCalendarConfig.self, forKey: .googleCalendar) ?? .init()
     }
 
     public struct GmailConfig: Codable, Sendable {
@@ -106,6 +121,25 @@ public struct AppConfig: Codable, Sendable {
             self.enabled = enabled
             self.printerName = printerName
             self.copies = copies
+        }
+    }
+
+    public struct GoogleCalendarConfig: Codable, Sendable {
+        public var enabled: Bool
+        public var clientId: String
+        public var clientSecret: String
+        public var selectedCalendarIds: [String]
+
+        public init(
+            enabled: Bool = false,
+            clientId: String = "",
+            clientSecret: String = "",
+            selectedCalendarIds: [String] = []
+        ) {
+            self.enabled = enabled
+            self.clientId = clientId
+            self.clientSecret = clientSecret
+            self.selectedCalendarIds = selectedCalendarIds
         }
     }
 }
