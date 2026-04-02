@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v1.1 Always On — Launch Agent phase
+**Current focus:** v1.1 Always On — Folder Watching complete, ready for Sports UI + Daily Brief
 
 ## Current Position
 
 Phase: 9 of 13 (Folder Watching)
 Plan: 02 complete
-Status: Phase 09 complete — ready for next phase
-Last activity: 2026-04-02 — Plan 09-02 complete (AppDelegate lifecycle + Folders settings tab)
+Status: Ready for phase 10
+Last activity: 2026-04-02 — Phase 09 complete (folder watching feature end-to-end)
 
-Progress: ██░░░░░░░░ 20% (v1.1)
+Progress: ███░░░░░░░ 33% (v1.1)
 
 ## Performance Metrics
 
@@ -59,5 +59,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Phase 09 plan 02 complete, phase 09 done
+Stopped at: Phase 09 complete, ready for phase 10
 Resume file: None

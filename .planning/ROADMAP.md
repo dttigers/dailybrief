@@ -41,15 +41,15 @@ Plans:
 - [x] 08-02: Built-in brief scheduler
 - [x] 08-03: Consolidate & verify
 
-#### Phase 9: Folder Watching
+#### Phase 9: Folder Watching ✅
 
 **Goal**: Monitor dedicated folders for new audio and photo files. Auto-transcribe audio and process images daily. Files dropped into watched folders get ingested as captured thoughts.
 **Depends on**: Phase 8
-**Research**: Unlikely (FSEvents/DispatchSource in macOS SDK, established patterns)
-**Plans**: TBD
+**Completed**: 2026-04-02
 
 Plans:
-- [ ] 09-01: TBD (run /gsd:plan-phase 9 to break down)
+- [x] 09-01: FolderWatcherService + Config
+- [x] 09-02: App lifecycle wiring + Settings UI
 
 #### Phase 10: Sports UI + Daily Brief
 
@@ -108,7 +108,7 @@ None
 | 6. Evolved Daily Brief | v1.0 | 2/2 | Complete | 2026-04-02 |
 | 7. Google Calendar | v1.0 | 3/3 | Complete | 2026-04-02 |
 | 8. Launch Agent | v1.1 | 3/3 | Complete | 2026-04-02 |
-| 9. Folder Watching | v1.1 | 0/? | Not started | - |
+| 9. Folder Watching | v1.1 | 2/2 | Complete | 2026-04-02 |
 | 10. Sports UI + Daily Brief | v1.1 | 0/? | Not started | - |
 | 11. Smart Suggestions | v1.1 | 0/? | Not started | - |
 | 12. Cloud Sync | v1.1 | 0/? | Not started | - |
