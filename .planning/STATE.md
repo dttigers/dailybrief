@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Current Position
 
 Phase: 7 of 7 (Google Calendar) — IN PROGRESS
-Plan: 01 complete (of 3)
-Status: CalendarEvent model, GoogleCalendarConfig, CalendarTokens, and GoogleCalendarService actor created.
-Last activity: 2026-04-02 — Plan 07-01 completed
+Plan: 03 complete (of 3)
+Status: Calendar events wired into PDF and dashboard. End-to-end integration complete.
+Last activity: 2026-04-02 — Plan 07-03 completed
 
-Progress: ███░░░░░░░ 33%
+Progress: ██████████ 100%
 
 ## Performance Metrics
 
@@ -99,6 +99,10 @@ Recent decisions affecting current work:
 - 07-01: CalendarTokens uses secondsSince1970 date encoding for token expiry persistence
 - 07-01: ISO8601 parsing with fractional seconds fallback (matches SportsService pattern)
 - 07-01: GoogleCalendarError.notAuthorized thrown when no tokens exist — callers skip gracefully
+- 07-03: GoogleCalendarService moved from DailyBrief/Services to JarvisCore/Services for cross-target access
+- 07-03: Calendar schedule section after To Do, before Notes in PDF Page 1 (max 8, all-day first)
+- 07-03: Dashboard calendar section only visible when events exist (graceful degradation)
+- 07-03: SendableBox wrapper for DispatchWorkItem in GoogleCalendarAuth (Swift 6 fix)
 
 ### Pending Todos
 
@@ -111,5 +115,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Phase 07 plan 01 complete — ready for plan 02
-Resume file: .planning/phases/07-google-calendar/07-02-PLAN.md
+Stopped at: Phase 07 plan 03 complete — all plans done
+Resume file: .planning/phases/07-google-calendar/07-03-SUMMARY.md
