@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 
 ## Current Position
 
-Phase: 5 of 7 (Voice & Image Capture) — IN PROGRESS
-Plan: 03 in progress (UI wiring complete, awaiting human verification)
-Status: Plan 05-03 tasks 1-2 done — CaptureView three-mode UI + AppDelegate service wiring. Checkpoint: human-verify.
-Last activity: 2026-04-01 — Plan 05-03 tasks 1-2 executed (2 tasks, 2 commits)
+Phase: 5 of 7 (Voice & Image Capture) — COMPLETE
+Plan: 03 complete
+Status: All 3 plans done. Audio/image import on dashboard, text capture on floating panel.
+Last activity: 2026-04-02 — Plan 05-03 completed (design revised: dashboard imports, SFSpeechRecognizer)
 
-Progress: ████████░░ ~80%
+Progress: ██████████ 100%
 
 ## Performance Metrics
 
@@ -84,6 +84,11 @@ Recent decisions affecting current work:
 - 05-03: Voice/image closures on CaptureView (onStartRecording, onStopRecording, onImageCapture) keep orchestration in AppDelegate
 - 05-03: Voice triage result returned via Thought.category/confidence (avoids second triage overlay callback)
 - 05-03: Image capture with no API key gracefully falls back to filename-only capture
+- 05-03: CapturePanel text-only; audio/image import via dashboard toolbar (floating panel + NSOpenPanel incompatible)
+- 05-03: SFSpeechRecognizer over WhisperKit (Intel Mac CoreML crash, no model downloads needed)
+- 05-03: Auto-compress images >5MB via progressive JPEG quality + 50% downscale fallback
+- 05-03: FilePicker replaces ImagePicker (shared pickFile with type-specific convenience methods)
+- 05-03: WhisperKit dependency removed from Package.swift
 
 ### Pending Todos
 
@@ -95,6 +100,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-04-01
-Stopped at: Plan 05-03 task 3 — checkpoint:human-verify for three-mode capture panel
-Resume file: .planning/phases/05-voice-image-capture/05-03-PLAN.md (task 3 checkpoint)
+Last session: 2026-04-02
+Stopped at: Phase 05 complete — ready for Phase 06
+Resume file: .planning/ROADMAP.md
