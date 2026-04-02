@@ -15,7 +15,7 @@ None
 - [x] **Phase 3: AI Triage** - Claude-powered auto-categorization with confidence scores
 - [x] **Phase 4: Dashboard** - Central SwiftUI dashboard + settings UI
 - [ ] **Phase 5: Voice & Image Capture** - WhisperKit transcription + multimodal photo capture
-- [ ] **Phase 6: Evolved Daily Brief** - Captured thoughts and contextual affirmations in PDF
+- [x] **Phase 6: Evolved Daily Brief** - Captured thoughts and contextual affirmations in PDF
 - [ ] **Phase 7: Google Calendar** - Pull calendar events into brief and dashboard
 
 ## Phase Details
@@ -86,8 +86,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 06-01: Integrate captured thoughts + unprocessed items into PDF brief
-- [ ] 06-02: Contextual AI affirmations referencing recent entries
+- [x] 06-01: Integrate captured thoughts + unprocessed items into PDF brief
+- [x] 06-02: Contextual AI affirmations referencing recent entries
 
 ### Phase 7: Google Calendar
 **Goal**: Pull events from selected Google Calendars into the daily brief and dashboard
@@ -112,5 +112,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | 3. AI Triage | 2/2 | Complete | 2026-04-01 |
 | 4. Dashboard | 2/2 | Complete | 2026-04-01 |
 | 5. Voice & Image Capture | 0/2 | Not started | - |
-| 6. Evolved Daily Brief | 0/2 | Not started | - |
+| 6. Evolved Daily Brief | 2/2 | Complete | 2026-04-02 |
 | 7. Google Calendar | 0/1 | Not started | - |

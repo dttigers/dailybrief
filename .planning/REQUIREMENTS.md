@@ -33,8 +33,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Daily Brief
 
-- [ ] **BRIEF-01**: Daily PDF brief incorporates captured thoughts, unprocessed items, and today's priorities
-- [ ] **BRIEF-02**: AI affirmations reference recent captured entries for contextual encouragement
+- [x] **BRIEF-01**: Daily PDF brief incorporates captured thoughts, unprocessed items, and today's priorities
+- [x] **BRIEF-02**: AI affirmations reference recent captured entries for contextual encouragement
 
 ### Integrations
 
@@ -108,8 +108,8 @@ Which phases cover which requirements. Updated by create-roadmap.
 | DASH-02 | Phase 4 | Complete |
 | CAPT-03 | Phase 5 | Pending |
 | CAPT-04 | Phase 5 | Pending |
-| BRIEF-01 | Phase 6 | Pending |
-| BRIEF-02 | Phase 6 | Pending |
+| BRIEF-01 | Phase 6 | Complete |
+| BRIEF-02 | Phase 6 | Complete |
 | INTEG-01 | Phase 7 | Pending |
 
 **Coverage:**
