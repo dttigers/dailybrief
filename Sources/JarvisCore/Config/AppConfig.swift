@@ -74,15 +74,35 @@ public struct AppConfig: Codable, Sendable {
         public var teamId: Int
         public var divisionId: Int
         public var leagueId: Int
+        public var teamName: String
+        public var divisionName: String
 
         public init(
             teamId: Int = 116,
             divisionId: Int = 202,
-            leagueId: Int = 103
+            leagueId: Int = 103,
+            teamName: String = "Detroit Tigers",
+            divisionName: String = "AL Central"
         ) {
             self.teamId = teamId
             self.divisionId = divisionId
             self.leagueId = leagueId
+            self.teamName = teamName
+            self.divisionName = divisionName
+        }
+
+        // Custom Decodable for backward compatibility with configs missing teamName/divisionName
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            teamId = try container.decode(Int.self, forKey: .teamId)
+            divisionId = try container.decode(Int.self, forKey: .divisionId)
+            leagueId = try container.decode(Int.self, forKey: .leagueId)
+            teamName = try container.decodeIfPresent(String.self, forKey: .teamName)
+                ?? MLBTeamData.team(forId: try container.decode(Int.self, forKey: .teamId))?.name
+                ?? "Detroit Tigers"
+            divisionName = try container.decodeIfPresent(String.self, forKey: .divisionName)
+                ?? MLBTeamData.team(forId: try container.decode(Int.self, forKey: .teamId))?.divisionName
+                ?? "AL Central"
         }
     }
 
