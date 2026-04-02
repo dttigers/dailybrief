@@ -99,6 +99,11 @@ Recent decisions affecting current work:
 - 07-01: CalendarTokens uses secondsSince1970 date encoding for token expiry persistence
 - 07-01: ISO8601 parsing with fractional seconds fallback (matches SportsService pattern)
 - 07-01: GoogleCalendarError.notAuthorized thrown when no tokens exist — callers skip gracefully
+- 07-02: @unchecked Sendable on ContinuationGuard (thread safety managed manually via NSLock)
+- 07-02: @preconcurrency import Dispatch for DispatchWorkItem Sendable compliance in Swift 6
+- 07-02: Public access on GoogleCalendarError.errorDescription for cross-module protocol conformance
+- 07-02: Settings window bumped to 700x460 to accommodate 7th Calendar tab
+- 07-02: GoogleCalendarService moved to JarvisCore for cross-target access (DailyBriefMonitor needs it)
 - 07-03: GoogleCalendarService moved from DailyBrief/Services to JarvisCore/Services for cross-target access
 - 07-03: Calendar schedule section after To Do, before Notes in PDF Page 1 (max 8, all-day first)
 - 07-03: Dashboard calendar section only visible when events exist (graceful degradation)
