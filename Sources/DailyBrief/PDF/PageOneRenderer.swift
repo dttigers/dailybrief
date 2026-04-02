@@ -155,6 +155,65 @@ enum PageOneRenderer {
             y += S.tableRowHeight
         }
 
+        // TODAY'S SCHEDULE SECTION (only if events exist)
+        if !data.calendarEvents.isEmpty {
+            // Divider
+            y += 4
+            context.setStrokeColor(S.lightGray)
+            context.setLineWidth(0.5)
+            context.move(to: CGPoint(x: leftX, y: PDFGenerator.cgY(y)))
+            context.addLine(to: CGPoint(x: rightEdge, y: PDFGenerator.cgY(y)))
+            context.strokePath()
+            y += 6
+
+            PDFGenerator.drawText(
+                "Today's Schedule",
+                at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.headerSize)),
+                font: S.headerFont(), color: S.black, context: context
+            )
+            y += S.headerSize + 4
+
+            // Sort: all-day events first, then by start time
+            let sorted = data.calendarEvents.sorted { a, b in
+                if a.isAllDay && !b.isAllDay { return true }
+                if !a.isAllDay && b.isAllDay { return false }
+                return a.startTime < b.startTime
+            }
+
+            let maxEvents = 8
+            let displayed = sorted.prefix(maxEvents)
+
+            for event in displayed {
+                PDFGenerator.drawText(
+                    "\(event.timeString)  \(event.title)",
+                    at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.bodySize)),
+                    font: S.bodyFont(), color: S.black, context: context
+                )
+                y += S.bodySize + 2
+
+                if let location = event.location, !location.isEmpty {
+                    PDFGenerator.drawText(
+                        location,
+                        at: CGPoint(x: leftX + 12, y: PDFGenerator.cgY(y + S.tinySize)),
+                        font: CTFontCreateWithName("Helvetica" as CFString, S.tinySize, nil),
+                        color: S.medGray, context: context
+                    )
+                    y += S.tinySize + 2
+                }
+            }
+
+            if sorted.count > maxEvents {
+                let remaining = sorted.count - maxEvents
+                PDFGenerator.drawText(
+                    "... and \(remaining) more",
+                    at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.tinySize)),
+                    font: CTFontCreateWithName("Helvetica-Oblique" as CFString, S.tinySize, nil),
+                    color: S.medGray, context: context
+                )
+                y += S.tinySize + 2
+            }
+        }
+
         // NOTES at bottom
         y = S.contentHeight - S.margin - 70
         PDFGenerator.drawText(

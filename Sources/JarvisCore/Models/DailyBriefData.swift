@@ -8,6 +8,7 @@ public struct DailyBriefData: Sendable {
     public var upcomingGame: UpcomingGame?
     public var standings: [StandingsEntry]
     public var affirmation: String
+    public var calendarEvents: [CalendarEvent]
 
     // Captured thoughts for Page 3
     public var unprocessedThoughts: [Thought]
@@ -22,6 +23,7 @@ public struct DailyBriefData: Sendable {
         upcomingGame: UpcomingGame? = nil,
         standings: [StandingsEntry],
         affirmation: String,
+        calendarEvents: [CalendarEvent] = [],
         unprocessedThoughts: [Thought] = [],
         taskThoughts: [Thought] = [],
         recentThoughts: [Thought] = []
@@ -33,6 +35,7 @@ public struct DailyBriefData: Sendable {
         self.upcomingGame = upcomingGame
         self.standings = standings
         self.affirmation = affirmation
+        self.calendarEvents = calendarEvents
         self.unprocessedThoughts = unprocessedThoughts
         self.taskThoughts = taskThoughts
         self.recentThoughts = recentThoughts

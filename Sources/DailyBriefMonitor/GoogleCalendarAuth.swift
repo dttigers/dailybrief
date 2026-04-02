@@ -19,6 +19,12 @@ private final class ContinuationGuard: @unchecked Sendable {
     }
 }
 
+/// Wraps a non-Sendable value for use in Sendable contexts where thread safety is externally guaranteed.
+private final class SendableBox<T>: @unchecked Sendable {
+    let value: T
+    init(_ value: T) { self.value = value }
+}
+
 @MainActor
 final class GoogleCalendarAuth {
 
@@ -103,9 +109,10 @@ final class GoogleCalendarAuth {
             }
             DispatchQueue.global().asyncAfter(deadline: .now() + 120, execute: timeoutItem)
 
+            let timeoutBox = SendableBox(timeoutItem)
             @Sendable func safeResume(_ result: Result<String, Error>) {
                 guard guard_.tryResume() else { return }
-                timeoutItem.cancel()
+                timeoutBox.value.cancel()
                 switch result {
                 case .success(let code):
                     continuation.resume(returning: code)

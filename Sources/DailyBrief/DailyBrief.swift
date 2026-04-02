@@ -50,6 +50,8 @@ extension DailyBrief {
             let remindersService = RemindersService(config: config.reminders)
             let gmailService = GmailService(config: config.gmail)
             let aiProvider = ClaudeAIProvider(config: config.ai)
+            let calendarService: GoogleCalendarService? = config.googleCalendar.enabled
+                ? GoogleCalendarService(config: config.googleCalendar) : nil
 
             // Fetch captured thoughts from ThoughtStore first (local DB, fast)
             // so we can pass summaries into the affirmation prompt
@@ -87,6 +89,7 @@ extension DailyBrief {
             async let todosResult = tryFetch("Reminders") { try await remindersService.fetchTodoItems() }
             async let workOrdersResult = tryFetch("Work orders") { try await gmailService.fetchWorkOrders() }
             async let affirmationResult = tryFetch("Affirmation") { try await aiProvider.generateAffirmation(recentThoughts: Array(thoughtSummaries)) }
+            async let calendarResult = tryFetch("Calendar") { try await calendarService?.fetchTodayEvents() ?? [] }
 
             // Filter out completed work orders
             let completed = CompletionStore.load()
@@ -100,6 +103,7 @@ extension DailyBrief {
                 upcomingGame: upcomingResult ?? nil,
                 standings: standingsResult ?? [],
                 affirmation: affirmationResult ?? "You've got this. Your brain works differently, and that's your superpower.",
+                calendarEvents: calendarResult ?? [],
                 unprocessedThoughts: unprocessedThoughts,
                 taskThoughts: taskThoughts,
                 recentThoughts: recentThoughts
@@ -163,6 +167,13 @@ extension DailyBrief {
                 print("  [ ] \(item.title)")
             }
             if data.todoItems.isEmpty { print("  (none)") }
+
+            print("\nTODAY'S SCHEDULE (\(data.calendarEvents.count)):")
+            for event in data.calendarEvents {
+                print("  \(event.timeString)  \(event.title)")
+                if let loc = event.location { print("    \u{1F4CD} \(loc)") }
+            }
+            if data.calendarEvents.isEmpty { print("  (no events)") }
 
             print("\nTIGERS:")
             if let game = data.gameScore {
