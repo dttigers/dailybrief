@@ -28,6 +28,15 @@ enum PDFGenerator {
         PageTwoRenderer.draw(context: context, data: data)
         context.endPage()
 
+        // Page 3: Captured Thoughts (only if there are any)
+        let hasThoughts = !data.unprocessedThoughts.isEmpty || !data.taskThoughts.isEmpty || !data.recentThoughts.isEmpty
+        if hasThoughts {
+            context.beginPage(mediaBox: &mediaBox)
+            drawDashedBorder(context: context)
+            PageThreeRenderer.draw(context: context, data: data)
+            context.endPage()
+        }
+
         context.closePDF()
         Logger.log("PDF generated at \(outputPath)")
     }
