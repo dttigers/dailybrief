@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 ## Current Position
 
 Phase: 9 of 13 (Folder Watching)
-Plan: 01 complete
-Status: Ready for plan 09-02
-Last activity: 2026-04-02 — Plan 09-01 complete (FolderWatchingConfig + FolderWatcherService)
+Plan: 02 complete
+Status: Phase 09 complete — ready for next phase
+Last activity: 2026-04-02 — Plan 09-02 complete (AppDelegate lifecycle + Folders settings tab)
 
 Progress: ██░░░░░░░░ 20% (v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 20
+- Total plans completed: 21
 - Total execution time: ~3 days
 - Average duration: ~5 min per plan
 
@@ -35,7 +35,7 @@ Progress: ██░░░░░░░░ 20% (v1.1)
 | 06-evolved-daily-brief | 2 | 13 min | 6.5 min |
 | 07-google-calendar | 3 | 28 min | 9.3 min |
 | 08-launch-agent | 3 | 14 min | 4.7 min |
-| 09-folder-watching | 1 | 6 min | 6.0 min |
+| 09-folder-watching | 2 | 11 min | 5.5 min |
 
 ## Accumulated Context
 
@@ -59,5 +59,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Phase 09 plan 01 complete, ready for plan 09-02
+Stopped at: Phase 09 plan 02 complete, phase 09 done
 Resume file: None
