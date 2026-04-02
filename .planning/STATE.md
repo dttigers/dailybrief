@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 5 — Voice & Image Capture (in progress)
+**Current focus:** Phase 6 — Evolved Daily Brief (in progress)
 
 ## Current Position
 
-Phase: 5 of 7 (Voice & Image Capture) — COMPLETE
-Plan: 03 complete
-Status: All 3 plans done. Audio/image import on dashboard, text capture on floating panel.
-Last activity: 2026-04-02 — Plan 05-03 completed (design revised: dashboard imports, SFSpeechRecognizer)
+Phase: 6 of 7 (Evolved Daily Brief) — IN PROGRESS
+Plan: 01 complete
+Status: Plan 01 done. Captured thoughts integrated into daily brief PDF as conditional Page 3.
+Last activity: 2026-04-02 — Plan 06-01 completed (thoughts in PDF brief)
 
-Progress: ██████████ 100%
+Progress: █████░░░░░ 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 8
-- Average duration: 4.6 min
-- Total execution time: 0.6 hours
+- Total plans completed: 9
+- Average duration: 5.0 min
+- Total execution time: 0.7 hours
 
 **By Phase:**
 
@@ -76,6 +76,9 @@ Recent decisions affecting current work:
 - 05-02: ImageMediaType enum with mimeType computed property for type-safe media types
 - 05-02: 20MB size validation before base64 encoding (fail fast)
 - 05-02: ImagePicker as enum with static method (project convention for stateless utilities)
+- 06-01: Graceful degradation for DatabaseManager init in DailyBrief Generate (empty thought arrays on failure)
+- 06-01: Conditional Page 3 in PDF — only renders when thoughts exist (backward compatible)
+- 06-01: Unprocessed = fetchAll then filter category==nil; recent = last 24h categorized non-task
 - 05-01: nonisolated(unsafe) for WhisperKit property (not Sendable but manages internal thread safety)
 - 05-01: @preconcurrency import AVFoundation for Swift 6 AVAudioPCMBuffer Sendable compliance
 - 05-01: AVAudioConverter for 16kHz mono Float32 format conversion from hardware format
@@ -101,5 +104,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Phase 05 complete — ready for Phase 06
+Stopped at: Phase 06, Plan 01 complete — ready for Plan 06-02
 Resume file: .planning/ROADMAP.md
