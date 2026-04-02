@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-31)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 6 — Evolved Daily Brief (complete)
+**Current focus:** Phase 7 — Google Calendar Integration (in progress)
 
 ## Current Position
 
-Phase: 6 of 7 (Evolved Daily Brief) — COMPLETE
-Plan: 02 complete (all plans done)
-Status: Phase 6 complete. PDF brief has captured thoughts page + contextual affirmations.
-Last activity: 2026-04-02 — Phase 06 completed
+Phase: 7 of 7 (Google Calendar) — IN PROGRESS
+Plan: 01 complete (of 3)
+Status: CalendarEvent model, GoogleCalendarConfig, CalendarTokens, and GoogleCalendarService actor created.
+Last activity: 2026-04-02 — Plan 07-01 completed
 
-Progress: ██████████ 100%
+Progress: ███░░░░░░░ 33%
 
 ## Performance Metrics
 
@@ -95,6 +95,10 @@ Recent decisions affecting current work:
 - 05-03: Auto-compress images >5MB via progressive JPEG quality + 50% downscale fallback
 - 05-03: FilePicker replaces ImagePicker (shared pickFile with type-specific convenience methods)
 - 05-03: WhisperKit dependency removed from Package.swift
+- 07-01: Custom init(from:) on AppConfig with decodeIfPresent for backward-compatible googleCalendar config
+- 07-01: CalendarTokens uses secondsSince1970 date encoding for token expiry persistence
+- 07-01: ISO8601 parsing with fractional seconds fallback (matches SportsService pattern)
+- 07-01: GoogleCalendarError.notAuthorized thrown when no tokens exist — callers skip gracefully
 
 ### Pending Todos
 
@@ -107,5 +111,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Phase 06 complete — ready for Phase 07
-Resume file: .planning/ROADMAP.md
+Stopped at: Phase 07 plan 01 complete — ready for plan 02
+Resume file: .planning/phases/07-google-calendar/07-02-PLAN.md
