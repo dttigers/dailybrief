@@ -59,7 +59,7 @@ extension DailyBrief {
             async let standingsResult = tryFetch("Standings") { try await sportsService.fetchStandings() }
             async let todosResult = tryFetch("Reminders") { try await remindersService.fetchTodoItems() }
             async let workOrdersResult = tryFetch("Work orders") { try await gmailService.fetchWorkOrders() }
-            async let affirmationResult = tryFetch("Affirmation") { try await aiProvider.generateAffirmation() }
+            async let affirmationResult = tryFetch("Affirmation") { try await aiProvider.generateAffirmation(recentThoughts: []) }
 
             // Fetch captured thoughts from ThoughtStore (graceful degradation)
             var unprocessedThoughts: [Thought] = []

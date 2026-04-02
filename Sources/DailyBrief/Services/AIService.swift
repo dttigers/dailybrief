@@ -2,7 +2,7 @@ import Foundation
 import JarvisCore
 
 protocol AIProvider: Sendable {
-    func generateAffirmation() async throws -> String
+    func generateAffirmation(recentThoughts: [String]) async throws -> String
 }
 
 actor ClaudeAIProvider: AIProvider {
@@ -16,7 +16,7 @@ actor ClaudeAIProvider: AIProvider {
         self.cacheDir = NSString("~/.cache/dailybrief").expandingTildeInPath
     }
 
-    func generateAffirmation() async throws -> String {
+    func generateAffirmation(recentThoughts: [String]) async throws -> String {
         // Check daily cache first
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd"
@@ -27,7 +27,7 @@ actor ClaudeAIProvider: AIProvider {
             return cached
         }
 
-        let affirmation = try await callClaude()
+        let affirmation = try await callClaude(recentThoughts: recentThoughts)
 
         // Cache for today
         try? FileManager.default.createDirectory(atPath: cacheDir, withIntermediateDirectories: true)
@@ -36,7 +36,7 @@ actor ClaudeAIProvider: AIProvider {
         return affirmation
     }
 
-    private func callClaude() async throws -> String {
+    private func callClaude(recentThoughts: [String]) async throws -> String {
         let url = URL(string: "https://api.anthropic.com/v1/messages")!
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -44,15 +44,31 @@ actor ClaudeAIProvider: AIProvider {
         request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
         request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
 
+        // Build system prompt — contextual if thoughts exist, generic otherwise
+        var systemPrompt = """
+            Generate a brief, warm ADHD-specific affirmation (2-3 sentences). \
+            Address themes like focus, time management, self-worth, or embracing \
+            how your brain works. Be encouraging but not patronizing. \
+            Vary the theme each day.
+            """
+
+        if !recentThoughts.isEmpty {
+            let truncated = recentThoughts.prefix(5).map { String($0.prefix(50)) }
+            let thoughtList = truncated.joined(separator: "\n")
+            systemPrompt += """
+
+
+                The user recently captured these thoughts (reference 1-2 naturally if relevant, don't force it):
+                \(thoughtList)
+                """
+        }
+
+        systemPrompt += "\n\nReturn only the affirmation text."
+
         let body: [String: Any] = [
             "model": model,
             "max_tokens": 200,
-            "system": """
-                Generate a brief, warm ADHD-specific affirmation (2-3 sentences). \
-                Address themes like focus, time management, self-worth, or embracing \
-                how your brain works. Be encouraging but not patronizing. \
-                Vary the theme each day. Return only the affirmation text.
-                """,
+            "system": systemPrompt,
             "messages": [
                 ["role": "user", "content": "Give me today's ADHD affirmation."]
             ]
