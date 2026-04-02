@@ -30,16 +30,16 @@ Transform the existing DailyBrief CLI and menu bar monitor into a full personal 
 
 **Milestone Goal:** Transform Jarvis from a terminal-launched tool into an always-running background assistant with smarter AI features and multi-Mac sync.
 
-#### Phase 8: Launch Agent
+#### Phase 8: Launch Agent ✅
 
 **Goal**: Convert from terminal-dependent CLI to macOS Launch Agent. Auto-start at login, run silently in background, menu bar icon always present.
 **Depends on**: Previous milestone complete
-**Research**: Likely (macOS LaunchAgent plist patterns, SMAppService for modern login items)
-**Research topics**: SMAppService vs launchd plist, sandboxing implications, menu bar app lifecycle
-**Plans**: TBD
+**Completed**: 2026-04-02
 
 Plans:
-- [ ] 08-01: TBD (run /gsd:plan-phase 8 to break down)
+- [x] 08-01: Install script & binary discovery
+- [x] 08-02: Built-in brief scheduler
+- [x] 08-03: Consolidate & verify
 
 #### Phase 9: Folder Watching
 
@@ -107,7 +107,7 @@ None
 | 5. Voice & Image Capture | v1.0 | 3/3 | Complete | 2026-04-01 |
 | 6. Evolved Daily Brief | v1.0 | 2/2 | Complete | 2026-04-02 |
 | 7. Google Calendar | v1.0 | 3/3 | Complete | 2026-04-02 |
-| 8. Launch Agent | v1.1 | 0/? | Not started | - |
+| 8. Launch Agent | v1.1 | 3/3 | Complete | 2026-04-02 |
 | 9. Folder Watching | v1.1 | 0/? | Not started | - |
 | 10. Sports UI + Daily Brief | v1.1 | 0/? | Not started | - |
 | 11. Smart Suggestions | v1.1 | 0/? | Not started | - |
