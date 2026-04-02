@@ -12,9 +12,19 @@ final class SettingsViewModel {
     var gmailLookbackDays: Int = 3
 
     // MARK: - Sports
-    var sportsTeamId: Int = 116
-    var sportsDivisionId: Int = 202
-    var sportsLeagueId: Int = 103
+    var sportsSelectedTeamId: Int = 116
+
+    var sportsTeamName: String {
+        MLBTeamData.team(forId: sportsSelectedTeamId)?.name ?? "Unknown"
+    }
+
+    var sportsDivisionName: String {
+        MLBTeamData.team(forId: sportsSelectedTeamId)?.divisionName ?? "Unknown"
+    }
+
+    var sportsLeagueName: String {
+        MLBTeamData.team(forId: sportsSelectedTeamId)?.leagueName ?? "Unknown"
+    }
 
     // MARK: - AI
     var claudeApiKey: String = ""
@@ -64,9 +74,7 @@ final class SettingsViewModel {
         gmailSearchSubjectPattern = config.gmail.searchSubjectPattern
         gmailLookbackDays = config.gmail.lookbackDays
 
-        sportsTeamId = config.sports.teamId
-        sportsDivisionId = config.sports.divisionId
-        sportsLeagueId = config.sports.leagueId
+        sportsSelectedTeamId = config.sports.teamId
 
         claudeApiKey = config.ai.claudeApiKey
         claudeModel = config.ai.claudeModel
@@ -104,11 +112,16 @@ final class SettingsViewModel {
                 lookbackDays: gmailLookbackDays
             ),
             reminders: .init(listName: remindersListName),
-            sports: .init(
-                teamId: sportsTeamId,
-                divisionId: sportsDivisionId,
-                leagueId: sportsLeagueId
-            ),
+            sports: {
+                let team = MLBTeamData.team(forId: sportsSelectedTeamId)
+                return .init(
+                    teamId: sportsSelectedTeamId,
+                    divisionId: team?.divisionId ?? 202,
+                    leagueId: team?.leagueId ?? 103,
+                    teamName: team?.name ?? "Detroit Tigers",
+                    divisionName: team?.divisionName ?? "AL Central"
+                )
+            }(),
             ai: .init(
                 claudeApiKey: claudeApiKey,
                 claudeModel: claudeModel

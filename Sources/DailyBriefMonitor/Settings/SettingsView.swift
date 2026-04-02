@@ -1,4 +1,5 @@
 import AppKit
+import JarvisCore
 import SwiftUI
 
 struct SettingsView: View {
@@ -62,9 +63,22 @@ struct SettingsView: View {
 
     private var sportsTab: some View {
         Form {
-            Stepper("Team ID: \(viewModel.sportsTeamId)", value: $viewModel.sportsTeamId, in: 1...999)
-            Stepper("Division ID: \(viewModel.sportsDivisionId)", value: $viewModel.sportsDivisionId, in: 1...999)
-            Stepper("League ID: \(viewModel.sportsLeagueId)", value: $viewModel.sportsLeagueId, in: 1...999)
+            Picker("Team", selection: $viewModel.sportsSelectedTeamId) {
+                ForEach(MLBTeamData.divisionNames, id: \.self) { division in
+                    Section(division) {
+                        ForEach(MLBTeamData.teams(inDivision:
+                            MLBTeamData.allTeams.first { $0.divisionName == division }!.divisionId
+                        ), id: \.id) { team in
+                            Text(team.name).tag(team.id)
+                        }
+                    }
+                }
+            }
+
+            LabeledContent("Division") {
+                Text("\(viewModel.sportsDivisionName) | \(viewModel.sportsLeagueName)")
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding()
     }
