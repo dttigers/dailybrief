@@ -8,6 +8,7 @@ public struct AppConfig: Codable, Sendable {
     public var pdf: PDFConfig
     public var printing: PrintingConfig
     public var googleCalendar: GoogleCalendarConfig
+    public var folderWatching: FolderWatchingConfig
 
     public init(
         gmail: GmailConfig,
@@ -16,7 +17,8 @@ public struct AppConfig: Codable, Sendable {
         ai: AIConfig,
         pdf: PDFConfig,
         printing: PrintingConfig,
-        googleCalendar: GoogleCalendarConfig = .init()
+        googleCalendar: GoogleCalendarConfig = .init(),
+        folderWatching: FolderWatchingConfig = .init()
     ) {
         self.gmail = gmail
         self.reminders = reminders
@@ -25,9 +27,10 @@ public struct AppConfig: Codable, Sendable {
         self.pdf = pdf
         self.printing = printing
         self.googleCalendar = googleCalendar
+        self.folderWatching = folderWatching
     }
 
-    // Custom Decodable to make googleCalendar optional for backward compatibility
+    // Custom Decodable to make googleCalendar and folderWatching optional for backward compatibility
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         gmail = try container.decode(GmailConfig.self, forKey: .gmail)
@@ -37,6 +40,7 @@ public struct AppConfig: Codable, Sendable {
         pdf = try container.decode(PDFConfig.self, forKey: .pdf)
         printing = try container.decode(PrintingConfig.self, forKey: .printing)
         googleCalendar = try container.decodeIfPresent(GoogleCalendarConfig.self, forKey: .googleCalendar) ?? .init()
+        folderWatching = try container.decodeIfPresent(FolderWatchingConfig.self, forKey: .folderWatching) ?? .init()
     }
 
     public struct GmailConfig: Codable, Sendable {
@@ -140,6 +144,22 @@ public struct AppConfig: Codable, Sendable {
             self.clientId = clientId
             self.clientSecret = clientSecret
             self.selectedCalendarIds = selectedCalendarIds
+        }
+    }
+
+    public struct FolderWatchingConfig: Codable, Sendable {
+        public var enabled: Bool
+        public var audioFolderPath: String
+        public var imageFolderPath: String
+
+        public init(
+            enabled: Bool = false,
+            audioFolderPath: String = "~/Jarvis/Audio",
+            imageFolderPath: String = "~/Jarvis/Images"
+        ) {
+            self.enabled = enabled
+            self.audioFolderPath = audioFolderPath
+            self.imageFolderPath = imageFolderPath
         }
     }
 }
