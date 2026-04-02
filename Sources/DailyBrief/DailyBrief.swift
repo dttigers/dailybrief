@@ -51,17 +51,8 @@ extension DailyBrief {
             let gmailService = GmailService(config: config.gmail)
             let aiProvider = ClaudeAIProvider(config: config.ai)
 
-            // Fetch all data concurrently
-            Logger.log("Fetching data...")
-
-            async let gameResult = tryFetch("Tigers score") { try await sportsService.fetchYesterdayGame() }
-            async let upcomingResult = tryFetch("Upcoming game") { try await sportsService.fetchUpcomingGame() }
-            async let standingsResult = tryFetch("Standings") { try await sportsService.fetchStandings() }
-            async let todosResult = tryFetch("Reminders") { try await remindersService.fetchTodoItems() }
-            async let workOrdersResult = tryFetch("Work orders") { try await gmailService.fetchWorkOrders() }
-            async let affirmationResult = tryFetch("Affirmation") { try await aiProvider.generateAffirmation(recentThoughts: []) }
-
-            // Fetch captured thoughts from ThoughtStore (graceful degradation)
+            // Fetch captured thoughts from ThoughtStore first (local DB, fast)
+            // so we can pass summaries into the affirmation prompt
             var unprocessedThoughts: [Thought] = []
             var taskThoughts: [Thought] = []
             var recentThoughts: [Thought] = []
@@ -83,6 +74,20 @@ extension DailyBrief {
                 Logger.error("ThoughtStore init failed, continuing without thoughts: \(error.localizedDescription)")
             }
 
+            // Build thought summaries for contextual affirmation (max 10, truncated to 50 chars)
+            let allThoughts = unprocessedThoughts + taskThoughts + recentThoughts
+            let thoughtSummaries = allThoughts.prefix(10).map { String($0.content.prefix(50)) }
+
+            // Fetch all data concurrently
+            Logger.log("Fetching data...")
+
+            async let gameResult = tryFetch("Tigers score") { try await sportsService.fetchYesterdayGame() }
+            async let upcomingResult = tryFetch("Upcoming game") { try await sportsService.fetchUpcomingGame() }
+            async let standingsResult = tryFetch("Standings") { try await sportsService.fetchStandings() }
+            async let todosResult = tryFetch("Reminders") { try await remindersService.fetchTodoItems() }
+            async let workOrdersResult = tryFetch("Work orders") { try await gmailService.fetchWorkOrders() }
+            async let affirmationResult = tryFetch("Affirmation") { try await aiProvider.generateAffirmation(recentThoughts: Array(thoughtSummaries)) }
+
             // Filter out completed work orders
             let completed = CompletionStore.load()
             let activeWorkOrders = await (workOrdersResult ?? []).filter { !completed.contains($0.caseNumber) }
@@ -103,7 +108,7 @@ extension DailyBrief {
             Logger.log("Data fetched: \(briefData.workOrders.count) work orders, \(briefData.todoItems.count) todos, game: \(briefData.gameScore != nil ? "yes" : "no"), standings: \(briefData.standings.count) teams")
 
             if dryRun {
-                printSummary(briefData)
+                printSummary(briefData, isContextualAffirmation: !thoughtSummaries.isEmpty)
                 Logger.log("Dry run complete")
                 return
             }
@@ -141,7 +146,7 @@ extension DailyBrief {
             }
         }
 
-        private func printSummary(_ data: DailyBriefData) {
+        private func printSummary(_ data: DailyBriefData, isContextualAffirmation: Bool = false) {
             print("\n=== Daily Brief — \(data.dateString) ===\n")
 
             print("WORK ORDERS (\(data.workOrders.count)):")
@@ -181,7 +186,8 @@ extension DailyBrief {
             }
             if data.standings.isEmpty { print("  (unavailable)") }
 
-            print("\nAFFIRMATION:")
+            let affirmationType = isContextualAffirmation ? "(contextual)" : "(generic)"
+            print("\nAFFIRMATION \(affirmationType):")
             print("  \(data.affirmation)")
 
             print("\nUNPROCESSED (\(data.unprocessedThoughts.count)):")
