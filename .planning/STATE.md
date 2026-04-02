@@ -10,18 +10,18 @@ See: .planning/PROJECT.md (updated 2026-03-31)
 ## Current Position
 
 Phase: 6 of 7 (Evolved Daily Brief) — IN PROGRESS
-Plan: 01 complete
-Status: Plan 01 done. Captured thoughts integrated into daily brief PDF as conditional Page 3.
-Last activity: 2026-04-02 — Plan 06-01 completed (thoughts in PDF brief)
+Plan: 02 complete
+Status: Plan 02 done. Affirmations are now contextual — reference captured thoughts when available.
+Last activity: 2026-04-02 — Plan 06-02 completed (contextual affirmations)
 
-Progress: █████░░░░░ 50%
+Progress: ██████████ 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 11
 - Average duration: 5.0 min
-- Total execution time: 0.7 hours
+- Total execution time: 0.8 hours
 
 **By Phase:**
 
@@ -79,6 +79,9 @@ Recent decisions affecting current work:
 - 06-01: Graceful degradation for DatabaseManager init in DailyBrief Generate (empty thought arrays on failure)
 - 06-01: Conditional Page 3 in PDF — only renders when thoughts exist (backward compatible)
 - 06-01: Unprocessed = fetchAll then filter category==nil; recent = last 24h categorized non-task
+- 06-02: Thought summaries truncated to 50 chars, max 5 in affirmation prompt (token budget control)
+- 06-02: Thought fetching moved before async let block (local DB reads fast, enables passing to affirmation)
+- 06-02: Daily affirmation cache unchanged — contextual affirmation generated once per morning
 - 05-01: nonisolated(unsafe) for WhisperKit property (not Sendable but manages internal thread safety)
 - 05-01: @preconcurrency import AVFoundation for Swift 6 AVAudioPCMBuffer Sendable compliance
 - 05-01: AVAudioConverter for 16kHz mono Float32 format conversion from hardware format
@@ -104,5 +107,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: Phase 06, Plan 01 complete — ready for Plan 06-02
+Stopped at: Phase 06, Plan 02 complete — phase 06 may be complete
 Resume file: .planning/ROADMAP.md
