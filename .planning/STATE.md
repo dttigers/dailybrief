@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-04-02)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Planning next milestone
+**Current focus:** v1.1 Always On — Launch Agent phase
 
 ## Current Position
 
-Phase: v1.0 complete (7 of 7 phases shipped)
-Plan: All plans complete
-Status: v1.0 MVP shipped. Ready to plan next milestone.
-Last activity: 2026-04-02 — v1.0 milestone complete
+Phase: 8 of 13 (Launch Agent)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-04-02 — Milestone v1.1 Always On created
 
-Progress: ██████████ 100% (v1.0)
+Progress: ░░░░░░░░░░ 0% (v1.1)
 
 ## Performance Metrics
 
@@ -50,8 +50,12 @@ None.
 
 None.
 
+### Roadmap Evolution
+
+- Milestone v1.1 Always On created: background assistant + smart AI + cloud sync, 6 phases (Phase 8-13)
+
 ## Session Continuity
 
 Last session: 2026-04-02
-Stopped at: v1.0 milestone complete
-Resume file: .planning/ROADMAP.md
+Stopped at: Milestone v1.1 initialization
+Resume file: None
