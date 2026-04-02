@@ -3,6 +3,7 @@ import AppKit
 
 struct MenuBarView: View {
     @Bindable var checker: StatusChecker
+    var scheduler: BriefScheduler?
     var onDashboard: () -> Void
     var onCapture: () -> Void
     var onSettings: () -> Void
@@ -23,6 +24,22 @@ struct MenuBarView: View {
                         .foregroundStyle(.secondary)
                     Text(checker.lastRunTime)
                         .font(.caption)
+                }
+            }
+
+            // Schedule info
+            if let scheduler = scheduler {
+                HStack {
+                    Image(systemName: "clock")
+                        .foregroundStyle(.secondary)
+                    if scheduler.isScheduleEnabled, let nextRun = scheduler.nextRunTime {
+                        Text(formatNextRunTime(nextRun))
+                            .font(.caption)
+                    } else {
+                        Text("Schedule: Off")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
 
@@ -83,6 +100,26 @@ struct MenuBarView: View {
             .keyboardShortcut("q")
         }
         .padding(8)
+    }
+
+    private func formatNextRunTime(_ date: Date) -> String {
+        let calendar = Calendar.current
+        let timeFormatter = DateFormatter()
+        timeFormatter.timeStyle = .short
+        timeFormatter.dateStyle = .none
+
+        let timeString = timeFormatter.string(from: date)
+
+        if calendar.isDateInToday(date) {
+            return "Next brief: \(timeString)"
+        } else if calendar.isDateInTomorrow(date) {
+            return "Next brief: Tomorrow \(timeString)"
+        } else {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateStyle = .short
+            dateFormatter.timeStyle = .short
+            return "Next brief: \(dateFormatter.string(from: date))"
+        }
     }
 
     @ViewBuilder

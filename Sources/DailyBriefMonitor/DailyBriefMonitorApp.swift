@@ -4,11 +4,17 @@ import SwiftUI
 struct DailyBriefMonitorApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var checker = StatusChecker()
+    @State private var scheduler: BriefScheduler?
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some Scene {
         MenuBarExtra {
-            MenuBarView(checker: checker, onDashboard: { appDelegate.openDashboard() }, onCapture: { appDelegate.toggleCapture() }, onSettings: { appDelegate.openSettings() })
+            MenuBarView(checker: checker, scheduler: scheduler, onDashboard: { appDelegate.openDashboard() }, onCapture: { appDelegate.toggleCapture() }, onSettings: { appDelegate.openSettings() })
+                .onAppear {
+                    if scheduler == nil {
+                        scheduler = BriefScheduler(checker: checker)
+                    }
+                }
                 .onReceive(timer) { _ in
                     checker.refresh()
                 }
