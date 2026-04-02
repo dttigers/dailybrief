@@ -10,6 +10,10 @@ public struct DailyBriefData: Sendable {
     public var affirmation: String
     public var calendarEvents: [CalendarEvent]
 
+    // Sports config names for dynamic PDF rendering
+    public var teamName: String
+    public var divisionName: String
+
     // Captured thoughts for Page 3
     public var unprocessedThoughts: [Thought]
     public var taskThoughts: [Thought]
@@ -24,6 +28,8 @@ public struct DailyBriefData: Sendable {
         standings: [StandingsEntry],
         affirmation: String,
         calendarEvents: [CalendarEvent] = [],
+        teamName: String = "Detroit Tigers",
+        divisionName: String = "AL Central",
         unprocessedThoughts: [Thought] = [],
         taskThoughts: [Thought] = [],
         recentThoughts: [Thought] = []
@@ -36,6 +42,8 @@ public struct DailyBriefData: Sendable {
         self.standings = standings
         self.affirmation = affirmation
         self.calendarEvents = calendarEvents
+        self.teamName = teamName
+        self.divisionName = divisionName
         self.unprocessedThoughts = unprocessedThoughts
         self.taskThoughts = taskThoughts
         self.recentThoughts = recentThoughts

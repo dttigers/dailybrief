@@ -11,9 +11,9 @@ enum PageTwoRenderer {
         let usableWidth = rightEdge - leftX
         var y: CGFloat = S.margin + 4
 
-        // Tigers Score Section
+        // Team Score Section
         PDFGenerator.drawText(
-            "Detroit Tigers",
+            data.teamName,
             at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.titleSize)),
             font: S.titleFont(), color: S.black, context: context
         )
@@ -87,9 +87,9 @@ enum PageTwoRenderer {
         context.strokePath()
         y += 6
 
-        // AL Central Standings
+        // Division Standings
         PDFGenerator.drawText(
-            "AL Central Standings",
+            "\(data.divisionName) Standings",
             at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.headerSize)),
             font: S.headerFont(), color: S.black, context: context
         )
@@ -114,9 +114,9 @@ enum PageTwoRenderer {
             y += S.tableHeaderHeight
 
             for entry in data.standings {
-                let isTigers = entry.team.contains("Tigers") || entry.team.contains("Detroit")
-                let textColor = isTigers ? S.black : S.darkGray
-                let font = isTigers ? S.headerFont() : S.monoFont()
+                let isMyTeam = entry.team.contains(data.teamName) || data.teamName.contains(entry.team)
+                let textColor = isMyTeam ? S.black : S.darkGray
+                let font = isMyTeam ? S.headerFont() : S.monoFont()
 
                 let shortName = shortenTeamName(entry.team)
                 PDFGenerator.drawText(shortName, at: CGPoint(x: teamX, y: PDFGenerator.cgY(y + S.smallSize + 1)), font: font, color: textColor, context: context)
@@ -182,14 +182,11 @@ enum PageTwoRenderer {
     }
 
     private static func shortenTeamName(_ name: String) -> String {
-        let abbreviations: [String: String] = [
-            "Detroit Tigers": "DET Tigers",
-            "Cleveland Guardians": "CLE Guardians",
-            "Kansas City Royals": "KC Royals",
-            "Minnesota Twins": "MIN Twins",
-            "Chicago White Sox": "CWS White Sox",
-        ]
-        return abbreviations[name] ?? name
+        if let team = MLBTeamData.allTeams.first(where: { name.contains($0.name) || $0.name.contains(name) }) {
+            let lastName = name.split(separator: " ").last.map(String.init) ?? name
+            return "\(team.abbreviation) \(lastName)"
+        }
+        return String(name.prefix(12))
     }
 
     private static func drawWrappedText(_ text: String, in rect: CGRect, font: CTFont, color: CGColor, context: CGContext) {

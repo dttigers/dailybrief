@@ -104,6 +104,8 @@ extension DailyBrief {
                 standings: standingsResult ?? [],
                 affirmation: affirmationResult ?? "You've got this. Your brain works differently, and that's your superpower.",
                 calendarEvents: calendarResult ?? [],
+                teamName: config.sports.teamName,
+                divisionName: config.sports.divisionName,
                 unprocessedThoughts: unprocessedThoughts,
                 taskThoughts: taskThoughts,
                 recentThoughts: recentThoughts
@@ -175,7 +177,7 @@ extension DailyBrief {
             }
             if data.calendarEvents.isEmpty { print("  (no events)") }
 
-            print("\nTIGERS:")
+            print("\n\(data.teamName.uppercased()):")
             if let game = data.gameScore {
                 print("  \(game.summaryLine1)")
                 print("  \(game.summaryLine2)")
@@ -191,7 +193,7 @@ extension DailyBrief {
                 print("  No upcoming game scheduled")
             }
 
-            print("\nAL CENTRAL:")
+            print("\n\(data.divisionName.uppercased()):")
             for entry in data.standings {
                 print("  \(entry.divisionRank). \(entry.team)\t\(entry.wins)-\(entry.losses)\tGB: \(entry.gamesBack)")
             }
