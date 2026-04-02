@@ -1,16 +1,15 @@
 import Foundation
-import JarvisCore
 
-actor GoogleCalendarService {
+public actor GoogleCalendarService {
     private let config: AppConfig.GoogleCalendarConfig
 
-    init(config: AppConfig.GoogleCalendarConfig) {
+    public init(config: AppConfig.GoogleCalendarConfig) {
         self.config = config
     }
 
     // MARK: - Public API
 
-    func fetchTodayEvents() async throws -> [CalendarEvent] {
+    public func fetchTodayEvents() async throws -> [CalendarEvent] {
         let accessToken = try await refreshTokenIfNeeded()
 
         let calendarIds = config.selectedCalendarIds.isEmpty ? ["primary"] : config.selectedCalendarIds
@@ -31,7 +30,7 @@ actor GoogleCalendarService {
         return allEvents.sorted { $0.startTime < $1.startTime }
     }
 
-    func fetchCalendarList() async throws -> [(id: String, name: String)] {
+    public func fetchCalendarList() async throws -> [(id: String, name: String)] {
         let accessToken = try await refreshTokenIfNeeded()
 
         let urlStr = "https://www.googleapis.com/calendar/v3/users/me/calendarList"
@@ -221,14 +220,14 @@ actor GoogleCalendarService {
 
 // MARK: - Errors
 
-enum GoogleCalendarError: LocalizedError {
+public enum GoogleCalendarError: LocalizedError {
     case notAuthorized
     case tokenRefreshFailed
     case invalidURL
     case invalidResponse
     case httpError(Int)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .notAuthorized:
             return "Google Calendar not authorized. Run OAuth setup to connect your account."

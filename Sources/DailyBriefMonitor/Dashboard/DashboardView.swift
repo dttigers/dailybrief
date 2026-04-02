@@ -126,6 +126,24 @@ struct DashboardView: View {
                 .background(Color(nsColor: .controlBackgroundColor))
             }
 
+            // Today's Schedule (only when events exist)
+            if !viewModel.calendarEvents.isEmpty {
+                Section("Today's Schedule") {
+                    ForEach(viewModel.calendarEvents) { event in
+                        HStack {
+                            Text(event.timeString)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(width: 120, alignment: .leading)
+                            Text(event.title)
+                                .lineLimit(1)
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+            }
+
             if viewModel.isLoading && viewModel.thoughts.isEmpty {
                 Spacer()
                 ProgressView("Loading...")

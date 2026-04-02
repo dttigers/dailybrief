@@ -32,6 +32,16 @@ final class SettingsViewModel {
     // MARK: - Reminders
     var remindersListName: String = "To Do"
 
+    // MARK: - Google Calendar
+    var googleCalendarEnabled: Bool = false
+    var googleCalendarClientId: String = ""
+    var googleCalendarClientSecret: String = ""
+    var selectedCalendarIds: [String] = []
+    var isAuthorized: Bool = false
+    var isAuthorizing: Bool = false
+    var authError: String?
+    var availableCalendars: [(id: String, name: String)] = []
+
     // MARK: - Save state
     var isSaving: Bool = false
     var saveError: String?
@@ -64,6 +74,12 @@ final class SettingsViewModel {
         printingCopies = config.printing.copies
 
         remindersListName = config.reminders.listName
+
+        googleCalendarEnabled = config.googleCalendar.enabled
+        googleCalendarClientId = config.googleCalendar.clientId
+        googleCalendarClientSecret = config.googleCalendar.clientSecret
+        selectedCalendarIds = config.googleCalendar.selectedCalendarIds
+        isAuthorized = CalendarTokens.load() != nil
     }
 
     func save() {
@@ -96,6 +112,12 @@ final class SettingsViewModel {
                 enabled: printingEnabled,
                 printerName: printerName,
                 copies: printingCopies
+            ),
+            googleCalendar: .init(
+                enabled: googleCalendarEnabled,
+                clientId: googleCalendarClientId,
+                clientSecret: googleCalendarClientSecret,
+                selectedCalendarIds: selectedCalendarIds
             )
         )
 
@@ -107,5 +129,51 @@ final class SettingsViewModel {
         }
 
         isSaving = false
+    }
+
+    // MARK: - Google Calendar Auth
+
+    func authorizeGoogleCalendar() async {
+        isAuthorizing = true
+        authError = nil
+
+        do {
+            _ = try await GoogleCalendarAuth.authorize(
+                clientId: googleCalendarClientId,
+                clientSecret: googleCalendarClientSecret
+            )
+            isAuthorized = true
+            await fetchAvailableCalendars()
+        } catch {
+            authError = error.localizedDescription
+        }
+
+        isAuthorizing = false
+    }
+
+    func fetchAvailableCalendars() async {
+        guard isAuthorized else { return }
+        let config = AppConfig.GoogleCalendarConfig(
+            enabled: googleCalendarEnabled,
+            clientId: googleCalendarClientId,
+            clientSecret: googleCalendarClientSecret,
+            selectedCalendarIds: selectedCalendarIds
+        )
+        let service = GoogleCalendarService(config: config)
+        do {
+            let calendars = try await service.fetchCalendarList()
+            availableCalendars = calendars
+        } catch {
+            authError = "Failed to load calendars: \(error.localizedDescription)"
+        }
+    }
+
+    func disconnectGoogleCalendar() {
+        let path = CalendarTokens.tokenFilePath
+        try? FileManager.default.removeItem(atPath: path)
+        isAuthorized = false
+        availableCalendars = []
+        selectedCalendarIds = []
+        authError = nil
     }
 }

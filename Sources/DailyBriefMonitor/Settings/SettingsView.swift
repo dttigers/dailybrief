@@ -23,6 +23,9 @@ struct SettingsView: View {
 
                 remindersTab
                     .tabItem { Label("Reminders", systemImage: "checklist") }
+
+                calendarTab
+                    .tabItem { Label("Calendar", systemImage: "calendar") }
             }
 
             Divider()
@@ -30,7 +33,7 @@ struct SettingsView: View {
             bottomBar
                 .padding(12)
         }
-        .frame(width: 600, height: 420)
+        .frame(width: 600, height: 460)
     }
 
     // MARK: - Tabs
@@ -82,6 +85,73 @@ struct SettingsView: View {
     private var remindersTab: some View {
         Form {
             TextField("List Name", text: $viewModel.remindersListName)
+        }
+        .padding()
+    }
+
+    private var calendarTab: some View {
+        Form {
+            Toggle("Enable Google Calendar", isOn: $viewModel.googleCalendarEnabled)
+
+            if viewModel.googleCalendarEnabled {
+                TextField("Client ID", text: $viewModel.googleCalendarClientId)
+                SecureField("Client Secret", text: $viewModel.googleCalendarClientSecret)
+
+                if viewModel.isAuthorizing {
+                    HStack {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Authorizing...")
+                            .foregroundStyle(.secondary)
+                    }
+                } else if viewModel.isAuthorized {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                        Text("Connected")
+                            .foregroundStyle(.green)
+                        Spacer()
+                        Button("Disconnect") {
+                            viewModel.disconnectGoogleCalendar()
+                        }
+                    }
+
+                    if !viewModel.availableCalendars.isEmpty {
+                        Section("Calendars") {
+                            ForEach(viewModel.availableCalendars, id: \.id) { cal in
+                                Toggle(cal.name, isOn: Binding(
+                                    get: { viewModel.selectedCalendarIds.contains(cal.id) },
+                                    set: { selected in
+                                        if selected {
+                                            viewModel.selectedCalendarIds.append(cal.id)
+                                        } else {
+                                            viewModel.selectedCalendarIds.removeAll { $0 == cal.id }
+                                        }
+                                    }
+                                ))
+                            }
+                        }
+                    }
+
+                    Button("Refresh Calendars") {
+                        Task { await viewModel.fetchAvailableCalendars() }
+                    }
+                } else {
+                    Button("Connect Google Calendar") {
+                        Task { await viewModel.authorizeGoogleCalendar() }
+                    }
+                    .disabled(
+                        viewModel.googleCalendarClientId.isEmpty
+                        || viewModel.googleCalendarClientSecret.isEmpty
+                    )
+                }
+
+                if let error = viewModel.authError {
+                    Text(error)
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
         }
         .padding()
     }

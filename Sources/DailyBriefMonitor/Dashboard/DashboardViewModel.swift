@@ -28,6 +28,8 @@ final class DashboardViewModel {
     var isLoading = false
     var totalCount = 0
     var categoryCounts: [ThoughtCategory: Int] = [:]
+    var calendarEvents: [CalendarEvent] = []
+    var isLoadingCalendar = false
 
     // Import state
     var isImporting = false
@@ -64,11 +66,12 @@ final class DashboardViewModel {
 
     // MARK: - Public Methods
 
-    /// Full refresh: reload thoughts and sidebar counts.
+    /// Full refresh: reload thoughts, sidebar counts, and calendar events.
     func refresh() async {
         isLoading = true
         await loadThoughts()
         await loadCounts()
+        await loadCalendarEvents()
         isLoading = false
     }
 
@@ -102,6 +105,25 @@ final class DashboardViewModel {
             }
         } catch {
             NSLog("Dashboard: failed to load counts — \(error.localizedDescription)")
+        }
+    }
+
+    /// Load today's calendar events (graceful degradation — no error shown).
+    func loadCalendarEvents() async {
+        isLoadingCalendar = true
+        defer { isLoadingCalendar = false }
+
+        do {
+            let config = try ConfigLoader.load()
+            guard config.googleCalendar.enabled else {
+                calendarEvents = []
+                return
+            }
+            let service = GoogleCalendarService(config: config.googleCalendar)
+            calendarEvents = try await service.fetchTodayEvents()
+        } catch {
+            NSLog("Dashboard: calendar fetch failed — \(error.localizedDescription)")
+            calendarEvents = []
         }
     }
 
