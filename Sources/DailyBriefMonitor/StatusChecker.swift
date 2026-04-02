@@ -12,11 +12,14 @@ final class StatusChecker: @unchecked Sendable {
     private let cliBinary: String
 
     init() {
-        // Find the CLI binary relative to this app's location, or use a known path
-        let knownPath = NSString("~/Desktop/Local AI/dailybrief/.build/release/DailyBrief").expandingTildeInPath
-        self.cliBinary = FileManager.default.fileExists(atPath: knownPath)
-            ? knownPath
-            : NSString("~/Desktop/Local AI/dailybrief/.build/debug/DailyBrief").expandingTildeInPath
+        // Search for CLI binary: installed path first, then dev build paths as fallback
+        let candidates = [
+            NSString("~/.local/bin/DailyBrief").expandingTildeInPath,
+            NSString("~/Desktop/Local AI/dailybrief/.build/release/DailyBrief").expandingTildeInPath,
+            NSString("~/Desktop/Local AI/dailybrief/.build/debug/DailyBrief").expandingTildeInPath,
+        ]
+        self.cliBinary = candidates.first(where: { FileManager.default.fileExists(atPath: $0) })
+            ?? candidates[0] // Default to installed path even if not yet installed
         refresh()
     }
 
