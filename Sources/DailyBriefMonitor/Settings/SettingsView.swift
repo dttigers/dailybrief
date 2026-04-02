@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -26,6 +27,9 @@ struct SettingsView: View {
 
                 calendarTab
                     .tabItem { Label("Calendar", systemImage: "calendar") }
+
+                foldersTab
+                    .tabItem { Label("Folders", systemImage: "folder.badge.gearshape") }
             }
 
             Divider()
@@ -33,7 +37,7 @@ struct SettingsView: View {
             bottomBar
                 .padding(12)
         }
-        .frame(width: 600, height: 460)
+        .frame(width: 700, height: 500)
     }
 
     // MARK: - Tabs
@@ -154,6 +158,63 @@ struct SettingsView: View {
             }
         }
         .padding()
+    }
+
+    private var foldersTab: some View {
+        Form {
+            Toggle("Enable Folder Watching", isOn: $viewModel.folderWatchingEnabled)
+
+            if viewModel.folderWatchingEnabled {
+                Text("Restart Jarvis to apply folder watching changes")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+
+            Section("Audio Folder") {
+                HStack {
+                    TextField("Path", text: $viewModel.audioFolderPath)
+                    Button("Choose...") {
+                        if let url = showFolderPicker() {
+                            viewModel.audioFolderPath = url.path.replacingOccurrences(
+                                of: NSHomeDirectory(), with: "~"
+                            )
+                        }
+                    }
+                }
+                Text("Drop audio files here (.wav, .mp3, .m4a, .aiff) for auto-transcription")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Image Folder") {
+                HStack {
+                    TextField("Path", text: $viewModel.imageFolderPath)
+                    Button("Choose...") {
+                        if let url = showFolderPicker() {
+                            viewModel.imageFolderPath = url.path.replacingOccurrences(
+                                of: NSHomeDirectory(), with: "~"
+                            )
+                        }
+                    }
+                }
+                Text("Drop images here (.jpg, .png, .gif, .webp) for AI description")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding()
+    }
+
+    private func showFolderPicker() -> URL? {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.canCreateDirectories = true
+        if panel.runModal() == .OK {
+            return panel.url
+        }
+        return nil
     }
 
     // MARK: - Bottom Bar

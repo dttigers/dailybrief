@@ -32,6 +32,11 @@ final class SettingsViewModel {
     // MARK: - Reminders
     var remindersListName: String = "To Do"
 
+    // MARK: - Folder Watching
+    var folderWatchingEnabled: Bool = false
+    var audioFolderPath: String = "~/Jarvis/Audio"
+    var imageFolderPath: String = "~/Jarvis/Images"
+
     // MARK: - Google Calendar
     var googleCalendarEnabled: Bool = false
     var googleCalendarClientId: String = ""
@@ -74,6 +79,10 @@ final class SettingsViewModel {
         printingCopies = config.printing.copies
 
         remindersListName = config.reminders.listName
+
+        folderWatchingEnabled = config.folderWatching.enabled
+        audioFolderPath = config.folderWatching.audioFolderPath
+        imageFolderPath = config.folderWatching.imageFolderPath
 
         googleCalendarEnabled = config.googleCalendar.enabled
         googleCalendarClientId = config.googleCalendar.clientId
@@ -118,6 +127,11 @@ final class SettingsViewModel {
                 clientId: googleCalendarClientId,
                 clientSecret: googleCalendarClientSecret,
                 selectedCalendarIds: selectedCalendarIds
+            ),
+            folderWatching: .init(
+                enabled: folderWatchingEnabled,
+                audioFolderPath: audioFolderPath,
+                imageFolderPath: imageFolderPath
             )
         )
 
