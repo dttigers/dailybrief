@@ -18,6 +18,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private var transcriptionService: TranscriptionService?
     private var imageDescriptionService: ImageDescriptionService?
 
+    // Folder watching
+    private var folderWatcher: FolderWatcherService?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Load config for AI credentials (optional — triage disabled without config)
         var triageService: TriageService?
@@ -80,6 +83,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                 )
             )
             capturePanel = panel
+
+            // Start folder watcher if enabled
+            if let config = try? ConfigLoader.load(), config.folderWatching.enabled {
+                let watcher = FolderWatcherService(
+                    transcriptionService: transcription,
+                    imageDescriptionService: imageDescService,
+                    captureService: service,
+                    triageService: triageService,
+                    config: config.folderWatching
+                )
+                self.folderWatcher = watcher
+                Task { await watcher.start() }
+            }
         } catch {
             // Log error but don't crash — capture button will be non-functional
             NSLog("Failed to initialize JarvisCore database: \(error.localizedDescription)")
@@ -104,6 +120,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
     func applicationWillTerminate(_ notification: Notification) {
         globalHotKey?.unregister()
+        if let watcher = folderWatcher {
+            Task { await watcher.stop() }
+        }
     }
 
     /// Toggles the floating capture panel.
