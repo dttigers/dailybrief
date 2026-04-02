@@ -9,6 +9,11 @@ public struct DailyBriefData: Sendable {
     public var standings: [StandingsEntry]
     public var affirmation: String
 
+    // Captured thoughts for Page 3
+    public var unprocessedThoughts: [Thought]
+    public var taskThoughts: [Thought]
+    public var recentThoughts: [Thought]
+
     public init(
         date: Date,
         workOrders: [WorkOrder],
@@ -16,7 +21,10 @@ public struct DailyBriefData: Sendable {
         gameScore: GameScore? = nil,
         upcomingGame: UpcomingGame? = nil,
         standings: [StandingsEntry],
-        affirmation: String
+        affirmation: String,
+        unprocessedThoughts: [Thought] = [],
+        taskThoughts: [Thought] = [],
+        recentThoughts: [Thought] = []
     ) {
         self.date = date
         self.workOrders = workOrders
@@ -25,6 +33,9 @@ public struct DailyBriefData: Sendable {
         self.upcomingGame = upcomingGame
         self.standings = standings
         self.affirmation = affirmation
+        self.unprocessedThoughts = unprocessedThoughts
+        self.taskThoughts = taskThoughts
+        self.recentThoughts = recentThoughts
     }
 
     public var dateString: String {

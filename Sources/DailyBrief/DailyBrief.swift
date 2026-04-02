@@ -61,6 +61,28 @@ extension DailyBrief {
             async let workOrdersResult = tryFetch("Work orders") { try await gmailService.fetchWorkOrders() }
             async let affirmationResult = tryFetch("Affirmation") { try await aiProvider.generateAffirmation() }
 
+            // Fetch captured thoughts from ThoughtStore (graceful degradation)
+            var unprocessedThoughts: [Thought] = []
+            var taskThoughts: [Thought] = []
+            var recentThoughts: [Thought] = []
+
+            do {
+                let dbManager = try DatabaseManager()
+                let thoughtStore = ThoughtStore(database: dbManager)
+
+                let allRecent = try await thoughtStore.fetchAll(limit: 50)
+                unprocessedThoughts = allRecent.filter { $0.category == nil }
+                    .prefix(20).map { $0 }
+                taskThoughts = try await thoughtStore.fetchAll(category: .task, limit: 10)
+
+                let twentyFourHoursAgo = Date().addingTimeInterval(-86400)
+                recentThoughts = allRecent.filter {
+                    $0.category != nil && $0.category != .task && $0.createdAt >= twentyFourHoursAgo
+                }
+            } catch {
+                Logger.error("ThoughtStore init failed, continuing without thoughts: \(error.localizedDescription)")
+            }
+
             // Filter out completed work orders
             let completed = CompletionStore.load()
             let activeWorkOrders = await (workOrdersResult ?? []).filter { !completed.contains($0.caseNumber) }
@@ -72,7 +94,10 @@ extension DailyBrief {
                 gameScore: gameResult ?? nil,
                 upcomingGame: upcomingResult ?? nil,
                 standings: standingsResult ?? [],
-                affirmation: affirmationResult ?? "You've got this. Your brain works differently, and that's your superpower."
+                affirmation: affirmationResult ?? "You've got this. Your brain works differently, and that's your superpower.",
+                unprocessedThoughts: unprocessedThoughts,
+                taskThoughts: taskThoughts,
+                recentThoughts: recentThoughts
             )
 
             Logger.log("Data fetched: \(briefData.workOrders.count) work orders, \(briefData.todoItems.count) todos, game: \(briefData.gameScore != nil ? "yes" : "no"), standings: \(briefData.standings.count) teams")
@@ -158,6 +183,25 @@ extension DailyBrief {
 
             print("\nAFFIRMATION:")
             print("  \(data.affirmation)")
+
+            print("\nUNPROCESSED (\(data.unprocessedThoughts.count)):")
+            for thought in data.unprocessedThoughts.prefix(5) {
+                print("  • [\(thought.source.rawValue)] \(thought.content.prefix(60))")
+            }
+            if data.unprocessedThoughts.isEmpty { print("  All caught up!") }
+
+            print("\nTODAY'S TASKS (\(data.taskThoughts.count)):")
+            for thought in data.taskThoughts.prefix(8) {
+                print("  [ ] \(thought.content.prefix(60))")
+            }
+            if data.taskThoughts.isEmpty { print("  (none)") }
+
+            print("\nRECENT CAPTURES (\(data.recentThoughts.count)):")
+            for thought in data.recentThoughts.prefix(5) {
+                let cat = thought.category?.rawValue ?? "uncategorized"
+                print("  [\(cat)] \(thought.content.prefix(60))")
+            }
+            if data.recentThoughts.isEmpty { print("  (none)") }
             print()
         }
 
