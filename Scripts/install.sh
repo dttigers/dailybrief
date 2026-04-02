@@ -10,9 +10,19 @@ LOG_DIR="$HOME/Library/Logs/DailyBrief"
 LAUNCH_AGENTS_DIR="$HOME/Library/LaunchAgents"
 MONITOR_LABEL="com.jamesonmorrill.dailybriefmonitor"
 MONITOR_PLIST="$LAUNCH_AGENTS_DIR/$MONITOR_LABEL.plist"
+OLD_CLI_LABEL="com.jamesonmorrill.dailybrief"
+OLD_CLI_PLIST="$LAUNCH_AGENTS_DIR/$OLD_CLI_LABEL.plist"
 
 echo "=== DailyBrief Installer ==="
 echo ""
+
+# 0. Clean up old CLI LaunchAgent (scheduling now built into monitor)
+if [ -f "$OLD_CLI_PLIST" ]; then
+    echo "Removing old CLI LaunchAgent..."
+    launchctl unload "$OLD_CLI_PLIST" 2>/dev/null || true
+    rm -f "$OLD_CLI_PLIST"
+    echo "  Removed old CLI LaunchAgent (scheduling now built into monitor)"
+fi
 
 # 1. Build both targets in release mode
 echo "Building release binaries..."
