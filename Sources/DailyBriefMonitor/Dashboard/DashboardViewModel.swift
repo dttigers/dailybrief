@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import JarvisCore
 
@@ -37,8 +38,15 @@ final class DashboardViewModel {
 
     // Import state
     var isImporting = false
-    var importStatus: String?
-    var importError: String?
+    var importProgress: ImportProgress?
+    var importErrors: [String] = []
+
+    struct ImportProgress {
+        var current: Int
+        var total: Int
+        var currentFile: String
+        var phase: String  // "Transcribing", "Analyzing", "Categorizing", "Saving"
+    }
 
     // MARK: - Private
 
@@ -162,97 +170,158 @@ final class DashboardViewModel {
         }
     }
 
+    // MARK: - File Classification
+
+    private static let audioExtensions: Set<String> = ["wav", "mp3", "m4a", "aiff"]
+    private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "tiff", "tif", "bmp"]
+    /// Formats that ImageDescriptionService handles natively (no conversion needed).
+    private static let nativeImageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp"]
+
+    private enum FileKind { case audio, image }
+
+    private static func classify(_ url: URL) -> FileKind? {
+        let ext = url.pathExtension.lowercased()
+        if audioExtensions.contains(ext) { return .audio }
+        if imageExtensions.contains(ext) { return .image }
+        return nil
+    }
+
+    // MARK: - Import: Batch (combined picker)
+
+    func importFiles() {
+        let urls = FilePicker.pickFiles()
+        guard !urls.isEmpty else { return }
+        Task { await processFiles(urls: urls) }
+    }
+
     // MARK: - Import Audio
 
     func importAudio() {
-        guard let captureService, let transcriptionService else { return }
-
-        let audioURL = FilePicker.pickAudioFile()
-        guard let audioURL else { return }
-
-        isImporting = true
-        importStatus = "Transcribing \(audioURL.lastPathComponent)..."
-        importError = nil
-
-        Task {
-            do {
-                let text = try await transcriptionService.transcribe(audioURL: audioURL)
-
-                importStatus = "Saving..."
-                var thought = try await captureService.capture(text, source: .voice)
-
-                if let triageService {
-                    importStatus = "Categorizing..."
-                    do {
-                        let result = try await triageService.triage(text)
-                        if var t = try await store.fetch(id: thought.id!) {
-                            t.category = result.category
-                            t.confidence = result.confidence
-                            try await store.update(t)
-                            thought = t
-                        }
-                    } catch {
-                        NSLog("Audio triage failed: \(error.localizedDescription)")
-                    }
-                }
-
-                isImporting = false
-                importStatus = nil
-                await refresh()
-            } catch {
-                isImporting = false
-                importStatus = nil
-                importError = error.localizedDescription
-            }
-        }
+        let urls = FilePicker.pickAudioFiles()
+        guard !urls.isEmpty else { return }
+        Task { await processFiles(urls: urls) }
     }
 
     // MARK: - Import Image
 
     func importImage() {
+        let urls = FilePicker.pickImageFiles()
+        guard !urls.isEmpty else { return }
+        Task { await processFiles(urls: urls) }
+    }
+
+    // MARK: - Shared Batch Processing
+
+    /// Processes an array of file URLs sequentially, updating progress for each file.
+    func processFiles(urls: [URL]) async {
         guard let captureService else { return }
 
-        let imageURL = FilePicker.pickImage()
-        guard let imageURL else { return }
-
         isImporting = true
-        importError = nil
+        importErrors = []
 
-        Task {
+        let total = urls.count
+
+        for (index, url) in urls.enumerated() {
+            let filename = url.lastPathComponent
+            let fileNumber = index + 1
+
             do {
-                let description: String
-                if let descService = imageDescriptionService {
-                    importStatus = "Analyzing \(imageURL.lastPathComponent)..."
-                    description = try await descService.describe(imageURL: imageURL)
-                } else {
-                    description = "Image: \(imageURL.lastPathComponent)"
+                guard let kind = Self.classify(url) else {
+                    importErrors.append("\(filename): Unsupported file type")
+                    continue
                 }
 
-                importStatus = "Saving..."
-                var thought = try await captureService.capture(description, source: .image)
+                switch kind {
+                case .audio:
+                    guard let transcriptionService else {
+                        importErrors.append("\(filename): Transcription service unavailable")
+                        continue
+                    }
 
-                if let triageService {
-                    importStatus = "Categorizing..."
-                    do {
-                        let result = try await triageService.triage(description)
-                        if var t = try await store.fetch(id: thought.id!) {
-                            t.category = result.category
-                            t.confidence = result.confidence
-                            try await store.update(t)
-                            thought = t
+                    importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Transcribing")
+                    let text = try await transcriptionService.transcribe(audioURL: url)
+
+                    importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Saving")
+                    let thought = try await captureService.capture(text, source: .voice)
+
+                    if let triageService {
+                        importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Categorizing")
+                        do {
+                            let result = try await triageService.triage(text)
+                            if var t = try await store.fetch(id: thought.id!) {
+                                t.category = result.category
+                                t.confidence = result.confidence
+                                try await store.update(t)
+                            }
+                        } catch {
+                            NSLog("Batch triage failed for %@: %@", filename, error.localizedDescription)
                         }
-                    } catch {
-                        NSLog("Image triage failed: \(error.localizedDescription)")
+                    }
+
+                case .image:
+                    let description: String
+                    let ext = url.pathExtension.lowercased()
+
+                    if let descService = imageDescriptionService {
+                        importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Analyzing")
+
+                        if Self.nativeImageExtensions.contains(ext) {
+                            description = try await descService.describe(imageURL: url)
+                        } else {
+                            let jpegData = try Self.convertToJPEG(url: url)
+                            description = try await descService.describe(imageData: jpegData, mediaType: .jpeg)
+                        }
+                    } else {
+                        description = "Image: \(filename)"
+                    }
+
+                    importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Saving")
+                    let thought = try await captureService.capture(description, source: .image)
+
+                    if let triageService {
+                        importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Categorizing")
+                        do {
+                            let result = try await triageService.triage(description)
+                            if var t = try await store.fetch(id: thought.id!) {
+                                t.category = result.category
+                                t.confidence = result.confidence
+                                try await store.update(t)
+                            }
+                        } catch {
+                            NSLog("Batch triage failed for %@: %@", filename, error.localizedDescription)
+                        }
                     }
                 }
-
-                isImporting = false
-                importStatus = nil
-                await refresh()
             } catch {
-                isImporting = false
-                importStatus = nil
-                importError = error.localizedDescription
+                importErrors.append("\(filename): \(error.localizedDescription)")
+            }
+        }
+
+        isImporting = false
+        importProgress = nil
+        await refresh()
+    }
+
+    // MARK: - Image Conversion
+
+    /// Converts a non-native image format (HEIC, TIFF, BMP, etc.) to JPEG data.
+    private static func convertToJPEG(url: URL) throws -> Data {
+        guard let image = NSImage(contentsOf: url),
+              let tiffData = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData),
+              let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.85]) else {
+            throw ImageConversionError.conversionFailed(url.lastPathComponent)
+        }
+        return jpegData
+    }
+
+    enum ImageConversionError: Error, LocalizedError {
+        case conversionFailed(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .conversionFailed(let filename):
+                return "Failed to convert \(filename) to JPEG"
             }
         }
     }
