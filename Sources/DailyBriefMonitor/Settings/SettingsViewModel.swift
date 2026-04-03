@@ -11,19 +11,62 @@ final class SettingsViewModel {
     var gmailSearchSubjectPattern: String = "Case CS"
     var gmailLookbackDays: Int = 3
 
-    // MARK: - Sports
-    var sportsSelectedTeamId: Int = 116
+    // MARK: - Sports (Multi-Sport)
 
-    var sportsTeamName: String {
-        MLBTeamData.team(forId: sportsSelectedTeamId)?.name ?? "Unknown"
+    // MLB
+    var mlbEnabled: Bool = true
+    var mlbSelectedTeamId: Int = 116
+
+    var mlbTeamName: String {
+        MLBTeamData.team(forId: mlbSelectedTeamId)?.name ?? "Unknown"
+    }
+    var mlbDivisionName: String {
+        MLBTeamData.team(forId: mlbSelectedTeamId)?.divisionName ?? "Unknown"
+    }
+    var mlbLeagueName: String {
+        MLBTeamData.team(forId: mlbSelectedTeamId)?.leagueName ?? "Unknown"
     }
 
-    var sportsDivisionName: String {
-        MLBTeamData.team(forId: sportsSelectedTeamId)?.divisionName ?? "Unknown"
+    // NFL
+    var nflEnabled: Bool = false
+    var nflSelectedTeamId: Int = 8
+
+    var nflTeamName: String {
+        NFLTeamData.team(forId: nflSelectedTeamId)?.name ?? "Unknown"
+    }
+    var nflDivisionName: String {
+        NFLTeamData.team(forId: nflSelectedTeamId)?.divisionName ?? "Unknown"
+    }
+    var nflConferenceName: String {
+        NFLTeamData.team(forId: nflSelectedTeamId)?.conferenceName ?? "Unknown"
     }
 
-    var sportsLeagueName: String {
-        MLBTeamData.team(forId: sportsSelectedTeamId)?.leagueName ?? "Unknown"
+    // NBA
+    var nbaEnabled: Bool = false
+    var nbaSelectedTeamId: Int = 8
+
+    var nbaTeamName: String {
+        NBATeamData.team(forId: nbaSelectedTeamId)?.name ?? "Unknown"
+    }
+    var nbaDivisionName: String {
+        NBATeamData.team(forId: nbaSelectedTeamId)?.divisionName ?? "Unknown"
+    }
+    var nbaConferenceName: String {
+        NBATeamData.team(forId: nbaSelectedTeamId)?.conferenceName ?? "Unknown"
+    }
+
+    // NHL
+    var nhlEnabled: Bool = false
+    var nhlSelectedTeamId: Int = 5
+
+    var nhlTeamName: String {
+        NHLTeamData.team(forId: nhlSelectedTeamId)?.name ?? "Unknown"
+    }
+    var nhlDivisionName: String {
+        NHLTeamData.team(forId: nhlSelectedTeamId)?.divisionName ?? "Unknown"
+    }
+    var nhlConferenceName: String {
+        NHLTeamData.team(forId: nhlSelectedTeamId)?.conferenceName ?? "Unknown"
     }
 
     // MARK: - AI
@@ -83,7 +126,17 @@ final class SettingsViewModel {
         gmailSearchSubjectPattern = config.gmail.searchSubjectPattern
         gmailLookbackDays = config.gmail.lookbackDays
 
-        sportsSelectedTeamId = config.sports.mlb.teamId
+        mlbEnabled = config.sports.mlb.enabled
+        mlbSelectedTeamId = config.sports.mlb.teamId
+
+        nflEnabled = config.sports.nfl.enabled
+        nflSelectedTeamId = config.sports.nfl.teamId
+
+        nbaEnabled = config.sports.nba.enabled
+        nbaSelectedTeamId = config.sports.nba.teamId
+
+        nhlEnabled = config.sports.nhl.enabled
+        nhlSelectedTeamId = config.sports.nhl.teamId
 
         claudeApiKey = config.ai.claudeApiKey
         claudeModel = config.ai.claudeModel
@@ -129,15 +182,42 @@ final class SettingsViewModel {
             ),
             reminders: .init(listName: remindersListName),
             sports: {
-                let team = MLBTeamData.team(forId: sportsSelectedTeamId)
+                let mlbTeam = MLBTeamData.team(forId: mlbSelectedTeamId)
+                let nflTeam = NFLTeamData.team(forId: nflSelectedTeamId)
+                let nbaTeam = NBATeamData.team(forId: nbaSelectedTeamId)
+                let nhlTeam = NHLTeamData.team(forId: nhlSelectedTeamId)
                 return .init(
                     mlb: .init(
-                        enabled: true,
-                        teamId: sportsSelectedTeamId,
-                        divisionId: team?.divisionId ?? 202,
-                        conferenceId: team?.leagueId ?? 103,
-                        teamName: team?.name ?? "Detroit Tigers",
-                        divisionName: team?.divisionName ?? "AL Central"
+                        enabled: mlbEnabled,
+                        teamId: mlbSelectedTeamId,
+                        divisionId: mlbTeam?.divisionId ?? 202,
+                        conferenceId: mlbTeam?.leagueId ?? 103,
+                        teamName: mlbTeam?.name ?? "Detroit Tigers",
+                        divisionName: mlbTeam?.divisionName ?? "AL Central"
+                    ),
+                    nfl: .init(
+                        enabled: nflEnabled,
+                        teamId: nflSelectedTeamId,
+                        divisionId: nflTeam?.divisionId ?? 10,
+                        conferenceId: nflTeam?.conferenceId ?? 7,
+                        teamName: nflTeam?.name ?? "Detroit Lions",
+                        divisionName: nflTeam?.divisionName ?? "NFC North"
+                    ),
+                    nba: .init(
+                        enabled: nbaEnabled,
+                        teamId: nbaSelectedTeamId,
+                        divisionId: nbaTeam?.divisionId ?? 2,
+                        conferenceId: nbaTeam?.conferenceId ?? 5,
+                        teamName: nbaTeam?.name ?? "Detroit Pistons",
+                        divisionName: nbaTeam?.divisionName ?? "Central"
+                    ),
+                    nhl: .init(
+                        enabled: nhlEnabled,
+                        teamId: nhlSelectedTeamId,
+                        divisionId: nhlTeam?.divisionId ?? 32,
+                        conferenceId: nhlTeam?.conferenceId ?? 7,
+                        teamName: nhlTeam?.name ?? "Detroit Red Wings",
+                        divisionName: nhlTeam?.divisionName ?? "Atlantic"
                     )
                 )
             }(),
