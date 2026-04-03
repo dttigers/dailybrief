@@ -103,15 +103,15 @@ Plans:
 
 **Milestone Goal:** Make Jarvis reliable and practical for daily use — batch workflows, task tracking, multi-sport coverage, and stability.
 
-#### Phase 14: LaunchAgent Fix & Folder Cleanup
+#### Phase 14: LaunchAgent Fix & Folder Cleanup ✅
 
 **Goal**: Debug and fix LaunchAgent exit code -4 for reliable auto-start. Add auto-delete of watched folder files after successful processing.
 **Depends on**: Previous milestone complete
-**Research**: Unlikely (internal debugging + existing patterns)
-**Plans**: TBD
+**Completed**: 2026-04-03
 
 Plans:
-- [ ] 14-01: TBD (run /gsd:plan-phase 14 to break down)
+- [x] 14-01: Fix LaunchAgent plist + install script + diagnostic logging
+- [x] 14-02: Auto-delete watched folder files after processing
 
 #### Phase 15: Multi-File Upload
 
@@ -175,7 +175,7 @@ None
 | 11. Smart Suggestions | v1.1 | 1/1 | Complete | 2026-04-03 |
 | 12. Cloud Sync | v1.1 | 4/4 | Complete | 2026-04-03 |
 | 13. Polish & Integration | v1.1 | 4/4 | Complete | 2026-04-03 |
-| 14. LaunchAgent Fix & Folder Cleanup | v1.2 | 0/? | Not started | - |
+| 14. LaunchAgent Fix & Folder Cleanup | v1.2 | 2/2 | Complete | 2026-04-03 |
 | 15. Multi-File Upload | v1.2 | 0/? | Not started | - |
 | 16. Task Status Workflow | v1.2 | 0/? | Not started | - |
 | 17. Multi-Sport Support | v1.2 | 0/? | Not started | - |
