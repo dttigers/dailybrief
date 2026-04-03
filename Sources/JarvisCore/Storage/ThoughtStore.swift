@@ -1,6 +1,18 @@
 import Foundation
 import GRDB
 
+/// Errors thrown by ThoughtStore operations.
+public enum ThoughtStoreError: Error, LocalizedError {
+    case notFound(id: Int64)
+
+    public var errorDescription: String? {
+        switch self {
+        case .notFound(let id):
+            return "Thought with id \(id) not found"
+        }
+    }
+}
+
 /// Data access layer for thoughts — provides CRUD operations and FTS5 search.
 public actor ThoughtStore {
 
@@ -117,6 +129,49 @@ public actor ThoughtStore {
         }
     }
 
+    // MARK: Task Status Operations
+
+    /// Update the task status of a thought and return the saved version.
+    /// Sets modifiedAt to now and marks as pending sync.
+    @discardableResult
+    public func updateTaskStatus(id: Int64, status: TaskStatus) throws -> Thought {
+        try db.write { db in
+            guard var thought = try Thought.fetchOne(db, key: id) else {
+                throw ThoughtStoreError.notFound(id: id)
+            }
+            thought.taskStatus = status
+            thought.modifiedAt = Date()
+            thought.syncStatus = .pending
+            try thought.update(db)
+            return thought
+        }
+    }
+
+    /// Fetch thoughts with category == .task, optionally filtered by task status.
+    public func fetchTasks(status: TaskStatus? = nil, limit: Int = 100) async throws -> [Thought] {
+        try await db.reader.read { db in
+            var request = Thought
+                .filter(Thought.Columns.category == ThoughtCategory.task.rawValue)
+                .order(Thought.Columns.createdAt.desc)
+            if let status {
+                request = request.filter(Thought.Columns.taskStatus == status.rawValue)
+            }
+            return try request.limit(limit).fetchAll(db)
+        }
+    }
+
+    /// Count thoughts with category == .task, optionally filtered by task status.
+    public func countTasks(status: TaskStatus? = nil) async throws -> Int {
+        try await db.reader.read { db in
+            var request = Thought
+                .filter(Thought.Columns.category == ThoughtCategory.task.rawValue)
+            if let status {
+                request = request.filter(Thought.Columns.taskStatus == status.rawValue)
+            }
+            return try request.fetchCount(db)
+        }
+    }
+
     // MARK: Sync Operations
 
     /// Fetch all thoughts that need to be uploaded to CloudKit.
@@ -169,6 +224,7 @@ public actor ThoughtStore {
                 existing.category = data.category
                 existing.confidence = data.confidence
                 existing.source = data.source
+                existing.taskStatus = data.taskStatus
                 existing.modifiedAt = data.modifiedAt
                 existing.syncStatus = .synced
                 existing.lastSyncedAt = Date()
@@ -182,6 +238,7 @@ public actor ThoughtStore {
                     source: data.source,
                     createdAt: data.createdAt,
                     modifiedAt: data.modifiedAt,
+                    taskStatus: data.taskStatus,
                     cloudKitRecordID: data.cloudKitRecordID,
                     syncStatus: .synced,
                     lastSyncedAt: Date()
