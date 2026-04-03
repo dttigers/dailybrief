@@ -11,8 +11,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **CAPT-01**: User can capture a thought via menu bar popover in under 1 second with zero required fields
 - [x] **CAPT-02**: User can trigger capture from anywhere via global keyboard shortcut
-- [ ] **CAPT-03**: User can record voice and have it transcribed on-device via WhisperKit
-- [ ] **CAPT-04**: User can capture a photo/image and receive an AI-generated text description via multimodal Claude
+- [x] **CAPT-03**: User can record voice and have it transcribed on-device via WhisperKit
+- [x] **CAPT-04**: User can capture a photo/image and receive an AI-generated text description via multimodal Claude
 - [x] **CAPT-05**: All captured entries have automatic creation and modification timestamps
 
 ### AI Triage
@@ -23,8 +23,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Storage & Search
 
-- [ ] **STORE-01**: All data persists locally in SQLite via GRDB with no data loss
-- [ ] **STORE-02**: User can full-text search across all captured thoughts via FTS5
+- [x] **STORE-01**: All data persists locally in SQLite via GRDB with no data loss
+- [x] **STORE-02**: User can full-text search across all captured thoughts via FTS5
 
 ### Dashboard
 
@@ -38,7 +38,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Integrations
 
-- [ ] **INTEG-01**: User can pull events from selected Google Calendars into the daily brief and dashboard
+- [x] **INTEG-01**: User can pull events from selected Google Calendars into the daily brief and dashboard
 
 ## v2 Requirements
 
@@ -106,11 +106,11 @@ Which phases cover which requirements. Updated by create-roadmap.
 | TRIAGE-03 | Phase 3 | Complete |
 | DASH-01 | Phase 4 | Complete |
 | DASH-02 | Phase 4 | Complete |
-| CAPT-03 | Phase 5 | Pending |
-| CAPT-04 | Phase 5 | Pending |
+| CAPT-03 | Phase 5 | Complete |
+| CAPT-04 | Phase 5 | Complete |
 | BRIEF-01 | Phase 6 | Complete |
 | BRIEF-02 | Phase 6 | Complete |
-| INTEG-01 | Phase 7 | Pending |
+| INTEG-01 | Phase 7 | Complete |
 
 **Coverage:**
 - v1 requirements: 15 total
@@ -119,4 +119,4 @@ Which phases cover which requirements. Updated by create-roadmap.
 
 ---
 *Requirements defined: 2026-03-31*
-*Last updated: 2026-03-31 after roadmap creation*
+*Last updated: 2026-04-03 — all v1 requirements complete*

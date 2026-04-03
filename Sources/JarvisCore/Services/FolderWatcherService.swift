@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 // MARK: - FolderWatcherService
@@ -37,7 +38,9 @@ public actor FolderWatcherService {
     private var isRunning = false
 
     private static let audioExtensions: Set<String> = ["wav", "mp3", "m4a", "aiff"]
-    private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp"]
+    private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "tiff", "tif", "bmp"]
+    /// Formats that ImageDescriptionService handles natively (no conversion needed).
+    private static let nativeImageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp"]
 
     private static var manifestURL: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
@@ -234,13 +237,22 @@ public actor FolderWatcherService {
     }
 
     /// Describes an image file and captures it as an image thought.
+    /// Converts non-native formats (HEIC, TIFF, BMP) to JPEG before sending to the API.
     private func processImageFile(url: URL, filename: String) async throws {
         guard let imageDescriptionService else {
             NSLog("FolderWatcherService: No image description service available, skipping %@", filename)
             return
         }
 
-        let description = try await imageDescriptionService.describe(imageURL: url)
+        let ext = url.pathExtension.lowercased()
+        let description: String
+        if Self.nativeImageExtensions.contains(ext) {
+            description = try await imageDescriptionService.describe(imageURL: url)
+        } else {
+            let jpegData = try Self.convertToJPEG(url: url)
+            NSLog("FolderWatcherService: Converted %@ from %@ to JPEG (%d bytes)", filename, ext, jpegData.count)
+            description = try await imageDescriptionService.describe(imageData: jpegData, mediaType: .jpeg)
+        }
         let thought = try await captureService.capture(description, source: .image)
 
         if let triageService, thought.id != nil {
@@ -250,6 +262,30 @@ public actor FolderWatcherService {
             } catch {
                 NSLog("FolderWatcherService: Triage failed for %@: %@", filename, error.localizedDescription)
                 // Non-fatal — thought is still captured
+            }
+        }
+    }
+
+    // MARK: - Image Conversion
+
+    /// Converts a non-native image format (HEIC, TIFF, BMP, etc.) to JPEG data.
+    private static func convertToJPEG(url: URL) throws -> Data {
+        guard let image = NSImage(contentsOf: url),
+              let tiffData = image.tiffRepresentation,
+              let bitmap = NSBitmapImageRep(data: tiffData),
+              let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.85]) else {
+            throw ImageConversionError.conversionFailed(url.lastPathComponent)
+        }
+        return jpegData
+    }
+
+    enum ImageConversionError: Error, LocalizedError {
+        case conversionFailed(String)
+
+        var errorDescription: String? {
+            switch self {
+            case .conversionFailed(let filename):
+                return "Failed to convert \(filename) to JPEG"
             }
         }
     }
