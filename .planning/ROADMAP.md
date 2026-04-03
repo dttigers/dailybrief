@@ -7,11 +7,12 @@ Transform the existing DailyBrief CLI and menu bar monitor into a full personal 
 ## Milestones
 
 - ✅ **v1.0 MVP** — Phases 1-7 (shipped 2026-04-02)
-- 🚧 **v1.1 Always On** — Phases 8-13 (in progress)
+- ✅ **v1.1 Always On** — Phases 8-13 (shipped 2026-04-03)
 
 ## Completed Milestones
 
 - ✅ [v1.0 MVP](milestones/v1.0-ROADMAP.md) (Phases 1-7) — SHIPPED 2026-04-02
+- ✅ [v1.1 Always On](milestones/v1.1-ROADMAP.md) (Phases 8-13) — SHIPPED 2026-04-03
 
 <details>
 <summary>✅ v1.0 MVP (Phases 1-7) — SHIPPED 2026-04-02</summary>
@@ -26,7 +27,8 @@ Transform the existing DailyBrief CLI and menu bar monitor into a full personal 
 
 </details>
 
-### 🚧 v1.1 Always On (In Progress)
+<details>
+<summary>✅ v1.1 Always On (Phases 8-13) — SHIPPED 2026-04-03</summary>
 
 **Milestone Goal:** Transform Jarvis from a terminal-launched tool into an always-running background assistant with smarter AI features and multi-Mac sync.
 
@@ -61,15 +63,14 @@ Plans:
 - [x] 10-01: MLBTeamData model + team name picker in Settings
 - [x] 10-02: Dynamic PDF sports section with config-driven names
 
-#### Phase 11: Smart Suggestions
+#### Phase 11: Smart Suggestions ✅
 
 **Goal**: AI proactively surfaces insights — pattern recognition, action prompts, and thought connections built incrementally.
 **Depends on**: Phase 10
-**Research**: Unlikely (Claude API already integrated, internal patterns)
-**Plans**: TBD
+**Completed**: 2026-04-03
 
 Plans:
-- [ ] 11-01: TBD (run /gsd:plan-phase 11 to break down)
+- [x] 11-01: InsightService actor + Insight model + InsightsConfig
 
 #### Phase 12: Cloud Sync ✅
 
@@ -83,15 +84,19 @@ Plans:
 - [x] 12-03: SyncService actor (push/pull/conflict resolution)
 - [x] 12-04: App lifecycle wiring + Settings UI
 
-#### Phase 13: Polish & Integration
+#### Phase 13: Polish & Integration ✅
 
 **Goal**: Tie everything together — edge cases, refinement, cross-feature integration testing, UX polish.
 **Depends on**: Phase 12
-**Research**: Unlikely (internal refinement)
-**Plans**: TBD
+**Completed**: 2026-04-03
 
 Plans:
-- [ ] 13-01: TBD (run /gsd:plan-phase 13 to break down)
+- [x] 13-01: InsightService wired into dashboard + settings UI
+- [x] 13-02: Insights integrated into daily brief PDF
+- [x] 13-03: Event-driven sync triggers + HEIC/TIFF support
+- [x] 13-04: Final build verification + project state update
+
+</details>
 
 ## Domain Expertise
 
@@ -111,6 +116,6 @@ None
 | 8. Launch Agent | v1.1 | 3/3 | Complete | 2026-04-02 |
 | 9. Folder Watching | v1.1 | 2/2 | Complete | 2026-04-02 |
 | 10. Sports UI + Daily Brief | v1.1 | 2/2 | Complete | 2026-04-03 |
-| 11. Smart Suggestions | v1.1 | 0/? | Not started | - |
+| 11. Smart Suggestions | v1.1 | 1/1 | Complete | 2026-04-03 |
 | 12. Cloud Sync | v1.1 | 4/4 | Complete | 2026-04-03 |
-| 13. Polish & Integration | v1.1 | 0/? | Not started | - |
+| 13. Polish & Integration | v1.1 | 4/4 | Complete | 2026-04-03 |
