@@ -14,6 +14,9 @@ public struct DailyBriefData: Sendable {
     public var teamName: String
     public var divisionName: String
 
+    // Work order status map (caseNumber -> status)
+    public var workOrderStatuses: [String: String]
+
     // Captured thoughts for Page 3
     public var unprocessedThoughts: [Thought]
     public var taskThoughts: [Thought]
@@ -33,6 +36,7 @@ public struct DailyBriefData: Sendable {
         calendarEvents: [CalendarEvent] = [],
         teamName: String = "Detroit Tigers",
         divisionName: String = "AL Central",
+        workOrderStatuses: [String: String] = [:],
         unprocessedThoughts: [Thought] = [],
         taskThoughts: [Thought] = [],
         recentThoughts: [Thought] = [],
@@ -48,6 +52,7 @@ public struct DailyBriefData: Sendable {
         self.calendarEvents = calendarEvents
         self.teamName = teamName
         self.divisionName = divisionName
+        self.workOrderStatuses = workOrderStatuses
         self.unprocessedThoughts = unprocessedThoughts
         self.taskThoughts = taskThoughts
         self.recentThoughts = recentThoughts

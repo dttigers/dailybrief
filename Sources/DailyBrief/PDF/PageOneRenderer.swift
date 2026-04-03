@@ -50,21 +50,62 @@ enum PageOneRenderer {
             )
             y += S.bodySize + 6
         } else {
-            for wo in data.workOrders.prefix(6) {
-                // Checkbox
+            // Sort work orders: inProgress first, then open, then done
+            let sortedOrders = data.workOrders.sorted { a, b in
+                let order: (String) -> Int = { status in
+                    switch status {
+                    case "inProgress": return 0
+                    case "open": return 1
+                    case "done": return 2
+                    default: return 1
+                    }
+                }
+                let sa = data.workOrderStatuses[a.caseNumber] ?? "open"
+                let sb = data.workOrderStatuses[b.caseNumber] ?? "open"
+                return order(sa) < order(sb)
+            }
+
+            for wo in sortedOrders.prefix(6) {
+                let woStatus = data.workOrderStatuses[wo.caseNumber] ?? "open"
+                let isDone = woStatus == "done"
+                let isInProgress = woStatus == "inProgress"
+
+                // Status-aware checkbox
                 let cbY = PDFGenerator.cgY(y + S.tableRowHeight - 1)
                 context.setStrokeColor(S.darkGray)
                 context.setLineWidth(0.5)
-                context.stroke(CGRect(x: leftX, y: cbY, width: S.checkboxSize, height: S.checkboxSize))
+                if isDone {
+                    // Filled checkbox for done
+                    context.setFillColor(S.darkGray)
+                    context.fill(CGRect(x: leftX, y: cbY, width: S.checkboxSize, height: S.checkboxSize))
+                } else if isInProgress {
+                    // Checkbox with centered dot for inProgress
+                    context.stroke(CGRect(x: leftX, y: cbY, width: S.checkboxSize, height: S.checkboxSize))
+                    let dotSize: CGFloat = 3
+                    let dotX = leftX + (S.checkboxSize - dotSize) / 2
+                    let dotY = cbY + (S.checkboxSize - dotSize) / 2
+                    context.setFillColor(S.darkGray)
+                    context.fillEllipse(in: CGRect(x: dotX, y: dotY, width: dotSize, height: dotSize))
+                } else {
+                    // Empty checkbox for open
+                    context.stroke(CGRect(x: leftX, y: cbY, width: S.checkboxSize, height: S.checkboxSize))
+                }
+
+                // Colors: done items de-emphasized
+                let headerColor = isDone ? S.medGray : S.black
+                let textColor = isDone ? S.medGray : S.darkGray
+                let bgColor = isDone ? S.lightGray : S.veryLightGray
 
                 // Case number + store header line (with background)
-                context.setFillColor(S.veryLightGray)
+                context.setFillColor(bgColor)
                 context.fill(CGRect(x: leftX + cbIndent - 2, y: PDFGenerator.cgY(y + S.tableRowHeight), width: usableWidth - cbIndent + 4, height: S.tableRowHeight))
 
+                // In-progress indicator prefix
+                let caseLabel = isInProgress ? "\u{25B8} \(wo.caseNumber)  \(wo.store)" : "\(wo.caseNumber)  \(wo.store)"
                 PDFGenerator.drawText(
-                    "\(wo.caseNumber)  \(wo.store)",
+                    caseLabel,
                     at: CGPoint(x: leftX + cbIndent, y: PDFGenerator.cgY(y + S.smallSize + 2)),
-                    font: S.monoFont(), color: S.black, context: context
+                    font: S.monoFont(), color: headerColor, context: context
                 )
                 y += S.tableRowHeight + 2
 
@@ -74,7 +115,7 @@ enum PageOneRenderer {
                     PDFGenerator.drawText(
                         desc,
                         at: CGPoint(x: leftX + cbIndent, y: PDFGenerator.cgY(y + S.bodySize)),
-                        font: S.bodyFont(), color: S.darkGray, context: context
+                        font: S.bodyFont(), color: textColor, context: context
                     )
                     y += S.bodySize + 2
                 } else {
@@ -85,15 +126,25 @@ enum PageOneRenderer {
                     PDFGenerator.drawText(
                         first,
                         at: CGPoint(x: leftX + cbIndent, y: PDFGenerator.cgY(y + S.bodySize)),
-                        font: S.bodyFont(), color: S.darkGray, context: context
+                        font: S.bodyFont(), color: textColor, context: context
                     )
                     y += S.bodySize + 1
                     PDFGenerator.drawText(
                         String(rest),
                         at: CGPoint(x: leftX + cbIndent, y: PDFGenerator.cgY(y + S.bodySize)),
-                        font: S.bodyFont(), color: S.darkGray, context: context
+                        font: S.bodyFont(), color: textColor, context: context
                     )
                     y += S.bodySize + 2
+                }
+
+                // Strikethrough line for done items
+                if isDone {
+                    let strikeY = PDFGenerator.cgY(y - 2)
+                    context.setStrokeColor(S.medGray)
+                    context.setLineWidth(0.5)
+                    context.move(to: CGPoint(x: leftX + cbIndent, y: strikeY))
+                    context.addLine(to: CGPoint(x: rightEdge - 20, y: strikeY))
+                    context.strokePath()
                 }
 
                 // Trade, Location, Equipment on one line

@@ -104,14 +104,16 @@ extension DailyBrief {
             async let affirmationResult = tryFetch("Affirmation") { try await aiProvider.generateAffirmation(recentThoughts: Array(thoughtSummaries)) }
             async let calendarResult = tryFetch("Calendar") { try await calendarService?.fetchTodayEvents() ?? [] }
 
-            // Filter out completed (done) work orders
-            let activeWorkOrders = await (workOrdersResult ?? []).filter {
-                CompletionStore.status(for: $0.caseNumber) != .done
+            // Pass all work orders with their statuses for status-aware rendering
+            let allWorkOrders = await (workOrdersResult ?? [])
+            var woStatuses: [String: String] = [:]
+            for wo in allWorkOrders {
+                woStatuses[wo.caseNumber] = CompletionStore.status(for: wo.caseNumber).rawValue
             }
 
             let briefData = await DailyBriefData(
                 date: Date(),
-                workOrders: activeWorkOrders,
+                workOrders: allWorkOrders,
                 todoItems: todosResult ?? [],
                 gameScore: gameResult ?? nil,
                 upcomingGame: upcomingResult ?? nil,
@@ -120,6 +122,7 @@ extension DailyBrief {
                 calendarEvents: calendarResult ?? [],
                 teamName: config.sports.teamName,
                 divisionName: config.sports.divisionName,
+                workOrderStatuses: woStatuses,
                 unprocessedThoughts: unprocessedThoughts,
                 taskThoughts: taskThoughts,
                 recentThoughts: recentThoughts,
