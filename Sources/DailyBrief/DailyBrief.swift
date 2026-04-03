@@ -76,6 +76,19 @@ extension DailyBrief {
                 Logger.error("ThoughtStore init failed, continuing without thoughts: \(error.localizedDescription)")
             }
 
+            // Fetch AI insights when enabled (depends on allThoughts, so runs sequentially)
+            var insights: [Insight] = []
+            if config.insights.enabled {
+                do {
+                    let allForInsights = unprocessedThoughts + taskThoughts + recentThoughts
+                    let insightService = InsightService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+                    insights = try await insightService.generateInsights(thoughts: allForInsights, lookbackDays: config.insights.lookbackDays)
+                    Logger.log("Generated \(insights.count) insights")
+                } catch {
+                    Logger.error("Insight generation failed, continuing without insights: \(error.localizedDescription)")
+                }
+            }
+
             // Build thought summaries for contextual affirmation (max 10, truncated to 50 chars)
             let allThoughts = unprocessedThoughts + taskThoughts + recentThoughts
             let thoughtSummaries = allThoughts.prefix(10).map { String($0.content.prefix(50)) }
@@ -108,7 +121,8 @@ extension DailyBrief {
                 divisionName: config.sports.divisionName,
                 unprocessedThoughts: unprocessedThoughts,
                 taskThoughts: taskThoughts,
-                recentThoughts: recentThoughts
+                recentThoughts: recentThoughts,
+                insights: insights
             )
 
             Logger.log("Data fetched: \(briefData.workOrders.count) work orders, \(briefData.todoItems.count) todos, game: \(briefData.gameScore != nil ? "yes" : "no"), standings: \(briefData.standings.count) teams")

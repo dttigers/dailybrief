@@ -19,6 +19,9 @@ public struct DailyBriefData: Sendable {
     public var taskThoughts: [Thought]
     public var recentThoughts: [Thought]
 
+    // AI-generated insights
+    public var insights: [Insight]
+
     public init(
         date: Date,
         workOrders: [WorkOrder],
@@ -32,7 +35,8 @@ public struct DailyBriefData: Sendable {
         divisionName: String = "AL Central",
         unprocessedThoughts: [Thought] = [],
         taskThoughts: [Thought] = [],
-        recentThoughts: [Thought] = []
+        recentThoughts: [Thought] = [],
+        insights: [Insight] = []
     ) {
         self.date = date
         self.workOrders = workOrders
@@ -47,6 +51,7 @@ public struct DailyBriefData: Sendable {
         self.unprocessedThoughts = unprocessedThoughts
         self.taskThoughts = taskThoughts
         self.recentThoughts = recentThoughts
+        self.insights = insights
     }
 
     public var dateString: String {
