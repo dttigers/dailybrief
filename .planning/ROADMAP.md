@@ -51,15 +51,15 @@ Plans:
 - [x] 09-01: FolderWatcherService + Config
 - [x] 09-02: App lifecycle wiring + Settings UI
 
-#### Phase 10: Sports UI + Daily Brief
+#### Phase 10: Sports UI + Daily Brief ✅
 
 **Goal**: Replace raw numeric team/sport IDs in settings with team name picker. Improve daily brief content, formatting, and add new sections.
 **Depends on**: Phase 9
-**Research**: Unlikely (internal UI patterns, existing brief infrastructure)
-**Plans**: TBD
+**Completed**: 2026-04-03
 
 Plans:
-- [ ] 10-01: TBD (run /gsd:plan-phase 10 to break down)
+- [x] 10-01: MLBTeamData model + team name picker in Settings
+- [x] 10-02: Dynamic PDF sports section with config-driven names
 
 #### Phase 11: Smart Suggestions
 
@@ -109,7 +109,7 @@ None
 | 7. Google Calendar | v1.0 | 3/3 | Complete | 2026-04-02 |
 | 8. Launch Agent | v1.1 | 3/3 | Complete | 2026-04-02 |
 | 9. Folder Watching | v1.1 | 2/2 | Complete | 2026-04-02 |
-| 10. Sports UI + Daily Brief | v1.1 | 0/? | Not started | - |
+| 10. Sports UI + Daily Brief | v1.1 | 2/2 | Complete | 2026-04-03 |
 | 11. Smart Suggestions | v1.1 | 0/? | Not started | - |
 | 12. Cloud Sync | v1.1 | 0/? | Not started | - |
 | 13. Polish & Integration | v1.1 | 0/? | Not started | - |
