@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A native macOS app that acts as a central nervous system for capturing, organizing, and surfacing thoughts, tasks, and life data. Features frictionless text/voice/image capture via a global hotkey, Claude AI auto-triage into 5 categories, a SwiftUI dashboard with full-text search, Google Calendar integration, and a daily printed PDF brief with captured thoughts and contextual affirmations — all designed for an ADHD brain that needs zero-friction capture and automatic organization.
+A native macOS app that acts as a central nervous system for capturing, organizing, and surfacing thoughts, tasks, and life data. Features frictionless text/voice/image capture via a global hotkey, Claude AI auto-triage into 5 categories, a SwiftUI dashboard with full-text search, Google Calendar integration, and a daily printed PDF brief with captured thoughts and contextual affirmations. Runs as an always-on background assistant with LaunchAgent auto-start, passive folder watching, AI-powered insights, and CloudKit sync across multiple Macs — all designed for an ADHD brain that needs zero-friction capture and automatic organization.
 
 ## Core Value
 
@@ -29,6 +29,12 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Configurable data sources — tabbed settings UI replacing hand-edited JSON — v1.0
 - ✓ Evolved daily brief — captured thoughts page + contextual affirmations — v1.0
 - ✓ Search across everything — FTS5 full-text search across all captured thoughts — v1.0
+- ✓ Always-on background assistant — LaunchAgent auto-start, BriefScheduler — v1.1
+- ✓ Passive folder watching — DispatchSource monitoring for audio/image auto-ingest — v1.1
+- ✓ Sports UX overhaul — MLB team name picker, config-driven PDF sports section — v1.1
+- ✓ AI-powered insights — InsightService with pattern/connection/action/trend analysis — v1.1
+- ✓ CloudKit sync — bidirectional push/pull across multiple Macs — v1.1
+- ✓ Image format support — HEIC/TIFF/BMP conversion via CoreGraphics — v1.1
 
 ### Active
 
@@ -36,6 +42,7 @@ Capture every thought with zero friction and have the system organize it for you
 - [ ] Undo/redo for thought editing
 - [ ] Thought tagging and manual organization beyond AI categories
 - [ ] Brief history — browse and reprint past daily briefs
+- [ ] CKSubscription push notifications — upgrade from polling-based sync
 
 ### Out of Scope
 
@@ -43,16 +50,15 @@ Capture every thought with zero friction and have the system organize it for you
 - Real-time voice assistant — this is capture-and-review, not conversational
 - Replacing the physical notebook — digital complements the traveler's notebook, doesn't replace it
 - Multi-user support — this is a personal tool for one person
-- Cloud sync/hosting — local macOS app with local data
 - Offline mode — local-first architecture already works offline except for API calls
 
 ## Context
 
-Shipped v1.0 MVP with 5,501 LOC Swift across 52 files in 3 days.
-Tech stack: Swift 6.2, SwiftUI, SPM, GRDB/SQLite with FTS5, Claude API (SwiftAnthropic), Google Calendar REST API with OAuth2.
-5 major services: CaptureService, TriageService, VoiceCaptureService (SFSpeechRecognizer), ImageDescriptionService, GoogleCalendarService.
-3 UI surfaces: floating capture panel (Cmd+Shift+J), central dashboard with settings, daily PDF brief.
-8+ Swift 6 Sendable/actor isolation issues resolved throughout development.
+Shipped v1.1 Always On with ~10,500 LOC Swift across 58+ files in 7 days total (v1.0 + v1.1).
+Tech stack: Swift 6.2, SwiftUI, SPM, GRDB/SQLite with FTS5, CloudKit, Claude API (SwiftAnthropic), Google Calendar REST API with OAuth2.
+9 major services: CaptureService, TriageService, VoiceCaptureService, ImageDescriptionService, GoogleCalendarService, BriefScheduler, FolderWatcherService, InsightService, SyncService.
+3 UI surfaces: floating capture panel (Cmd+Shift+J), central dashboard with settings (850px wide), daily PDF brief (3 pages).
+Always-on via LaunchAgent with auto-start at login. CloudKit sync across multiple Macs with last-write-wins conflict resolution.
 
 ## Constraints
 
@@ -77,6 +83,11 @@ Tech stack: Swift 6.2, SwiftUI, SPM, GRDB/SQLite with FTS5, Claude API (SwiftAnt
 | Fire-and-forget triage | Instant capture UX; background categorization doesn't block user | ✓ Good |
 | Dashboard toolbar for audio/image import | Floating NSPanel + NSOpenPanel incompatible; dashboard provides stable window context | ✓ Good |
 | GoogleCalendarService in JarvisCore | Cross-target access needed (both CLI and menu bar app use it) | ✓ Good |
+| LaunchAgent over Login Items | More control over lifecycle, single architecture | ✓ Good |
+| DispatchSource for folder watching | Low overhead, immediate file detection without polling | ✓ Good |
+| CloudKit over Supabase for sync | Native Apple integration, no server costs, privacy-first | ✓ Good |
+| Last-write-wins conflict resolution | Simple, predictable for single-user multi-Mac sync | ✓ Good |
+| CoreGraphics for image conversion | No external dependencies, handles HEIC/TIFF/BMP natively | ✓ Good |
 
 ---
-*Last updated: 2026-04-02 after v1.0 milestone*
+*Last updated: 2026-04-03 after v1.1 milestone*

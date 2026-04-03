@@ -2,25 +2,25 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-02)
+See: .planning/PROJECT.md (updated 2026-04-03)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v1.1 Always On — COMPLETE
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 13 of 13 (Polish & Integration) — COMPLETE
-Plan: 04 of 4 complete
-Status: v1.1 Always On milestone complete
-Last activity: 2026-04-03 — Human UAT approved, settings widened, SUMMARY.md created
+Phase: 13 of 13 — All phases complete
+Plan: N/A
+Status: v1.1 Always On shipped, ready to plan next milestone
+Last activity: 2026-04-03 — v1.1 milestone archived
 
-Progress: ██████████ 100% (v1.1)
+Progress: ██████████ 100% (v1.0 + v1.1)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 31
-- Total execution time: ~3 days
+- Total plans completed: 33
+- Total execution time: ~7 days
 - Average duration: ~5 min per plan
 
 **By Phase:**
@@ -46,7 +46,9 @@ Progress: ██████████ 100% (v1.1)
 ### Decisions
 
 All decisions logged in PROJECT.md Key Decisions table.
-Full decision history available in milestone archive: .planning/milestones/v1.0-ROADMAP.md
+Full decision history available in milestone archives:
+- .planning/milestones/v1.0-ROADMAP.md
+- .planning/milestones/v1.1-ROADMAP.md
 
 ### Pending Todos
 
@@ -58,10 +60,11 @@ None.
 
 ### Roadmap Evolution
 
-- Milestone v1.1 Always On created: background assistant + smart AI + cloud sync, 6 phases (Phase 8-13)
+- v1.0 MVP shipped: 7 phases (1-7), 17 plans
+- v1.1 Always On shipped: 6 phases (8-13), 16 plans
 
 ## Session Continuity
 
 Last session: 2026-04-03
-Stopped at: v1.1 Always On milestone complete — all 13 phases done, all plan summaries written
+Stopped at: v1.1 milestone archived, ready for next milestone planning
 Resume file: None

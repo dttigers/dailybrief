@@ -1,5 +1,33 @@
 # Project Milestones: Jarvis — Personal AI Life Assistant
 
+## v1.1 Always On (Shipped: 2026-04-03)
+
+**Delivered:** Always-running background assistant with LaunchAgent auto-start, passive folder watching, sports UX overhaul, AI-powered insights, CloudKit sync across Macs, and integration polish.
+
+**Phases completed:** 8-13 (16 plans total)
+
+**Key accomplishments:**
+
+- macOS LaunchAgent with BriefScheduler for auto-start at login and daily brief generation
+- Passive folder watching via DispatchSource for automatic audio/image ingest
+- MLB team name picker replacing raw numeric IDs, config-driven PDF sports section
+- InsightService actor with Claude-powered pattern recognition, connections, action prompts, trends
+- Full CloudKit sync with bidirectional push/pull and last-write-wins conflict resolution
+- Integration polish: insights in dashboard + PDF, event-driven sync, HEIC/TIFF/BMP support
+
+**Stats:**
+
+- 58 files created/modified
+- ~5,034 lines of Swift added/modified
+- 6 phases, 16 plans
+- 4 days (2026-03-30 → 2026-04-03)
+
+**Git range:** `feat(08-01)` → `feat(13-04)`
+
+**What's next:** TBD — next milestone planning
+
+---
+
 ## v1.0 MVP (Shipped: 2026-04-02)
 
 **Delivered:** Full personal AI life assistant with frictionless thought capture, AI-powered triage, central dashboard, voice/image capture, evolved daily brief, and Google Calendar integration.
