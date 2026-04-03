@@ -48,7 +48,7 @@ extension DailyBrief {
             // Initialize services
             let sportsService = SportsService(config: config.sports.mlb)
             let remindersService = RemindersService(config: config.reminders)
-            let gmailService = GmailService(config: config.gmail)
+            let emailService = EmailService(config: config.email)
             let aiProvider = ClaudeAIProvider(config: config.ai)
             let calendarService: GoogleCalendarService? = config.googleCalendar.enabled
                 ? GoogleCalendarService(config: config.googleCalendar) : nil
@@ -100,7 +100,7 @@ extension DailyBrief {
             async let upcomingResult = tryFetch("Upcoming game") { try await sportsService.fetchUpcomingGame() }
             async let standingsResult = tryFetch("Standings") { try await sportsService.fetchStandings() }
             async let todosResult = tryFetch("Reminders") { try await remindersService.fetchTodoItems() }
-            async let workOrdersResult = tryFetch("Work orders") { try await gmailService.fetchWorkOrders() }
+            async let workOrdersResult = tryFetch("Work orders") { try await emailService.fetchWorkOrders() }
             async let affirmationResult = tryFetch("Affirmation") { try await aiProvider.generateAffirmation(recentThoughts: Array(thoughtSummaries)) }
             async let calendarResult = tryFetch("Calendar") { try await calendarService?.fetchTodayEvents() ?? [] }
 
@@ -303,9 +303,12 @@ extension DailyBrief {
 
             let template = """
             {
-                "gmail": {
-                    "email": "your-email@gmail.com",
+                "email": {
+                    "email_address": "your-email@example.com",
                     "app_password": "xxxx xxxx xxxx xxxx",
+                    "imap_host": "imap.gmail.com",
+                    "imap_port": 993,
+                    "use_tls": true,
                     "search_subject_pattern": "has been assigned to you",
                     "lookback_days": 3
                 },

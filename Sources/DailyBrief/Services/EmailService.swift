@@ -1,21 +1,21 @@
 import Foundation
 import JarvisCore
 
-actor GmailService {
-    private let config: AppConfig.GmailConfig
+actor EmailService {
+    private let config: AppConfig.EmailConfig
 
-    init(config: AppConfig.GmailConfig) {
+    init(config: AppConfig.EmailConfig) {
         self.config = config
     }
 
     func fetchWorkOrders() async throws -> [WorkOrder] {
-        // Connect to Gmail IMAP using app password
-        // Uses a simple IMAP client built on Foundation networking
+        // Connect to IMAP server using configured host/port
         let imap = IMAPClient(
-            host: "imap.gmail.com",
-            port: 993,
-            email: config.email,
-            password: config.appPassword
+            host: config.imapHost,
+            port: config.imapPort,
+            email: config.emailAddress,
+            password: config.appPassword,
+            useTLS: config.useTLS
         )
 
         let cutoffDate = Calendar.current.date(byAdding: .day, value: -config.lookbackDays, to: Date())!
@@ -70,23 +70,31 @@ private actor IMAPClient {
     let port: Int
     let email: String
     let password: String
+    let useTLS: Bool
 
-    init(host: String, port: Int, email: String, password: String) {
+    init(host: String, port: Int, email: String, password: String, useTLS: Bool) {
         self.host = host
         self.port = port
         self.email = email
         self.password = password
+        self.useTLS = useTLS
     }
 
     func searchAndFetch(folder: String, criteria: String) async throws -> [String] {
-        // Use nw_connection for TLS IMAP
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/python3")
+
+        let connectCode: String
+        if useTLS {
+            connectCode = "mail = imaplib.IMAP4_SSL('\(host)', \(port))"
+        } else {
+            connectCode = "mail = imaplib.IMAP4('\(host)', \(port))"
+        }
 
         let script = """
         import imaplib, email, sys, json
         try:
-            mail = imaplib.IMAP4_SSL('\(host)', \(port))
+            \(connectCode)
             mail.login('\(email)', '\(password)')
             mail.select('\(folder)', readonly=True)
             status, data = mail.search(None, '\(criteria)')
@@ -134,13 +142,13 @@ private actor IMAPClient {
 
         if process.terminationStatus != 0 {
             let stderr = String(data: errData, encoding: .utf8) ?? "(no output)"
-            Logger.error("Gmail IMAP script failed (exit \(process.terminationStatus)): \(stderr)")
+            Logger.error("IMAP script failed (exit \(process.terminationStatus)): \(stderr)")
         } else if let stderr = String(data: errData, encoding: .utf8), !stderr.isEmpty {
-            Logger.error("Gmail IMAP warning: \(stderr)")
+            Logger.error("IMAP warning: \(stderr)")
         }
 
         guard !data.isEmpty else {
-            Logger.error("Gmail IMAP returned no data")
+            Logger.error("IMAP returned no data")
             return []
         }
 

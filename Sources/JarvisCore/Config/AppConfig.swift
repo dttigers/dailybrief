@@ -1,7 +1,7 @@
 import Foundation
 
 public struct AppConfig: Codable, Sendable {
-    public var gmail: GmailConfig
+    public var email: EmailConfig
     public var reminders: RemindersConfig
     public var sports: SportsConfig
     public var ai: AIConfig
@@ -13,7 +13,7 @@ public struct AppConfig: Codable, Sendable {
     public var cloudSync: CloudSyncConfig
 
     public init(
-        gmail: GmailConfig,
+        email: EmailConfig,
         reminders: RemindersConfig,
         sports: SportsConfig,
         ai: AIConfig,
@@ -24,7 +24,7 @@ public struct AppConfig: Codable, Sendable {
         insights: InsightsConfig = .init(),
         cloudSync: CloudSyncConfig = .init()
     ) {
-        self.gmail = gmail
+        self.email = email
         self.reminders = reminders
         self.sports = sports
         self.ai = ai
@@ -36,10 +36,16 @@ public struct AppConfig: Codable, Sendable {
         self.cloudSync = cloudSync
     }
 
-    // Custom Decodable to make googleCalendar, folderWatching, and insights optional for backward compatibility
+    // Custom Decodable to support backward-compatible config loading
+    // Old configs use "gmail" key, new configs use "email" key
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        gmail = try container.decode(GmailConfig.self, forKey: .gmail)
+        // Try "email" key first, fall back to "gmail" for backward compatibility
+        if let emailConfig = try container.decodeIfPresent(EmailConfig.self, forKey: .email) {
+            email = emailConfig
+        } else {
+            email = try container.decode(EmailConfig.self, forKey: .gmail)
+        }
         reminders = try container.decode(RemindersConfig.self, forKey: .reminders)
         sports = try container.decode(SportsConfig.self, forKey: .sports)
         ai = try container.decode(AIConfig.self, forKey: .ai)
@@ -51,22 +57,89 @@ public struct AppConfig: Codable, Sendable {
         cloudSync = try container.decodeIfPresent(CloudSyncConfig.self, forKey: .cloudSync) ?? .init()
     }
 
-    public struct GmailConfig: Codable, Sendable {
-        public var email: String
+    // Encode with "email" key (new format)
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(email, forKey: .email)
+        try container.encode(reminders, forKey: .reminders)
+        try container.encode(sports, forKey: .sports)
+        try container.encode(ai, forKey: .ai)
+        try container.encode(pdf, forKey: .pdf)
+        try container.encode(printing, forKey: .printing)
+        try container.encode(googleCalendar, forKey: .googleCalendar)
+        try container.encode(folderWatching, forKey: .folderWatching)
+        try container.encode(insights, forKey: .insights)
+        try container.encode(cloudSync, forKey: .cloudSync)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case email
+        case gmail // backward-compatible decode key
+        case reminders, sports, ai, pdf, printing
+        case googleCalendar, folderWatching, insights, cloudSync
+    }
+
+    public struct EmailConfig: Codable, Sendable {
+        public var emailAddress: String
         public var appPassword: String
+        public var imapHost: String
+        public var imapPort: Int
+        public var useTLS: Bool
         public var searchSubjectPattern: String
         public var lookbackDays: Int
 
         public init(
-            email: String,
+            emailAddress: String,
             appPassword: String,
+            imapHost: String = "imap.gmail.com",
+            imapPort: Int = 993,
+            useTLS: Bool = true,
             searchSubjectPattern: String = "Case CS",
             lookbackDays: Int = 3
         ) {
-            self.email = email
+            self.emailAddress = emailAddress
             self.appPassword = appPassword
+            self.imapHost = imapHost
+            self.imapPort = imapPort
+            self.useTLS = useTLS
             self.searchSubjectPattern = searchSubjectPattern
             self.lookbackDays = lookbackDays
+        }
+
+        // Backward-compatible decoding: old configs have "email" field for address
+        private enum CodingKeys: String, CodingKey {
+            case emailAddress = "email_address"
+            case email // old key for backward compat
+            case appPassword
+            case imapHost, imapPort, useTLS
+            case searchSubjectPattern, lookbackDays
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            // Try new "email_address" key first, fall back to old "email" key
+            if let addr = try container.decodeIfPresent(String.self, forKey: .emailAddress) {
+                emailAddress = addr
+            } else {
+                emailAddress = try container.decode(String.self, forKey: .email)
+            }
+            appPassword = try container.decode(String.self, forKey: .appPassword)
+            imapHost = try container.decodeIfPresent(String.self, forKey: .imapHost) ?? "imap.gmail.com"
+            imapPort = try container.decodeIfPresent(Int.self, forKey: .imapPort) ?? 993
+            useTLS = try container.decodeIfPresent(Bool.self, forKey: .useTLS) ?? true
+            searchSubjectPattern = try container.decodeIfPresent(String.self, forKey: .searchSubjectPattern) ?? "Case CS"
+            lookbackDays = try container.decodeIfPresent(Int.self, forKey: .lookbackDays) ?? 3
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(emailAddress, forKey: .emailAddress)
+            try container.encode(appPassword, forKey: .appPassword)
+            try container.encode(imapHost, forKey: .imapHost)
+            try container.encode(imapPort, forKey: .imapPort)
+            try container.encode(useTLS, forKey: .useTLS)
+            try container.encode(searchSubjectPattern, forKey: .searchSubjectPattern)
+            try container.encode(lookbackDays, forKey: .lookbackDays)
         }
     }
 
