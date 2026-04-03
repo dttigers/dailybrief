@@ -45,6 +45,11 @@ struct DashboardView: View {
             await viewModel.refresh()
         }
         .onChange(of: viewModel.selectedFilter) {
+            // Reset task status sub-filter when switching categories
+            viewModel.taskStatusFilter = nil
+            Task { await viewModel.loadThoughts() }
+        }
+        .onChange(of: viewModel.taskStatusFilter) {
             Task { await viewModel.loadThoughts() }
         }
     }
@@ -95,8 +100,56 @@ struct DashboardView: View {
                     .tag(CategoryFilter.specific(category))
                 }
             }
+
+            // Task status sub-filters — shown when Task category is selected
+            if viewModel.selectedFilter == .specific(.task) {
+                Section("Status") {
+                    taskStatusPills
+                }
+            }
         }
         .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 260)
+    }
+
+    /// Status sub-filter pills for task category.
+    @ViewBuilder
+    private var taskStatusPills: some View {
+        // "All" pill
+        Button {
+            viewModel.taskStatusFilter = nil
+        } label: {
+            HStack {
+                Text("All")
+                Spacer()
+                Text("\(viewModel.categoryCounts[.task] ?? 0)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 2)
+        .opacity(viewModel.taskStatusFilter == nil ? 1.0 : 0.6)
+
+        ForEach([TaskStatus.open, .inProgress, .done], id: \.self) { status in
+            Button {
+                viewModel.taskStatusFilter = status
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: status.systemImage)
+                        .foregroundStyle(status.displayColor)
+                        .font(.caption)
+                    Text(status.displayName)
+                        .font(.subheadline)
+                    Spacer()
+                    Text("\(viewModel.taskStatusCounts[status] ?? 0)")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.vertical, 2)
+            .opacity(viewModel.taskStatusFilter == status ? 1.0 : 0.6)
+        }
     }
 
     // MARK: - Detail
@@ -206,7 +259,12 @@ struct DashboardView: View {
                 Spacer()
             } else {
                 List(viewModel.thoughts) { thought in
-                    ThoughtRowView(thought: thought)
+                    ThoughtRowView(
+                        thought: thought,
+                        onStatusToggle: thought.category == .task ? {
+                            Task { await viewModel.cycleTaskStatus(for: thought) }
+                        } : nil
+                    )
                 }
             }
         }

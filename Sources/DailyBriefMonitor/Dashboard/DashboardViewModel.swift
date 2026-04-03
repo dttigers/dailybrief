@@ -29,6 +29,8 @@ final class DashboardViewModel {
     var isLoading = false
     var totalCount = 0
     var categoryCounts: [ThoughtCategory: Int] = [:]
+    var taskStatusFilter: TaskStatus?
+    var taskStatusCounts: [TaskStatus: Int] = [:]
     var calendarEvents: [CalendarEvent] = []
     var isLoadingCalendar = false
 
@@ -96,13 +98,22 @@ final class DashboardViewModel {
         do {
             let trimmed = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
             let category = selectedFilter.category
+
             if trimmed.isEmpty {
-                thoughts = try await store.fetchAll(category: category)
+                // When viewing tasks with a status sub-filter, use fetchTasks
+                if category == .task, let statusFilter = taskStatusFilter {
+                    thoughts = try await store.fetchTasks(status: statusFilter)
+                } else {
+                    thoughts = try await store.fetchAll(category: category)
+                }
             } else {
                 // FTS5 search — then client-side filter by category if needed
                 var results = try await store.search(query: trimmed)
                 if let category {
                     results = results.filter { $0.category == category }
+                }
+                if category == .task, let statusFilter = taskStatusFilter {
+                    results = results.filter { $0.taskStatus == statusFilter }
                 }
                 thoughts = results
             }
@@ -112,12 +123,34 @@ final class DashboardViewModel {
         }
     }
 
-    /// Reload sidebar badge counts.
+    /// Cycle a task thought's status: open → inProgress → done → open.
+    func cycleTaskStatus(for thought: Thought) async {
+        guard let id = thought.id, let currentStatus = thought.taskStatus else { return }
+        let nextStatus: TaskStatus
+        switch currentStatus {
+        case .open: nextStatus = .inProgress
+        case .inProgress: nextStatus = .done
+        case .done: nextStatus = .open
+        }
+        do {
+            try await store.updateTaskStatus(id: id, status: nextStatus)
+            await loadThoughts()
+            await loadCounts()
+        } catch {
+            NSLog("Dashboard: failed to cycle task status — \(error.localizedDescription)")
+        }
+    }
+
+    /// Reload sidebar badge counts and task status counts.
     func loadCounts() async {
         do {
             totalCount = try await store.count()
             for category in ThoughtCategory.allCases {
                 categoryCounts[category] = try await store.count(category: category)
+            }
+            // Task status sub-counts
+            for status in [TaskStatus.open, .inProgress, .done] {
+                taskStatusCounts[status] = try await store.countTasks(status: status)
             }
         } catch {
             NSLog("Dashboard: failed to load counts — \(error.localizedDescription)")
