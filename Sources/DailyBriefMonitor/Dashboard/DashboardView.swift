@@ -1,10 +1,12 @@
 import SwiftUI
+import UniformTypeIdentifiers
 import JarvisCore
 
 /// Central dashboard window — sidebar category filter with thought list and FTS5 search.
 struct DashboardView: View {
 
     @State var viewModel: DashboardViewModel
+    @State private var isDropTargeted = false
 
     var body: some View {
         NavigationSplitView {
@@ -15,12 +17,20 @@ struct DashboardView: View {
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
+                    viewModel.importFiles()
+                } label: {
+                    Label("Import Files", systemImage: "square.and.arrow.down.on.square")
+                }
+                .disabled((!viewModel.canImportAudio && !viewModel.canImportImage) || viewModel.isImporting)
+                .help("Import audio and image files")
+
+                Button {
                     viewModel.importAudio()
                 } label: {
                     Label("Import Audio", systemImage: "waveform")
                 }
                 .disabled(!viewModel.canImportAudio || viewModel.isImporting)
-                .help("Transcribe an audio file")
+                .help("Transcribe audio files")
 
                 Button {
                     viewModel.importImage()
@@ -28,7 +38,7 @@ struct DashboardView: View {
                     Label("Import Image", systemImage: "photo")
                 }
                 .disabled(!viewModel.canImportImage || viewModel.isImporting)
-                .help("Describe and capture an image")
+                .help("Describe and capture images")
             }
         }
         .task {
@@ -94,32 +104,41 @@ struct DashboardView: View {
     @ViewBuilder
     private var detail: some View {
         VStack(spacing: 0) {
-            // Import status bar
-            if let status = viewModel.importStatus {
+            // Batch import progress bar
+            if let progress = viewModel.importProgress {
                 HStack(spacing: 8) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text(status)
+                    ProgressView(value: Double(progress.current), total: Double(progress.total))
+                        .frame(width: 100)
+                    Text("\(progress.phase) \(progress.currentFile) (\(progress.current)/\(progress.total))")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
                 .background(Color(nsColor: .controlBackgroundColor))
             }
 
-            if let error = viewModel.importError {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.yellow)
-                    Text(error)
-                        .font(.subheadline)
-                        .foregroundStyle(.red)
-                    Spacer()
-                    Button("Dismiss") {
-                        viewModel.importError = nil
+            // Batch import error summary
+            if !viewModel.importErrors.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.yellow)
+                        Text("\(viewModel.importErrors.count) file(s) failed to import")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                        Spacer()
+                        Button("Dismiss") {
+                            viewModel.importErrors.removeAll()
+                        }
+                        .controlSize(.small)
                     }
-                    .controlSize(.small)
+                    ForEach(viewModel.importErrors, id: \.self) { error in
+                        Text("• \(error)")
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                    }
                 }
                 .padding(.horizontal, 12)
                 .padding(.vertical, 8)
@@ -191,6 +210,14 @@ struct DashboardView: View {
                 }
             }
         }
+        .overlay {
+            if isDropTargeted {
+                dropOverlay
+            }
+        }
+        .onDrop(of: [.fileURL], isTargeted: $isDropTargeted) { providers in
+            handleDrop(providers: providers)
+        }
         .searchable(text: $viewModel.searchQuery, prompt: "Search thoughts...")
         .frame(minWidth: 400)
     }
@@ -226,6 +253,66 @@ struct DashboardView: View {
                  : "Capture a thought with Cmd+Shift+J")
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
+        }
+    }
+
+    // MARK: - Drag & Drop
+
+    @ViewBuilder
+    private var dropOverlay: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [8, 4]))
+            .foregroundStyle(.tint)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.accentColor.opacity(0.08))
+            )
+            .overlay {
+                VStack(spacing: 8) {
+                    Image(systemName: "square.and.arrow.down")
+                        .font(.largeTitle)
+                        .foregroundStyle(.tint)
+                    Text("Drop audio or image files here")
+                        .font(.headline)
+                        .foregroundStyle(.tint)
+                }
+            }
+            .padding(8)
+    }
+
+    private nonisolated static let supportedExtensions: Set<String> = [
+        "wav", "mp3", "m4a", "aiff",
+        "jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "tiff", "tif", "bmp",
+    ]
+
+    private func handleDrop(providers: [NSItemProvider]) -> Bool {
+        Task {
+            var urls: [URL] = []
+            for provider in providers {
+                guard provider.hasItemConformingToTypeIdentifier(UTType.fileURL.identifier) else { continue }
+                if let url = await loadFileURL(from: provider) {
+                    let ext = url.pathExtension.lowercased()
+                    if Self.supportedExtensions.contains(ext) {
+                        urls.append(url)
+                    }
+                }
+            }
+            guard !urls.isEmpty else { return }
+            await viewModel.processFiles(urls: urls)
+        }
+        return true
+    }
+
+    private func loadFileURL(from provider: NSItemProvider) async -> URL? {
+        await withCheckedContinuation { continuation in
+            provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier, options: nil) { item, _ in
+                if let data = item as? Data,
+                   let url = URL(dataRepresentation: data, relativeTo: nil) {
+                    continuation.resume(returning: url)
+                } else {
+                    continuation.resume(returning: nil)
+                }
+            }
         }
     }
 }
