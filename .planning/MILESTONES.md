@@ -1,5 +1,33 @@
 # Project Milestones: Jarvis — Personal AI Life Assistant
 
+## v1.2 Daily Driver (Shipped: 2026-04-03)
+
+**Delivered:** Reliable daily-use assistant with batch multi-file upload, task status workflow (open/in-progress/done), multi-sport support (MLB/NFL/NBA/NHL), configurable IMAP email, and LaunchAgent reliability fixes.
+
+**Phases completed:** 14-18 (14 plans total)
+
+**Key accomplishments:**
+
+- Fixed LaunchAgent exit code -4 with Aqua session constraints and auto-delete for processed files
+- Multi-file batch import with drag & drop and per-file progress tracking
+- Full task status workflow (open → in-progress → done) for thoughts and work orders with UI + PDF
+- Multi-sport support — NFL, NBA, NHL added alongside MLB with ESPN API and adaptive PDF layout
+- Configurable IMAP email replacing hardcoded Gmail with backward-compatible migration
+- Shared ImageConversion utility, clean release build with zero errors/warnings
+
+**Stats:**
+
+- 53 files created/modified
+- ~4,813 lines of Swift added/modified
+- 5 phases, 14 plans
+- 4 days (2026-03-30 → 2026-04-03)
+
+**Git range:** `feat(14-01)` → `feat(18-03)`
+
+**What's next:** TBD — next milestone planning
+
+---
+
 ## v1.1 Always On (Shipped: 2026-04-03)
 
 **Delivered:** Always-running background assistant with LaunchAgent auto-start, passive folder watching, sports UX overhaul, AI-powered insights, CloudKit sync across Macs, and integration polish.

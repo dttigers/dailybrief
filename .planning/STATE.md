@@ -5,65 +5,41 @@
 See: .planning/PROJECT.md (updated 2026-04-03)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v1.2 Daily Driver complete — ready for next milestone
+**Current focus:** v1.2 Daily Driver shipped — planning next milestone
 
 ## Current Position
 
 Phase: 18 of 18 (Polish & Integration) — COMPLETE
-Plan: 03 complete (final)
-Status: v1.2 Daily Driver milestone complete — all 18 phases shipped
-Last activity: 2026-04-03 - Plan 18-03 complete (final build verification, milestone closure)
+Plan: All complete
+Status: v1.2 Daily Driver milestone archived — ready for next milestone
+Last activity: 2026-04-03 — v1.2 milestone complete and archived
 
 Progress: ██████████ 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 47 (includes plan 18-03)
+- Total plans completed: 47
 - Total execution time: ~7 days
 - Average duration: ~5 min per plan
 
-**By Phase:**
+**By Milestone:**
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 01-foundation | 3 | 10 min | 3.3 min |
-| 02-text-capture | 2 | 10 min | 5.0 min |
-| 03-ai-triage | 2 | 13 min | 6.5 min |
-| 04-dashboard | 2 | 26 min | 13.0 min |
-| 05-voice-image-capture | 3 | 45 min | 15.0 min |
-| 06-evolved-daily-brief | 2 | 13 min | 6.5 min |
-| 07-google-calendar | 3 | 28 min | 9.3 min |
-| 08-launch-agent | 3 | 14 min | 4.7 min |
-| 09-folder-watching | 2 | 11 min | 5.5 min |
-| 10-sports-ui-daily-brief | 2 | 10 min | 5.0 min |
-| 11-smart-suggestions | 1 | 4 min | 4.0 min |
-| 12-cloud-sync | 4 | 16 min | 4.0 min |
-| 13-polish-integration | 4 | 16 min | 4.0 min |
-| 14-launchagent-folder-cleanup | 2 | 7 min | 3.5 min |
-| 15-multi-file-upload | 1 | 3 min | 3.0 min |
-| 16-task-status-workflow | 4 | 20 min | 5.0 min |
-| 17-multi-sport-support | 4 | 21 min | 5.3 min |
-| 18-polish-integration | 3 | 14 min | 4.7 min |
+| Milestone | Phases | Plans | Timeline |
+|-----------|--------|-------|----------|
+| v1.0 MVP | 1-7 | 17 | 3 days |
+| v1.1 Always On | 8-13 | 16 | 4 days |
+| v1.2 Daily Driver | 14-18 | 14 | 4 days |
 
 ## Accumulated Context
 
 ### Decisions
 
-- Plan 17-01: NHL ESPN IDs differ significantly from plan — verified against live API
-- Plan 17-01: NFL NFC conferenceId is 7 (not 9); NHL Eastern=7, Western=8; NBA Eastern=5, Western=6
-- Plan 17-01: Utah NHL team is now "Utah Mammoth" (id 129764)
-- Plan 17-02: ESPN standings division matching uses team presence rather than divisionId for reliability
-- Plan 17-02: NHL standings show PTS alongside streak; upcoming game search parallelizes today+tomorrow
-- Plan 17-03: NHL default team ID is 5 (Red Wings) in NHLTeamData, not 6 as plan suggested
-- Plan 17-04: Adaptive PDF layout — full mode for 1 sport, compact for 2+, very compact for 3-4
-- Plan 18-01: Dual CodingKey pattern for backward-compatible config rename (gmail -> email)
-- Plan 18-01: EmailConfig.emailAddress uses "email_address" CodingKey to avoid collision with old "email" field
-
 All decisions logged in PROJECT.md Key Decisions table.
 Full decision history available in milestone archives:
 - .planning/milestones/v1.0-ROADMAP.md
 - .planning/milestones/v1.1-ROADMAP.md
+- .planning/milestones/v1.2-ROADMAP.md
 
 ### Pending Todos
 
@@ -82,5 +58,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-03
-Stopped at: v1.2 Daily Driver milestone complete — all phases shipped
+Stopped at: v1.2 Daily Driver milestone archived
 Resume file: None
