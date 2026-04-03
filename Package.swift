@@ -17,7 +17,10 @@ let package = Package(
             dependencies: [
                 .product(name: "GRDB", package: "GRDB.swift"),
             ],
-            path: "Sources/JarvisCore"
+            path: "Sources/JarvisCore",
+            linkerSettings: [
+                .linkedFramework("CloudKit"),
+            ]
         ),
         .executableTarget(
             name: "DailyBrief",

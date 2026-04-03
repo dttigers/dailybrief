@@ -10,6 +10,7 @@ public struct AppConfig: Codable, Sendable {
     public var googleCalendar: GoogleCalendarConfig
     public var folderWatching: FolderWatchingConfig
     public var insights: InsightsConfig
+    public var cloudSync: CloudSyncConfig
 
     public init(
         gmail: GmailConfig,
@@ -20,7 +21,8 @@ public struct AppConfig: Codable, Sendable {
         printing: PrintingConfig,
         googleCalendar: GoogleCalendarConfig = .init(),
         folderWatching: FolderWatchingConfig = .init(),
-        insights: InsightsConfig = .init()
+        insights: InsightsConfig = .init(),
+        cloudSync: CloudSyncConfig = .init()
     ) {
         self.gmail = gmail
         self.reminders = reminders
@@ -31,6 +33,7 @@ public struct AppConfig: Codable, Sendable {
         self.googleCalendar = googleCalendar
         self.folderWatching = folderWatching
         self.insights = insights
+        self.cloudSync = cloudSync
     }
 
     // Custom Decodable to make googleCalendar, folderWatching, and insights optional for backward compatibility
@@ -45,6 +48,7 @@ public struct AppConfig: Codable, Sendable {
         googleCalendar = try container.decodeIfPresent(GoogleCalendarConfig.self, forKey: .googleCalendar) ?? .init()
         folderWatching = try container.decodeIfPresent(FolderWatchingConfig.self, forKey: .folderWatching) ?? .init()
         insights = try container.decodeIfPresent(InsightsConfig.self, forKey: .insights) ?? .init()
+        cloudSync = try container.decodeIfPresent(CloudSyncConfig.self, forKey: .cloudSync) ?? .init()
     }
 
     public struct GmailConfig: Codable, Sendable {
@@ -197,6 +201,19 @@ public struct AppConfig: Codable, Sendable {
         ) {
             self.enabled = enabled
             self.lookbackDays = lookbackDays
+        }
+    }
+
+    public struct CloudSyncConfig: Codable, Sendable {
+        public var enabled: Bool
+        public var autoSyncIntervalMinutes: Int
+
+        public init(
+            enabled: Bool = false,
+            autoSyncIntervalMinutes: Int = 15
+        ) {
+            self.enabled = enabled
+            self.autoSyncIntervalMinutes = autoSyncIntervalMinutes
         }
     }
 }
