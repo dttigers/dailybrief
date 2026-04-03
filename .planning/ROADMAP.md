@@ -8,6 +8,7 @@ Transform the existing DailyBrief CLI and menu bar monitor into a full personal 
 
 - ✅ **v1.0 MVP** — Phases 1-7 (shipped 2026-04-02)
 - ✅ **v1.1 Always On** — Phases 8-13 (shipped 2026-04-03)
+- 🚧 **v1.2 Daily Driver** — Phases 14-18 (in progress)
 
 ## Completed Milestones
 
@@ -98,6 +99,61 @@ Plans:
 
 </details>
 
+### 🚧 v1.2 Daily Driver (In Progress)
+
+**Milestone Goal:** Make Jarvis reliable and practical for daily use — batch workflows, task tracking, multi-sport coverage, and stability.
+
+#### Phase 14: LaunchAgent Fix & Folder Cleanup
+
+**Goal**: Debug and fix LaunchAgent exit code -4 for reliable auto-start. Add auto-delete of watched folder files after successful processing.
+**Depends on**: Previous milestone complete
+**Research**: Unlikely (internal debugging + existing patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 14-01: TBD (run /gsd:plan-phase 14 to break down)
+
+#### Phase 15: Multi-File Upload
+
+**Goal**: Batch import multiple photos and audio files from the dashboard toolbar via file picker or drag & drop. Process all selected files and create thoughts for each.
+**Depends on**: Phase 14
+**Research**: Unlikely (SwiftUI file picker / drag-drop patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 15-01: TBD (run /gsd:plan-phase 15 to break down)
+
+#### Phase 16: Task Status Workflow
+
+**Goal**: Add status tracking to tasks and work orders. Support open → in progress → done workflow with UI controls to change status.
+**Depends on**: Phase 15
+**Research**: Unlikely (internal CRUD/state patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 16-01: TBD (run /gsd:plan-phase 16 to break down)
+
+#### Phase 17: Multi-Sport Support
+
+**Goal**: Extend sports settings beyond MLB to include NFL, NBA, and NHL. Add team data models for each league with team name pickers in settings. Update PDF brief sports section to show all configured sports.
+**Depends on**: Phase 16
+**Research**: Likely (need NFL/NBA/NHL team data models and API patterns)
+**Research topics**: Team data models for NFL, NBA, NHL; API endpoints for scores/standings per league
+**Plans**: TBD
+
+Plans:
+- [ ] 17-01: TBD (run /gsd:plan-phase 17 to break down)
+
+#### Phase 18: Polish & Integration
+
+**Goal**: Tie everything together — edge cases, refinement, cross-feature integration testing, UX polish.
+**Depends on**: Phase 17
+**Research**: Unlikely (internal integration)
+**Plans**: TBD
+
+Plans:
+- [ ] 18-01: TBD (run /gsd:plan-phase 18 to break down)
+
 ## Domain Expertise
 
 None
@@ -119,3 +175,8 @@ None
 | 11. Smart Suggestions | v1.1 | 1/1 | Complete | 2026-04-03 |
 | 12. Cloud Sync | v1.1 | 4/4 | Complete | 2026-04-03 |
 | 13. Polish & Integration | v1.1 | 4/4 | Complete | 2026-04-03 |
+| 14. LaunchAgent Fix & Folder Cleanup | v1.2 | 0/? | Not started | - |
+| 15. Multi-File Upload | v1.2 | 0/? | Not started | - |
+| 16. Task Status Workflow | v1.2 | 0/? | Not started | - |
+| 17. Multi-Sport Support | v1.2 | 0/? | Not started | - |
+| 18. Polish & Integration | v1.2 | 0/? | Not started | - |

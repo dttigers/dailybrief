@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-04-03)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Planning next milestone
+**Current focus:** v1.2 Daily Driver — reliability, batch workflows, task tracking, multi-sport
 
 ## Current Position
 
-Phase: 13 of 13 — All phases complete
-Plan: N/A
-Status: v1.1 Always On shipped, ready to plan next milestone
-Last activity: 2026-04-03 — v1.1 milestone archived
+Phase: 14 of 18 (LaunchAgent Fix & Folder Cleanup)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-04-03 - Milestone v1.2 created
 
-Progress: ██████████ 100% (v1.0 + v1.1)
+Progress: ░░░░░░░░░░ 0%
 
 ## Performance Metrics
 
@@ -62,9 +62,10 @@ None.
 
 - v1.0 MVP shipped: 7 phases (1-7), 17 plans
 - v1.1 Always On shipped: 6 phases (8-13), 16 plans
+- Milestone v1.2 created: Daily Driver, 5 phases (Phase 14-18)
 
 ## Session Continuity
 
 Last session: 2026-04-03
-Stopped at: v1.1 milestone archived, ready for next milestone planning
+Stopped at: Milestone v1.2 initialization
 Resume file: None
