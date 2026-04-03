@@ -44,7 +44,7 @@ struct SettingsView: View {
             bottomBar
                 .padding(12)
         }
-        .frame(width: 700, height: 500)
+        .frame(width: 850, height: 500)
     }
 
     // MARK: - Tabs
