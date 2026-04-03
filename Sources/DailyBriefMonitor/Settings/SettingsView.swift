@@ -69,21 +69,100 @@ struct SettingsView: View {
 
     private var sportsTab: some View {
         Form {
-            Picker("Team", selection: $viewModel.sportsSelectedTeamId) {
-                ForEach(MLBTeamData.divisionNames, id: \.self) { division in
-                    Section(division) {
-                        ForEach(MLBTeamData.teams(inDivision:
-                            MLBTeamData.allTeams.first { $0.divisionName == division }!.divisionId
-                        ), id: \.id) { team in
-                            Text(team.name).tag(team.id)
+            // MLB Section
+            Section {
+                Toggle("Enabled", isOn: $viewModel.mlbEnabled)
+                if viewModel.mlbEnabled {
+                    Picker("Team", selection: $viewModel.mlbSelectedTeamId) {
+                        ForEach(MLBTeamData.divisionNames, id: \.self) { division in
+                            Section(division) {
+                                ForEach(MLBTeamData.teams(inDivision:
+                                    MLBTeamData.allTeams.first { $0.divisionName == division }!.divisionId
+                                ), id: \.id) { team in
+                                    Text(team.name).tag(team.id)
+                                }
+                            }
                         }
                     }
+                    LabeledContent("Division") {
+                        Text("\(viewModel.mlbDivisionName) | \(viewModel.mlbLeagueName)")
+                            .foregroundStyle(.secondary)
+                    }
                 }
+            } header: {
+                Text("MLB")
             }
 
-            LabeledContent("Division") {
-                Text("\(viewModel.sportsDivisionName) | \(viewModel.sportsLeagueName)")
-                    .foregroundStyle(.secondary)
+            // NFL Section
+            Section {
+                Toggle("Enabled", isOn: $viewModel.nflEnabled)
+                if viewModel.nflEnabled {
+                    Picker("Team", selection: $viewModel.nflSelectedTeamId) {
+                        ForEach(NFLTeamData.divisionNames, id: \.self) { division in
+                            Section(division) {
+                                ForEach(NFLTeamData.teams(inDivision:
+                                    NFLTeamData.allTeams.first { $0.divisionName == division }!.divisionId
+                                ), id: \.id) { team in
+                                    Text(team.name).tag(team.id)
+                                }
+                            }
+                        }
+                    }
+                    LabeledContent("Division") {
+                        Text("\(viewModel.nflDivisionName) | \(viewModel.nflConferenceName)")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("NFL")
+            }
+
+            // NBA Section
+            Section {
+                Toggle("Enabled", isOn: $viewModel.nbaEnabled)
+                if viewModel.nbaEnabled {
+                    Picker("Team", selection: $viewModel.nbaSelectedTeamId) {
+                        ForEach(NBATeamData.divisionNames, id: \.self) { division in
+                            Section(division) {
+                                ForEach(NBATeamData.teams(inDivision:
+                                    NBATeamData.allTeams.first { $0.divisionName == division }!.divisionId
+                                ), id: \.id) { team in
+                                    Text(team.name).tag(team.id)
+                                }
+                            }
+                        }
+                    }
+                    LabeledContent("Division") {
+                        Text("\(viewModel.nbaDivisionName) | \(viewModel.nbaConferenceName)")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("NBA")
+            }
+
+            // NHL Section
+            Section {
+                Toggle("Enabled", isOn: $viewModel.nhlEnabled)
+                if viewModel.nhlEnabled {
+                    Picker("Team", selection: $viewModel.nhlSelectedTeamId) {
+                        ForEach(NHLTeamData.divisionNames, id: \.self) { division in
+                            Section(division) {
+                                ForEach(NHLTeamData.teams(inDivision:
+                                    NHLTeamData.allTeams.first { $0.divisionName == division }!.divisionId
+                                ), id: \.id) { team in
+                                    Text(team.name).tag(team.id)
+                                }
+                            }
+                        }
+                    }
+                    LabeledContent("Division") {
+                        Text("\(viewModel.nhlDivisionName) | \(viewModel.nhlConferenceName)")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("NHL")
             }
         }
         .padding()
