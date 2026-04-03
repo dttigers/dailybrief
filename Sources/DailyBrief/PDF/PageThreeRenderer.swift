@@ -87,19 +87,53 @@ enum PageThreeRenderer {
             )
             y += S.bodySize + 6
         } else {
-            for thought in data.taskThoughts.prefix(8) {
-                // Checkbox
+            // Sort tasks: inProgress first, then open, then done
+            let sortedTasks = data.taskThoughts.sorted { a, b in
+                let order: (TaskStatus?) -> Int = { status in
+                    switch status {
+                    case .inProgress: return 0
+                    case .open, nil: return 1
+                    case .done: return 2
+                    }
+                }
+                let oa = order(a.taskStatus)
+                let ob = order(b.taskStatus)
+                if oa != ob { return oa < ob }
+                return a.createdAt > b.createdAt
+            }
+
+            for thought in sortedTasks.prefix(8) {
                 let cbY = PDFGenerator.cgY(y + S.checkboxSize + 1)
+                let status = thought.taskStatus
+
+                // Draw status-aware checkbox
                 context.setStrokeColor(S.darkGray)
                 context.setLineWidth(0.5)
-                context.stroke(CGRect(x: leftX, y: cbY, width: S.checkboxSize, height: S.checkboxSize))
+                switch status {
+                case .done:
+                    // Filled checkbox
+                    context.setFillColor(S.darkGray)
+                    context.fill(CGRect(x: leftX, y: cbY, width: S.checkboxSize, height: S.checkboxSize))
+                case .inProgress:
+                    // Stroked checkbox with centered dot
+                    context.stroke(CGRect(x: leftX, y: cbY, width: S.checkboxSize, height: S.checkboxSize))
+                    let dotSize: CGFloat = 3
+                    let dotX = leftX + (S.checkboxSize - dotSize) / 2
+                    let dotY = cbY + (S.checkboxSize - dotSize) / 2
+                    context.setFillColor(S.darkGray)
+                    context.fillEllipse(in: CGRect(x: dotX, y: dotY, width: dotSize, height: dotSize))
+                case .open, nil:
+                    // Empty checkbox (current behavior)
+                    context.stroke(CGRect(x: leftX, y: cbY, width: S.checkboxSize, height: S.checkboxSize))
+                }
 
-                // Task content
+                // Task content — done tasks in lighter gray
+                let textColor = status == .done ? S.medGray : S.black
                 let taskText = String(thought.content.prefix(45))
                 PDFGenerator.drawText(
                     taskText,
                     at: CGPoint(x: leftX + cbIndent, y: cbY + 1),
-                    font: S.bodyFont(), color: S.black, context: context
+                    font: S.bodyFont(), color: textColor, context: context
                 )
                 y += S.tableRowHeight
             }
