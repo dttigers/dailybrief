@@ -131,7 +131,10 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 16-01: TBD (run /gsd:plan-phase 16 to break down)
+- [ ] 16-01: Thought TaskStatus model + DB migration + ThoughtStore + CloudKit sync
+- [ ] 16-02: WorkOrder 3-state CompletionStore + CLI commands
+- [ ] 16-03: Dashboard UI status controls + filtering
+- [ ] 16-04: PDF status rendering for tasks and work orders
 
 #### Phase 17: Multi-Sport Support
 
