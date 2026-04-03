@@ -207,9 +207,6 @@ final class DashboardViewModel {
 
     private static let audioExtensions: Set<String> = ["wav", "mp3", "m4a", "aiff"]
     private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "tiff", "tif", "bmp"]
-    /// Formats that ImageDescriptionService handles natively (no conversion needed).
-    private static let nativeImageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp"]
-
     private enum FileKind { case audio, image }
 
     private static func classify(_ url: URL) -> FileKind? {
@@ -293,16 +290,15 @@ final class DashboardViewModel {
 
                 case .image:
                     let description: String
-                    let ext = url.pathExtension.lowercased()
 
                     if let descService = imageDescriptionService {
                         importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Analyzing")
 
-                        if Self.nativeImageExtensions.contains(ext) {
-                            description = try await descService.describe(imageURL: url)
-                        } else {
-                            let jpegData = try Self.convertToJPEG(url: url)
+                        if ImageConversion.needsConversion(url) {
+                            let jpegData = try ImageConversion.convertToJPEG(from: url)
                             description = try await descService.describe(imageData: jpegData, mediaType: .jpeg)
+                        } else {
+                            description = try await descService.describe(imageURL: url)
                         }
                     } else {
                         description = "Image: \(filename)"
@@ -333,30 +329,6 @@ final class DashboardViewModel {
         isImporting = false
         importProgress = nil
         await refresh()
-    }
-
-    // MARK: - Image Conversion
-
-    /// Converts a non-native image format (HEIC, TIFF, BMP, etc.) to JPEG data.
-    private static func convertToJPEG(url: URL) throws -> Data {
-        guard let image = NSImage(contentsOf: url),
-              let tiffData = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiffData),
-              let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.85]) else {
-            throw ImageConversionError.conversionFailed(url.lastPathComponent)
-        }
-        return jpegData
-    }
-
-    enum ImageConversionError: Error, LocalizedError {
-        case conversionFailed(String)
-
-        var errorDescription: String? {
-            switch self {
-            case .conversionFailed(let filename):
-                return "Failed to convert \(filename) to JPEG"
-            }
-        }
     }
 
     // MARK: - Private

@@ -39,9 +39,6 @@ public actor FolderWatcherService {
 
     private static let audioExtensions: Set<String> = ["wav", "mp3", "m4a", "aiff"]
     private static let imageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "tiff", "tif", "bmp"]
-    /// Formats that ImageDescriptionService handles natively (no conversion needed).
-    private static let nativeImageExtensions: Set<String> = ["jpg", "jpeg", "png", "gif", "webp"]
-
     private static var manifestURL: URL {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let jarvisDir = appSupport.appendingPathComponent("Jarvis")
@@ -253,14 +250,14 @@ public actor FolderWatcherService {
             return
         }
 
-        let ext = url.pathExtension.lowercased()
         let description: String
-        if Self.nativeImageExtensions.contains(ext) {
-            description = try await imageDescriptionService.describe(imageURL: url)
-        } else {
-            let jpegData = try Self.convertToJPEG(url: url)
+        if ImageConversion.needsConversion(url) {
+            let jpegData = try ImageConversion.convertToJPEG(from: url)
+            let ext = url.pathExtension.lowercased()
             NSLog("FolderWatcherService: Converted %@ from %@ to JPEG (%d bytes)", filename, ext, jpegData.count)
             description = try await imageDescriptionService.describe(imageData: jpegData, mediaType: .jpeg)
+        } else {
+            description = try await imageDescriptionService.describe(imageURL: url)
         }
         let thought = try await captureService.capture(description, source: .image)
 
@@ -271,30 +268,6 @@ public actor FolderWatcherService {
             } catch {
                 NSLog("FolderWatcherService: Triage failed for %@: %@", filename, error.localizedDescription)
                 // Non-fatal — thought is still captured
-            }
-        }
-    }
-
-    // MARK: - Image Conversion
-
-    /// Converts a non-native image format (HEIC, TIFF, BMP, etc.) to JPEG data.
-    private static func convertToJPEG(url: URL) throws -> Data {
-        guard let image = NSImage(contentsOf: url),
-              let tiffData = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiffData),
-              let jpegData = bitmap.representation(using: .jpeg, properties: [.compressionFactor: 0.85]) else {
-            throw ImageConversionError.conversionFailed(url.lastPathComponent)
-        }
-        return jpegData
-    }
-
-    enum ImageConversionError: Error, LocalizedError {
-        case conversionFailed(String)
-
-        var errorDescription: String? {
-            switch self {
-            case .conversionFailed(let filename):
-                return "Failed to convert \(filename) to JPEG"
             }
         }
     }
