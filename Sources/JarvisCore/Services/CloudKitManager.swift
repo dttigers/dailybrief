@@ -39,6 +39,27 @@ public actor CloudKitManager {
 
     // MARK: Initialization
 
+    /// Check whether CloudKit entitlements are available before creating a CKContainer.
+    /// CKContainer(identifier:) triggers SIGILL when the binary lacks entitlements
+    /// (e.g., when built with `swift build` instead of Xcode code-signing).
+    public static var isAvailable: Bool {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/codesign")
+        task.arguments = ["-d", "--entitlements", ":-", Bundle.main.executablePath ?? ""]
+        let pipe = Pipe()
+        task.standardOutput = pipe
+        task.standardError = FileHandle.nullDevice
+        do {
+            try task.run()
+            task.waitUntilExit()
+            let data = pipe.fileHandleForReading.readDataToEndOfFile()
+            let output = String(data: data, encoding: .utf8) ?? ""
+            return output.contains("com.apple.developer.icloud-container-identifiers")
+        } catch {
+            return false
+        }
+    }
+
     public init() {
         let container = CKContainer(identifier: CloudKitManager.containerID)
         self.container = container

@@ -124,7 +124,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
             // Start cloud sync if enabled
             NSLog("DailyBriefMonitor: checking cloud sync config...")
-            if let config = try? ConfigLoader.load(), config.cloudSync.enabled {
+            if let config = try? ConfigLoader.load(), config.cloudSync.enabled, CloudKitManager.isAvailable {
                 let cloudKitManager = CloudKitManager()
                 let syncService = SyncService(cloudKit: cloudKitManager, store: thoughtStore)
                 self.syncService = syncService
