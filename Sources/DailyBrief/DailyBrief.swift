@@ -104,9 +104,10 @@ extension DailyBrief {
             async let affirmationResult = tryFetch("Affirmation") { try await aiProvider.generateAffirmation(recentThoughts: Array(thoughtSummaries)) }
             async let calendarResult = tryFetch("Calendar") { try await calendarService?.fetchTodayEvents() ?? [] }
 
-            // Filter out completed work orders
-            let completed = CompletionStore.load()
-            let activeWorkOrders = await (workOrdersResult ?? []).filter { !completed.contains($0.caseNumber) }
+            // Filter out completed (done) work orders
+            let activeWorkOrders = await (workOrdersResult ?? []).filter {
+                CompletionStore.status(for: $0.caseNumber) != .done
+            }
 
             let briefData = await DailyBriefData(
                 date: Date(),
@@ -306,15 +307,22 @@ extension DailyBrief {
 
 extension DailyBrief {
     struct Complete: ParsableCommand {
-        static let configuration = CommandConfiguration(abstract: "Mark a work order as complete so it won't reprint.")
+        static let configuration = CommandConfiguration(abstract: "Mark a work order as complete (or set a specific status).")
 
-        @Argument(help: "Case number(s) to mark complete (e.g. CS0353598)")
+        @Argument(help: "Case number(s) to update (e.g. CS0353598)")
         var caseNumbers: [String]
 
+        @Option(help: "Set status: open, inProgress, or done (default: done)")
+        var status: String = "done"
+
         func run() {
+            guard let parsed = CompletionStore.WorkOrderStatus(rawValue: status) else {
+                print("Invalid status '\(status)'. Use: open, inProgress, or done")
+                return
+            }
             for cn in caseNumbers {
-                CompletionStore.markComplete(cn)
-                print("Marked \(cn) as complete")
+                CompletionStore.setStatus(cn, parsed)
+                print("Work order \(cn) → \(parsed.rawValue)")
             }
         }
     }
@@ -324,7 +332,7 @@ extension DailyBrief {
 
 extension DailyBrief {
     struct Uncomplete: ParsableCommand {
-        static let configuration = CommandConfiguration(abstract: "Unmark a work order so it appears again.")
+        static let configuration = CommandConfiguration(abstract: "Unmark a work order so it appears again (sets status to open).")
 
         @Argument(help: "Case number(s) to unmark (e.g. CS0353598)")
         var caseNumbers: [String]
@@ -332,7 +340,7 @@ extension DailyBrief {
         func run() {
             for cn in caseNumbers {
                 CompletionStore.markIncomplete(cn)
-                print("Unmarked \(cn) — it will appear again")
+                print("Work order \(cn) → open")
             }
         }
     }
