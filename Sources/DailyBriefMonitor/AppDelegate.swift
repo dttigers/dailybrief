@@ -57,17 +57,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             let panel = CapturePanel()
             panel.contentView = NSHostingView(
                 rootView: CaptureView(
-                    onCapture: { text in
-                        return try await service.captureText(text)
+                    onCapture: { [weak self] text in
+                        let thought = try await service.captureText(text)
+                        // Trigger sync after capture (non-blocking)
+                        if let syncService = self?.syncService {
+                            Task { try? await syncService.sync() }
+                        }
+                        return thought
                     },
                     onTriage: triageService.map { triage in
-                        return { thoughtId, content in
+                        return { [weak self] thoughtId, content in
                             do {
                                 let result = try await triage.triage(content)
                                 if var thought = try await thoughtStore.fetch(id: thoughtId) {
                                     thought.category = result.category
                                     thought.confidence = result.confidence
                                     try await thoughtStore.update(thought)
+                                    // Trigger sync after triage (non-blocking)
+                                    if let syncService = self?.syncService {
+                                        Task { try? await syncService.sync() }
+                                    }
                                 }
                                 return result
                             } catch {
