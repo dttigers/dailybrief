@@ -144,6 +144,71 @@ enum PageThreeRenderer {
                 y += S.bodySize + 4
             }
         }
+
+        // AI INSIGHTS SECTION (only if non-empty)
+        if !data.insights.isEmpty {
+            // Divider before insights
+            y += 4
+            context.setStrokeColor(S.lightGray)
+            context.setLineWidth(0.5)
+            context.move(to: CGPoint(x: leftX, y: PDFGenerator.cgY(y)))
+            context.addLine(to: CGPoint(x: rightEdge, y: PDFGenerator.cgY(y)))
+            context.strokePath()
+            y += 6
+
+            PDFGenerator.drawText(
+                "AI Insights",
+                at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.headerSize)),
+                font: S.headerFont(), color: S.black, context: context
+            )
+            y += S.headerSize + 4
+
+            let pageBottom = S.contentHeight - S.margin
+            let boldFont = CTFontCreateWithName("Helvetica-Bold" as CFString, S.bodySize, nil)
+
+            for insight in data.insights.prefix(5) {
+                // Check if we have enough space for at least the title line + message line
+                let neededSpace = S.bodySize + S.bodySize + 8
+                if y + neededSpace > pageBottom { break }
+
+                // Type label prefix
+                let typeLabel: String
+                switch insight.type {
+                case .pattern: typeLabel = "Pattern:"
+                case .connection: typeLabel = "Connection:"
+                case .actionPrompt: typeLabel = "Action:"
+                case .trend: typeLabel = "Trend:"
+                }
+
+                // Draw type label in bold
+                PDFGenerator.drawText(
+                    typeLabel,
+                    at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.bodySize)),
+                    font: boldFont, color: S.darkGray, context: context
+                )
+
+                // Draw title after type label (offset by label width)
+                let labelWidth: CGFloat = 52
+                let titleText = String(insight.title.prefix(30))
+                PDFGenerator.drawText(
+                    titleText,
+                    at: CGPoint(x: leftX + labelWidth, y: PDFGenerator.cgY(y + S.bodySize)),
+                    font: S.bodyFont(), color: S.black, context: context
+                )
+                y += S.bodySize + 2
+
+                // Draw message indented, truncated to fit
+                if y + S.bodySize <= pageBottom {
+                    let messageText = String(insight.message.prefix(60))
+                    PDFGenerator.drawText(
+                        messageText,
+                        at: CGPoint(x: leftX + 8, y: PDFGenerator.cgY(y + S.bodySize)),
+                        font: S.bodyFont(), color: S.darkGray, context: context
+                    )
+                    y += S.bodySize + 4
+                }
+            }
+        }
     }
 
     /// Draw a thought item with bullet, truncated content, and source indicator.
