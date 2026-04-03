@@ -79,38 +79,106 @@ public struct AppConfig: Codable, Sendable {
     }
 
     public struct SportsConfig: Codable, Sendable {
-        public var teamId: Int
-        public var divisionId: Int
-        public var leagueId: Int
-        public var teamName: String
-        public var divisionName: String
+        public var mlb: SportLeagueConfig
+        public var nfl: SportLeagueConfig
+        public var nba: SportLeagueConfig
+        public var nhl: SportLeagueConfig
 
-        public init(
-            teamId: Int = 116,
-            divisionId: Int = 202,
-            leagueId: Int = 103,
-            teamName: String = "Detroit Tigers",
-            divisionName: String = "AL Central"
-        ) {
-            self.teamId = teamId
-            self.divisionId = divisionId
-            self.leagueId = leagueId
-            self.teamName = teamName
-            self.divisionName = divisionName
+        /// Generic per-league configuration.
+        public struct SportLeagueConfig: Codable, Sendable {
+            public var enabled: Bool
+            public var teamId: Int
+            public var divisionId: Int
+            public var conferenceId: Int
+            public var teamName: String
+            public var divisionName: String
+
+            public init(
+                enabled: Bool = false,
+                teamId: Int = 0,
+                divisionId: Int = 0,
+                conferenceId: Int = 0,
+                teamName: String = "",
+                divisionName: String = ""
+            ) {
+                self.enabled = enabled
+                self.teamId = teamId
+                self.divisionId = divisionId
+                self.conferenceId = conferenceId
+                self.teamName = teamName
+                self.divisionName = divisionName
+            }
         }
 
-        // Custom Decodable for backward compatibility with configs missing teamName/divisionName
+        public init(
+            mlb: SportLeagueConfig = .init(enabled: true, teamId: 116, divisionId: 202, conferenceId: 103, teamName: "Detroit Tigers", divisionName: "AL Central"),
+            nfl: SportLeagueConfig = .init(enabled: false, teamId: 8, divisionId: 10, conferenceId: 7, teamName: "Detroit Lions", divisionName: "NFC North"),
+            nba: SportLeagueConfig = .init(enabled: false, teamId: 8, divisionId: 2, conferenceId: 5, teamName: "Detroit Pistons", divisionName: "Central"),
+            nhl: SportLeagueConfig = .init(enabled: false, teamId: 5, divisionId: 32, conferenceId: 7, teamName: "Detroit Red Wings", divisionName: "Atlantic")
+        ) {
+            self.mlb = mlb
+            self.nfl = nfl
+            self.nba = nba
+            self.nhl = nhl
+        }
+
+        /// List of enabled sport keys.
+        public var enabledSports: [String] {
+            var result: [String] = []
+            if mlb.enabled { result.append("mlb") }
+            if nfl.enabled { result.append("nfl") }
+            if nba.enabled { result.append("nba") }
+            if nhl.enabled { result.append("nhl") }
+            return result
+        }
+
+        // Custom Decodable for backward compatibility with old flat config format
         public init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            teamId = try container.decode(Int.self, forKey: .teamId)
-            divisionId = try container.decode(Int.self, forKey: .divisionId)
-            leagueId = try container.decode(Int.self, forKey: .leagueId)
-            teamName = try container.decodeIfPresent(String.self, forKey: .teamName)
-                ?? MLBTeamData.team(forId: try container.decode(Int.self, forKey: .teamId))?.name
+
+            // Try new multi-sport format first
+            if let mlbConfig = try container.decodeIfPresent(SportLeagueConfig.self, forKey: .mlb) {
+                mlb = mlbConfig
+                nfl = try container.decodeIfPresent(SportLeagueConfig.self, forKey: .nfl)
+                    ?? .init(enabled: false, teamId: 8, divisionId: 10, conferenceId: 7, teamName: "Detroit Lions", divisionName: "NFC North")
+                nba = try container.decodeIfPresent(SportLeagueConfig.self, forKey: .nba)
+                    ?? .init(enabled: false, teamId: 8, divisionId: 2, conferenceId: 5, teamName: "Detroit Pistons", divisionName: "Central")
+                nhl = try container.decodeIfPresent(SportLeagueConfig.self, forKey: .nhl)
+                    ?? .init(enabled: false, teamId: 5, divisionId: 32, conferenceId: 7, teamName: "Detroit Red Wings", divisionName: "Atlantic")
+                return
+            }
+
+            // Fall back to old flat format: teamId, divisionId, leagueId at top level
+            let teamId = try container.decode(Int.self, forKey: .teamId)
+            let divisionId = try container.decode(Int.self, forKey: .divisionId)
+            let leagueId = try container.decode(Int.self, forKey: .leagueId)
+            let teamName = try container.decodeIfPresent(String.self, forKey: .teamName)
+                ?? MLBTeamData.team(forId: teamId)?.name
                 ?? "Detroit Tigers"
-            divisionName = try container.decodeIfPresent(String.self, forKey: .divisionName)
-                ?? MLBTeamData.team(forId: try container.decode(Int.self, forKey: .teamId))?.divisionName
+            let divisionName = try container.decodeIfPresent(String.self, forKey: .divisionName)
+                ?? MLBTeamData.team(forId: teamId)?.divisionName
                 ?? "AL Central"
+
+            mlb = SportLeagueConfig(enabled: true, teamId: teamId, divisionId: divisionId, conferenceId: leagueId, teamName: teamName, divisionName: divisionName)
+            nfl = .init(enabled: false, teamId: 8, divisionId: 10, conferenceId: 7, teamName: "Detroit Lions", divisionName: "NFC North")
+            nba = .init(enabled: false, teamId: 8, divisionId: 2, conferenceId: 5, teamName: "Detroit Pistons", divisionName: "Central")
+            nhl = .init(enabled: false, teamId: 5, divisionId: 32, conferenceId: 7, teamName: "Detroit Red Wings", divisionName: "Atlantic")
+        }
+
+        // Encode only the new nested format
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(mlb, forKey: .mlb)
+            try container.encode(nfl, forKey: .nfl)
+            try container.encode(nba, forKey: .nba)
+            try container.encode(nhl, forKey: .nhl)
+        }
+
+        // CodingKeys to support both old flat format and new nested format
+        private enum CodingKeys: String, CodingKey {
+            case mlb, nfl, nba, nhl
+            // Old flat format keys
+            case teamId, divisionId, leagueId, teamName, divisionName
         }
     }
 

@@ -2,9 +2,9 @@ import Foundation
 import JarvisCore
 
 actor SportsService {
-    private let config: AppConfig.SportsConfig
+    private let config: AppConfig.SportsConfig.SportLeagueConfig
 
-    init(config: AppConfig.SportsConfig) {
+    init(config: AppConfig.SportsConfig.SportLeagueConfig) {
         self.config = config
     }
 
@@ -87,7 +87,7 @@ actor SportsService {
 
     func fetchStandings() async throws -> [StandingsEntry] {
         let year = Calendar.current.component(.year, from: Date())
-        let urlStr = "https://statsapi.mlb.com/api/v1/standings?leagueId=\(config.leagueId)&season=\(year)&standingsTypes=regularSeason"
+        let urlStr = "https://statsapi.mlb.com/api/v1/standings?leagueId=\(config.conferenceId)&season=\(year)&standingsTypes=regularSeason"
         guard let url = URL(string: urlStr) else { return [] }
 
         let (data, _) = try await URLSession.shared.data(from: url)

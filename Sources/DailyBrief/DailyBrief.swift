@@ -46,7 +46,7 @@ extension DailyBrief {
             }
 
             // Initialize services
-            let sportsService = SportsService(config: config.sports)
+            let sportsService = SportsService(config: config.sports.mlb)
             let remindersService = RemindersService(config: config.reminders)
             let gmailService = GmailService(config: config.gmail)
             let aiProvider = ClaudeAIProvider(config: config.ai)
@@ -120,8 +120,8 @@ extension DailyBrief {
                 standings: standingsResult ?? [],
                 affirmation: affirmationResult ?? "You've got this. Your brain works differently, and that's your superpower.",
                 calendarEvents: calendarResult ?? [],
-                teamName: config.sports.teamName,
-                divisionName: config.sports.divisionName,
+                teamName: config.sports.mlb.teamName,
+                divisionName: config.sports.mlb.divisionName,
                 workOrderStatuses: woStatuses,
                 unprocessedThoughts: unprocessedThoughts,
                 taskThoughts: taskThoughts,

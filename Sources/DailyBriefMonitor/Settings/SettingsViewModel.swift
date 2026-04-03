@@ -83,7 +83,7 @@ final class SettingsViewModel {
         gmailSearchSubjectPattern = config.gmail.searchSubjectPattern
         gmailLookbackDays = config.gmail.lookbackDays
 
-        sportsSelectedTeamId = config.sports.teamId
+        sportsSelectedTeamId = config.sports.mlb.teamId
 
         claudeApiKey = config.ai.claudeApiKey
         claudeModel = config.ai.claudeModel
@@ -131,11 +131,14 @@ final class SettingsViewModel {
             sports: {
                 let team = MLBTeamData.team(forId: sportsSelectedTeamId)
                 return .init(
-                    teamId: sportsSelectedTeamId,
-                    divisionId: team?.divisionId ?? 202,
-                    leagueId: team?.leagueId ?? 103,
-                    teamName: team?.name ?? "Detroit Tigers",
-                    divisionName: team?.divisionName ?? "AL Central"
+                    mlb: .init(
+                        enabled: true,
+                        teamId: sportsSelectedTeamId,
+                        divisionId: team?.divisionId ?? 202,
+                        conferenceId: team?.leagueId ?? 103,
+                        teamName: team?.name ?? "Detroit Tigers",
+                        divisionName: team?.divisionName ?? "AL Central"
+                    )
                 )
             }(),
             ai: .init(
