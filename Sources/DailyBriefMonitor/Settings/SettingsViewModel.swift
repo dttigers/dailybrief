@@ -47,6 +47,10 @@ final class SettingsViewModel {
     var audioFolderPath: String = "~/Jarvis/Audio"
     var imageFolderPath: String = "~/Jarvis/Images"
 
+    // MARK: - Insights
+    var insightsEnabled: Bool = true
+    var insightsLookbackDays: Int = 7
+
     // MARK: - Cloud Sync
     var cloudSyncEnabled: Bool = false
     var cloudSyncIntervalMinutes: Int = 15
@@ -95,6 +99,9 @@ final class SettingsViewModel {
         folderWatchingEnabled = config.folderWatching.enabled
         audioFolderPath = config.folderWatching.audioFolderPath
         imageFolderPath = config.folderWatching.imageFolderPath
+
+        insightsEnabled = config.insights.enabled
+        insightsLookbackDays = config.insights.lookbackDays
 
         cloudSyncEnabled = config.cloudSync.enabled
         cloudSyncIntervalMinutes = config.cloudSync.autoSyncIntervalMinutes
@@ -152,6 +159,10 @@ final class SettingsViewModel {
                 enabled: folderWatchingEnabled,
                 audioFolderPath: audioFolderPath,
                 imageFolderPath: imageFolderPath
+            ),
+            insights: .init(
+                enabled: insightsEnabled,
+                lookbackDays: insightsLookbackDays
             ),
             cloudSync: .init(
                 enabled: cloudSyncEnabled,

@@ -34,6 +34,9 @@ struct SettingsView: View {
 
                 cloudSyncTab
                     .tabItem { Label("Cloud Sync", systemImage: "icloud") }
+
+                insightsTab
+                    .tabItem { Label("Insights", systemImage: "lightbulb") }
             }
 
             Divider()
@@ -247,6 +250,21 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+        }
+        .padding()
+    }
+
+    private var insightsTab: some View {
+        Form {
+            Toggle("Enable Smart Suggestions", isOn: $viewModel.insightsEnabled)
+
+            if viewModel.insightsEnabled {
+                Stepper("Lookback Days: \(viewModel.insightsLookbackDays)", value: $viewModel.insightsLookbackDays, in: 1...30)
+            }
+
+            Text("AI analyzes your recent thoughts to surface patterns, connections, and action suggestions")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .padding()
     }
