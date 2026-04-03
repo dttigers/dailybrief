@@ -1,5 +1,33 @@
 import Foundation
 
+public struct SportData: Sendable {
+    public var sport: String  // "mlb", "nfl", "nba", "nhl"
+    public var sportDisplayName: String  // "MLB", "NFL", "NBA", "NHL"
+    public var teamName: String
+    public var divisionName: String
+    public var gameScore: GameScore?
+    public var upcomingGame: UpcomingGame?
+    public var standings: [StandingsEntry]
+
+    public init(
+        sport: String,
+        sportDisplayName: String,
+        teamName: String,
+        divisionName: String,
+        gameScore: GameScore? = nil,
+        upcomingGame: UpcomingGame? = nil,
+        standings: [StandingsEntry] = []
+    ) {
+        self.sport = sport
+        self.sportDisplayName = sportDisplayName
+        self.teamName = teamName
+        self.divisionName = divisionName
+        self.gameScore = gameScore
+        self.upcomingGame = upcomingGame
+        self.standings = standings
+    }
+}
+
 public struct DailyBriefData: Sendable {
     public var date: Date
     public var workOrders: [WorkOrder]
@@ -13,6 +41,9 @@ public struct DailyBriefData: Sendable {
     // Sports config names for dynamic PDF rendering
     public var teamName: String
     public var divisionName: String
+
+    // Additional sports beyond MLB
+    public var additionalSports: [SportData]
 
     // Work order status map (caseNumber -> status)
     public var workOrderStatuses: [String: String]
@@ -36,6 +67,7 @@ public struct DailyBriefData: Sendable {
         calendarEvents: [CalendarEvent] = [],
         teamName: String = "Detroit Tigers",
         divisionName: String = "AL Central",
+        additionalSports: [SportData] = [],
         workOrderStatuses: [String: String] = [:],
         unprocessedThoughts: [Thought] = [],
         taskThoughts: [Thought] = [],
@@ -52,6 +84,7 @@ public struct DailyBriefData: Sendable {
         self.calendarEvents = calendarEvents
         self.teamName = teamName
         self.divisionName = divisionName
+        self.additionalSports = additionalSports
         self.workOrderStatuses = workOrderStatuses
         self.unprocessedThoughts = unprocessedThoughts
         self.taskThoughts = taskThoughts

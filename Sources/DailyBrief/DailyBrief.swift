@@ -104,6 +104,44 @@ extension DailyBrief {
             async let affirmationResult = tryFetch("Affirmation") { try await aiProvider.generateAffirmation(recentThoughts: Array(thoughtSummaries)) }
             async let calendarResult = tryFetch("Calendar") { try await calendarService?.fetchTodayEvents() ?? [] }
 
+            // Fetch additional sports data concurrently
+            let enabledOtherSports: [(key: String, displayName: String, sportPath: String, sportConfig: AppConfig.SportsConfig.SportLeagueConfig)] = [
+                ("nfl", "NFL", "football/nfl", config.sports.nfl),
+                ("nba", "NBA", "basketball/nba", config.sports.nba),
+                ("nhl", "NHL", "hockey/nhl", config.sports.nhl),
+            ].filter { $0.sportConfig.enabled }
+
+            var additionalSports: [SportData] = []
+            if !enabledOtherSports.isEmpty {
+                additionalSports = await withTaskGroup(of: SportData.self) { group in
+                    for (key, displayName, sportPath, sportConfig) in enabledOtherSports {
+                        group.addTask {
+                            let service = ESPNSportsService(sport: sportPath, config: sportConfig)
+                            let game = await self.tryFetch("\(displayName) score") { try await service.fetchYesterdayGame() }
+                            let upcoming = await self.tryFetch("\(displayName) upcoming") { try await service.fetchUpcomingGame() }
+                            let standings = await self.tryFetch("\(displayName) standings") { try await service.fetchStandings() }
+                            return SportData(
+                                sport: key,
+                                sportDisplayName: displayName,
+                                teamName: sportConfig.teamName,
+                                divisionName: sportConfig.divisionName,
+                                gameScore: game ?? nil,
+                                upcomingGame: upcoming ?? nil,
+                                standings: standings ?? []
+                            )
+                        }
+                    }
+                    var results: [SportData] = []
+                    for await result in group {
+                        results.append(result)
+                    }
+                    return results
+                }
+                // Sort to maintain consistent order: nfl, nba, nhl
+                let sportOrder = ["nfl", "nba", "nhl"]
+                additionalSports.sort { sportOrder.firstIndex(of: $0.sport) ?? 0 < sportOrder.firstIndex(of: $1.sport) ?? 0 }
+            }
+
             // Pass all work orders with their statuses for status-aware rendering
             let allWorkOrders = await (workOrdersResult ?? [])
             var woStatuses: [String: String] = [:]
@@ -122,6 +160,7 @@ extension DailyBrief {
                 calendarEvents: calendarResult ?? [],
                 teamName: config.sports.mlb.teamName,
                 divisionName: config.sports.mlb.divisionName,
+                additionalSports: additionalSports,
                 workOrderStatuses: woStatuses,
                 unprocessedThoughts: unprocessedThoughts,
                 taskThoughts: taskThoughts,
