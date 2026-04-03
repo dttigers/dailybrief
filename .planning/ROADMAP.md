@@ -8,12 +8,13 @@ Transform the existing DailyBrief CLI and menu bar monitor into a full personal 
 
 - ✅ **v1.0 MVP** — Phases 1-7 (shipped 2026-04-02)
 - ✅ **v1.1 Always On** — Phases 8-13 (shipped 2026-04-03)
-- 🚧 **v1.2 Daily Driver** — Phases 14-18 (in progress)
+- ✅ **v1.2 Daily Driver** — Phases 14-18 (shipped 2026-04-03)
 
 ## Completed Milestones
 
 - ✅ [v1.0 MVP](milestones/v1.0-ROADMAP.md) (Phases 1-7) — SHIPPED 2026-04-02
 - ✅ [v1.1 Always On](milestones/v1.1-ROADMAP.md) (Phases 8-13) — SHIPPED 2026-04-03
+- ✅ [v1.2 Daily Driver](milestones/v1.2-ROADMAP.md) (Phases 14-18) — SHIPPED 2026-04-03
 
 <details>
 <summary>✅ v1.0 MVP (Phases 1-7) — SHIPPED 2026-04-02</summary>
@@ -99,7 +100,8 @@ Plans:
 
 </details>
 
-### 🚧 v1.2 Daily Driver (In Progress)
+<details>
+<summary>✅ v1.2 Daily Driver (Phases 14-18) — SHIPPED 2026-04-03</summary>
 
 **Milestone Goal:** Make Jarvis reliable and practical for daily use — batch workflows, task tracking, multi-sport coverage, and stability.
 
@@ -113,15 +115,14 @@ Plans:
 - [x] 14-01: Fix LaunchAgent plist + install script + diagnostic logging
 - [x] 14-02: Auto-delete watched folder files after processing
 
-#### Phase 15: Multi-File Upload
+#### Phase 15: Multi-File Upload ✅
 
 **Goal**: Batch import multiple photos and audio files from the dashboard toolbar via file picker or drag & drop. Process all selected files and create thoughts for each.
 **Depends on**: Phase 14
-**Research**: Unlikely (SwiftUI file picker / drag-drop patterns)
-**Plans**: TBD
+**Completed**: 2026-04-03
 
 Plans:
-- [ ] 15-01: TBD (run /gsd:plan-phase 15 to break down)
+- [x] 15-01: Multi-file upload from dashboard toolbar
 
 #### Phase 16: Task Status Workflow ✅
 
@@ -147,15 +148,18 @@ Plans:
 - [x] 17-03: Multi-sport Settings UI with per-league toggles/pickers
 - [x] 17-04: Multi-sport PDF rendering on Page 2
 
-#### Phase 18: Polish & Integration
+#### Phase 18: Polish & Integration ✅
 
 **Goal**: Tie everything together — edge cases, refinement, cross-feature integration testing, UX polish.
 **Depends on**: Phase 17
-**Research**: Unlikely (internal integration)
-**Plans**: TBD
+**Completed**: 2026-04-03
 
 Plans:
-- [ ] 18-01: TBD (run /gsd:plan-phase 18 to break down)
+- [x] 18-01: Email/IMAP config rename + backward-compatible migration
+- [x] 18-02: Shared ImageConversion utility + cross-feature audit
+- [x] 18-03: Final build verification + v1.2 milestone closure
+
+</details>
 
 ## Domain Expertise
 
@@ -182,4 +186,4 @@ None
 | 15. Multi-File Upload | v1.2 | 1/1 | Complete | 2026-04-03 |
 | 16. Task Status Workflow | v1.2 | 4/4 | Complete | 2026-04-03 |
 | 17. Multi-Sport Support | v1.2 | 4/4 | Complete | 2026-04-03 |
-| 18. Polish & Integration | v1.2 | 0/? | Not started | - |
+| 18. Polish & Integration | v1.2 | 3/3 | Complete | 2026-04-03 |

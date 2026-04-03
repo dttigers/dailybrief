@@ -35,6 +35,11 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ AI-powered insights — InsightService with pattern/connection/action/trend analysis — v1.1
 - ✓ CloudKit sync — bidirectional push/pull across multiple Macs — v1.1
 - ✓ Image format support — HEIC/TIFF/BMP conversion via CoreGraphics — v1.1
+- ✓ Configurable IMAP email — host/port/TLS fields replacing hardcoded Gmail — v1.2
+- ✓ Task status workflow — open/in-progress/done for thoughts and work orders — v1.2
+- ✓ Multi-sport support — MLB, NFL, NBA, NHL with team pickers and ESPN API — v1.2
+- ✓ Multi-file upload — batch photo/audio import from dashboard toolbar — v1.2
+- ✓ LaunchAgent reliability — fixed exit code -4, auto-delete processed files — v1.2
 
 ### Active
 
@@ -54,11 +59,12 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
-Shipped v1.1 Always On with ~10,500 LOC Swift across 58+ files in 7 days total (v1.0 + v1.1).
-Tech stack: Swift 6.2, SwiftUI, SPM, GRDB/SQLite with FTS5, CloudKit, Claude API (SwiftAnthropic), Google Calendar REST API with OAuth2.
-9 major services: CaptureService, TriageService, VoiceCaptureService, ImageDescriptionService, GoogleCalendarService, BriefScheduler, FolderWatcherService, InsightService, SyncService.
+Shipped v1.2 Daily Driver with ~8,900 LOC Swift across 58 files in 7 days total (v1.0 + v1.1 + v1.2).
+Tech stack: Swift 6.2, SwiftUI, SPM, GRDB/SQLite with FTS5, CloudKit, Claude API (SwiftAnthropic), Google Calendar REST API with OAuth2, ESPN REST API.
+10 major services: CaptureService, TriageService, VoiceCaptureService, ImageDescriptionService, GoogleCalendarService, BriefScheduler, FolderWatcherService, InsightService, SyncService, ESPNSportsService.
 3 UI surfaces: floating capture panel (Cmd+Shift+J), central dashboard with settings (850px wide), daily PDF brief (3 pages).
 Always-on via LaunchAgent with auto-start at login. CloudKit sync across multiple Macs with last-write-wins conflict resolution.
+v1.2 additions: configurable IMAP email, task status workflow, multi-sport (MLB/NFL/NBA/NHL), multi-file upload, shared image conversion utility.
 
 ## Constraints
 
@@ -90,4 +96,4 @@ Always-on via LaunchAgent with auto-start at login. CloudKit sync across multipl
 | CoreGraphics for image conversion | No external dependencies, handles HEIC/TIFF/BMP natively | ✓ Good |
 
 ---
-*Last updated: 2026-04-03 after v1.1 milestone*
+*Last updated: 2026-04-03 after v1.2 milestone*
