@@ -31,6 +31,10 @@ final class DashboardViewModel {
     var calendarEvents: [CalendarEvent] = []
     var isLoadingCalendar = false
 
+    // Insights state
+    var insights: [Insight] = []
+    var isLoadingInsights = false
+
     // Import state
     var isImporting = false
     var importStatus: String?
@@ -43,6 +47,7 @@ final class DashboardViewModel {
     private let transcriptionService: TranscriptionService?
     private let imageDescriptionService: ImageDescriptionService?
     private let triageService: TriageService?
+    private let insightService: InsightService?
     private var searchTask: Task<Void, Never>?
 
     var canImportAudio: Bool { transcriptionService != nil && captureService != nil }
@@ -55,13 +60,15 @@ final class DashboardViewModel {
         captureService: CaptureService? = nil,
         transcriptionService: TranscriptionService? = nil,
         imageDescriptionService: ImageDescriptionService? = nil,
-        triageService: TriageService? = nil
+        triageService: TriageService? = nil,
+        insightService: InsightService? = nil
     ) {
         self.store = store
         self.captureService = captureService
         self.transcriptionService = transcriptionService
         self.imageDescriptionService = imageDescriptionService
         self.triageService = triageService
+        self.insightService = insightService
     }
 
     // MARK: - Public Methods
@@ -72,6 +79,7 @@ final class DashboardViewModel {
         await loadThoughts()
         await loadCounts()
         await loadCalendarEvents()
+        await loadInsights()
         isLoading = false
     }
 
@@ -124,6 +132,33 @@ final class DashboardViewModel {
         } catch {
             NSLog("Dashboard: calendar fetch failed — \(error.localizedDescription)")
             calendarEvents = []
+        }
+    }
+
+    /// Load AI-generated insights from recent thoughts.
+    func loadInsights() async {
+        guard let insightService else { return }
+
+        do {
+            let config = try ConfigLoader.load()
+            guard config.insights.enabled else {
+                insights = []
+                return
+            }
+
+            isLoadingInsights = true
+            defer { isLoadingInsights = false }
+
+            let lookbackDays = config.insights.lookbackDays
+            let recentThoughts = try await store.fetchAll(limit: lookbackDays * 20)
+            let cutoff = Calendar.current.date(byAdding: .day, value: -lookbackDays, to: Date()) ?? Date()
+            let filtered = recentThoughts.filter { $0.createdAt >= cutoff }
+
+            insights = try await insightService.generateInsights(thoughts: filtered, lookbackDays: lookbackDays)
+        } catch {
+            NSLog("Dashboard: insight generation failed — \(error.localizedDescription)")
+            insights = []
+            isLoadingInsights = false
         }
     }
 

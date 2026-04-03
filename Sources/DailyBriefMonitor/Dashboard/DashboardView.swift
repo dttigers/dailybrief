@@ -126,6 +126,39 @@ struct DashboardView: View {
                 .background(Color(nsColor: .controlBackgroundColor))
             }
 
+            // Insights section
+            if !viewModel.insights.isEmpty {
+                Section("Insights") {
+                    ForEach(Array(viewModel.insights.enumerated()), id: \.offset) { _, insight in
+                        HStack(alignment: .top, spacing: 8) {
+                            Image(systemName: insightIcon(for: insight.type))
+                                .foregroundStyle(.purple)
+                                .frame(width: 20)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(insight.title)
+                                    .font(.subheadline)
+                                    .fontWeight(.semibold)
+                                Text(insight.message)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+            } else if viewModel.isLoadingInsights {
+                HStack(spacing: 8) {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Generating insights...")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+            }
+
             // Today's Schedule (only when events exist)
             if !viewModel.calendarEvents.isEmpty {
                 Section("Today's Schedule") {
@@ -160,6 +193,17 @@ struct DashboardView: View {
         }
         .searchable(text: $viewModel.searchQuery, prompt: "Search thoughts...")
         .frame(minWidth: 400)
+    }
+
+    // MARK: - Helpers
+
+    private func insightIcon(for type: InsightType) -> String {
+        switch type {
+        case .pattern: return "lightbulb"
+        case .connection: return "link"
+        case .actionPrompt: return "arrow.right.circle"
+        case .trend: return "chart.line.uptrend"
+        }
     }
 
     // MARK: - Empty State

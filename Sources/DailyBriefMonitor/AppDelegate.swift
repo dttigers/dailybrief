@@ -21,6 +21,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     // Folder watching
     private var folderWatcher: FolderWatcherService?
 
+    // Insights
+    private var insightService: InsightService?
+
     // Cloud sync
     private var syncService: SyncService?
     private var syncTimer: Timer?
@@ -35,6 +38,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
             imageDescService = ImageDescriptionService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
             self.imageDescriptionService = imageDescService
+
+            let insightService = InsightService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+            self.insightService = insightService
         }
 
         // Create transcription service (uses Apple SFSpeechRecognizer)
@@ -176,7 +182,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             captureService: captureService,
             transcriptionService: transcriptionService,
             imageDescriptionService: imageDescriptionService,
-            triageService: triageService
+            triageService: triageService,
+            insightService: insightService
         )
         let dashboardView = DashboardView(viewModel: viewModel)
         let hostingView = NSHostingView(rootView: dashboardView)
