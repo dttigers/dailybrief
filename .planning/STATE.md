@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 Phase: 13 of 13 (Polish & Integration) — COMPLETE
 Plan: 04 of 4 complete
 Status: v1.1 Always On milestone complete
-Last activity: 2026-04-03 — Final build verification, project state updated
+Last activity: 2026-04-03 — Human UAT approved, settings widened, SUMMARY.md created
 
 Progress: ██████████ 100% (v1.1)
 
@@ -63,5 +63,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-03
-Stopped at: v1.1 Always On milestone complete — all 13 phases done
+Stopped at: v1.1 Always On milestone complete — all 13 phases done, all plan summaries written
 Resume file: None
