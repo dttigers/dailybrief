@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 ## Current Position
 
 Phase: 17 of 18 (Multi-Sport Support)
-Plan: 03 of 4 complete
-Status: In progress
-Last activity: 2026-04-03 - Plan 17-03 complete (multi-sport settings UI with per-league toggles and team pickers)
+Plan: 04 of 4 complete
+Status: Phase 17 complete — all 4 plans done
+Last activity: 2026-04-03 - Plan 17-04 complete (multi-sport PDF rendering)
 
-Progress: ███████░░░ 70%
+Progress: ████████░░ 100% (phase 17)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 43 (includes plan 17-03)
+- Total plans completed: 44 (includes plan 17-04)
 - Total execution time: ~7 days
 - Average duration: ~5 min per plan
 
@@ -43,7 +43,7 @@ Progress: ███████░░░ 70%
 | 14-launchagent-folder-cleanup | 2 | 7 min | 3.5 min |
 | 15-multi-file-upload | 1 | 3 min | 3.0 min |
 | 16-task-status-workflow | 4 | 20 min | 5.0 min |
-| 17-multi-sport-support | 3 | 16 min | 5.3 min |
+| 17-multi-sport-support | 4 | 21 min | 5.3 min |
 
 ## Accumulated Context
 
@@ -55,6 +55,7 @@ Progress: ███████░░░ 70%
 - Plan 17-02: ESPN standings division matching uses team presence rather than divisionId for reliability
 - Plan 17-02: NHL standings show PTS alongside streak; upcoming game search parallelizes today+tomorrow
 - Plan 17-03: NHL default team ID is 5 (Red Wings) in NHLTeamData, not 6 as plan suggested
+- Plan 17-04: Adaptive PDF layout — full mode for 1 sport, compact for 2+, very compact for 3-4
 
 All decisions logged in PROJECT.md Key Decisions table.
 Full decision history available in milestone archives:
@@ -78,5 +79,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-03
-Stopped at: Plan 17-03 complete, ready for Plan 17-04
+Stopped at: Phase 17 complete — ready for Phase 18 or milestone completion
 Resume file: None
