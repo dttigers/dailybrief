@@ -135,16 +135,17 @@ Plans:
 - [x] 16-03: Dashboard UI status controls + filtering
 - [x] 16-04: PDF status rendering for tasks and work orders
 
-#### Phase 17: Multi-Sport Support
+#### Phase 17: Multi-Sport Support ✅
 
 **Goal**: Extend sports settings beyond MLB to include NFL, NBA, and NHL. Add team data models for each league with team name pickers in settings. Update PDF brief sports section to show all configured sports.
 **Depends on**: Phase 16
-**Research**: Likely (need NFL/NBA/NHL team data models and API patterns)
-**Research topics**: Team data models for NFL, NBA, NHL; API endpoints for scores/standings per league
-**Plans**: TBD
+**Completed**: 2026-04-03
 
 Plans:
-- [ ] 17-01: TBD (run /gsd:plan-phase 17 to break down)
+- [x] 17-01: Team data models (NFL, NBA, NHL) + multi-sport AppConfig
+- [x] 17-02: ESPNSportsService + DailyBriefData wiring
+- [x] 17-03: Multi-sport Settings UI with per-league toggles/pickers
+- [x] 17-04: Multi-sport PDF rendering on Page 2
 
 #### Phase 18: Polish & Integration
 
@@ -180,5 +181,5 @@ None
 | 14. LaunchAgent Fix & Folder Cleanup | v1.2 | 2/2 | Complete | 2026-04-03 |
 | 15. Multi-File Upload | v1.2 | 1/1 | Complete | 2026-04-03 |
 | 16. Task Status Workflow | v1.2 | 4/4 | Complete | 2026-04-03 |
-| 17. Multi-Sport Support | v1.2 | 0/? | Not started | - |
+| 17. Multi-Sport Support | v1.2 | 4/4 | Complete | 2026-04-03 |
 | 18. Polish & Integration | v1.2 | 0/? | Not started | - |
