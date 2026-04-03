@@ -70,23 +70,8 @@ actor ESPNSportsService {
             }
             guard matchesConference else { continue }
 
-            // Filter to just teams in our division (by divisionName match)
-            let divisionEntries = entries.filter { entry in
-                // ESPN entries may not have division info; if divisionName is empty, show full conference
-                config.divisionName.isEmpty || entry.team.displayName == config.teamName ||
-                entries.contains { $0.team.id == String(config.teamId) }
-            }
-
-            // Use full conference entries but find our team's division peers
-            // by looking at relative position around our team
-            let teamEntries: [ESPNStandingsEntry]
-            if !config.divisionName.isEmpty {
-                // Try to find division grouping — ESPN sometimes groups by division within conference
-                // For simplicity, just show the full conference standings
-                teamEntries = entries
-            } else {
-                teamEntries = entries
-            }
+            // Use full conference entries for standings display
+            let teamEntries = entries
 
             return teamEntries.enumerated().map { (index, entry) in
                 let wins = entry.statValue("wins")
