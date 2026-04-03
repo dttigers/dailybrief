@@ -19,7 +19,7 @@ echo ""
 # 0. Clean up old CLI LaunchAgent (scheduling now built into monitor)
 if [ -f "$OLD_CLI_PLIST" ]; then
     echo "Removing old CLI LaunchAgent..."
-    launchctl unload "$OLD_CLI_PLIST" 2>/dev/null || true
+    launchctl bootout "gui/$(id -u)/$OLD_CLI_LABEL" 2>/dev/null || true
     rm -f "$OLD_CLI_PLIST"
     echo "  Removed old CLI LaunchAgent (scheduling now built into monitor)"
 fi
@@ -60,7 +60,14 @@ cat > "$MONITOR_PLIST" <<PLIST
     <key>RunAtLoad</key>
     <true/>
     <key>KeepAlive</key>
-    <true/>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+    <key>ProcessType</key>
+    <string>Interactive</string>
     <key>StandardOutPath</key>
     <string>$LOG_DIR/monitor-stdout.log</string>
     <key>StandardErrorPath</key>
@@ -76,11 +83,16 @@ PLIST
 
 # 7. Load/reload the monitor LaunchAgent
 echo "Loading LaunchAgent..."
-# Unload existing if present (ignore errors if not loaded)
-launchctl unload "$MONITOR_PLIST" 2>/dev/null || true
-launchctl load "$MONITOR_PLIST"
+GUI_DOMAIN="gui/$(id -u)"
+# Bootout existing if present (ignore errors if not loaded)
+launchctl bootout "$GUI_DOMAIN/$MONITOR_LABEL" 2>/dev/null || true
+launchctl bootstrap "$GUI_DOMAIN" "$MONITOR_PLIST"
 
-# 8. Print summary
+# 8. Verify LaunchAgent loaded
+echo "Verifying LaunchAgent..."
+launchctl print "$GUI_DOMAIN/$MONITOR_LABEL" 2>/dev/null && echo "  LaunchAgent verified." || echo "  Warning: Could not verify LaunchAgent status."
+
+# 9. Print summary
 echo ""
 echo "=== Installation Complete ==="
 echo ""
