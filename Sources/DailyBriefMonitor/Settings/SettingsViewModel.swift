@@ -5,11 +5,14 @@ import JarvisCore
 @Observable
 final class SettingsViewModel {
 
-    // MARK: - Gmail
-    var gmailEmail: String = ""
-    var gmailAppPassword: String = ""
-    var gmailSearchSubjectPattern: String = "Case CS"
-    var gmailLookbackDays: Int = 3
+    // MARK: - Email / IMAP
+    var emailAddress: String = ""
+    var emailAppPassword: String = ""
+    var imapHost: String = "imap.gmail.com"
+    var imapPort: Int = 993
+    var useTLS: Bool = true
+    var emailSearchSubjectPattern: String = "Case CS"
+    var emailLookbackDays: Int = 3
 
     // MARK: - Sports (Multi-Sport)
 
@@ -121,10 +124,13 @@ final class SettingsViewModel {
     func loadConfig() {
         guard let config = try? ConfigLoader.load() else { return }
 
-        gmailEmail = config.gmail.email
-        gmailAppPassword = config.gmail.appPassword
-        gmailSearchSubjectPattern = config.gmail.searchSubjectPattern
-        gmailLookbackDays = config.gmail.lookbackDays
+        emailAddress = config.email.emailAddress
+        emailAppPassword = config.email.appPassword
+        imapHost = config.email.imapHost
+        imapPort = config.email.imapPort
+        useTLS = config.email.useTLS
+        emailSearchSubjectPattern = config.email.searchSubjectPattern
+        emailLookbackDays = config.email.lookbackDays
 
         mlbEnabled = config.sports.mlb.enabled
         mlbSelectedTeamId = config.sports.mlb.teamId
@@ -174,11 +180,14 @@ final class SettingsViewModel {
         showSaveSuccess = false
 
         let config = AppConfig(
-            gmail: .init(
-                email: gmailEmail,
-                appPassword: gmailAppPassword,
-                searchSubjectPattern: gmailSearchSubjectPattern,
-                lookbackDays: gmailLookbackDays
+            email: .init(
+                emailAddress: emailAddress,
+                appPassword: emailAppPassword,
+                imapHost: imapHost,
+                imapPort: imapPort,
+                useTLS: useTLS,
+                searchSubjectPattern: emailSearchSubjectPattern,
+                lookbackDays: emailLookbackDays
             ),
             reminders: .init(listName: remindersListName),
             sports: {

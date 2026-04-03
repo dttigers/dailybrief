@@ -11,8 +11,8 @@ struct SettingsView: View {
                 aiTab
                     .tabItem { Label("AI", systemImage: "brain") }
 
-                gmailTab
-                    .tabItem { Label("Gmail", systemImage: "envelope") }
+                emailTab
+                    .tabItem { Label("Email / IMAP", systemImage: "envelope") }
 
                 sportsTab
                     .tabItem { Label("Sports", systemImage: "sportscourt") }
@@ -57,12 +57,23 @@ struct SettingsView: View {
         .padding()
     }
 
-    private var gmailTab: some View {
+    private var emailTab: some View {
         Form {
-            TextField("Email", text: $viewModel.gmailEmail)
-            SecureField("App Password", text: $viewModel.gmailAppPassword)
-            TextField("Search Subject Pattern", text: $viewModel.gmailSearchSubjectPattern)
-            Stepper("Lookback Days: \(viewModel.gmailLookbackDays)", value: $viewModel.gmailLookbackDays, in: 1...30)
+            Section("Connection") {
+                TextField("IMAP Host", text: $viewModel.imapHost, prompt: Text("imap.gmail.com"))
+                TextField("IMAP Port", value: $viewModel.imapPort, format: .number)
+                Toggle("Use TLS", isOn: $viewModel.useTLS)
+            }
+
+            Section("Credentials") {
+                TextField("Email Address", text: $viewModel.emailAddress)
+                SecureField("IMAP Password", text: $viewModel.emailAppPassword)
+            }
+
+            Section("Search") {
+                TextField("Search Subject Pattern", text: $viewModel.emailSearchSubjectPattern)
+                Stepper("Lookback Days: \(viewModel.emailLookbackDays)", value: $viewModel.emailLookbackDays, in: 1...30)
+            }
         }
         .padding()
     }
