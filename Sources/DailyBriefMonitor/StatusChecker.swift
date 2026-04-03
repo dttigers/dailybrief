@@ -5,6 +5,7 @@ final class StatusChecker: @unchecked Sendable {
     var lastRunTime: String = "Never"
     var lastRunSuccess: Bool? = nil
     var isRunning: Bool = false
+    var lastExitCode: Int32? = nil
 
     private let logPath = NSString("~/Library/Logs/DailyBrief/dailybrief.log").expandingTildeInPath
     private let pdfDir = NSString("~/Documents/DailyBrief").expandingTildeInPath
@@ -46,8 +47,9 @@ final class StatusChecker: @unchecked Sendable {
                 return
             }
             if line.contains("DailyBrief starting") {
-                lastRunSuccess = nil // Started but no completion found
-                lastRunTime = extractTimestamp(from: line) + " (in progress?)"
+                // No "complete" or "ERROR" after "starting" — likely crashed
+                lastRunSuccess = false
+                lastRunTime = extractTimestamp(from: line) + " (crashed?)"
                 return
             }
         }
@@ -100,8 +102,16 @@ final class StatusChecker: @unchecked Sendable {
             try? process.run()
             process.waitUntilExit()
 
+            let exitCode = process.terminationStatus
+            let exitReason = process.terminationReason
+
+            if exitCode != 0 {
+                NSLog("DailyBrief CLI exited with code %d (reason: %d)", exitCode, exitReason.rawValue)
+            }
+
             await MainActor.run { [weak self] in
                 self?.isRunning = false
+                self?.lastExitCode = exitCode
                 self?.refresh()
             }
         }

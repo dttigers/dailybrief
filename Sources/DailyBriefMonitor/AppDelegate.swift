@@ -29,7 +29,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private var syncTimer: Timer?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSLog("DailyBriefMonitor: applicationDidFinishLaunching started")
+
         // Load config for AI credentials (optional — triage disabled without config)
+        NSLog("DailyBriefMonitor: loading config...")
         var triageService: TriageService?
         var imageDescService: ImageDescriptionService?
         if let config = try? ConfigLoader.load() {
@@ -47,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         let transcription = TranscriptionService()
         self.transcriptionService = transcription
 
+        NSLog("DailyBriefMonitor: initializing database...")
         do {
             let dbManager = try DatabaseManager()
             let thoughtStore = ThoughtStore(database: dbManager)
@@ -54,6 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             let service = CaptureService(store: thoughtStore)
             captureService = service
 
+            NSLog("DailyBriefMonitor: creating capture panel...")
             let panel = CapturePanel()
             panel.contentView = NSHostingView(
                 rootView: CaptureView(
@@ -104,6 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             capturePanel = panel
 
             // Start folder watcher if enabled
+            NSLog("DailyBriefMonitor: checking folder watcher config...")
             if let config = try? ConfigLoader.load(), config.folderWatching.enabled {
                 let watcher = FolderWatcherService(
                     transcriptionService: transcription,
@@ -117,6 +123,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             }
 
             // Start cloud sync if enabled
+            NSLog("DailyBriefMonitor: checking cloud sync config...")
             if let config = try? ConfigLoader.load(), config.cloudSync.enabled {
                 let cloudKitManager = CloudKitManager()
                 let syncService = SyncService(cloudKit: cloudKitManager, store: thoughtStore)
@@ -130,7 +137,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             }
         } catch {
             // Log error but don't crash — capture button will be non-functional
-            NSLog("Failed to initialize JarvisCore database: \(error.localizedDescription)")
+            NSLog("DailyBriefMonitor: FATAL startup error: %@", error.localizedDescription)
 
             // Create panel anyway so toggle doesn't crash, but capture will fail
             let panel = CapturePanel()
@@ -148,6 +155,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         }
 
         registerGlobalHotKey()
+        NSLog("DailyBriefMonitor: startup complete")
     }
 
     func applicationWillTerminate(_ notification: Notification) {
