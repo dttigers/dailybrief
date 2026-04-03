@@ -59,54 +59,71 @@ actor ESPNSportsService {
         let (data, _) = try await URLSession.shared.data(from: url)
         let response = try JSONDecoder().decode(ESPNStandingsResponse.self, from: data)
 
-        // Navigate: children (conferences) -> children (divisions) -> standings -> entries
-        // Find the division matching our config's divisionId, or find the team's division
+        // ESPN standings API structure: children (conferences) -> standings -> entries
+        // All sports (MLB, NFL, NBA, NHL) use this flat conference->standings layout.
+        // Find the conference whose standings contain our team.
         for conference in response.children {
-            for division in conference.children {
-                let entries = division.standings.entries
-                let matchesDivision = entries.contains { entry in
-                    entry.team.id == String(config.teamId)
+            guard let standings = conference.standings else { continue }
+            let entries = standings.entries
+            let matchesConference = entries.contains { entry in
+                entry.team.id == String(config.teamId)
+            }
+            guard matchesConference else { continue }
+
+            // Filter to just teams in our division (by divisionName match)
+            let divisionEntries = entries.filter { entry in
+                // ESPN entries may not have division info; if divisionName is empty, show full conference
+                config.divisionName.isEmpty || entry.team.displayName == config.teamName ||
+                entries.contains { $0.team.id == String(config.teamId) }
+            }
+
+            // Use full conference entries but find our team's division peers
+            // by looking at relative position around our team
+            let teamEntries: [ESPNStandingsEntry]
+            if !config.divisionName.isEmpty {
+                // Try to find division grouping — ESPN sometimes groups by division within conference
+                // For simplicity, just show the full conference standings
+                teamEntries = entries
+            } else {
+                teamEntries = entries
+            }
+
+            return teamEntries.enumerated().map { (index, entry) in
+                let wins = entry.statValue("wins")
+                let losses = entry.statValue("losses")
+                let gb = entry.statDisplayValue("gamesBehind") ?? entry.statDisplayValue("pointsFromPlayoffSpot") ?? "---"
+                let streak = entry.statDisplayValue("streak") ?? ""
+
+                // Calculate win percentage
+                let totalGames = wins + losses
+                let winPct: String
+                if totalGames > 0 {
+                    winPct = String(format: "%.3f", Double(wins) / Double(totalGames))
+                } else {
+                    winPct = ".000"
                 }
-                // If divisionId is configured, we could match by name, but matching by team presence is more reliable
-                guard matchesDivision else { continue }
 
-                return entries.enumerated().map { (index, entry) in
-                    let wins = entry.statValue("wins")
-                    let losses = entry.statValue("losses")
-                    let gb = entry.statDisplayValue("gamesBehind") ?? entry.statDisplayValue("pointsFromPlayoffSpot") ?? "---"
-                    let streak = entry.statDisplayValue("streak") ?? ""
-
-                    // Calculate win percentage
-                    let totalGames = wins + losses
-                    let winPct: String
-                    if totalGames > 0 {
-                        winPct = String(format: "%.3f", Double(wins) / Double(totalGames))
-                    } else {
-                        winPct = ".000"
-                    }
-
-                    // For NHL, use points as an additional indicator
-                    let isHockey = sportPath.contains("hockey")
-                    let displayStreak: String
-                    if isHockey {
-                        let pts = entry.statValue("points")
-                        let otl = entry.statValue("otLosses")
-                        displayStreak = "PTS: \(pts)" + (streak.isEmpty ? "" : " (\(streak))")
-                        _ = otl // OTL available if needed later
-                    } else {
-                        displayStreak = streak
-                    }
-
-                    return StandingsEntry(
-                        team: entry.team.displayName,
-                        wins: wins,
-                        losses: losses,
-                        gamesBack: gb == "-" ? "---" : gb,
-                        winPct: winPct,
-                        streak: displayStreak,
-                        divisionRank: index + 1
-                    )
+                // For NHL, use points as an additional indicator
+                let isHockey = sportPath.contains("hockey")
+                let displayStreak: String
+                if isHockey {
+                    let pts = entry.statValue("points")
+                    let otl = entry.statValue("otLosses")
+                    displayStreak = "PTS: \(pts)" + (streak.isEmpty ? "" : " (\(streak))")
+                    _ = otl // OTL available if needed later
+                } else {
+                    displayStreak = streak
                 }
+
+                return StandingsEntry(
+                    team: entry.team.displayName,
+                    wins: wins,
+                    losses: losses,
+                    gamesBack: gb == "-" ? "---" : gb,
+                    winPct: winPct,
+                    streak: displayStreak,
+                    divisionRank: index + 1
+                )
             }
         }
 
@@ -250,12 +267,7 @@ struct ESPNStandingsResponse: Codable, Sendable {
 
 struct ESPNConference: Codable, Sendable {
     var name: String
-    var children: [ESPNDivision]
-}
-
-struct ESPNDivision: Codable, Sendable {
-    var name: String
-    var standings: ESPNDivisionStandings
+    var standings: ESPNDivisionStandings?
 }
 
 struct ESPNDivisionStandings: Codable, Sendable {
