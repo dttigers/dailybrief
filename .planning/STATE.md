@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 ## Current Position
 
 Phase: 17 of 18 (Multi-Sport Support)
-Plan: 01 of 4 complete
+Plan: 03 of 4 complete
 Status: In progress
-Last activity: 2026-04-03 - Plan 17-01 complete (NFL/NBA/NHL team data models + multi-sport config)
+Last activity: 2026-04-03 - Plan 17-03 complete (multi-sport settings UI with per-league toggles and team pickers)
 
-Progress: ████░░░░░░ 45%
+Progress: ███████░░░ 70%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 41 (includes plan 17-01)
+- Total plans completed: 43 (includes plan 17-03)
 - Total execution time: ~7 days
 - Average duration: ~5 min per plan
 
@@ -43,7 +43,7 @@ Progress: ████░░░░░░ 45%
 | 14-launchagent-folder-cleanup | 2 | 7 min | 3.5 min |
 | 15-multi-file-upload | 1 | 3 min | 3.0 min |
 | 16-task-status-workflow | 4 | 20 min | 5.0 min |
-| 17-multi-sport-support | 1 | 12 min | 12.0 min |
+| 17-multi-sport-support | 3 | 16 min | 5.3 min |
 
 ## Accumulated Context
 
@@ -52,6 +52,7 @@ Progress: ████░░░░░░ 45%
 - Plan 17-01: NHL ESPN IDs differ significantly from plan — verified against live API
 - Plan 17-01: NFL NFC conferenceId is 7 (not 9); NHL Eastern=7, Western=8; NBA Eastern=5, Western=6
 - Plan 17-01: Utah NHL team is now "Utah Mammoth" (id 129764)
+- Plan 17-03: NHL default team ID is 5 (Red Wings) in NHLTeamData, not 6 as plan suggested
 
 All decisions logged in PROJECT.md Key Decisions table.
 Full decision history available in milestone archives:
@@ -75,5 +76,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-03
-Stopped at: Plan 17-01 complete, ready for Plan 17-02
+Stopped at: Plan 17-03 complete, ready for Plan 17-04
 Resume file: None
