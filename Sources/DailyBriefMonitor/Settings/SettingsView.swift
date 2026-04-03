@@ -31,6 +31,9 @@ struct SettingsView: View {
 
                 foldersTab
                     .tabItem { Label("Folders", systemImage: "folder.badge.gearshape") }
+
+                cloudSyncTab
+                    .tabItem { Label("Cloud Sync", systemImage: "icloud") }
             }
 
             Divider()
@@ -212,6 +215,35 @@ struct SettingsView: View {
                     }
                 }
                 Text("Drop images here (.jpg, .png, .gif, .webp) for AI description")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding()
+    }
+
+    private var cloudSyncTab: some View {
+        Form {
+            Toggle("Enable iCloud Sync", isOn: $viewModel.cloudSyncEnabled)
+
+            if viewModel.cloudSyncEnabled {
+                Picker("Sync every", selection: $viewModel.cloudSyncIntervalMinutes) {
+                    Text("5 minutes").tag(5)
+                    Text("10 minutes").tag(10)
+                    Text("15 minutes").tag(15)
+                    Text("30 minutes").tag(30)
+                    Text("60 minutes").tag(60)
+                }
+
+                Text("Syncs thoughts across your Macs via iCloud")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+                Text("Restart Jarvis to apply cloud sync changes")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            } else {
+                Text("Enable to sync thoughts across your Macs via iCloud")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

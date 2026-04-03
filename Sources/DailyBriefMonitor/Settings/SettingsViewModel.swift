@@ -47,6 +47,10 @@ final class SettingsViewModel {
     var audioFolderPath: String = "~/Jarvis/Audio"
     var imageFolderPath: String = "~/Jarvis/Images"
 
+    // MARK: - Cloud Sync
+    var cloudSyncEnabled: Bool = false
+    var cloudSyncIntervalMinutes: Int = 15
+
     // MARK: - Google Calendar
     var googleCalendarEnabled: Bool = false
     var googleCalendarClientId: String = ""
@@ -91,6 +95,9 @@ final class SettingsViewModel {
         folderWatchingEnabled = config.folderWatching.enabled
         audioFolderPath = config.folderWatching.audioFolderPath
         imageFolderPath = config.folderWatching.imageFolderPath
+
+        cloudSyncEnabled = config.cloudSync.enabled
+        cloudSyncIntervalMinutes = config.cloudSync.autoSyncIntervalMinutes
 
         googleCalendarEnabled = config.googleCalendar.enabled
         googleCalendarClientId = config.googleCalendar.clientId
@@ -145,6 +152,10 @@ final class SettingsViewModel {
                 enabled: folderWatchingEnabled,
                 audioFolderPath: audioFolderPath,
                 imageFolderPath: imageFolderPath
+            ),
+            cloudSync: .init(
+                enabled: cloudSyncEnabled,
+                autoSyncIntervalMinutes: cloudSyncIntervalMinutes
             )
         )
 
