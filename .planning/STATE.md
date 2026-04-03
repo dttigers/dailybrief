@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 
 ## Current Position
 
-Phase: 16 of 18 (Task Status Workflow) 🔄
-Plan: 04 complete
-Status: Plan 04 complete
-Last activity: 2026-04-03 - Plan 16-04 complete (PDF status-aware rendering for tasks and work orders)
+Phase: 16 of 18 (Task Status Workflow) ✅
+Plan: All 4 complete
+Status: Phase complete
+Last activity: 2026-04-03 - Phase 16 complete (task status workflow — model, CLI, dashboard UI, PDF)
 
 Progress: ████░░░░░░ 40%
 
@@ -70,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-03
-Stopped at: Phase 16 plan 04 complete
+Stopped at: Phase 16 complete
 Resume file: None

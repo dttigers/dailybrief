@@ -123,18 +123,17 @@ Plans:
 Plans:
 - [ ] 15-01: TBD (run /gsd:plan-phase 15 to break down)
 
-#### Phase 16: Task Status Workflow
+#### Phase 16: Task Status Workflow ✅
 
 **Goal**: Add status tracking to tasks and work orders. Support open → in progress → done workflow with UI controls to change status.
 **Depends on**: Phase 15
-**Research**: Unlikely (internal CRUD/state patterns)
-**Plans**: TBD
+**Completed**: 2026-04-03
 
 Plans:
-- [ ] 16-01: Thought TaskStatus model + DB migration + ThoughtStore + CloudKit sync
-- [ ] 16-02: WorkOrder 3-state CompletionStore + CLI commands
-- [ ] 16-03: Dashboard UI status controls + filtering
-- [ ] 16-04: PDF status rendering for tasks and work orders
+- [x] 16-01: Thought TaskStatus model + DB migration + ThoughtStore + CloudKit sync
+- [x] 16-02: WorkOrder 3-state CompletionStore + CLI commands
+- [x] 16-03: Dashboard UI status controls + filtering
+- [x] 16-04: PDF status rendering for tasks and work orders
 
 #### Phase 17: Multi-Sport Support
 
@@ -179,7 +178,7 @@ None
 | 12. Cloud Sync | v1.1 | 4/4 | Complete | 2026-04-03 |
 | 13. Polish & Integration | v1.1 | 4/4 | Complete | 2026-04-03 |
 | 14. LaunchAgent Fix & Folder Cleanup | v1.2 | 2/2 | Complete | 2026-04-03 |
-| 15. Multi-File Upload | v1.2 | 0/? | Not started | - |
-| 16. Task Status Workflow | v1.2 | 0/? | Not started | - |
+| 15. Multi-File Upload | v1.2 | 1/1 | Complete | 2026-04-03 |
+| 16. Task Status Workflow | v1.2 | 4/4 | Complete | 2026-04-03 |
 | 17. Multi-Sport Support | v1.2 | 0/? | Not started | - |
 | 18. Polish & Integration | v1.2 | 0/? | Not started | - |
