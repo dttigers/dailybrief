@@ -213,6 +213,15 @@ public actor FolderWatcherService {
                 processedFiles.insert(filename)
                 Self.saveManifest(processedFiles)
                 NSLog("FolderWatcherService: Successfully processed %@", filename)
+
+                if config.autoDeleteAfterProcessing {
+                    do {
+                        try FileManager.default.removeItem(atPath: fullPath)
+                        NSLog("FolderWatcherService: Auto-deleted processed file %@", filename)
+                    } catch {
+                        NSLog("FolderWatcherService: Failed to auto-delete %@: %@", filename, error.localizedDescription)
+                    }
+                }
             } catch {
                 NSLog("FolderWatcherService: Failed to process %@: %@", filename, error.localizedDescription)
                 // Skip file — will retry on next scan

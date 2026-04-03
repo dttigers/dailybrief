@@ -179,15 +179,18 @@ public struct AppConfig: Codable, Sendable {
         public var enabled: Bool
         public var audioFolderPath: String
         public var imageFolderPath: String
+        public var autoDeleteAfterProcessing: Bool
 
         public init(
             enabled: Bool = false,
             audioFolderPath: String = "~/Jarvis/Audio",
-            imageFolderPath: String = "~/Jarvis/Images"
+            imageFolderPath: String = "~/Jarvis/Images",
+            autoDeleteAfterProcessing: Bool = false
         ) {
             self.enabled = enabled
             self.audioFolderPath = audioFolderPath
             self.imageFolderPath = imageFolderPath
+            self.autoDeleteAfterProcessing = autoDeleteAfterProcessing
         }
     }
 
