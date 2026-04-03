@@ -105,6 +105,18 @@ public actor DatabaseManager {
                           unique: true)
         }
 
+        // v3: Task status column for task workflow
+        migrator.registerMigration("v3-task-status") { db in
+            try db.alter(table: "thoughts") { t in
+                t.add(column: "taskStatus", .text)
+            }
+
+            // Backfill existing task-category rows as "open"
+            try db.execute(
+                sql: "UPDATE thoughts SET taskStatus = 'open' WHERE category = 'task'"
+            )
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

@@ -19,6 +19,13 @@ public enum ThoughtCategory: String, Codable, Sendable, CaseIterable, DatabaseVa
     case project
 }
 
+/// Task lifecycle status for task-category thoughts.
+public enum TaskStatus: String, Codable, Sendable, DatabaseValueConvertible {
+    case open
+    case inProgress
+    case done
+}
+
 /// Sync state for CloudKit synchronization.
 public enum SyncStatus: String, Codable, Sendable, DatabaseValueConvertible {
     /// Needs upload to CloudKit (new or modified locally).
@@ -48,6 +55,7 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
         public static let createdAt = Column(CodingKeys.createdAt)
         public static let modifiedAt = Column(CodingKeys.modifiedAt)
         public static let cloudKitRecordID = Column(CodingKeys.cloudKitRecordID)
+        public static let taskStatus = Column(CodingKeys.taskStatus)
         public static let syncStatus = Column(CodingKeys.syncStatus)
         public static let lastSyncedAt = Column(CodingKeys.lastSyncedAt)
     }
@@ -81,6 +89,9 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
     /// Tracks sync state for CloudKit synchronization.
     public var syncStatus: SyncStatus
 
+    /// Task lifecycle status. Nil for non-task thoughts.
+    public var taskStatus: TaskStatus?
+
     /// When this thought was last synced to CloudKit. Nil if never synced.
     public var lastSyncedAt: Date?
 
@@ -94,6 +105,7 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
         source: CaptureSource = .text,
         createdAt: Date = Date(),
         modifiedAt: Date = Date(),
+        taskStatus: TaskStatus? = nil,
         cloudKitRecordID: String = UUID().uuidString,
         syncStatus: SyncStatus = .pending,
         lastSyncedAt: Date? = nil
@@ -105,6 +117,7 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
         self.source = source
         self.createdAt = createdAt
         self.modifiedAt = modifiedAt
+        self.taskStatus = taskStatus
         self.cloudKitRecordID = cloudKitRecordID
         self.syncStatus = syncStatus
         self.lastSyncedAt = lastSyncedAt
