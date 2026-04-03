@@ -78,6 +78,33 @@ public actor DatabaseManager {
             }
         }
 
+        // v2: Sync metadata columns for CloudKit
+        migrator.registerMigration("v2-sync-fields") { db in
+            // Add sync columns to thoughts table
+            try db.alter(table: "thoughts") { t in
+                t.add(column: "cloudKitRecordID", .text).notNull().defaults(to: "")
+                t.add(column: "syncStatus", .text).notNull().defaults(to: "pending")
+                t.add(column: "lastSyncedAt", .datetime)
+            }
+
+            // Backfill UUIDs for existing rows (empty string default isn't valid)
+            let rows = try Row.fetchAll(db, sql: "SELECT id FROM thoughts")
+            for row in rows {
+                let id: Int64 = row["id"]
+                let uuid = UUID().uuidString
+                try db.execute(
+                    sql: "UPDATE thoughts SET cloudKitRecordID = ? WHERE id = ?",
+                    arguments: [uuid, id]
+                )
+            }
+
+            // Add unique index on cloudKitRecordID for efficient lookups during sync
+            try db.create(index: "idx_thoughts_cloudKitRecordID",
+                          on: "thoughts",
+                          columns: ["cloudKitRecordID"],
+                          unique: true)
+        }
+
         try migrator.migrate(dbQueue)
     }
 }
