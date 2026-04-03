@@ -21,6 +21,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     // Folder watching
     private var folderWatcher: FolderWatcherService?
 
+    // Cloud sync
+    private var syncService: SyncService?
+    private var syncTimer: Timer?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Load config for AI credentials (optional — triage disabled without config)
         var triageService: TriageService?
@@ -96,6 +100,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                 self.folderWatcher = watcher
                 Task { await watcher.start() }
             }
+
+            // Start cloud sync if enabled
+            if let config = try? ConfigLoader.load(), config.cloudSync.enabled {
+                let cloudKitManager = CloudKitManager()
+                let syncService = SyncService(cloudKit: cloudKitManager, store: thoughtStore)
+                self.syncService = syncService
+                Task { try? await syncService.sync() }
+                let interval = TimeInterval(config.cloudSync.autoSyncIntervalMinutes * 60)
+                syncTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+                    guard let syncService = self?.syncService else { return }
+                    Task { try? await syncService.sync() }
+                }
+            }
         } catch {
             // Log error but don't crash — capture button will be non-functional
             NSLog("Failed to initialize JarvisCore database: \(error.localizedDescription)")
@@ -122,6 +139,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         globalHotKey?.unregister()
         if let watcher = folderWatcher {
             Task { await watcher.stop() }
+        }
+        syncTimer?.invalidate()
+        if let syncService {
+            Task { try? await syncService.sync() }
         }
     }
 
