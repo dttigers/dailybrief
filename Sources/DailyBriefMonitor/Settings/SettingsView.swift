@@ -185,6 +185,11 @@ struct SettingsView: View {
             Toggle("Enable Folder Watching", isOn: $viewModel.folderWatchingEnabled)
 
             if viewModel.folderWatchingEnabled {
+                Toggle("Auto-delete files after processing", isOn: $viewModel.autoDeleteAfterProcessing)
+                Text("Removes audio and image files from watched folders after they've been successfully captured as thoughts.")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+
                 Text("Restart Jarvis to apply folder watching changes")
                     .font(.caption)
                     .foregroundStyle(.orange)

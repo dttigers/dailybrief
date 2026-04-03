@@ -46,6 +46,7 @@ final class SettingsViewModel {
     var folderWatchingEnabled: Bool = false
     var audioFolderPath: String = "~/Jarvis/Audio"
     var imageFolderPath: String = "~/Jarvis/Images"
+    var autoDeleteAfterProcessing: Bool = false
 
     // MARK: - Insights
     var insightsEnabled: Bool = true
@@ -99,6 +100,7 @@ final class SettingsViewModel {
         folderWatchingEnabled = config.folderWatching.enabled
         audioFolderPath = config.folderWatching.audioFolderPath
         imageFolderPath = config.folderWatching.imageFolderPath
+        autoDeleteAfterProcessing = config.folderWatching.autoDeleteAfterProcessing
 
         insightsEnabled = config.insights.enabled
         insightsLookbackDays = config.insights.lookbackDays
@@ -158,7 +160,8 @@ final class SettingsViewModel {
             folderWatching: .init(
                 enabled: folderWatchingEnabled,
                 audioFolderPath: audioFolderPath,
-                imageFolderPath: imageFolderPath
+                imageFolderPath: imageFolderPath,
+                autoDeleteAfterProcessing: autoDeleteAfterProcessing
             ),
             insights: .init(
                 enabled: insightsEnabled,
