@@ -21,6 +21,37 @@ extension ThoughtCategory {
     }
 }
 
+// MARK: - TaskStatus UI Extension
+
+extension TaskStatus {
+    /// Human-readable display name.
+    var displayName: String {
+        switch self {
+        case .open: return "Open"
+        case .inProgress: return "In Progress"
+        case .done: return "Done"
+        }
+    }
+
+    /// Color for status indicators and pills.
+    var displayColor: Color {
+        switch self {
+        case .open: return .blue
+        case .inProgress: return .orange
+        case .done: return .green
+        }
+    }
+
+    /// SF Symbol name for the status icon.
+    var systemImage: String {
+        switch self {
+        case .open: return "circle"
+        case .inProgress: return "circle.dotted.circle"
+        case .done: return "checkmark.circle.fill"
+        }
+    }
+}
+
 // MARK: - CaptureView
 
 /// SwiftUI view for capturing a quick thought — text input with Cmd+Enter submit.

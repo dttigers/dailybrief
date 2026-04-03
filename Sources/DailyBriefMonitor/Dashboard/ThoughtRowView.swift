@@ -6,13 +6,32 @@ struct ThoughtRowView: View {
 
     let thought: Thought
 
+    /// Called when the user clicks the status icon on a task thought. Nil for non-tasks.
+    var onStatusToggle: (() -> Void)?
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Content text — 2-line truncation
-            Text(thought.content)
-                .font(.body)
-                .lineLimit(2)
-                .truncationMode(.tail)
+            // Content row — optional status icon + text
+            HStack(alignment: .top, spacing: 6) {
+                if let status = thought.taskStatus, thought.category == .task {
+                    Button {
+                        onStatusToggle?()
+                    } label: {
+                        Image(systemName: status.systemImage)
+                            .foregroundStyle(status.displayColor)
+                            .font(.body)
+                    }
+                    .buttonStyle(.plain)
+                    .help("Status: \(status.displayName) — click to cycle")
+                }
+
+                Text(thought.content)
+                    .font(.body)
+                    .lineLimit(2)
+                    .truncationMode(.tail)
+                    .strikethrough(thought.taskStatus == .done)
+                    .foregroundStyle(thought.taskStatus == .done ? .secondary : .primary)
+            }
 
             // Metadata row: category pill + confidence + timestamp
             HStack(spacing: 8) {
