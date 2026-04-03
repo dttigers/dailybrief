@@ -9,17 +9,17 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 
 ## Current Position
 
-Phase: 16 of 18 (Task Status Workflow) ✅
-Plan: All 4 complete
-Status: Phase complete
-Last activity: 2026-04-03 - Phase 16 complete (task status workflow — model, CLI, dashboard UI, PDF)
+Phase: 17 of 18 (Multi-Sport Support)
+Plan: 01 of 4 complete
+Status: In progress
+Last activity: 2026-04-03 - Plan 17-01 complete (NFL/NBA/NHL team data models + multi-sport config)
 
-Progress: ████░░░░░░ 40%
+Progress: ████░░░░░░ 45%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 40 (includes phase 16-04)
+- Total plans completed: 41 (includes plan 17-01)
 - Total execution time: ~7 days
 - Average duration: ~5 min per plan
 
@@ -43,10 +43,15 @@ Progress: ████░░░░░░ 40%
 | 14-launchagent-folder-cleanup | 2 | 7 min | 3.5 min |
 | 15-multi-file-upload | 1 | 3 min | 3.0 min |
 | 16-task-status-workflow | 4 | 20 min | 5.0 min |
+| 17-multi-sport-support | 1 | 12 min | 12.0 min |
 
 ## Accumulated Context
 
 ### Decisions
+
+- Plan 17-01: NHL ESPN IDs differ significantly from plan — verified against live API
+- Plan 17-01: NFL NFC conferenceId is 7 (not 9); NHL Eastern=7, Western=8; NBA Eastern=5, Western=6
+- Plan 17-01: Utah NHL team is now "Utah Mammoth" (id 129764)
 
 All decisions logged in PROJECT.md Key Decisions table.
 Full decision history available in milestone archives:
@@ -70,5 +75,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-03
-Stopped at: Phase 16 complete
+Stopped at: Plan 17-01 complete, ready for Plan 17-02
 Resume file: None
