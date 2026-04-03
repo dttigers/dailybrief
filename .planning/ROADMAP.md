@@ -71,16 +71,17 @@ Plans:
 Plans:
 - [ ] 11-01: TBD (run /gsd:plan-phase 11 to break down)
 
-#### Phase 12: Cloud Sync
+#### Phase 12: Cloud Sync ✅
 
 **Goal**: Research best sync approach (CloudKit vs Supabase vs other), then implement database sync across multiple Macs.
 **Depends on**: Phase 11
-**Research**: Likely (CloudKit vs Supabase evaluation, conflict resolution strategies, GRDB sync patterns)
-**Research topics**: CloudKit + GRDB integration, Supabase Swift SDK, offline-first sync, conflict resolution
-**Plans**: TBD
+**Completed**: 2026-04-03
 
 Plans:
-- [ ] 12-01: TBD (run /gsd:plan-phase 12 to break down)
+- [x] 12-01: Sync metadata fields + database migration
+- [x] 12-02: CloudKit infrastructure + record mapping
+- [x] 12-03: SyncService actor (push/pull/conflict resolution)
+- [x] 12-04: App lifecycle wiring + Settings UI
 
 #### Phase 13: Polish & Integration
 
@@ -111,5 +112,5 @@ None
 | 9. Folder Watching | v1.1 | 2/2 | Complete | 2026-04-02 |
 | 10. Sports UI + Daily Brief | v1.1 | 2/2 | Complete | 2026-04-03 |
 | 11. Smart Suggestions | v1.1 | 0/? | Not started | - |
-| 12. Cloud Sync | v1.1 | 0/? | Not started | - |
+| 12. Cloud Sync | v1.1 | 4/4 | Complete | 2026-04-03 |
 | 13. Polish & Integration | v1.1 | 0/? | Not started | - |
