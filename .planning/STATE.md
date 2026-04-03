@@ -9,17 +9,17 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 
 ## Current Position
 
-Phase: 17 of 18 (Multi-Sport Support) ✅
-Plan: All 4 complete
-Status: Phase complete
-Last activity: 2026-04-03 - Phase 17 complete (NFL/NBA/NHL team data, ESPN service, settings UI, PDF rendering)
+Phase: 18 of 18 (Polish & Integration)
+Plan: 01 complete
+Status: Plan 18-01 complete — EmailConfig replaces GmailConfig with configurable IMAP
+Last activity: 2026-04-03 - Plan 18-01 complete (IMAP config, EmailService rename, Settings UI update)
 
-Progress: ████████░░ 80%
+Progress: ████████▓░ 85%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 44 (includes plan 17-04)
+- Total plans completed: 45 (includes plan 18-01)
 - Total execution time: ~7 days
 - Average duration: ~5 min per plan
 
@@ -44,6 +44,7 @@ Progress: ████████░░ 80%
 | 15-multi-file-upload | 1 | 3 min | 3.0 min |
 | 16-task-status-workflow | 4 | 20 min | 5.0 min |
 | 17-multi-sport-support | 4 | 21 min | 5.3 min |
+| 18-polish-integration | 1 | 6 min | 6.0 min |
 
 ## Accumulated Context
 
@@ -56,6 +57,8 @@ Progress: ████████░░ 80%
 - Plan 17-02: NHL standings show PTS alongside streak; upcoming game search parallelizes today+tomorrow
 - Plan 17-03: NHL default team ID is 5 (Red Wings) in NHLTeamData, not 6 as plan suggested
 - Plan 17-04: Adaptive PDF layout — full mode for 1 sport, compact for 2+, very compact for 3-4
+- Plan 18-01: Dual CodingKey pattern for backward-compatible config rename (gmail -> email)
+- Plan 18-01: EmailConfig.emailAddress uses "email_address" CodingKey to avoid collision with old "email" field
 
 All decisions logged in PROJECT.md Key Decisions table.
 Full decision history available in milestone archives:
@@ -79,5 +82,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-03
-Stopped at: Phase 17 complete — ready for Phase 18 or milestone completion
+Stopped at: Plan 18-01 complete — ready for Plan 18-02 or next phase plan
 Resume file: None
