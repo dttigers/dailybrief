@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-04-02)
 
 ## Current Position
 
-Phase: 10 of 13 (Sports UI + Daily Brief)
-Plan: Phase complete
-Status: Ready for phase 11
-Last activity: 2026-04-03 — Phase 10 complete (team picker + dynamic PDF)
+Phase: 11 of 13 (Smart Suggestions)
+Plan: 01 complete
+Status: Ready for plan 11-02
+Last activity: 2026-04-03 — Insight model, InsightService actor, InsightsConfig added
 
-Progress: █████░░░░░ 50% (v1.1)
+Progress: █████░░░░░ 55% (v1.1)
 
 ## Performance Metrics
 
@@ -37,6 +37,7 @@ Progress: █████░░░░░ 50% (v1.1)
 | 08-launch-agent | 3 | 14 min | 4.7 min |
 | 09-folder-watching | 2 | 11 min | 5.5 min |
 | 10-sports-ui-daily-brief | 2 | 10 min | 5.0 min |
+| 11-smart-suggestions | 1 | 4 min | 4.0 min |
 
 ## Accumulated Context
 
@@ -60,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-03
-Stopped at: Phase 10 complete, ready for phase 11
+Stopped at: Plan 11-01 complete, ready for plan 11-02
 Resume file: None
