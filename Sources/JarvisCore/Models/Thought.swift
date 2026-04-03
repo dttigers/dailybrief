@@ -19,6 +19,16 @@ public enum ThoughtCategory: String, Codable, Sendable, CaseIterable, DatabaseVa
     case project
 }
 
+/// Sync state for CloudKit synchronization.
+public enum SyncStatus: String, Codable, Sendable, DatabaseValueConvertible {
+    /// Needs upload to CloudKit (new or modified locally).
+    case pending
+    /// Matches CloudKit record.
+    case synced
+    /// Deleted locally; deletion needs syncing to CloudKit.
+    case pendingDeletion
+}
+
 // MARK: - Thought Model
 
 /// A captured thought — the core data unit of Jarvis.
@@ -37,6 +47,9 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
         public static let source = Column(CodingKeys.source)
         public static let createdAt = Column(CodingKeys.createdAt)
         public static let modifiedAt = Column(CodingKeys.modifiedAt)
+        public static let cloudKitRecordID = Column(CodingKeys.cloudKitRecordID)
+        public static let syncStatus = Column(CodingKeys.syncStatus)
+        public static let lastSyncedAt = Column(CodingKeys.lastSyncedAt)
     }
 
     // MARK: Properties
@@ -62,6 +75,15 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
     /// When the thought was last modified.
     public var modifiedAt: Date
 
+    /// UUID string used as CKRecord.ID name. Generated once on creation, never changes.
+    public var cloudKitRecordID: String
+
+    /// Tracks sync state for CloudKit synchronization.
+    public var syncStatus: SyncStatus
+
+    /// When this thought was last synced to CloudKit. Nil if never synced.
+    public var lastSyncedAt: Date?
+
     // MARK: Initialization
 
     public init(
@@ -71,7 +93,10 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
         confidence: Double? = nil,
         source: CaptureSource = .text,
         createdAt: Date = Date(),
-        modifiedAt: Date = Date()
+        modifiedAt: Date = Date(),
+        cloudKitRecordID: String = UUID().uuidString,
+        syncStatus: SyncStatus = .pending,
+        lastSyncedAt: Date? = nil
     ) {
         self.id = id
         self.content = content
@@ -80,6 +105,9 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
         self.source = source
         self.createdAt = createdAt
         self.modifiedAt = modifiedAt
+        self.cloudKitRecordID = cloudKitRecordID
+        self.syncStatus = syncStatus
+        self.lastSyncedAt = lastSyncedAt
     }
 
     // MARK: MutablePersistableRecord
