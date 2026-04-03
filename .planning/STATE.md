@@ -52,6 +52,8 @@ Progress: ███████░░░ 70%
 - Plan 17-01: NHL ESPN IDs differ significantly from plan — verified against live API
 - Plan 17-01: NFL NFC conferenceId is 7 (not 9); NHL Eastern=7, Western=8; NBA Eastern=5, Western=6
 - Plan 17-01: Utah NHL team is now "Utah Mammoth" (id 129764)
+- Plan 17-02: ESPN standings division matching uses team presence rather than divisionId for reliability
+- Plan 17-02: NHL standings show PTS alongside streak; upcoming game search parallelizes today+tomorrow
 - Plan 17-03: NHL default team ID is 5 (Red Wings) in NHLTeamData, not 6 as plan suggested
 
 All decisions logged in PROJECT.md Key Decisions table.
