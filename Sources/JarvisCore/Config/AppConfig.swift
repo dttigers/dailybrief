@@ -9,6 +9,7 @@ public struct AppConfig: Codable, Sendable {
     public var printing: PrintingConfig
     public var googleCalendar: GoogleCalendarConfig
     public var folderWatching: FolderWatchingConfig
+    public var insights: InsightsConfig
 
     public init(
         gmail: GmailConfig,
@@ -18,7 +19,8 @@ public struct AppConfig: Codable, Sendable {
         pdf: PDFConfig,
         printing: PrintingConfig,
         googleCalendar: GoogleCalendarConfig = .init(),
-        folderWatching: FolderWatchingConfig = .init()
+        folderWatching: FolderWatchingConfig = .init(),
+        insights: InsightsConfig = .init()
     ) {
         self.gmail = gmail
         self.reminders = reminders
@@ -28,9 +30,10 @@ public struct AppConfig: Codable, Sendable {
         self.printing = printing
         self.googleCalendar = googleCalendar
         self.folderWatching = folderWatching
+        self.insights = insights
     }
 
-    // Custom Decodable to make googleCalendar and folderWatching optional for backward compatibility
+    // Custom Decodable to make googleCalendar, folderWatching, and insights optional for backward compatibility
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         gmail = try container.decode(GmailConfig.self, forKey: .gmail)
@@ -41,6 +44,7 @@ public struct AppConfig: Codable, Sendable {
         printing = try container.decode(PrintingConfig.self, forKey: .printing)
         googleCalendar = try container.decodeIfPresent(GoogleCalendarConfig.self, forKey: .googleCalendar) ?? .init()
         folderWatching = try container.decodeIfPresent(FolderWatchingConfig.self, forKey: .folderWatching) ?? .init()
+        insights = try container.decodeIfPresent(InsightsConfig.self, forKey: .insights) ?? .init()
     }
 
     public struct GmailConfig: Codable, Sendable {
@@ -180,6 +184,19 @@ public struct AppConfig: Codable, Sendable {
             self.enabled = enabled
             self.audioFolderPath = audioFolderPath
             self.imageFolderPath = imageFolderPath
+        }
+    }
+
+    public struct InsightsConfig: Codable, Sendable {
+        public var enabled: Bool
+        public var lookbackDays: Int
+
+        public init(
+            enabled: Bool = true,
+            lookbackDays: Int = 7
+        ) {
+            self.enabled = enabled
+            self.lookbackDays = lookbackDays
         }
     }
 }
