@@ -265,15 +265,16 @@ Plans:
 - [x] 27-02: PDF Integration (DailyBriefData wiring + PageThreeRenderer therapy prep section)
 - [x] 27-03: Dashboard Therapy Prep UI (TherapyPrepView + generate + copy export)
 
-#### Phase 28: Tags & Organization
+#### Phase 28: Tags & Organization ✅
 
 **Goal**: Manual user-defined tags, favorites/pinning, thought-to-thought linking
 **Depends on**: Phase 27
-**Research**: Unlikely (DB migration + SwiftUI patterns)
-**Plans**: TBD
+**Completed**: 2026-04-04
 
 Plans:
-- [ ] 28-01: TBD
+- [x] 28-01: Storage Layer Foundation (DB v5 migration, models, ThoughtStore CRUD, CloudKit sync)
+- [x] 28-02: Tags & Favorites UI (tag pills, favorite toggle, sidebar filters, bulk tag action)
+- [x] 28-03: Thought Linking UI (context menu linking, LinkedThoughtsSheet, visual verification)
 
 #### Phase 29: Export System
 
@@ -350,7 +351,7 @@ None
 | 25. Bulk Actions & Filtering | v1.4 | 2/2 | Complete | 2026-04-04 |
 | 26. Therapy Intelligence | v1.4 | 2/2 | Complete | 2026-04-04 |
 | 27. Therapy Prep & Patterns | v1.4 | 3/3 | Complete | 2026-04-04 |
-| 28. Tags & Organization | v1.4 | 0/? | Not started | - |
+| 28. Tags & Organization | v1.4 | 3/3 | Complete | 2026-04-04 |
 | 29. Export System | v1.4 | 0/? | Not started | - |
 | 30. Brief History | v1.4 | 0/? | Not started | - |
 | 31. Brief Enhancements | v1.4 | 0/? | Not started | - |
