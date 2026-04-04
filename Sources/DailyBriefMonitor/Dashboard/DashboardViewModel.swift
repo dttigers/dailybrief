@@ -71,6 +71,11 @@ final class DashboardViewModel {
     // Therapy re-classify state
     var reclassifyingThoughtId: Int64?
 
+    // Therapy prep state
+    var therapyPatterns: [TherapyPattern] = []
+    var therapyPrep: TherapyPrep? = nil
+    var isLoadingTherapyPrep: Bool = false
+
     // Expand/collapse state
     var expandedThoughtIds: Set<Int64> = []
 
@@ -122,6 +127,8 @@ final class DashboardViewModel {
     private let triageService: TriageService?
     private let insightService: InsightService?
     private let therapyClassificationService: TherapyClassificationService?
+    private let therapyPatternService: TherapyPatternService?
+    private let therapyPrepService: TherapyPrepService?
     private var searchTask: Task<Void, Never>?
 
     var canImportAudio: Bool { transcriptionService != nil && captureService != nil }
@@ -136,7 +143,9 @@ final class DashboardViewModel {
         imageDescriptionService: ImageDescriptionService? = nil,
         triageService: TriageService? = nil,
         insightService: InsightService? = nil,
-        therapyClassificationService: TherapyClassificationService? = nil
+        therapyClassificationService: TherapyClassificationService? = nil,
+        therapyPatternService: TherapyPatternService? = nil,
+        therapyPrepService: TherapyPrepService? = nil
     ) {
         self.store = store
         self.captureService = captureService
@@ -145,6 +154,8 @@ final class DashboardViewModel {
         self.triageService = triageService
         self.insightService = insightService
         self.therapyClassificationService = therapyClassificationService
+        self.therapyPatternService = therapyPatternService
+        self.therapyPrepService = therapyPrepService
     }
 
     // MARK: - Public Methods
@@ -701,6 +712,69 @@ final class DashboardViewModel {
         } catch {
             NSLog("Dashboard: bulk recategorize failed — \(error.localizedDescription)")
         }
+    }
+
+    // MARK: - Therapy Prep
+
+    /// Generate therapy session prep from recent therapy thoughts via AI analysis.
+    func generateTherapyPrep() async {
+        guard let therapyPatternService, let therapyPrepService else { return }
+
+        isLoadingTherapyPrep = true
+        defer { isLoadingTherapyPrep = false }
+
+        do {
+            // Fetch therapy thoughts from last 30 days
+            let allTherapyThoughts = try await store.fetchRecentTherapyThoughts(days: 30, limit: 200)
+            // Fetch bringToTherapist thoughts from last 30 days
+            let bringToTherapistThoughts = try await store.fetchRecentTherapyThoughts(
+                days: 30, classification: .bringToTherapist, limit: 200
+            )
+
+            // Detect patterns across all therapy thoughts
+            let patterns = try await therapyPatternService.detectPatterns(
+                thoughts: allTherapyThoughts, lookbackDays: 30
+            )
+            therapyPatterns = patterns
+
+            // Generate prep from bringToTherapist thoughts with pattern context
+            let prep = try await therapyPrepService.generatePrep(
+                thoughts: bringToTherapistThoughts, patterns: patterns
+            )
+            therapyPrep = prep
+        } catch {
+            NSLog("Dashboard: therapy prep generation failed — %@", error.localizedDescription)
+        }
+    }
+
+    /// Format therapy prep as readable text for clipboard export.
+    func therapyPrepAsText() -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+        let dateString = dateFormatter.string(from: Date())
+
+        var text = "Therapy Session Prep — \(dateString)\n"
+
+        if let prep = therapyPrep {
+            text += "\nSuggested Focus: \(prep.suggestedFocus)\n"
+        }
+
+        if !therapyPatterns.isEmpty {
+            text += "\nPatterns:\n"
+            for pattern in therapyPatterns {
+                text += "• \(pattern.theme) (\(pattern.trend)) — \(pattern.description)\n"
+            }
+        }
+
+        if let prep = therapyPrep, !prep.items.isEmpty {
+            text += "\nDiscussion Topics:\n"
+            for (index, item) in prep.items.enumerated() {
+                text += "\(index + 1). [\(item.urgency)] \(item.topic)\n"
+                text += "   \(item.context)\n"
+            }
+        }
+
+        return text
     }
 
     // MARK: - Delete

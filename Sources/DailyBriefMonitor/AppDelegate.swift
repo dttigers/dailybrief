@@ -27,6 +27,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     // Therapy classification
     private var therapyClassificationService: TherapyClassificationService?
 
+    // Therapy pattern detection & session prep
+    private var therapyPatternService: TherapyPatternService?
+    private var therapyPrepService: TherapyPrepService?
+
     // Cloud sync
     private var syncService: SyncService?
     private var syncTimer: Timer?
@@ -50,6 +54,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
             let therapyClassService = TherapyClassificationService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
             self.therapyClassificationService = therapyClassService
+
+            let therapyPatternSvc = TherapyPatternService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+            self.therapyPatternService = therapyPatternSvc
+
+            let therapyPrepSvc = TherapyPrepService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+            self.therapyPrepService = therapyPrepSvc
         }
 
         // Create transcription service (uses Apple SFSpeechRecognizer)
@@ -219,7 +229,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             imageDescriptionService: imageDescriptionService,
             triageService: triageService,
             insightService: insightService,
-            therapyClassificationService: therapyClassificationService
+            therapyClassificationService: therapyClassificationService,
+            therapyPatternService: therapyPatternService,
+            therapyPrepService: therapyPrepService
         )
         let dashboardView = DashboardView(viewModel: viewModel)
         let hostingView = NSHostingView(rootView: dashboardView)
