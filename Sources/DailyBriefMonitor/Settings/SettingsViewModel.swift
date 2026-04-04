@@ -13,6 +13,10 @@ final class SettingsViewModel {
     var useTLS: Bool = true
     var emailSearchSubjectPattern: String = "Case CS"
     var emailLookbackDays: Int = 3
+    var emailAuthType: String = "app_password"
+    var oauth2ClientId: String = ""
+    var oauth2TenantId: String = ""
+    var oauth2RefreshToken: String = ""
 
     // MARK: - Sports (Multi-Sport)
 
@@ -131,6 +135,10 @@ final class SettingsViewModel {
         useTLS = config.email.useTLS
         emailSearchSubjectPattern = config.email.searchSubjectPattern
         emailLookbackDays = config.email.lookbackDays
+        emailAuthType = config.email.authType
+        oauth2ClientId = config.email.oauth2ClientId
+        oauth2TenantId = config.email.oauth2TenantId
+        oauth2RefreshToken = config.email.oauth2RefreshToken
 
         mlbEnabled = config.sports.mlb.enabled
         mlbSelectedTeamId = config.sports.mlb.teamId
@@ -187,7 +195,11 @@ final class SettingsViewModel {
                 imapPort: imapPort,
                 useTLS: useTLS,
                 searchSubjectPattern: emailSearchSubjectPattern,
-                lookbackDays: emailLookbackDays
+                lookbackDays: emailLookbackDays,
+                authType: emailAuthType,
+                oauth2ClientId: oauth2ClientId,
+                oauth2TenantId: oauth2TenantId,
+                oauth2RefreshToken: oauth2RefreshToken
             ),
             reminders: .init(listName: remindersListName),
             sports: {

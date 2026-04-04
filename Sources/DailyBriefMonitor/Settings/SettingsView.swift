@@ -66,9 +66,39 @@ struct SettingsView: View {
                 Toggle("Use TLS", isOn: $viewModel.useTLS)
             }
 
+            Section("Authentication") {
+                Picker("Auth Type", selection: $viewModel.emailAuthType) {
+                    Text("App Password").tag("app_password")
+                    Text("OAuth2 (Microsoft 365)").tag("oauth2")
+                }
+                .pickerStyle(.segmented)
+            }
+
             Section("Credentials") {
                 TextField("Email Address", text: $viewModel.emailAddress)
-                SecureField("IMAP Password", text: $viewModel.emailAppPassword)
+
+                if viewModel.emailAuthType == "app_password" {
+                    SecureField("IMAP Password", text: $viewModel.emailAppPassword)
+                } else {
+                    TextField("Client ID", text: $viewModel.oauth2ClientId)
+                    TextField("Tenant ID", text: $viewModel.oauth2TenantId)
+                    HStack {
+                        if viewModel.oauth2RefreshToken.isEmpty {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.red)
+                            Text("Refresh Token: Not configured")
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                            Text("Refresh Token: Configured")
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    Text("Run `dailybrief email-auth` in terminal to authenticate")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
             }
 
             Section("Search") {
