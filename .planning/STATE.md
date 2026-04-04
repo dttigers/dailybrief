@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 31 of 36 (Vigil Core AI Integration) — In progress
-Plan: 02 complete (2/?)
-Status: Plan 31-02 complete
-Last activity: 2026-04-04 - Plan 31-02 complete (affirmation + insights endpoints)
+Plan: 04 complete (4/?)
+Status: Plan 31-04 complete
+Last activity: 2026-04-04 - Plan 31-04 complete (prioritize + describe-image endpoints)
 
-Progress: ████░░░░░░ 50%
+Progress: ████████░░ 80%
 
 ## Performance Metrics
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Plan 31-02 complete, ready for plan 31-03
+Stopped at: Plan 31-04 complete, ready for plan 31-05
 Resume file: None
-Notes: AI client module created (ai/client.ts, ai/types.ts). POST /v1/triage, /v1/affirmation, /v1/insights endpoints live. Affirmation uses daily file cache at ~/.cache/dailybrief/. Insights filters confidence >= 0.5.
+Notes: AI client module created (ai/client.ts, ai/types.ts). POST /v1/triage, /v1/affirmation, /v1/insights, /v1/prioritize, /v1/describe-image endpoints live. Prioritize uses daily+hash file cache at ~/.cache/dailybrief/. Describe-image uses callClaudeMultimodal for vision.
