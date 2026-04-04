@@ -30,6 +30,9 @@ struct ThoughtRowView: View {
     /// Called when the user clicks the re-triage button. Nil when triage service unavailable.
     var onRetriage: (() -> Void)?
 
+    /// Called when the user requests re-classification of a therapy thought.
+    var onReClassify: (() -> Void)?
+
     /// Called when the user deletes this thought from the context menu.
     var onDelete: (() -> Void)?
 
@@ -47,6 +50,9 @@ struct ThoughtRowView: View {
 
     /// Whether this thought is currently being re-triaged.
     var isRetriaging: Bool = false
+
+    /// Whether this thought is currently being re-classified.
+    var isReclassifying: Bool = false
 
     @FocusState private var isEditorFocused: Bool
 
@@ -135,6 +141,28 @@ struct ThoughtRowView: View {
                             .foregroundStyle(.secondary)
                     }
 
+                    // Therapy classification badge
+                    if thought.category == .therapy {
+                        if isReclassifying {
+                            ProgressView()
+                                .controlSize(.mini)
+                        } else if let classification = thought.therapyClassification {
+                            HStack(spacing: 3) {
+                                Image(systemName: classification == .selfLearnable ? "book.closed" : "person.fill.questionmark")
+                                    .font(.caption2)
+                                Text(classification == .selfLearnable ? "Self-work" : "Therapist")
+                                    .font(.caption2.weight(.medium))
+                            }
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                (classification == .selfLearnable ? Color.green : Color.orange).opacity(0.85)
+                            )
+                            .clipShape(Capsule())
+                        }
+                    }
+
                     if onRetriage != nil {
                         Button {
                             onRetriage?()
@@ -186,6 +214,13 @@ struct ThoughtRowView: View {
                     onRetriage?()
                 } label: {
                     Label("Re-categorize", systemImage: "arrow.clockwise")
+                }
+            }
+            if thought.category == .therapy, let onReClassify {
+                Button {
+                    onReClassify()
+                } label: {
+                    Label("Re-classify therapy", systemImage: "arrow.triangle.2.circlepath")
                 }
             }
             Divider()

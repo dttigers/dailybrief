@@ -82,6 +82,19 @@ final class DashboardViewModel {
     var sourceFilter: CaptureSource?
     var dateRangeFilter: DateRangeFilter = .all
 
+    /// Therapy sub-filter: all, specific classification, or unclassified only.
+    enum TherapySubFilter: Hashable {
+        case all
+        case classified(TherapyClassification)
+        case unclassified
+    }
+
+    // Therapy sub-filter state
+    var therapyFilter: TherapySubFilter = .all
+    var selfLearnableCount: Int = 0
+    var bringToTherapistCount: Int = 0
+    var unclassifiedTherapyCount: Int = 0
+
     // Selection / bulk action state
     var isSelectionMode: Bool = false
     var selectedThoughtIds: Set<Int64> = []
@@ -165,6 +178,26 @@ final class DashboardViewModel {
                         results = results.filter { $0.createdAt >= afterDate }
                     }
                     thoughts = results
+                } else if category == .therapy, therapyFilter != .all {
+                    // Therapy sub-filter active
+                    var results: [Thought]
+                    switch therapyFilter {
+                    case .all:
+                        results = [] // unreachable
+                    case .classified(let classification):
+                        results = try await store.fetchTherapyThoughts(classification: classification)
+                    case .unclassified:
+                        // Fetch all therapy, then client-side filter to nil classification
+                        results = try await store.fetchTherapyThoughts()
+                        results = results.filter { $0.therapyClassification == nil }
+                    }
+                    if let sourceFilter {
+                        results = results.filter { $0.source == sourceFilter }
+                    }
+                    if let afterDate {
+                        results = results.filter { $0.createdAt >= afterDate }
+                    }
+                    thoughts = results
                 } else {
                     var results = try await store.fetchFiltered(
                         category: category,
@@ -194,6 +227,16 @@ final class DashboardViewModel {
                 } else if taskStatusFilter == nil {
                     // Auto-hide completed tasks from search results too
                     results = results.filter { $0.taskStatus != .done }
+                }
+                // Apply therapy sub-filter to search results
+                if category == .therapy, therapyFilter != .all {
+                    switch therapyFilter {
+                    case .all: break
+                    case .classified(let classification):
+                        results = results.filter { $0.therapyClassification == classification }
+                    case .unclassified:
+                        results = results.filter { $0.therapyClassification == nil }
+                    }
                 }
                 thoughts = results
             }
@@ -232,6 +275,10 @@ final class DashboardViewModel {
             for status in [TaskStatus.open, .inProgress, .done] {
                 taskStatusCounts[status] = try await store.countTasks(status: status)
             }
+            // Therapy classification sub-counts
+            selfLearnableCount = try await store.countTherapy(classification: .selfLearnable)
+            bringToTherapistCount = try await store.countTherapy(classification: .bringToTherapist)
+            unclassifiedTherapyCount = try await store.countUnclassifiedTherapy()
         } catch {
             NSLog("Dashboard: failed to load counts — \(error.localizedDescription)")
         }

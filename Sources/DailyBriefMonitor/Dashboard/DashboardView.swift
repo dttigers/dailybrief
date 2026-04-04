@@ -54,8 +54,13 @@ struct DashboardView: View {
             await viewModel.refresh()
         }
         .onChange(of: viewModel.selectedFilter) {
-            // Reset task status sub-filter and selection when switching categories
+            // Reset task status sub-filter, therapy filter, and selection when switching categories
             viewModel.taskStatusFilter = nil
+            viewModel.therapyFilter = .all
+            viewModel.selectedThoughtIds.removeAll()
+            Task { await viewModel.loadThoughts() }
+        }
+        .onChange(of: viewModel.therapyFilter) {
             viewModel.selectedThoughtIds.removeAll()
             Task { await viewModel.loadThoughts() }
         }
@@ -138,6 +143,13 @@ struct DashboardView: View {
             if viewModel.selectedFilter == .specific(.task) {
                 Section("Status") {
                     taskStatusPills
+                }
+            }
+
+            // Therapy classification sub-filters — shown when Therapy category is selected
+            if viewModel.selectedFilter == .specific(.therapy) {
+                Section("Classification") {
+                    therapySubFilterPills
                 }
             }
 
@@ -236,6 +248,88 @@ struct DashboardView: View {
             .padding(.vertical, 2)
             .opacity(viewModel.taskStatusFilter == status ? 1.0 : 0.6)
         }
+    }
+
+    /// Therapy classification sub-filter pills.
+    @ViewBuilder
+    private var therapySubFilterPills: some View {
+        // "All" pill
+        Button {
+            viewModel.therapyFilter = .all
+        } label: {
+            HStack {
+                Text("All")
+                Spacer()
+                Text("\(viewModel.categoryCounts[.therapy] ?? 0)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 2)
+        .opacity(viewModel.therapyFilter == .all ? 1.0 : 0.6)
+
+        Button {
+            viewModel.therapyFilter = .classified(.selfLearnable)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "book.closed")
+                    .foregroundStyle(.green)
+                    .font(.caption)
+                Text("Self-work")
+                    .font(.subheadline)
+                Spacer()
+                Text("\(viewModel.selfLearnableCount)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 2)
+        .opacity(viewModel.therapyFilter == .classified(.selfLearnable) ? 1.0 : 0.6)
+
+        Button {
+            viewModel.therapyFilter = .classified(.bringToTherapist)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "person.fill.questionmark")
+                    .foregroundStyle(.orange)
+                    .font(.caption)
+                Text("Therapist")
+                    .font(.subheadline)
+                Spacer()
+                Text("\(viewModel.bringToTherapistCount)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 2)
+        .opacity(viewModel.therapyFilter == .classified(.bringToTherapist) ? 1.0 : 0.6)
+
+        Button {
+            viewModel.therapyFilter = .unclassified
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "questionmark.circle")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+                Text("Unclassified")
+                    .font(.subheadline)
+                Spacer()
+                Text("\(viewModel.unclassifiedTherapyCount)")
+                    .font(.caption2)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .buttonStyle(.plain)
+        .padding(.vertical, 2)
+        .opacity(viewModel.therapyFilter == .unclassified ? 1.0 : 0.6)
+
+        Text("AI suggestions — not clinical advice")
+            .font(.caption2)
+            .foregroundStyle(.secondary)
+            .padding(.top, 4)
     }
 
     // MARK: - Detail
@@ -422,6 +516,9 @@ struct DashboardView: View {
                         onRetriage: {
                             Task { await viewModel.reTriageThought(thought) }
                         },
+                        onReClassify: thought.category == .therapy ? {
+                            Task<Void, Never> { await viewModel.reClassifyTherapy(thought) }
+                        } : nil,
                         onDelete: {
                             Task { await viewModel.deleteThought(thought) }
                         },
@@ -437,7 +534,8 @@ struct DashboardView: View {
                         onCancelEdit: {
                             viewModel.cancelEdit()
                         },
-                        isRetriaging: viewModel.retriagingThoughtId == thought.id
+                        isRetriaging: viewModel.retriagingThoughtId == thought.id,
+                        isReclassifying: viewModel.reclassifyingThoughtId == thought.id
                     )
                 }
             }
