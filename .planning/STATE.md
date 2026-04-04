@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 26 of 32 (Therapy Intelligence)
-Plan: 01 complete
+Plan: 02 complete
 Status: In progress
-Last activity: 2026-04-04 - Plan 01 complete (TherapyClassification model, DB migration, CloudKit sync, classification service)
+Last activity: 2026-04-04 - Plan 02 complete (auto-classification after triage, UI badges, sidebar sub-filters, re-classify action)
 
 Progress: ██░░░░░░░░ 22%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 54
+- Total plans completed: 55
 - Total execution time: ~7 days
 - Average duration: ~5 min per plan
 
@@ -61,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 26, plan 01 complete
+Stopped at: Phase 26, plan 02 complete
 Resume file: None
