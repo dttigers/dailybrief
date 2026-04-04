@@ -6,7 +6,7 @@ import JarvisCore
 struct DailyBrief: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Generate a daily briefing PDF with work orders, todos, sports scores, and an ADHD affirmation.",
-        subcommands: [Generate.self, Complete.self, Uncomplete.self, ListCompleted.self],
+        subcommands: [Generate.self, Complete.self, Uncomplete.self, ListCompleted.self, EmailAuth.self],
         defaultSubcommand: Generate.self
     )
 }
@@ -320,7 +320,11 @@ extension DailyBrief {
                     "imap_port": 993,
                     "use_tls": true,
                     "search_subject_pattern": "has been assigned to you",
-                    "lookback_days": 3
+                    "lookback_days": 3,
+                    "auth_type": "app_password",
+                    "oauth2_client_id": "",
+                    "oauth2_tenant_id": "",
+                    "oauth2_refresh_token": ""
                 },
                 "reminders": {
                     "list_name": "To Do"
@@ -420,6 +424,115 @@ extension DailyBrief {
                     print("  \(item)")
                 }
             }
+        }
+    }
+}
+
+// MARK: - Email Auth (OAuth2 Device Code Flow)
+
+extension DailyBrief {
+    struct EmailAuth: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(
+            commandName: "email-auth",
+            abstract: "Authenticate with Microsoft 365 for OAuth2 IMAP access using device code flow."
+        )
+
+        @Option(help: "Path to config file")
+        var configPath: String?
+
+        func run() async throws {
+            var config: AppConfig
+            do {
+                config = try ConfigLoader.load(from: configPath)
+            } catch {
+                Logger.error("Config error: \(error.localizedDescription)")
+                throw error
+            }
+
+            let clientId = config.email.oauth2ClientId
+            let tenantId = config.email.oauth2TenantId
+
+            guard !clientId.isEmpty, !tenantId.isEmpty else {
+                print("Error: Set oauth2_client_id and oauth2_tenant_id in config first (see --setup)")
+                throw ExitCode.failure
+            }
+
+            // Step 1: Request device code
+            let deviceCodeURL = URL(string: "https://login.microsoftonline.com/\(tenantId)/oauth2/v2.0/devicecode")!
+            let deviceCodeBody = "client_id=\(clientId)&scope=offline_access%20https%3A%2F%2Foutlook.office365.com%2FIMAP.AccessAsUser.All"
+
+            var deviceCodeRequest = URLRequest(url: deviceCodeURL)
+            deviceCodeRequest.httpMethod = "POST"
+            deviceCodeRequest.httpBody = deviceCodeBody.data(using: .utf8)
+            deviceCodeRequest.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+
+            let (deviceCodeData, deviceCodeResponse) = try await URLSession.shared.data(for: deviceCodeRequest)
+
+            guard let httpResponse = deviceCodeResponse as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+                let body = String(data: deviceCodeData, encoding: .utf8) ?? "(no response)"
+                print("Error: Failed to request device code: \(body)")
+                throw ExitCode.failure
+            }
+
+            guard let deviceCodeJSON = try JSONSerialization.jsonObject(with: deviceCodeData) as? [String: Any],
+                  let deviceCode = deviceCodeJSON["device_code"] as? String,
+                  let userCode = deviceCodeJSON["user_code"] as? String,
+                  let verificationUri = deviceCodeJSON["verification_uri"] as? String,
+                  let interval = deviceCodeJSON["interval"] as? Int,
+                  let expiresIn = deviceCodeJSON["expires_in"] as? Int else {
+                print("Error: Unexpected device code response format")
+                throw ExitCode.failure
+            }
+
+            // Step 2: Display instructions
+            print("")
+            print("To authenticate, visit: \(verificationUri)")
+            print("Enter code: \(userCode)")
+            print("Waiting for authentication...")
+            print("")
+
+            // Step 3: Poll for token
+            let tokenURL = URL(string: "https://login.microsoftonline.com/\(tenantId)/oauth2/v2.0/token")!
+            let tokenBody = "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code&device_code=\(deviceCode)&client_id=\(clientId)"
+
+            let deadline = Date().addingTimeInterval(Double(expiresIn))
+
+            while Date() < deadline {
+                try await Task.sleep(nanoseconds: UInt64(interval) * 1_000_000_000)
+
+                var tokenRequest = URLRequest(url: tokenURL)
+                tokenRequest.httpMethod = "POST"
+                tokenRequest.httpBody = tokenBody.data(using: .utf8)
+                tokenRequest.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+
+                let (tokenData, _) = try await URLSession.shared.data(for: tokenRequest)
+
+                guard let tokenJSON = try JSONSerialization.jsonObject(with: tokenData) as? [String: Any] else {
+                    continue
+                }
+
+                // Check for success (refresh_token present)
+                if let refreshToken = tokenJSON["refresh_token"] as? String {
+                    config.email.oauth2RefreshToken = refreshToken
+                    config.email.authType = "oauth2"
+                    try ConfigLoader.save(config)
+                    print("Authentication successful! Refresh token saved.")
+                    return
+                }
+
+                // Check for pending or error
+                if let error = tokenJSON["error"] as? String {
+                    if error == "authorization_pending" {
+                        continue
+                    }
+                    let description = tokenJSON["error_description"] as? String ?? error
+                    print("Error: \(description)")
+                    throw ExitCode.failure
+                }
+            }
+
+            print("Error: Authentication timed out. Please try again.")
+            throw ExitCode.failure
         }
     }
 }
