@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v1.3 Stability & Smarts — SHIPPED
+**Current focus:** v1.4 Intelligence & Organization
 
 ## Current Position
 
-Phase: 23 of 23 (Polish & Integration) — COMPLETE
-Plan: 1/1 complete
-Status: v1.3 Stability & Smarts milestone complete. All phases shipped.
-Last activity: 2026-04-04 - Phase 23 executed (final build verification + milestone closure)
+Phase: 24 of 32 (Thought Editing)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-04-04 - Milestone v1.4 created
 
-Progress: ██████████ 100%
+Progress: ░░░░░░░░░░ 0%
 
 ## Performance Metrics
 
@@ -48,7 +48,7 @@ None.
 
 ### Blockers/Concerns
 
-- **Post-milestone verification:** OAuth2 IMAP end-to-end verification pending Azure AD admin consent (expected Monday 2026-04-07). This is an external blocker, not a code issue. All code is complete and builds cleanly.
+None.
 
 ### Roadmap Evolution
 
@@ -56,9 +56,10 @@ None.
 - v1.1 Always On shipped: 6 phases (8-13), 16 plans
 - v1.2 Daily Driver shipped: 5 phases (14-18), 14 plans
 - v1.3 Stability & Smarts shipped: 5 phases (19-23), 7 plans
+- Milestone v1.4 created: Intelligence & Organization, 9 phases (Phase 24-32)
 
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: v1.3 milestone complete
+Stopped at: Milestone v1.4 initialization
 Resume file: None

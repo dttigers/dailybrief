@@ -10,6 +10,7 @@ Transform the existing DailyBrief CLI and menu bar monitor into a full personal 
 - ✅ **v1.1 Always On** — Phases 8-13 (shipped 2026-04-03)
 - ✅ **v1.2 Daily Driver** — Phases 14-18 (shipped 2026-04-03)
 - ✅ **v1.3 Stability & Smarts** — Phases 19-23 (shipped 2026-04-04)
+- 🚧 **v1.4 Intelligence & Organization** — Phases 24-32 (in progress)
 
 ## Completed Milestones
 
@@ -218,6 +219,102 @@ Plans:
 
 </details>
 
+### 🚧 v1.4 Intelligence & Organization (In Progress)
+
+**Milestone Goal:** Make the dashboard a power tool for organizing thoughts, add AI-powered therapy intelligence that classifies thoughts as self-learnable vs therapist-worthy, enable export and brief history, and surface insights in the daily PDF.
+
+#### Phase 24: Thought Editing
+
+**Goal**: Inline edit thought content from dashboard with undo support
+**Depends on**: Previous milestone complete
+**Research**: Unlikely (internal SwiftUI patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 24-01: TBD (run /gsd:plan-phase 24 to break down)
+
+#### Phase 25: Bulk Actions & Filtering
+
+**Goal**: Multi-select thoughts with bulk delete/retriage/recategorize, plus source/date/category search filters
+**Depends on**: Phase 24
+**Research**: Unlikely (internal patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 25-01: TBD
+
+#### Phase 26: Therapy Intelligence
+
+**Goal**: AI classifies therapy-category thoughts into self-learnable (can work on independently) vs bring-to-therapist (needs professional guidance)
+**Depends on**: Phase 25
+**Research**: Likely (AI prompt design for clinical triage sensitivity)
+**Research topics**: Prompt engineering for therapy thought classification; appropriate confidence thresholds; ethical framing (tool not replacement for clinical judgment)
+**Plans**: TBD
+
+Plans:
+- [ ] 26-01: TBD
+
+#### Phase 27: Therapy Prep & Patterns
+
+**Goal**: Pattern recognition across therapy thoughts over time, therapy prep export for sessions, AI-generated session summary
+**Depends on**: Phase 26
+**Research**: Likely (pattern recognition prompt engineering, therapy prep best practices)
+**Research topics**: Cross-thought pattern detection prompts; therapy session prep format; recurring theme identification
+**Plans**: TBD
+
+Plans:
+- [ ] 27-01: TBD
+
+#### Phase 28: Tags & Organization
+
+**Goal**: Manual user-defined tags, favorites/pinning, thought-to-thought linking
+**Depends on**: Phase 27
+**Research**: Unlikely (DB migration + SwiftUI patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 28-01: TBD
+
+#### Phase 29: Export System
+
+**Goal**: Export thoughts as Markdown, JSON, or CSV with date range and category filtering
+**Depends on**: Phase 28
+**Research**: Unlikely (standard file generation)
+**Plans**: TBD
+
+Plans:
+- [ ] 29-01: TBD
+
+#### Phase 30: Brief History
+
+**Goal**: Browse and reprint past daily briefs, brief archive storage with date picker
+**Depends on**: Phase 29
+**Research**: Unlikely (file storage patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 30-01: TBD
+
+#### Phase 31: Brief Enhancements
+
+**Goal**: Surface top insights in PDF, add capture metrics, improve layout with therapy intelligence indicators
+**Depends on**: Phase 30
+**Research**: Unlikely (extends existing PDF renderer)
+**Plans**: TBD
+
+Plans:
+- [ ] 31-01: TBD
+
+#### Phase 32: Polish & Integration
+
+**Goal**: Cross-feature testing, UX refinement, edge cases, final build verification
+**Depends on**: Phase 31
+**Research**: Unlikely (internal work)
+**Plans**: TBD
+
+Plans:
+- [ ] 32-01: TBD
+
 ## Domain Expertise
 
 None
@@ -249,3 +346,12 @@ None
 | 21. AI Work Order Prioritization | v1.3 | 1/1 | Complete | 2026-04-04 |
 | 22. IMAP Work Email | v1.3 | 2/2 | Complete* | 2026-04-04 |
 | 23. Polish & Integration | v1.3 | 1/1 | Complete | 2026-04-04 |
+| 24. Thought Editing | v1.4 | 0/? | Not started | - |
+| 25. Bulk Actions & Filtering | v1.4 | 0/? | Not started | - |
+| 26. Therapy Intelligence | v1.4 | 0/? | Not started | - |
+| 27. Therapy Prep & Patterns | v1.4 | 0/? | Not started | - |
+| 28. Tags & Organization | v1.4 | 0/? | Not started | - |
+| 29. Export System | v1.4 | 0/? | Not started | - |
+| 30. Brief History | v1.4 | 0/? | Not started | - |
+| 31. Brief Enhancements | v1.4 | 0/? | Not started | - |
+| 32. Polish & Integration | v1.4 | 0/? | Not started | - |
