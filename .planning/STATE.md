@@ -68,4 +68,4 @@ None.
 Last session: 2026-04-04
 Stopped at: Plan 31-04 complete, ready for plan 31-05
 Resume file: None
-Notes: AI client module created (ai/client.ts, ai/types.ts). POST /v1/triage, /v1/affirmation, /v1/insights, /v1/prioritize, /v1/describe-image endpoints live. Prioritize uses daily+hash file cache at ~/.cache/dailybrief/. Describe-image uses callClaudeMultimodal for vision.
+Notes: AI client module created (ai/client.ts, ai/types.ts). POST /v1/triage, /v1/affirmation, /v1/insights, /v1/prioritize, /v1/describe-image endpoints live. Prioritize uses daily+hash file cache at ~/.cache/dailybrief/. Describe-image uses callClaudeMultimodal for vision. Therapy pipeline complete: POST /v1/therapy/classify, /v1/therapy/patterns, /v1/therapy/prep ported from Swift with full prompt fidelity.
