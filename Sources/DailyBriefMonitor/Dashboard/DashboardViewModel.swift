@@ -41,6 +41,13 @@ final class DashboardViewModel {
     // Re-triage state
     var retriagingThoughtId: Int64?
 
+    // Expand/collapse state
+    var expandedThoughtIds: Set<Int64> = []
+
+    // Editing state
+    var editingThoughtId: Int64?
+    var editedContent: String = ""
+
     // Import state
     var isImporting = false
     var importProgress: ImportProgress?
@@ -373,6 +380,69 @@ final class DashboardViewModel {
             await loadCounts()
         } catch {
             NSLog("Dashboard: re-triage failed for thought %lld — %@", id, error.localizedDescription)
+        }
+    }
+
+    // MARK: - Expand/Collapse
+
+    /// Toggle a thought's expanded state.
+    func toggleExpanded(_ thought: Thought) {
+        guard let id = thought.id else { return }
+        if expandedThoughtIds.contains(id) {
+            expandedThoughtIds.remove(id)
+        } else {
+            expandedThoughtIds.insert(id)
+        }
+    }
+
+    // MARK: - Inline Editing
+
+    /// Begin editing a thought — populates editor state and expands the row.
+    func startEditing(_ thought: Thought) {
+        guard let id = thought.id else { return }
+        editingThoughtId = id
+        editedContent = thought.content
+        expandedThoughtIds.insert(id)
+    }
+
+    /// Save the current edit, register undo/redo, and refresh.
+    func saveEdit(undoManager: UndoManager?) async {
+        guard let thoughtId = editingThoughtId else { return }
+        let newContent = editedContent.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !newContent.isEmpty else { return }
+
+        await applyEdit(id: thoughtId, content: newContent, undoManager: undoManager)
+    }
+
+    /// Cancel editing without saving.
+    func cancelEdit() {
+        editingThoughtId = nil
+        editedContent = ""
+    }
+
+    /// Apply an edit to a thought, register undo, and refresh.
+    private func applyEdit(id: Int64, content: String, undoManager: UndoManager?) async {
+        do {
+            guard var thought = try await store.fetch(id: id) else { return }
+            let oldContent = thought.content
+
+            thought.content = content
+            try await store.update(thought)
+
+            // Register undo
+            undoManager?.registerUndo(withTarget: self) { [weak undoManager] vm in
+                Task { @MainActor in
+                    await vm.applyEdit(id: id, content: oldContent, undoManager: undoManager)
+                }
+            }
+            undoManager?.setActionName("Edit Thought")
+
+            // Clear editing state and refresh
+            editingThoughtId = nil
+            editedContent = ""
+            await loadThoughts()
+        } catch {
+            NSLog("Dashboard: failed to save thought edit — \(error.localizedDescription)")
         }
     }
 
