@@ -112,7 +112,10 @@ public actor ThoughtStore {
                 return []
             }
             return try Thought
+                .all()
+                .distinct()
                 .joining(required: Thought.thoughtsFts.matching(pattern))
+                .order(Thought.Columns.createdAt.desc)
                 .limit(limit)
                 .fetchAll(db)
         }
