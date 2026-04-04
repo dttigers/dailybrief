@@ -102,7 +102,8 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 **Plans**: TBD
 
 Plans:
-- [ ] 29-01: TBD (run /gsd:plan-phase 29 to break down)
+- [ ] 29-01: Project scaffold + Hono server + health endpoint
+- [ ] 29-02: Database connection + summary endpoint
 
 #### Phase 30: Vigil Core API — Full Endpoints
 
