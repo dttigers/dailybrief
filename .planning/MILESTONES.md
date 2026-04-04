@@ -1,4 +1,56 @@
-# Project Milestones: Jarvis — Personal AI Life Assistant
+# Project Milestones: Vigil — Ambient AI Life Assistant
+
+## v1.4 Intelligence & Organization (Shipped: 2026-04-04, Early Close)
+
+**Delivered:** Dashboard power tools — inline thought editing with undo, bulk actions, source/date filters, AI therapy intelligence (classification + pattern recognition + session prep), and tags/favorites/thought-to-thought linking. Closed early to pivot to Vigil platform (Even G2 smart glasses + Vigil Core API).
+
+**Phases completed:** 24-28 (11 plans total, phases 29-32 deferred)
+
+**Key accomplishments:**
+
+- Inline thought editing with UndoManager integration and expand/collapse
+- Multi-select with bulk delete, recategorize, re-triage; source type and date range filters
+- AI therapy intelligence — classifies therapy thoughts as self-learnable vs bring-to-therapist
+- Therapy prep — pattern recognition across thoughts, AI session prep, PDF integration, dashboard UI
+- Tags, favorites, and bidirectional thought-to-thought linking with CloudKit sync
+- v5 DB migration combining tags, isFavorited, and thought_links in one schema change
+
+**Stats:**
+
+- 44 files created/modified
+- ~5,740 lines of Swift added/modified
+- 5 phases, 11 plans
+- 1 day (2026-04-04)
+
+**Git range:** `feat(24-01)` → `feat(28-03)`
+
+**What's next:** v2.0 Vigil Platform — Vigil Core API (Node.js), Even G2 smart glasses plugin, Mac app migration
+
+---
+
+## v1.3 Stability & Smarts (Shipped: 2026-04-04)
+
+**Delivered:** Bug fixes for daily reliability, manual re-triage, AI work order prioritization, and OAuth2 IMAP work email.
+
+**Phases completed:** 19-23 (7 plans total)
+
+**Key accomplishments:**
+
+- Fixed FTS5 duplicate thoughts, config startup error, settings window sizing
+- Manual re-triage button on dashboard thought rows
+- AI work order prioritization with Claude-powered urgency ranking and daily cache
+- OAuth2 IMAP work email with device code flow and XOAUTH2 authentication
+
+**Stats:**
+
+- 5 phases, 7 plans
+- 1 day (2026-04-04)
+
+**Git range:** `feat(19-01)` → `feat(23-01)`
+
+**What's next:** v1.4 Intelligence & Organization
+
+---
 
 ## v1.2 Daily Driver (Shipped: 2026-04-03)
 

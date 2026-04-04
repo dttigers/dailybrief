@@ -1,8 +1,8 @@
-# Jarvis — Personal AI Life Assistant
+# Vigil — Ambient AI Life Assistant
 
 ## What This Is
 
-A native macOS app that acts as a central nervous system for capturing, organizing, and surfacing thoughts, tasks, and life data. Features frictionless text/voice/image capture via a global hotkey, Claude AI auto-triage into 5 categories, a SwiftUI dashboard with full-text search, Google Calendar integration, and a daily printed PDF brief with captured thoughts and contextual affirmations. Runs as an always-on background assistant with LaunchAgent auto-start, passive folder watching, AI-powered insights, and CloudKit sync across multiple Macs — all designed for an ADHD brain that needs zero-friction capture and automatic organization.
+An ambient AI life assistant built for ADHD brains. Currently a native macOS app (formerly Jarvis) with frictionless text/voice/image capture, Claude AI auto-triage, therapy intelligence, tags/favorites/linking, a SwiftUI dashboard, and a daily printed PDF brief. Runs as an always-on background assistant with LaunchAgent auto-start, passive folder watching, AI-powered insights, and CloudKit sync across multiple Macs. Evolving into a cross-platform system with a platform-agnostic backend (Vigil Core) and smart glasses integration (Even Realities G2).
 
 ## Core Value
 
@@ -44,31 +44,38 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Manual re-triage — UI button to re-run AI triage on any thought — v1.3
 - ✓ AI work order prioritization — Claude-powered urgency ranking with daily cache — v1.3
 - ✓ OAuth2 IMAP work email — device code flow, XOAUTH2 auth, configurable host/port — v1.3
+- ✓ Inline thought editing with undo/redo and expand/collapse — v1.4
+- ✓ Bulk actions (delete/recategorize/retriage) and source/date filters — v1.4
+- ✓ AI therapy intelligence — self-learnable vs bring-to-therapist classification — v1.4
+- ✓ Therapy prep — pattern recognition, session prep AI, PDF integration, dashboard UI — v1.4
+- ✓ Tags, favorites, and thought-to-thought linking with CloudKit sync — v1.4
 
 ### Active
 
-- [ ] Pattern recognition — surface recurring themes, especially for therapy prep
-- [ ] Undo/redo for thought editing
-- [ ] Thought tagging and manual organization beyond AI categories
+- [ ] Vigil Core API — platform-agnostic Node.js backend exposing REST API for all clients
+- [ ] Even G2 smart glasses plugin — ambient display of work orders, reminders, affirmation
+- [ ] Mac app migration — redirect Swift services to call Vigil Core instead of computing locally
 - [ ] Brief history — browse and reprint past daily briefs
+- [ ] Export system — thoughts as Markdown/JSON/CSV
 - [ ] CKSubscription push notifications — upgrade from polling-based sync
 
 ### Out of Scope
 
-- iOS/mobile app — pocket voice recorder handles mobile capture; revisit later
+- iOS/mobile app — build once Vigil Core runs on a server, not just localhost
 - Real-time voice assistant — this is capture-and-review, not conversational
 - Replacing the physical notebook — digital complements the traveler's notebook, doesn't replace it
-- Multi-user support — this is a personal tool for one person
-- Offline mode — local-first architecture already works offline except for API calls
+- Multi-user support — build after Vigil Core is proven on a server
+- Android XR — wait for SDK maturity, build after Even G2 shows traction
 
 ## Context
 
-Shipped v1.3 Stability & Smarts with ~9,400 LOC Swift across 59 files in 8 days total (v1.0 + v1.1 + v1.2 + v1.3).
+Shipped v1.4 Intelligence & Organization (early close) with ~12,500 LOC Swift across 65+ files in 9 days total.
 Tech stack: Swift 6.2, SwiftUI, SPM, GRDB/SQLite with FTS5, CloudKit, Claude API (SwiftAnthropic), Google Calendar REST API with OAuth2, ESPN REST API, IMAP with XOAUTH2.
-11 major services: CaptureService, TriageService, VoiceCaptureService, ImageDescriptionService, GoogleCalendarService, BriefScheduler, FolderWatcherService, InsightService, SyncService, ESPNSportsService, WorkOrderPrioritizer.
+13 major services: CaptureService, TriageService, VoiceCaptureService, ImageDescriptionService, GoogleCalendarService, BriefScheduler, FolderWatcherService, InsightService, SyncService, ESPNSportsService, WorkOrderPrioritizer, TherapyClassificationService, TherapyPatternService, TherapyPrepService.
 3 UI surfaces: floating capture panel (Cmd+Shift+J), central dashboard with settings (850px wide), daily PDF brief (3 pages).
 Always-on via LaunchAgent with auto-start at login. CloudKit sync across multiple Macs with last-write-wins conflict resolution.
-v1.3 additions: bug fixes (FTS5 dedup, config startup, settings sizing), manual re-triage, AI work order prioritization, OAuth2 IMAP work email.
+v1.4 additions: inline editing with undo, bulk actions, source/date filters, therapy intelligence (classification + patterns + prep), tags/favorites/linking.
+Next: Vigil platform — extract Vigil Core API (Node.js), build Even G2 smart glasses plugin, migrate Mac app to call Core API.
 
 ## Constraints
 
@@ -101,5 +108,8 @@ v1.3 additions: bug fixes (FTS5 dedup, config startup, settings sizing), manual 
 | OAuth2 device code flow for IMAP auth | Headless-friendly (no browser redirect needed); works in CLI and menu bar contexts; Azure AD compatible | ✓ Good |
 | Actor-based WorkOrderPrioritizer with daily cache | Hash-based cache invalidation avoids redundant API calls; actor isolation for thread safety | ✓ Good |
 
+| Early close of v1.4 to pivot to Vigil platform | Even G2 smart glasses SDK launched 2026-04-03; first-mover window for ambient AI + ADHD | — Pending |
+| Rename from Jarvis to Vigil | Jarvis has Marvel/Disney IP conflict, hundreds of existing apps; Vigil fits the product promise | — Pending |
+
 ---
-*Last updated: 2026-04-04 after v1.3 milestone*
+*Last updated: 2026-04-04 after v1.4 milestone (early close)*
