@@ -243,6 +243,98 @@ enum PageThreeRenderer {
                 }
             }
         }
+
+        // THERAPY PREP SECTION (only if prep exists with items)
+        if let prep = data.therapyPrep, !prep.items.isEmpty {
+            let pageBottom = S.contentHeight - S.margin
+
+            // Divider before therapy prep
+            y += 4
+            context.setStrokeColor(S.lightGray)
+            context.setLineWidth(0.5)
+            context.move(to: CGPoint(x: leftX, y: PDFGenerator.cgY(y)))
+            context.addLine(to: CGPoint(x: rightEdge, y: PDFGenerator.cgY(y)))
+            context.strokePath()
+            y += 6
+
+            // Check if we have space for at least the header + one item
+            let minSpace = S.headerSize + S.bodySize + S.bodySize + 16
+            if y + minSpace <= pageBottom {
+                PDFGenerator.drawText(
+                    "Therapy Prep",
+                    at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.headerSize)),
+                    font: S.headerFont(), color: S.black, context: context
+                )
+                y += S.headerSize + 4
+
+                // Patterns sub-section (compact, up to 3)
+                if !data.therapyPatterns.isEmpty {
+                    for pattern in data.therapyPatterns.prefix(3) {
+                        if y + S.bodySize > pageBottom { break }
+                        let patternText = "\u{2022} \(pattern.theme) (\(pattern.trend))"
+                        PDFGenerator.drawText(
+                            patternText,
+                            at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.bodySize)),
+                            font: S.bodyFont(), color: S.darkGray, context: context
+                        )
+                        y += S.bodySize + 2
+                    }
+                    y += 2
+                }
+
+                // Prep items (up to 5)
+                let boldFont = CTFontCreateWithName("Helvetica-Bold" as CFString, S.bodySize, nil)
+                for item in prep.items.prefix(5) {
+                    // Need space for topic line + context line
+                    let neededSpace = S.bodySize + S.bodySize + 8
+                    if y + neededSpace > pageBottom { break }
+
+                    // Urgency indicator (filled circle)
+                    let urgencyColor: CGColor
+                    switch item.urgency.lowercased() {
+                    case "high": urgencyColor = S.black
+                    case "medium": urgencyColor = S.darkGray
+                    default: urgencyColor = S.medGray
+                    }
+                    let dotSize: CGFloat = 4
+                    let dotY = PDFGenerator.cgY(y + S.bodySize) + (S.bodySize - dotSize) / 2
+                    context.setFillColor(urgencyColor)
+                    context.fillEllipse(in: CGRect(x: leftX, y: dotY, width: dotSize, height: dotSize))
+
+                    // Topic in bold
+                    let topicText = String(item.topic.prefix(40))
+                    PDFGenerator.drawText(
+                        topicText,
+                        at: CGPoint(x: leftX + dotSize + 4, y: PDFGenerator.cgY(y + S.bodySize)),
+                        font: boldFont, color: S.black, context: context
+                    )
+                    y += S.bodySize + 2
+
+                    // Context indented, truncated
+                    if y + S.bodySize <= pageBottom {
+                        let contextText = String(item.context.prefix(60))
+                        PDFGenerator.drawText(
+                            contextText,
+                            at: CGPoint(x: leftX + 8, y: PDFGenerator.cgY(y + S.bodySize)),
+                            font: S.bodyFont(), color: S.darkGray, context: context
+                        )
+                        y += S.bodySize + 4
+                    }
+                }
+
+                // Suggested focus (if exists and space allows)
+                if !prep.suggestedFocus.isEmpty, y + S.bodySize <= pageBottom {
+                    let italicFont = CTFontCreateWithName("Helvetica-Oblique" as CFString, S.bodySize, nil)
+                    let focusText = "Focus: \(prep.suggestedFocus)"
+                    PDFGenerator.drawText(
+                        String(focusText.prefix(70)),
+                        at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + S.bodySize)),
+                        font: italicFont, color: S.darkGray, context: context
+                    )
+                    y += S.bodySize + 4
+                }
+            }
+        }
     }
 
     /// Draw a thought item with bullet, truncated content, and source indicator.
