@@ -15,6 +15,33 @@ enum CategoryFilter: Hashable {
     }
 }
 
+/// Date range filter for narrowing thought lists by time period.
+enum DateRangeFilter: String, CaseIterable {
+    case all
+    case today
+    case thisWeek
+    case thisMonth
+
+    var startDate: Date? {
+        let cal = Calendar.current
+        switch self {
+        case .all: return nil
+        case .today: return cal.startOfDay(for: Date())
+        case .thisWeek: return cal.date(from: cal.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date()))
+        case .thisMonth: return cal.date(from: cal.dateComponents([.year, .month], from: Date()))
+        }
+    }
+
+    var displayName: String {
+        switch self {
+        case .all: return "All Time"
+        case .today: return "Today"
+        case .thisWeek: return "This Week"
+        case .thisMonth: return "This Month"
+        }
+    }
+}
+
 /// View model for the central dashboard — fetches, filters, searches thoughts, and handles file imports.
 @MainActor @Observable
 final class DashboardViewModel {
@@ -47,6 +74,10 @@ final class DashboardViewModel {
     // Editing state
     var editingThoughtId: Int64?
     var editedContent: String = ""
+
+    // Source and date range filters
+    var sourceFilter: CaptureSource?
+    var dateRangeFilter: DateRangeFilter = .all
 
     // Selection / bulk action state
     var isSelectionMode: Bool = false
@@ -109,18 +140,31 @@ final class DashboardViewModel {
         isLoading = false
     }
 
-    /// Reload thoughts based on current search query and category filter.
+    /// Reload thoughts based on current search query, category, source, and date filters.
     func loadThoughts() async {
         do {
             let trimmed = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
             let category = selectedFilter.category
+            let afterDate = dateRangeFilter.startDate
 
             if trimmed.isEmpty {
                 // When viewing tasks with a status sub-filter, use fetchTasks
                 if category == .task, let statusFilter = taskStatusFilter {
-                    thoughts = try await store.fetchTasks(status: statusFilter)
+                    var results = try await store.fetchTasks(status: statusFilter)
+                    // Client-side source and date filtering for task status path
+                    if let sourceFilter {
+                        results = results.filter { $0.source == sourceFilter }
+                    }
+                    if let afterDate {
+                        results = results.filter { $0.createdAt >= afterDate }
+                    }
+                    thoughts = results
                 } else {
-                    var results = try await store.fetchAll(category: category)
+                    var results = try await store.fetchFiltered(
+                        category: category,
+                        source: sourceFilter,
+                        after: afterDate
+                    )
                     // Auto-hide completed tasks unless explicitly viewing Done filter
                     if taskStatusFilter == nil {
                         results = results.filter { $0.taskStatus != .done }
@@ -128,10 +172,16 @@ final class DashboardViewModel {
                     thoughts = results
                 }
             } else {
-                // FTS5 search — then client-side filter by category if needed
+                // FTS5 search — then client-side filter by category, source, and date
                 var results = try await store.search(query: trimmed)
                 if let category {
                     results = results.filter { $0.category == category }
+                }
+                if let sourceFilter {
+                    results = results.filter { $0.source == sourceFilter }
+                }
+                if let afterDate {
+                    results = results.filter { $0.createdAt >= afterDate }
                 }
                 if category == .task, let statusFilter = taskStatusFilter {
                     results = results.filter { $0.taskStatus == statusFilter }

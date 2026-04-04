@@ -125,6 +125,54 @@ public actor ThoughtStore {
         }
     }
 
+    /// Fetch thoughts with combined filters, ordered by createdAt descending.
+    /// Excludes thoughts marked for deletion.
+    public func fetchFiltered(
+        category: ThoughtCategory? = nil,
+        source: CaptureSource? = nil,
+        after: Date? = nil,
+        limit: Int = 100,
+        offset: Int = 0
+    ) async throws -> [Thought] {
+        try await db.reader.read { db in
+            var request = Thought
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
+                .order(Thought.Columns.createdAt.desc)
+            if let category {
+                request = request.filter(Thought.Columns.category == category.rawValue)
+            }
+            if let source {
+                request = request.filter(Thought.Columns.source == source.rawValue)
+            }
+            if let after {
+                request = request.filter(Thought.Columns.createdAt >= after)
+            }
+            return try request.limit(limit, offset: offset).fetchAll(db)
+        }
+    }
+
+    /// Count thoughts with combined filters. Excludes deleted.
+    public func countFiltered(
+        category: ThoughtCategory? = nil,
+        source: CaptureSource? = nil,
+        after: Date? = nil
+    ) async throws -> Int {
+        try await db.reader.read { db in
+            var request = Thought
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
+            if let category {
+                request = request.filter(Thought.Columns.category == category.rawValue)
+            }
+            if let source {
+                request = request.filter(Thought.Columns.source == source.rawValue)
+            }
+            if let after {
+                request = request.filter(Thought.Columns.createdAt >= after)
+            }
+            return try request.fetchCount(db)
+        }
+    }
+
     /// Count thoughts, optionally filtered by category. Excludes deleted.
     public func count(category: ThoughtCategory? = nil) async throws -> Int {
         try await db.reader.read { db in
