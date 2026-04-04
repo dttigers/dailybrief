@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 26 of 32 (Therapy Intelligence)
-Plan: 02 complete
-Status: Phase complete
-Last activity: 2026-04-04 - Phase 26 complete (therapy classification model, AI service, auto-classify after triage, dashboard UI)
+Phase: 27 of 32 (Therapy Prep Patterns)
+Plan: 01 complete
+Status: In progress
+Last activity: 2026-04-04 - Plan 27-01 complete (TherapyPatternService, TherapyPrepService actors, models, ThoughtStore date-range queries)
 
-Progress: ███░░░░░░░ 33%
+Progress: ███░░░░░░░ 34%
 
 ## Performance Metrics
 
@@ -61,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 26 complete
+Stopped at: Phase 27, plan 01 complete
 Resume file: None
