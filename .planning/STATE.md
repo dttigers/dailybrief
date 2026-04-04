@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 32 of 36 (Even G2 Scaffold + Home Screen)
-Plan: 02 complete
-Status: Phase 32 complete
-Last activity: 2026-04-04 - Plan 02 complete (home screen with mock data)
+Phase: 33 of 36 (G2 Screens + Navigation)
+Plan: 01 complete
+Status: In progress
+Last activity: 2026-04-04 - Plan 01 complete (API client + navigation state machine)
 
-Progress: ██░░░░░░░░ 37%
+Progress: ██░░░░░░░░ 39%
 
 ## Performance Metrics
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 32 Plan 02 complete, phase done
+Stopped at: Phase 33 Plan 01 complete, plans 02-03 remain
 Resume file: None
-Notes: Home screen renders 3-zone layout (header/body/footer) with mock Vigil data on G2 display. Types match real API shapes for Phase 33 swap. Lifecycle events handled. Screen builder pattern established (buildXScreen -> CreateStartUpPageContainer).
+Notes: API client (api.ts) with graceful fallbacks ready. Navigation state machine cycles HOME/WORK_ORDERS/AFFIRMATION via swipe events. Placeholder screens in place for Plan 02/03 replacement. RebuildPageContainer pattern established for screen switching.
