@@ -196,17 +196,15 @@ Plans:
 Plans:
 - [ ] 21-01: TBD
 
-#### Phase 22: IMAP Work Email
+#### Phase 22: IMAP Work Email ✅
 
 **Goal**: Test and implement direct IMAP access for work email as alternative to Gmail API
 **Depends on**: Phase 21
-**Research**: Likely (IMAP protocol integration, authentication patterns)
-**Research topics**: Swift IMAP libraries, OAuth2 vs app passwords for work email, email parsing
-**Plans**: TBD
+**Completed**: 2026-04-04 (checkpoint deferred — Azure AD admin consent pending)
 
 Plans:
-- [ ] 22-01: OAuth2 IMAP backend (config + XOAUTH2 + device code CLI)
-- [ ] 22-02: Settings UI auth type picker + work email verification
+- [x] 22-01: OAuth2 IMAP backend (config + XOAUTH2 + device code CLI)
+- [x] 22-02: Settings UI auth type picker + work email verification (checkpoint deferred)
 
 #### Phase 23: Polish & Integration
 
@@ -247,5 +245,5 @@ None
 | 19. Bug Fixes | v1.3 | 2/2 | Complete | 2026-04-04 |
 | 20. Folder Watcher & Manual Triage | v1.3 | 2/2 | Complete | 2026-04-04 |
 | 21. AI Work Order Prioritization | v1.3 | 1/1 | Complete | 2026-04-04 |
-| 22. IMAP Work Email | v1.3 | 0/2 | Planned | - |
+| 22. IMAP Work Email | v1.3 | 2/2 | Complete* | 2026-04-04 |
 | 23. Polish & Integration | v1.3 | 0/? | Not started | - |
