@@ -12,6 +12,15 @@ struct ThoughtRowView: View {
     /// Whether this row is in inline edit mode.
     var isEditing: Bool = false
 
+    /// Whether multi-select mode is active.
+    var isSelectionMode: Bool = false
+
+    /// Whether this row is currently selected.
+    var isSelected: Bool = false
+
+    /// Called when the user toggles this row's selection.
+    var onToggleSelection: (() -> Void)?
+
     /// Bound to the ViewModel's editedContent for the active editor.
     var editedContent: Binding<String>?
 
@@ -43,8 +52,15 @@ struct ThoughtRowView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Content row — optional status icon + text/editor
+            // Content row — optional selection checkbox + status icon + text/editor
             HStack(alignment: .top, spacing: 6) {
+                if isSelectionMode {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                        .foregroundStyle(isSelected ? .blue : .secondary)
+                        .font(.body)
+                        .onTapGesture { onToggleSelection?() }
+                }
+
                 if let status = thought.taskStatus, thought.category == .task {
                     Button {
                         onStatusToggle?()
@@ -57,7 +73,16 @@ struct ThoughtRowView: View {
                     .help("Status: \(status.displayName) — click to cycle")
                 }
 
-                if isEditing, let editedContent {
+                if isSelectionMode {
+                    // In selection mode, tap toggles selection instead of expand/edit
+                    Text(thought.content)
+                        .font(.body)
+                        .lineLimit(isExpanded ? nil : 2)
+                        .truncationMode(.tail)
+                        .strikethrough(thought.taskStatus == .done)
+                        .foregroundStyle(thought.taskStatus == .done ? .secondary : .primary)
+                        .onTapGesture { onToggleSelection?() }
+                } else if isEditing, let editedContent {
                     VStack(alignment: .leading, spacing: 4) {
                         TextEditor(text: editedContent)
                             .font(.body)
@@ -132,6 +157,13 @@ struct ThoughtRowView: View {
         }
         .padding(.vertical, 4)
         .contextMenu {
+            if isSelectionMode {
+                Button {
+                    onToggleSelection?()
+                } label: {
+                    Label(isSelected ? "Deselect" : "Select", systemImage: isSelected ? "circle" : "checkmark.circle")
+                }
+            }
             Button {
                 onToggleExpand?()
             } label: {

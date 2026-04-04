@@ -18,6 +18,14 @@ struct DashboardView: View {
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button {
+                    viewModel.toggleSelectionMode()
+                } label: {
+                    Label(viewModel.isSelectionMode ? "Done" : "Select",
+                          systemImage: viewModel.isSelectionMode ? "checkmark.circle" : "checklist")
+                }
+                .help(viewModel.isSelectionMode ? "Exit selection mode" : "Enter selection mode")
+
+                Button {
                     viewModel.importFiles()
                 } label: {
                     Label("Import Files", systemImage: "square.and.arrow.down.on.square")
@@ -46,12 +54,28 @@ struct DashboardView: View {
             await viewModel.refresh()
         }
         .onChange(of: viewModel.selectedFilter) {
-            // Reset task status sub-filter when switching categories
+            // Reset task status sub-filter and selection when switching categories
             viewModel.taskStatusFilter = nil
+            viewModel.selectedThoughtIds.removeAll()
             Task { await viewModel.loadThoughts() }
         }
         .onChange(of: viewModel.taskStatusFilter) {
+            viewModel.selectedThoughtIds.removeAll()
             Task { await viewModel.loadThoughts() }
+        }
+        .onKeyPress(.escape) {
+            if viewModel.isSelectionMode {
+                viewModel.toggleSelectionMode()
+                return .handled
+            }
+            return .ignored
+        }
+        .onKeyPress(characters: CharacterSet(charactersIn: "a")) { keyPress in
+            if viewModel.isSelectionMode && keyPress.modifiers.contains(.command) {
+                viewModel.selectAll()
+                return .handled
+            }
+            return .ignored
         }
     }
 
@@ -199,6 +223,66 @@ struct DashboardView: View {
                 .background(Color(nsColor: .controlBackgroundColor))
             }
 
+            // Bulk action bar
+            if viewModel.isSelectionMode && !viewModel.selectedThoughtIds.isEmpty {
+                HStack(spacing: 12) {
+                    if viewModel.isBulkProcessing, let progress = viewModel.bulkProgress {
+                        ProgressView()
+                            .controlSize(.small)
+                        Text("Re-triaging \(progress.current)/\(progress.total)...")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        Text("\(viewModel.selectedThoughtIds.count) selected")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+
+                        let allSelected = viewModel.selectedThoughtIds.count == viewModel.thoughts.compactMap(\.id).count
+                        Button(allSelected ? "Deselect All" : "Select All") {
+                            if allSelected {
+                                viewModel.deselectAll()
+                            } else {
+                                viewModel.selectAll()
+                            }
+                        }
+                        .controlSize(.small)
+
+                        Spacer()
+
+                        Button(role: .destructive) {
+                            Task { await viewModel.bulkDelete() }
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        .controlSize(.small)
+                        .disabled(viewModel.isBulkProcessing)
+
+                        Menu {
+                            ForEach(ThoughtCategory.allCases, id: \.self) { category in
+                                Button(category.displayName) {
+                                    Task { await viewModel.bulkRecategorize(category: category) }
+                                }
+                            }
+                        } label: {
+                            Label("Re-categorize", systemImage: "arrow.triangle.2.circlepath")
+                        }
+                        .controlSize(.small)
+                        .disabled(viewModel.isBulkProcessing)
+
+                        Button {
+                            Task { await viewModel.bulkRetriage() }
+                        } label: {
+                            Label("Re-triage", systemImage: "sparkles")
+                        }
+                        .controlSize(.small)
+                        .disabled(viewModel.isBulkProcessing)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(nsColor: .controlBackgroundColor))
+            }
+
             // Insights section
             if !viewModel.insights.isEmpty {
                 Section("Insights") {
@@ -264,6 +348,9 @@ struct DashboardView: View {
                         thought: thought,
                         isExpanded: viewModel.expandedThoughtIds.contains(thought.id ?? -1),
                         isEditing: viewModel.editingThoughtId == thought.id,
+                        isSelectionMode: viewModel.isSelectionMode,
+                        isSelected: viewModel.selectedThoughtIds.contains(thought.id ?? -1),
+                        onToggleSelection: { viewModel.toggleSelection(thought) },
                         editedContent: Binding(
                             get: { viewModel.editedContent },
                             set: { viewModel.editedContent = $0 }
