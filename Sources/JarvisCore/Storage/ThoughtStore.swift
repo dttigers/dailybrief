@@ -288,6 +288,44 @@ public actor ThoughtStore {
         }
     }
 
+    /// Fetch therapy-category thoughts within a date range, optionally filtered by classification.
+    /// Excludes thoughts marked for deletion.
+    public func fetchTherapyThoughtsByDateRange(
+        from startDate: Date,
+        to endDate: Date,
+        classification: TherapyClassification? = nil
+    ) async throws -> [Thought] {
+        try await db.reader.read { db in
+            var request = Thought
+                .filter(Thought.Columns.category == ThoughtCategory.therapy.rawValue)
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
+                .filter(Thought.Columns.createdAt >= startDate)
+                .filter(Thought.Columns.createdAt <= endDate)
+                .order(Thought.Columns.createdAt.desc)
+            if let classification {
+                request = request.filter(Thought.Columns.therapyClassification == classification.rawValue)
+            }
+            return try request.fetchAll(db)
+        }
+    }
+
+    /// Convenience method to fetch recent therapy thoughts within a number of days.
+    /// Excludes thoughts marked for deletion.
+    public func fetchRecentTherapyThoughts(
+        days: Int,
+        classification: TherapyClassification? = nil,
+        limit: Int = 100
+    ) async throws -> [Thought] {
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        let endDate = Date()
+        let thoughts = try await fetchTherapyThoughtsByDateRange(
+            from: startDate,
+            to: endDate,
+            classification: classification
+        )
+        return Array(thoughts.prefix(limit))
+    }
+
     /// Count therapy-category thoughts with no classification (nil therapyClassification). Excludes deleted.
     public func countUnclassifiedTherapy() async throws -> Int {
         try await db.reader.read { db in
