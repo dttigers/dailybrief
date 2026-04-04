@@ -5,6 +5,8 @@ import { summary } from "./routes/summary.js";
 import { thoughts } from "./routes/thoughts.js";
 import { tags } from "./routes/tags.js";
 import { links } from "./routes/links.js";
+import { brief } from "./routes/brief.js";
+import { bulk } from "./routes/bulk.js";
 import { getDb } from "./db/index.js";
 
 // Initialize database connection at startup
@@ -17,6 +19,8 @@ app.route("/v1", summary);
 app.route("/v1", thoughts);
 app.route("/v1", tags);
 app.route("/v1", links);
+app.route("/v1", brief);
+app.route("/v1", bulk);
 
 const port = Number(process.env.PORT) || 3001;
 
