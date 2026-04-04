@@ -45,6 +45,18 @@ struct ThoughtRowView: View {
     /// All unique tags across all thoughts, for the tag picker.
     var allUniqueTags: [String] = []
 
+    /// Called when the user wants to link this thought to another.
+    var onLinkThought: (() -> Void)?
+
+    /// Number of linked thoughts for this thought.
+    var linkCount: Int = 0
+
+    /// Linked thoughts to display in expanded view.
+    var linkedThoughts: [Thought] = []
+
+    /// Called when the user removes a link from expanded view.
+    var onRemoveLink: ((Int64) -> Void)?
+
     /// Called when the user deletes this thought from the context menu.
     var onDelete: (() -> Void)?
 
@@ -198,6 +210,21 @@ struct ThoughtRowView: View {
                         .buttonStyle(.plain)
                         .help("Re-categorize this thought")
                     }
+
+                    // Link count badge
+                    if linkCount > 0 {
+                        HStack(spacing: 2) {
+                            Image(systemName: "link")
+                                .font(.caption2)
+                            Text("\(linkCount)")
+                                .font(.caption2)
+                        }
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.15))
+                        .clipShape(Capsule())
+                    }
                 }
 
                 Spacer()
@@ -261,6 +288,53 @@ struct ThoughtRowView: View {
                     tagPickerPopover
                 }
             }
+
+            // Linked thoughts section — shown when expanded and has links
+            if isExpanded && !linkedThoughts.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Linked Thoughts")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 4)
+
+                    ForEach(linkedThoughts) { linked in
+                        HStack(spacing: 6) {
+                            Text(linked.content)
+                                .font(.caption)
+                                .lineLimit(1)
+                                .truncationMode(.tail)
+
+                            if let category = linked.category {
+                                Text(category.displayName)
+                                    .font(.system(size: 9, weight: .medium))
+                                    .foregroundStyle(.white)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 1)
+                                    .background(category.displayColor.opacity(0.85))
+                                    .clipShape(Capsule())
+                            }
+
+                            Spacer()
+
+                            if let linkedId = linked.id {
+                                Button {
+                                    onRemoveLink?(linkedId)
+                                } label: {
+                                    Image(systemName: "link.badge.minus")
+                                        .font(.caption2)
+                                        .foregroundStyle(.red.opacity(0.7))
+                                }
+                                .buttonStyle(.plain)
+                                .help("Unlink this thought")
+                            }
+                        }
+                        .padding(.vertical, 2)
+                        .padding(.horizontal, 4)
+                        .background(Color.secondary.opacity(0.05))
+                        .clipShape(RoundedRectangle(cornerRadius: 4))
+                    }
+                }
+            }
         }
         .padding(.vertical, 4)
         .contextMenu {
@@ -301,6 +375,11 @@ struct ThoughtRowView: View {
                 } label: {
                     Label("Re-classify therapy", systemImage: "arrow.triangle.2.circlepath")
                 }
+            }
+            Button {
+                onLinkThought?()
+            } label: {
+                Label("Link to...", systemImage: "link")
             }
             Divider()
             Button(role: .destructive) {

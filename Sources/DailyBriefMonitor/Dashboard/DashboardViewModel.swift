@@ -106,6 +106,12 @@ final class DashboardViewModel {
     var allTags: [String] = []
     var favoritesCount: Int = 0
 
+    // Linking state
+    var linkingThoughtId: Int64?
+    var linkSearchQuery: String = ""
+    var linkSearchResults: [Thought] = []
+    var linkCounts: [Int64: Int] = [:]
+
     // Selection / bulk action state
     var isSelectionMode: Bool = false
     var selectedThoughtIds: Set<Int64> = []
@@ -266,10 +272,29 @@ final class DashboardViewModel {
                 }
                 thoughts = results
             }
+            // Compute link counts for displayed thoughts
+            await loadLinkCounts()
         } catch {
             NSLog("Dashboard: failed to load thoughts — \(error.localizedDescription)")
             thoughts = []
         }
+    }
+
+    /// Load link counts for all currently displayed thoughts.
+    private func loadLinkCounts() async {
+        var counts: [Int64: Int] = [:]
+        for thought in thoughts {
+            guard let id = thought.id else { continue }
+            do {
+                let count = try await store.countLinks(thoughtId: id)
+                if count > 0 {
+                    counts[id] = count
+                }
+            } catch {
+                // Silently skip — link counts are non-critical
+            }
+        }
+        linkCounts = counts
     }
 
     /// Cycle a task thought's status: open → inProgress → done → open.
@@ -843,6 +868,72 @@ final class DashboardViewModel {
             await loadCounts()
         } catch {
             NSLog("Dashboard: bulk add tag failed — \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Thought Linking
+
+    /// Begin linking mode for a thought — sets linkingThoughtId and clears search.
+    func startLinking(thoughtId: Int64) {
+        linkingThoughtId = thoughtId
+        linkSearchQuery = ""
+        linkSearchResults = []
+    }
+
+    /// Search for link target thoughts, excluding self and already-linked thoughts.
+    func searchForLinkTarget(query: String) async {
+        linkSearchQuery = query
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, let sourceId = linkingThoughtId else {
+            linkSearchResults = []
+            return
+        }
+        do {
+            var results = try await store.search(query: trimmed)
+            // Exclude self
+            results = results.filter { $0.id != sourceId }
+            // Exclude already linked
+            let linked = try await store.fetchLinkedThoughts(thoughtId: sourceId)
+            let linkedIds = Set(linked.compactMap(\.id))
+            results = results.filter { !linkedIds.contains($0.id ?? -1) }
+            linkSearchResults = results
+        } catch {
+            NSLog("Dashboard: link target search failed — \(error.localizedDescription)")
+            linkSearchResults = []
+        }
+    }
+
+    /// Create a bidirectional link between the linking source and target thought.
+    func createLink(targetId: Int64) async {
+        guard let sourceId = linkingThoughtId else { return }
+        do {
+            try await store.linkThoughts(sourceId: sourceId, targetId: targetId)
+            linkingThoughtId = nil
+            linkSearchQuery = ""
+            linkSearchResults = []
+            await loadThoughts()
+        } catch {
+            NSLog("Dashboard: failed to create link — \(error.localizedDescription)")
+        }
+    }
+
+    /// Remove a bidirectional link between two thoughts.
+    func removeLink(thoughtId: Int64, linkedId: Int64) async {
+        do {
+            try await store.unlinkThoughts(sourceId: thoughtId, targetId: linkedId)
+            await loadThoughts()
+        } catch {
+            NSLog("Dashboard: failed to remove link — \(error.localizedDescription)")
+        }
+    }
+
+    /// Fetch all thoughts linked to a given thought.
+    func fetchLinkedThoughts(thoughtId: Int64) async -> [Thought] {
+        do {
+            return try await store.fetchLinkedThoughts(thoughtId: thoughtId)
+        } catch {
+            NSLog("Dashboard: failed to fetch linked thoughts — \(error.localizedDescription)")
+            return []
         }
     }
 

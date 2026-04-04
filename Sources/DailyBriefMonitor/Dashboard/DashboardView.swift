@@ -10,6 +10,7 @@ struct DashboardView: View {
     @State private var showTherapyPrep = false
     @State private var bulkTagText = ""
     @State private var showBulkTagPopover = false
+    @State private var linkedThoughtsCache: [Int64: [Thought]] = [:]
     @Environment(\.undoManager) private var undoManager
 
     var body: some View {
@@ -63,6 +64,16 @@ struct DashboardView: View {
         .sheet(isPresented: $showTherapyPrep) {
             TherapyPrepView(viewModel: viewModel)
                 .frame(minWidth: 500, minHeight: 400)
+        }
+        .sheet(isPresented: Binding(
+            get: { viewModel.linkingThoughtId != nil },
+            set: { if !$0 {
+                viewModel.linkingThoughtId = nil
+                viewModel.linkSearchQuery = ""
+                viewModel.linkSearchResults = []
+            }}
+        )) {
+            LinkedThoughtsSheet(viewModel: viewModel)
         }
         .task {
             await viewModel.refresh()
@@ -719,11 +730,31 @@ struct DashboardView: View {
                             Task { await viewModel.removeTag(thoughtId: id, tag: tag) }
                         },
                         allUniqueTags: viewModel.allTags,
+                        onLinkThought: {
+                            guard let id = thought.id else { return }
+                            viewModel.startLinking(thoughtId: id)
+                        },
+                        linkCount: viewModel.linkCounts[thought.id ?? -1] ?? 0,
+                        linkedThoughts: linkedThoughtsCache[thought.id ?? -1] ?? [],
+                        onRemoveLink: { linkedId in
+                            guard let id = thought.id else { return }
+                            Task {
+                                await viewModel.removeLink(thoughtId: id, linkedId: linkedId)
+                                linkedThoughtsCache.removeValue(forKey: id)
+                            }
+                        },
                         onDelete: {
                             Task { await viewModel.deleteThought(thought) }
                         },
                         onToggleExpand: {
                             viewModel.toggleExpanded(thought)
+                            // Load linked thoughts when expanding (after toggle, check if now expanded)
+                            if let id = thought.id, viewModel.expandedThoughtIds.contains(id) {
+                                Task {
+                                    let linked = await viewModel.fetchLinkedThoughts(thoughtId: id)
+                                    linkedThoughtsCache[id] = linked
+                                }
+                            }
                         },
                         onStartEdit: {
                             viewModel.startEditing(thought)
