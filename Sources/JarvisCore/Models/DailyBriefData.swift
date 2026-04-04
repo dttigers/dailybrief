@@ -56,6 +56,9 @@ public struct DailyBriefData: Sendable {
     // AI-generated insights
     public var insights: [Insight]
 
+    // AI-recommended work order priority (case numbers in urgency order)
+    public var workOrderPriorityOrder: [String]?
+
     public init(
         date: Date,
         workOrders: [WorkOrder],
@@ -72,7 +75,8 @@ public struct DailyBriefData: Sendable {
         unprocessedThoughts: [Thought] = [],
         taskThoughts: [Thought] = [],
         recentThoughts: [Thought] = [],
-        insights: [Insight] = []
+        insights: [Insight] = [],
+        workOrderPriorityOrder: [String]? = nil
     ) {
         self.date = date
         self.workOrders = workOrders
@@ -90,6 +94,7 @@ public struct DailyBriefData: Sendable {
         self.taskThoughts = taskThoughts
         self.recentThoughts = recentThoughts
         self.insights = insights
+        self.workOrderPriorityOrder = workOrderPriorityOrder
     }
 
     public var dateString: String {

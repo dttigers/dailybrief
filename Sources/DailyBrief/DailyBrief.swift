@@ -52,6 +52,7 @@ extension DailyBrief {
             let aiProvider = ClaudeAIProvider(config: config.ai)
             let calendarService: GoogleCalendarService? = config.googleCalendar.enabled
                 ? GoogleCalendarService(config: config.googleCalendar) : nil
+            let prioritizer = WorkOrderPrioritizer(config: config.ai)
 
             // Fetch captured thoughts from ThoughtStore first (local DB, fast)
             // so we can pass summaries into the affirmation prompt
@@ -149,6 +150,14 @@ extension DailyBrief {
                 woStatuses[wo.caseNumber] = CompletionStore.status(for: wo.caseNumber).rawValue
             }
 
+            // AI-prioritize open (non-done) work orders
+            let openWorkOrders = allWorkOrders.filter {
+                CompletionStore.status(for: $0.caseNumber) != .done
+            }
+            let woPriorityOrder = await tryFetch("WO Priority") {
+                try await prioritizer.prioritize(workOrders: openWorkOrders)
+            } ?? nil
+
             let briefData = await DailyBriefData(
                 date: Date(),
                 workOrders: allWorkOrders,
@@ -165,7 +174,8 @@ extension DailyBrief {
                 unprocessedThoughts: unprocessedThoughts,
                 taskThoughts: taskThoughts,
                 recentThoughts: recentThoughts,
-                insights: insights
+                insights: insights,
+                workOrderPriorityOrder: woPriorityOrder
             )
 
             Logger.log("Data fetched: \(briefData.workOrders.count) work orders, \(briefData.todoItems.count) todos, game: \(briefData.gameScore != nil ? "yes" : "no"), standings: \(briefData.standings.count) teams")

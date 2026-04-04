@@ -51,8 +51,10 @@ enum PageOneRenderer {
             y += S.bodySize + 6
         } else {
             // Sort work orders: inProgress first, then open, then done
+            // Within the same status group, use AI priority order if available
+            let priorityOrder = data.workOrderPriorityOrder
             let sortedOrders = data.workOrders.sorted { a, b in
-                let order: (String) -> Int = { status in
+                let statusRank: (String) -> Int = { status in
                     switch status {
                     case "inProgress": return 0
                     case "open": return 1
@@ -62,7 +64,21 @@ enum PageOneRenderer {
                 }
                 let sa = data.workOrderStatuses[a.caseNumber] ?? "open"
                 let sb = data.workOrderStatuses[b.caseNumber] ?? "open"
-                return order(sa) < order(sb)
+                let rankA = statusRank(sa)
+                let rankB = statusRank(sb)
+
+                if rankA != rankB {
+                    return rankA < rankB
+                }
+
+                // Within same status, sort by AI priority if available
+                if let order = priorityOrder {
+                    let idxA = order.firstIndex(of: a.caseNumber) ?? Int.max
+                    let idxB = order.firstIndex(of: b.caseNumber) ?? Int.max
+                    return idxA < idxB
+                }
+
+                return false // preserve original order if no AI priority
             }
 
             for wo in sortedOrders.prefix(6) {
