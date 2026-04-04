@@ -71,6 +71,13 @@ export async function navigateTo(
   console.log(`[vigil-g2] navigated to: ${screen}`)
 }
 
+/** Refresh the current screen with fresh API data */
+export async function refreshCurrentScreen(
+  bridge: EvenAppBridge,
+): Promise<void> {
+  await navigateTo(currentScreen, bridge)
+}
+
 /** Handle navigation events from temple touchpad / R1 ring */
 export async function handleNavEvent(
   eventType: OsEventTypeList,

@@ -3,7 +3,7 @@ import {
   OsEventTypeList,
 } from '@evenrealities/even_hub_sdk'
 import { buildHomeScreen } from './screens/home.ts'
-import { handleNavEvent } from './navigation.ts'
+import { handleNavEvent, refreshCurrentScreen } from './navigation.ts'
 import { fetchSummary, fetchAffirmation } from './api.ts'
 
 const NAV_EVENTS = new Set([
@@ -11,6 +11,22 @@ const NAV_EVENTS = new Set([
   OsEventTypeList.SCROLL_BOTTOM_EVENT,
   OsEventTypeList.DOUBLE_CLICK_EVENT,
 ])
+
+const REFRESH_INTERVAL_MS = 60_000
+
+let refreshTimer: ReturnType<typeof setInterval> | null = null
+
+function startRefreshTimer(bridge: Awaited<ReturnType<typeof waitForEvenAppBridge>>): void {
+  stopRefreshTimer()
+  refreshTimer = setInterval(() => void refreshCurrentScreen(bridge), REFRESH_INTERVAL_MS)
+}
+
+function stopRefreshTimer(): void {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+    refreshTimer = null
+  }
+}
 
 async function init(): Promise<void> {
   const bridge = await waitForEvenAppBridge()
@@ -22,6 +38,9 @@ async function init(): Promise<void> {
   ])
   const container = buildHomeScreen(summary, affirmation)
   await bridge.createStartUpPageContainer(container)
+
+  // Start 60s auto-refresh timer
+  startRefreshTimer(bridge)
 
   // Listen for lifecycle + navigation events
   bridge.onEvenHubEvent((event) => {
@@ -40,8 +59,11 @@ async function init(): Promise<void> {
       }
       if (eventType === OsEventTypeList.FOREGROUND_ENTER_EVENT) {
         console.log('Vigil foregrounded')
+        void refreshCurrentScreen(bridge)
+        startRefreshTimer(bridge)
       } else if (eventType === OsEventTypeList.FOREGROUND_EXIT_EVENT) {
         console.log('Vigil backgrounded')
+        stopRefreshTimer()
       }
     }
   })
