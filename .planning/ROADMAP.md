@@ -244,16 +244,15 @@ Plans:
 - [x] 25-01: Multi-Select & Bulk Actions
 - [x] 25-02: Source & Date Filters
 
-#### Phase 26: Therapy Intelligence
+#### Phase 26: Therapy Intelligence ✅
 
 **Goal**: AI classifies therapy-category thoughts into self-learnable (can work on independently) vs bring-to-therapist (needs professional guidance)
 **Depends on**: Phase 25
-**Research**: Likely (AI prompt design for clinical triage sensitivity)
-**Research topics**: Prompt engineering for therapy thought classification; appropriate confidence thresholds; ethical framing (tool not replacement for clinical judgment)
-**Plans**: TBD
+**Completed**: 2026-04-04
 
 Plans:
-- [ ] 26-01: TBD
+- [x] 26-01: Model, Storage & Classification Service
+- [x] 26-02: Triage Wiring & Dashboard UI
 
 #### Phase 27: Therapy Prep & Patterns
 
@@ -349,7 +348,7 @@ None
 | 23. Polish & Integration | v1.3 | 1/1 | Complete | 2026-04-04 |
 | 24. Thought Editing | v1.4 | 1/1 | Complete | 2026-04-04 |
 | 25. Bulk Actions & Filtering | v1.4 | 2/2 | Complete | 2026-04-04 |
-| 26. Therapy Intelligence | v1.4 | 0/? | Not started | - |
+| 26. Therapy Intelligence | v1.4 | 2/2 | Complete | 2026-04-04 |
 | 27. Therapy Prep & Patterns | v1.4 | 0/? | Not started | - |
 | 28. Tags & Organization | v1.4 | 0/? | Not started | - |
 | 29. Export System | v1.4 | 0/? | Not started | - |
