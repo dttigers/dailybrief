@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 ## Current Position
 
 Phase: 20 of 23 (Folder Watcher & Manual Triage) — IN PROGRESS
-Plan: 1/? complete
-Status: Plan 01 complete — manual re-triage button shipped
-Last activity: 2026-04-04 - Plan 20-01 complete (re-triage button on dashboard)
+Plan: 2/? complete
+Status: Plan 02 complete — folder watcher diagnostic logging added and verified
+Last activity: 2026-04-04 - Plan 20-02 complete (diagnostic logging + user verification)
 
-Progress: ██░░░░░░░░ 20%
+Progress: ███░░░░░░░ 30%
 
 ## Performance Metrics
 
@@ -59,5 +59,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 20, plan 01 complete
+Stopped at: Phase 20, plan 02 complete
 Resume file: None
