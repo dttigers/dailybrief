@@ -63,6 +63,14 @@ struct DashboardView: View {
             viewModel.selectedThoughtIds.removeAll()
             Task { await viewModel.loadThoughts() }
         }
+        .onChange(of: viewModel.sourceFilter) {
+            viewModel.selectedThoughtIds.removeAll()
+            Task { await viewModel.loadThoughts() }
+        }
+        .onChange(of: viewModel.dateRangeFilter) {
+            viewModel.selectedThoughtIds.removeAll()
+            Task { await viewModel.loadThoughts() }
+        }
         .onKeyPress(.escape) {
             if viewModel.isSelectionMode {
                 viewModel.toggleSelectionMode()
@@ -130,6 +138,59 @@ struct DashboardView: View {
             if viewModel.selectedFilter == .specific(.task) {
                 Section("Status") {
                     taskStatusPills
+                }
+            }
+
+            Section("Source") {
+                Button {
+                    viewModel.sourceFilter = nil
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "tray.full")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("All")
+                            .font(.subheadline)
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 2)
+                .opacity(viewModel.sourceFilter == nil ? 1.0 : 0.6)
+
+                ForEach([CaptureSource.text, .voice, .image], id: \.self) { source in
+                    Button {
+                        viewModel.sourceFilter = source
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: sourceIcon(for: source))
+                                .font(.caption)
+                                .foregroundStyle(sourceColor(for: source))
+                            Text(sourceDisplayName(for: source))
+                                .font(.subheadline)
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, 2)
+                    .opacity(viewModel.sourceFilter == source ? 1.0 : 0.6)
+                }
+            }
+
+            Section("Date") {
+                ForEach(DateRangeFilter.allCases, id: \.self) { range in
+                    Button {
+                        viewModel.dateRangeFilter = range
+                    } label: {
+                        HStack {
+                            Text(range.displayName)
+                                .font(.subheadline)
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.vertical, 2)
+                    .opacity(viewModel.dateRangeFilter == range ? 1.0 : 0.6)
                 }
             }
         }
@@ -404,6 +465,34 @@ struct DashboardView: View {
         }
     }
 
+    private func sourceIcon(for source: CaptureSource) -> String {
+        switch source {
+        case .text: return "keyboard"
+        case .voice: return "waveform"
+        case .image: return "photo"
+        }
+    }
+
+    private func sourceColor(for source: CaptureSource) -> Color {
+        switch source {
+        case .text: return .blue
+        case .voice: return .orange
+        case .image: return .green
+        }
+    }
+
+    private func sourceDisplayName(for source: CaptureSource) -> String {
+        switch source {
+        case .text: return "Text"
+        case .voice: return "Voice"
+        case .image: return "Image"
+        }
+    }
+
+    private var hasActiveFilters: Bool {
+        viewModel.sourceFilter != nil || viewModel.dateRangeFilter != .all
+    }
+
     // MARK: - Empty State
 
     @ViewBuilder
@@ -411,16 +500,18 @@ struct DashboardView: View {
         let hasSearch = !viewModel.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
         VStack(spacing: 8) {
-            Image(systemName: hasSearch ? "magnifyingglass" : "tray")
+            Image(systemName: hasSearch ? "magnifyingglass" : (hasActiveFilters ? "line.3.horizontal.decrease.circle" : "tray"))
                 .font(.largeTitle)
                 .foregroundStyle(.secondary)
 
-            Text(hasSearch ? "No results" : "No entries")
+            Text(hasSearch || hasActiveFilters ? "No results" : "No entries")
                 .font(.headline)
                 .foregroundStyle(.secondary)
 
             Text(hasSearch
                  ? "Try a different search term"
+                 : hasActiveFilters
+                 ? "Try clearing filters"
                  : "Capture a thought with Cmd+Shift+J")
                 .font(.subheadline)
                 .foregroundStyle(.tertiary)
