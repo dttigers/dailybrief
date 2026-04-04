@@ -110,6 +110,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
             // Start folder watcher if enabled
             NSLog("DailyBriefMonitor: checking folder watcher config...")
+            do {
+                let fwConfig = try ConfigLoader.load()
+                NSLog("DailyBriefMonitor: folder watcher enabled=%d, autoDelete=%d, audio=%@, image=%@",
+                      fwConfig.folderWatching.enabled ? 1 : 0,
+                      fwConfig.folderWatching.autoDeleteAfterProcessing ? 1 : 0,
+                      fwConfig.folderWatching.audioFolderPath,
+                      fwConfig.folderWatching.imageFolderPath)
+            } catch {
+                NSLog("DailyBriefMonitor: config load failed: %@", error.localizedDescription)
+            }
             if let config = try? ConfigLoader.load(), config.folderWatching.enabled {
                 let watcher = FolderWatcherService(
                     transcriptionService: transcription,
