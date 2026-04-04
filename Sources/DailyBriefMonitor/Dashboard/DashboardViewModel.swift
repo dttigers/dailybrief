@@ -48,6 +48,12 @@ final class DashboardViewModel {
     var editingThoughtId: Int64?
     var editedContent: String = ""
 
+    // Selection / bulk action state
+    var isSelectionMode: Bool = false
+    var selectedThoughtIds: Set<Int64> = []
+    var isBulkProcessing: Bool = false
+    var bulkProgress: (current: Int, total: Int)?
+
     // Import state
     var isImporting = false
     var importProgress: ImportProgress?
@@ -443,6 +449,96 @@ final class DashboardViewModel {
             await loadThoughts()
         } catch {
             NSLog("Dashboard: failed to save thought edit — \(error.localizedDescription)")
+        }
+    }
+
+    // MARK: - Selection Mode
+
+    /// Toggle selection mode on/off. Clears selection when turning off.
+    func toggleSelectionMode() {
+        isSelectionMode.toggle()
+        if !isSelectionMode {
+            selectedThoughtIds.removeAll()
+        }
+    }
+
+    /// Add or remove a thought from the current selection.
+    func toggleSelection(_ thought: Thought) {
+        guard let id = thought.id else { return }
+        if selectedThoughtIds.contains(id) {
+            selectedThoughtIds.remove(id)
+        } else {
+            selectedThoughtIds.insert(id)
+        }
+    }
+
+    /// Select all currently visible thoughts.
+    func selectAll() {
+        for thought in thoughts {
+            if let id = thought.id {
+                selectedThoughtIds.insert(id)
+            }
+        }
+    }
+
+    /// Clear all selections.
+    func deselectAll() {
+        selectedThoughtIds.removeAll()
+    }
+
+    // MARK: - Bulk Actions
+
+    /// Delete all selected thoughts in a single transaction.
+    func bulkDelete() async {
+        do {
+            try await store.bulkDelete(ids: selectedThoughtIds)
+            selectedThoughtIds.removeAll()
+            await loadThoughts()
+            await loadCounts()
+        } catch {
+            NSLog("Dashboard: bulk delete failed — \(error.localizedDescription)")
+        }
+    }
+
+    /// Re-triage all selected thoughts sequentially with progress tracking.
+    func bulkRetriage() async {
+        guard let triageService else { return }
+
+        let ids = Array(selectedThoughtIds)
+        isBulkProcessing = true
+        bulkProgress = (current: 0, total: ids.count)
+
+        for (index, id) in ids.enumerated() {
+            bulkProgress = (current: index + 1, total: ids.count)
+            do {
+                guard let thought = try await store.fetch(id: id) else { continue }
+                let result = try await triageService.triage(thought.content)
+                if var t = try await store.fetch(id: id) {
+                    t.category = result.category
+                    t.confidence = result.confidence
+                    try await store.update(t)
+                }
+            } catch {
+                NSLog("Dashboard: bulk retriage failed for thought %lld — %@", id, error.localizedDescription)
+            }
+        }
+
+        isBulkProcessing = false
+        bulkProgress = nil
+        selectedThoughtIds.removeAll()
+        await loadThoughts()
+        await loadCounts()
+    }
+
+    /// Recategorize all selected thoughts to a new category.
+    func bulkRecategorize(category: ThoughtCategory) async {
+        do {
+            try await store.bulkUpdateCategory(ids: selectedThoughtIds, category: category)
+            selectedThoughtIds.removeAll()
+            await loadThoughts()
+            await loadCounts()
+        } catch {
+            NSLog("Dashboard: bulk recategorize failed — \(error.localizedDescription)")
         }
     }
 

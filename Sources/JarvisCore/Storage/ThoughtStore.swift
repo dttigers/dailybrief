@@ -182,6 +182,50 @@ public actor ThoughtStore {
         }
     }
 
+    // MARK: Bulk Operations
+
+    /// Mark all matching thoughts as pendingDeletion in a single write transaction.
+    /// Returns the count of rows updated.
+    @discardableResult
+    public func bulkDelete(ids: Set<Int64>) throws -> Int {
+        guard !ids.isEmpty else { return 0 }
+        return try db.write { db in
+            let placeholders = ids.map { _ in "?" }.joined(separator: ", ")
+            let sql = "UPDATE thoughts SET syncStatus = ? WHERE id IN (\(placeholders))"
+            let arguments: [DatabaseValueConvertible] = [SyncStatus.pendingDeletion.rawValue] + Array(ids).map { $0 as DatabaseValueConvertible }
+            try db.execute(sql: sql, arguments: StatementArguments(arguments))
+            return db.changesCount
+        }
+    }
+
+    /// Update category (and taskStatus) for all matching thoughts in a single write transaction.
+    /// Returns the count of rows updated.
+    @discardableResult
+    public func bulkUpdateCategory(ids: Set<Int64>, category: ThoughtCategory) throws -> Int {
+        guard !ids.isEmpty else { return 0 }
+        return try db.write { db in
+            let now = Date()
+            let idArray = Array(ids)
+            var count = 0
+            for id in idArray {
+                guard var thought = try Thought.fetchOne(db, key: id) else { continue }
+                thought.category = category
+                thought.modifiedAt = now
+                thought.syncStatus = .pending
+                if category == .task {
+                    if thought.taskStatus == nil {
+                        thought.taskStatus = .open
+                    }
+                } else {
+                    thought.taskStatus = nil
+                }
+                try thought.update(db)
+                count += 1
+            }
+            return count
+        }
+    }
+
     // MARK: Sync Operations
 
     /// Fetch all thoughts that need to be uploaded to CloudKit.
