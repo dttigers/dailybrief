@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 29 of 36 (Vigil Core API — Foundation) ✓
-Plan: All complete (2/2)
-Status: Phase complete
-Last activity: 2026-04-04 - Phase 29 complete (Vigil Core scaffold + DB bridge)
+Phase: 30 of 36 (Vigil Core — Full Endpoints)
+Plan: 01 complete (1/?)
+Status: In progress
+Last activity: 2026-04-04 - Plan 30-01 complete (Thoughts CRUD + search)
 
 Progress: █░░░░░░░░░ 12.5%
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 29 complete, ready for Phase 30
+Stopped at: Phase 30, plan 01 complete. Ready for plan 02.
 Resume file: None
-Notes: vigil-core/ project created with Hono server on port 3001. Reads Jarvis SQLite (read-only). Endpoints: GET /v1/health, GET /v1/summary
+Notes: vigil-core/ now read-write. Endpoints: GET /v1/health, GET /v1/summary, GET/POST/PUT/DELETE /v1/thoughts (CRUD + FTS5 search + filters)
