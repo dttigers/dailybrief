@@ -117,6 +117,13 @@ public actor DatabaseManager {
             )
         }
 
+        // v4: Therapy classification column for therapy intelligence
+        migrator.registerMigration("v4-therapy-classification") { db in
+            try db.alter(table: "thoughts") { t in
+                t.add(column: "therapyClassification", .text)
+            }
+        }
+
         try migrator.migrate(dbQueue)
     }
 }

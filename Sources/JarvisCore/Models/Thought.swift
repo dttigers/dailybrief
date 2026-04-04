@@ -26,6 +26,14 @@ public enum TaskStatus: String, Codable, Sendable, DatabaseValueConvertible {
     case done
 }
 
+/// Therapy classification for therapy-category thoughts.
+/// Indicates whether a thought can be worked through independently
+/// or should be brought to a therapist session.
+public enum TherapyClassification: String, Codable, Sendable, DatabaseValueConvertible {
+    case selfLearnable
+    case bringToTherapist
+}
+
 /// Sync state for CloudKit synchronization.
 public enum SyncStatus: String, Codable, Sendable, DatabaseValueConvertible {
     /// Needs upload to CloudKit (new or modified locally).
@@ -56,6 +64,7 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
         public static let modifiedAt = Column(CodingKeys.modifiedAt)
         public static let cloudKitRecordID = Column(CodingKeys.cloudKitRecordID)
         public static let taskStatus = Column(CodingKeys.taskStatus)
+        public static let therapyClassification = Column(CodingKeys.therapyClassification)
         public static let syncStatus = Column(CodingKeys.syncStatus)
         public static let lastSyncedAt = Column(CodingKeys.lastSyncedAt)
     }
@@ -92,6 +101,9 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
     /// Task lifecycle status. Nil for non-task thoughts.
     public var taskStatus: TaskStatus?
 
+    /// Therapy classification. Nil for non-therapy thoughts and therapy thoughts not yet classified.
+    public var therapyClassification: TherapyClassification?
+
     /// When this thought was last synced to CloudKit. Nil if never synced.
     public var lastSyncedAt: Date?
 
@@ -106,6 +118,7 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
         createdAt: Date = Date(),
         modifiedAt: Date = Date(),
         taskStatus: TaskStatus? = nil,
+        therapyClassification: TherapyClassification? = nil,
         cloudKitRecordID: String = UUID().uuidString,
         syncStatus: SyncStatus = .pending,
         lastSyncedAt: Date? = nil
@@ -118,6 +131,7 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
         self.createdAt = createdAt
         self.modifiedAt = modifiedAt
         self.taskStatus = taskStatus
+        self.therapyClassification = therapyClassification
         self.cloudKitRecordID = cloudKitRecordID
         self.syncStatus = syncStatus
         self.lastSyncedAt = lastSyncedAt

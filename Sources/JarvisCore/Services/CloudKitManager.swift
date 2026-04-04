@@ -12,6 +12,7 @@ public struct ThoughtCloudData: Sendable {
     public let confidence: Double?
     public let source: CaptureSource
     public let taskStatus: TaskStatus?
+    public let therapyClassification: TherapyClassification?
     public let createdAt: Date
     public let modifiedAt: Date
 }
@@ -109,6 +110,7 @@ public actor CloudKitManager {
         record["source"] = thought.source.rawValue as NSString
         record["createdAt"] = thought.createdAt as NSDate
         record["taskStatus"] = thought.taskStatus?.rawValue as NSString?
+        record["therapyClassification"] = thought.therapyClassification?.rawValue as NSString?
         record["modifiedAt"] = thought.modifiedAt as NSDate
         return record
     }
@@ -128,6 +130,8 @@ public actor CloudKitManager {
         let source = CaptureSource(rawValue: sourceRaw) ?? .text
         let taskStatusRaw = record["taskStatus"] as? String
         let taskStatus = taskStatusRaw.flatMap { TaskStatus(rawValue: $0) }
+        let therapyClassificationRaw = record["therapyClassification"] as? String
+        let therapyClassification = therapyClassificationRaw.flatMap { TherapyClassification(rawValue: $0) }
         let createdAt = record["createdAt"] as? Date ?? record.creationDate ?? Date()
         let modifiedAt = record["modifiedAt"] as? Date ?? record.modificationDate ?? Date()
 
@@ -138,6 +142,7 @@ public actor CloudKitManager {
             confidence: confidence,
             source: source,
             taskStatus: taskStatus,
+            therapyClassification: therapyClassification,
             createdAt: createdAt,
             modifiedAt: modifiedAt
         )

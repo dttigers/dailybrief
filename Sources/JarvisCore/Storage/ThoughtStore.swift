@@ -230,6 +230,48 @@ public actor ThoughtStore {
         }
     }
 
+    // MARK: Therapy Classification Operations
+
+    /// Fetch therapy-category thoughts, optionally filtered by classification.
+    /// Excludes thoughts marked for deletion.
+    public func fetchTherapyThoughts(
+        classification: TherapyClassification? = nil,
+        limit: Int = 100,
+        offset: Int = 0
+    ) async throws -> [Thought] {
+        try await db.reader.read { db in
+            var request = Thought
+                .filter(Thought.Columns.category == ThoughtCategory.therapy.rawValue)
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
+                .order(Thought.Columns.createdAt.desc)
+            if let classification {
+                request = request.filter(Thought.Columns.therapyClassification == classification.rawValue)
+            }
+            return try request.limit(limit, offset: offset).fetchAll(db)
+        }
+    }
+
+    /// Update therapy classification for all matching thoughts in a single write transaction.
+    /// Returns the count of rows updated.
+    @discardableResult
+    public func bulkUpdateTherapyClassification(ids: Set<Int64>, classification: TherapyClassification) throws -> Int {
+        guard !ids.isEmpty else { return 0 }
+        return try db.write { db in
+            let now = Date()
+            let idArray = Array(ids)
+            var count = 0
+            for id in idArray {
+                guard var thought = try Thought.fetchOne(db, key: id) else { continue }
+                thought.therapyClassification = classification
+                thought.modifiedAt = now
+                thought.syncStatus = .pending
+                try thought.update(db)
+                count += 1
+            }
+            return count
+        }
+    }
+
     // MARK: Bulk Operations
 
     /// Mark all matching thoughts as pendingDeletion in a single write transaction.
@@ -327,6 +369,7 @@ public actor ThoughtStore {
                 existing.confidence = data.confidence
                 existing.source = data.source
                 existing.taskStatus = data.taskStatus
+                existing.therapyClassification = data.therapyClassification
                 existing.modifiedAt = data.modifiedAt
                 existing.syncStatus = .synced
                 existing.lastSyncedAt = Date()
@@ -341,6 +384,7 @@ public actor ThoughtStore {
                     createdAt: data.createdAt,
                     modifiedAt: data.modifiedAt,
                     taskStatus: data.taskStatus,
+                    therapyClassification: data.therapyClassification,
                     cloudKitRecordID: data.cloudKitRecordID,
                     syncStatus: .synced,
                     lastSyncedAt: Date()
