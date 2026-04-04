@@ -117,16 +117,17 @@ Plans:
 - [x] 30-02: Tags, favorites, bidirectional thought links
 - [x] 30-03: Brief aggregation + bulk operations
 
-#### Phase 31: Vigil Core API — AI Integration
+#### Phase 31: Vigil Core API — AI Integration ✓
 
 **Goal**: Port Claude API calls from Swift to Node.js — triage, prioritization, affirmation, insights generation
 **Depends on**: Phase 30
-**Research**: Likely (porting Claude API calls to Anthropic Node.js SDK)
-**Research topics**: Current Anthropic SDK for Node.js, tool use patterns, streaming support
-**Plans**: TBD
+**Plans**: 4
 
 Plans:
-- [ ] 31-01: TBD
+- [x] 31-01: Anthropic SDK client + triage endpoint
+- [x] 31-02: Affirmation + insights endpoints
+- [x] 31-03: Therapy endpoints (classify, patterns, prep)
+- [x] 31-04: Prioritize + describe-image endpoints
 
 #### Phase 32: Even G2 Plugin — Scaffold + Home Screen
 
@@ -218,7 +219,7 @@ None
 | 28. Tags & Organization | v1.4 | 3/3 | Complete | 2026-04-04 |
 | 29. Vigil Core API — Foundation | v2.0 | 2/2 | Complete | 2026-04-04 |
 | 30. Vigil Core API — Full Endpoints | v2.0 | 3/3 | Complete | 2026-04-04 |
-| 31. Vigil Core API — AI Integration | v2.0 | 0/? | Not started | - |
+| 31. Vigil Core API — AI Integration | v2.0 | 4/4 | Complete | 2026-04-04 |
 | 32. Even G2 Plugin — Scaffold + Home | v2.0 | 0/? | Not started | - |
 | 33. Even G2 Plugin — Screens + Nav | v2.0 | 0/? | Not started | - |
 | 34. Mac App Migration — First Services | v2.0 | 0/? | Not started | - |

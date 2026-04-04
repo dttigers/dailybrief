@@ -9,17 +9,17 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 31 of 36 (Vigil Core AI Integration) — In progress
-Plan: 04 complete (4/?)
-Status: Plan 31-04 complete
-Last activity: 2026-04-04 - Plan 31-04 complete (prioritize + describe-image endpoints)
+Phase: 31 of 36 (Vigil Core AI Integration) ✓
+Plan: All complete (4/4)
+Status: Phase complete
+Last activity: 2026-04-04 - Phase 31 complete (full AI endpoint surface)
 
-Progress: ████████░░ 80%
+Progress: ██░░░░░░░░ 37%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 70
+- Total plans completed: 74
 - Total execution time: ~9 days
 - Average duration: ~5 min per plan
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Plan 31-04 complete, ready for plan 31-05
+Stopped at: Phase 31 complete, ready for Phase 32
 Resume file: None
-Notes: AI client module created (ai/client.ts, ai/types.ts). POST /v1/triage, /v1/affirmation, /v1/insights, /v1/prioritize, /v1/describe-image endpoints live. Prioritize uses daily+hash file cache at ~/.cache/dailybrief/. Describe-image uses callClaudeMultimodal for vision. Therapy pipeline complete: POST /v1/therapy/classify, /v1/therapy/patterns, /v1/therapy/prep ported from Swift with full prompt fidelity.
+Notes: Full AI endpoint surface complete. Endpoints: POST /v1/triage, /v1/affirmation (daily cache), /v1/insights, /v1/prioritize (daily+hash cache), /v1/describe-image (multimodal), /v1/therapy/classify, /v1/therapy/patterns, /v1/therapy/prep. All prompts ported from Swift with full fidelity. Shared ai/client.ts + ai/types.ts foundation.
