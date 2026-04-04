@@ -507,11 +507,11 @@ public actor ThoughtStore {
     public func linkThoughts(sourceId: Int64, targetId: Int64) throws -> ThoughtLink? {
         try db.write { db in
             // Insert source→target
-            var link = ThoughtLink(sourceThoughtId: sourceId, targetThoughtId: targetId)
+            let link = ThoughtLink(sourceThoughtId: sourceId, targetThoughtId: targetId)
             try link.insert(db, onConflict: .ignore)
 
             // Insert reverse target→source
-            var reverse = ThoughtLink(sourceThoughtId: targetId, targetThoughtId: sourceId)
+            let reverse = ThoughtLink(sourceThoughtId: targetId, targetThoughtId: sourceId)
             try reverse.insert(db, onConflict: .ignore)
 
             return link
