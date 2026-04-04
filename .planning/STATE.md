@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 27 of 32 (Therapy Prep Patterns)
-Plan: 02 complete
+Plan: 03 complete
 Status: In progress
-Last activity: 2026-04-04 - Plan 27-02 complete (therapy data wired into brief pipeline, PDF therapy prep section)
+Last activity: 2026-04-04 - Plan 27-03 complete (TherapyPrepView with pattern display, prep generation, copy-to-clipboard in dashboard)
 
-Progress: ███░░░░░░░ 34%
+Progress: █████░░░░░ 50%
 
 ## Performance Metrics
 
@@ -61,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 27, plan 02 complete
+Stopped at: Phase 27, plan 03 complete
 Resume file: None
