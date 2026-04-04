@@ -124,6 +124,36 @@ public actor DatabaseManager {
             }
         }
 
+        // v5: Tags, favorites, and thought-to-thought links
+        migrator.registerMigration("v5-tags-favorites-links") { db in
+            try db.alter(table: "thoughts") { t in
+                t.add(column: "tags", .text)
+                t.add(column: "isFavorited", .integer).notNull().defaults(to: 0)
+            }
+
+            try db.create(table: "thought_links") { t in
+                t.autoIncrementedPrimaryKey("id")
+                t.column("sourceThoughtId", .integer).notNull()
+                    .references("thoughts", column: "id", onDelete: .cascade)
+                t.column("targetThoughtId", .integer).notNull()
+                    .references("thoughts", column: "id", onDelete: .cascade)
+                t.column("createdAt", .datetime).notNull()
+                    .defaults(sql: "CURRENT_TIMESTAMP")
+                t.uniqueKey(["sourceThoughtId", "targetThoughtId"])
+            }
+
+            try db.create(
+                index: "idx_thought_links_source",
+                on: "thought_links",
+                columns: ["sourceThoughtId"]
+            )
+            try db.create(
+                index: "idx_thought_links_target",
+                on: "thought_links",
+                columns: ["targetThoughtId"]
+            )
+        }
+
         try migrator.migrate(dbQueue)
     }
 }
