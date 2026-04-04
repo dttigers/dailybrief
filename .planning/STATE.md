@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 29 of 36 (Vigil Core API — Foundation)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-04-04 - Milestone v2.0 created
+Plan: 01 complete
+Status: Plan 01 executed
+Last activity: 2026-04-04 - Vigil Core scaffold + health endpoint
 
-Progress: ░░░░░░░░░░ 0%
+Progress: █░░░░░░░░░ ~5%
 
 ## Performance Metrics
 
@@ -66,5 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Milestone v2.0 initialization
+Stopped at: Phase 29, plan 01 complete
 Resume file: None
+Notes: vigil-core/ scaffold created with Hono + TypeScript, health endpoint at /v1/health on port 3001
