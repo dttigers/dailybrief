@@ -166,15 +166,15 @@ Plans:
 
 **Milestone Goal:** Fix daily-use bugs for reliability, then add manual triage, AI work order prioritization, and IMAP work email integration.
 
-#### Phase 19: Bug Fixes
+#### Phase 19: Bug Fixes ✅
 
 **Goal**: Fix config startup error, duplicate thoughts in dashboard, audio upload triage, and settings tab resizing
 **Depends on**: Previous milestone complete
-**Research**: Unlikely (debugging existing code)
-**Plans**: TBD
+**Completed**: 2026-04-04
 
 Plans:
-- [ ] 19-01: TBD (run /gsd:plan-phase 19 to break down)
+- [x] 19-01: Fix duplicate thoughts in FTS5 search + folder watcher triage persistence
+- [x] 19-02: Fix config startup error + settings window sizing
 
 #### Phase 20: Folder Watcher & Manual Triage
 
@@ -243,7 +243,7 @@ None
 | 16. Task Status Workflow | v1.2 | 4/4 | Complete | 2026-04-03 |
 | 17. Multi-Sport Support | v1.2 | 4/4 | Complete | 2026-04-03 |
 | 18. Polish & Integration | v1.2 | 3/3 | Complete | 2026-04-03 |
-| 19. Bug Fixes | v1.3 | 0/? | Not started | - |
+| 19. Bug Fixes | v1.3 | 2/2 | Complete | 2026-04-04 |
 | 20. Folder Watcher & Manual Triage | v1.3 | 0/? | Not started | - |
 | 21. AI Work Order Prioritization | v1.3 | 0/? | Not started | - |
 | 22. IMAP Work Email | v1.3 | 0/? | Not started | - |
