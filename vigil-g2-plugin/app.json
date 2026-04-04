@@ -1,0 +1,7 @@
+{
+  "name": "Vigil",
+  "version": "0.1.0",
+  "description": "Ambient AI life assistant for Even G2 smart glasses",
+  "entrypoint": "dist/index.html",
+  "permissions": []
+}
