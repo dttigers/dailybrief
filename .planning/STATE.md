@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 30 of 36 (Vigil Core API — Full Endpoints) ✓
-Plan: All complete (3/3)
-Status: Phase complete
-Last activity: 2026-04-04 - Phase 30 complete (Full /v1/ REST API surface)
+Phase: 31 of 36 (Vigil Core AI Integration) — In progress
+Plan: 01 complete (1/?)
+Status: Plan 31-01 complete
+Last activity: 2026-04-04 - Plan 31-01 complete (AI client module + triage endpoint)
 
 Progress: ██░░░░░░░░ 25%
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 30 complete, ready for Phase 31
+Stopped at: Plan 31-01 complete, ready for plan 31-02
 Resume file: None
-Notes: vigil-core/ full /v1/ API surface complete. Endpoints: GET /v1/health, GET /v1/summary, GET/POST/PUT/DELETE /v1/thoughts (CRUD + FTS5 search + 7 filters), POST/DELETE /v1/thoughts/:id/tags, GET /v1/tags, PUT /v1/thoughts/:id/favorite, POST/DELETE/GET /v1/thoughts/:id/links, GET /v1/brief (aggregated for G2), POST /v1/thoughts/bulk/{delete,recategorize,tag}
+Notes: AI client module created (ai/client.ts, ai/types.ts). POST /v1/triage endpoint live. Pattern established for all subsequent AI endpoints. Requires ANTHROPIC_API_KEY env var.
