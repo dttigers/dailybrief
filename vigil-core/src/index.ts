@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { health } from "./routes/health.js";
 import { summary } from "./routes/summary.js";
+import { thoughts } from "./routes/thoughts.js";
 import { getDb } from "./db/index.js";
 
 // Initialize database connection at startup
@@ -11,6 +12,7 @@ const app = new Hono();
 
 app.route("/v1", health);
 app.route("/v1", summary);
+app.route("/v1", thoughts);
 
 const port = Number(process.env.PORT) || 3001;
 
