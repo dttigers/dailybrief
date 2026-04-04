@@ -531,6 +531,19 @@ struct DashboardView: View {
                         onReClassify: thought.category == .therapy ? {
                             Task<Void, Never> { await viewModel.reClassifyTherapy(thought) }
                         } : nil,
+                        onToggleFavorite: {
+                            guard let id = thought.id else { return }
+                            Task { await viewModel.toggleFavorite(thoughtId: id) }
+                        },
+                        onAddTag: { tag in
+                            guard let id = thought.id else { return }
+                            Task { await viewModel.addTag(thoughtId: id, tag: tag) }
+                        },
+                        onRemoveTag: { tag in
+                            guard let id = thought.id else { return }
+                            Task { await viewModel.removeTag(thoughtId: id, tag: tag) }
+                        },
+                        allUniqueTags: viewModel.allTags,
                         onDelete: {
                             Task { await viewModel.deleteThought(thought) }
                         },

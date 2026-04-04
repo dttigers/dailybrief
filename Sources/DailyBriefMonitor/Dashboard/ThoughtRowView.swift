@@ -33,6 +33,18 @@ struct ThoughtRowView: View {
     /// Called when the user requests re-classification of a therapy thought.
     var onReClassify: (() -> Void)?
 
+    /// Called when the user toggles the favorite status of this thought.
+    var onToggleFavorite: (() -> Void)?
+
+    /// Called when the user adds a tag to this thought.
+    var onAddTag: ((String) -> Void)?
+
+    /// Called when the user removes a tag from this thought.
+    var onRemoveTag: ((String) -> Void)?
+
+    /// All unique tags across all thoughts, for the tag picker.
+    var allUniqueTags: [String] = []
+
     /// Called when the user deletes this thought from the context menu.
     var onDelete: (() -> Void)?
 
@@ -55,11 +67,23 @@ struct ThoughtRowView: View {
     var isReclassifying: Bool = false
 
     @FocusState private var isEditorFocused: Bool
+    @State private var showTagPopover = false
+    @State private var newTagText = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Content row — optional selection checkbox + status icon + text/editor
+            // Content row — favorite star + optional selection checkbox + status icon + text/editor
             HStack(alignment: .top, spacing: 6) {
+                // Favorite star toggle
+                Button {
+                    onToggleFavorite?()
+                } label: {
+                    Image(systemName: thought.isFavorited ? "star.fill" : "star")
+                        .foregroundStyle(thought.isFavorited ? .yellow : .secondary.opacity(0.4))
+                        .font(.caption)
+                }
+                .buttonStyle(.plain)
+                .help(thought.isFavorited ? "Remove from favorites" : "Add to favorites")
                 if isSelectionMode {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
                         .foregroundStyle(isSelected ? .blue : .secondary)
@@ -182,6 +206,61 @@ struct ThoughtRowView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            // Tag pills row — shown when thought has tags
+            if let tags = thought.tags, !tags.isEmpty {
+                HStack(spacing: 4) {
+                    ForEach(tags, id: \.self) { tag in
+                        HStack(spacing: 3) {
+                            Text(tag)
+                                .font(.caption2)
+                            Button {
+                                onRemoveTag?(tag)
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 8, weight: .bold))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.secondary.opacity(0.2))
+                        .clipShape(Capsule())
+                    }
+
+                    Button {
+                        showTagPopover = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.caption2)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Color.secondary.opacity(0.15))
+                            .clipShape(Capsule())
+                    }
+                    .buttonStyle(.plain)
+                    .popover(isPresented: $showTagPopover) {
+                        tagPickerPopover
+                    }
+                }
+            } else {
+                // No tags — show subtle add button on hover area
+                Button {
+                    showTagPopover = true
+                } label: {
+                    HStack(spacing: 3) {
+                        Image(systemName: "tag")
+                            .font(.caption2)
+                        Text("Add tag")
+                            .font(.caption2)
+                    }
+                    .foregroundStyle(.secondary.opacity(0.5))
+                }
+                .buttonStyle(.plain)
+                .popover(isPresented: $showTagPopover) {
+                    tagPickerPopover
+                }
+            }
         }
         .padding(.vertical, 4)
         .contextMenu {
@@ -230,6 +309,64 @@ struct ThoughtRowView: View {
                 Label("Delete", systemImage: "trash")
             }
         }
+    }
+
+    // MARK: - Tag Picker
+
+    @ViewBuilder
+    private var tagPickerPopover: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Add Tag")
+                .font(.headline)
+
+            HStack {
+                TextField("New tag...", text: $newTagText)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit {
+                        if !newTagText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            onAddTag?(newTagText.trimmingCharacters(in: .whitespacesAndNewlines))
+                            newTagText = ""
+                            showTagPopover = false
+                        }
+                    }
+                Button("Add") {
+                    if !newTagText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        onAddTag?(newTagText.trimmingCharacters(in: .whitespacesAndNewlines))
+                        newTagText = ""
+                        showTagPopover = false
+                    }
+                }
+                .disabled(newTagText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+
+            let currentTags = thought.tags ?? []
+            let available = allUniqueTags.filter { !currentTags.contains($0) }
+            if !available.isEmpty {
+                Divider()
+                Text("Existing Tags")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                ScrollView {
+                    LazyVStack(alignment: .leading, spacing: 4) {
+                        ForEach(available, id: \.self) { tag in
+                            Button {
+                                onAddTag?(tag)
+                                showTagPopover = false
+                            } label: {
+                                Text(tag)
+                                    .font(.subheadline)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+                .frame(maxHeight: 120)
+            }
+        }
+        .padding()
+        .frame(width: 220)
     }
 
     // MARK: - Formatters

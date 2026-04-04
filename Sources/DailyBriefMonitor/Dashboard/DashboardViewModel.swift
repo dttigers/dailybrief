@@ -100,6 +100,12 @@ final class DashboardViewModel {
     var bringToTherapistCount: Int = 0
     var unclassifiedTherapyCount: Int = 0
 
+    // Tag and favorites filter state
+    var tagFilter: String?
+    var showFavoritesOnly: Bool = false
+    var allTags: [String] = []
+    var favoritesCount: Int = 0
+
     // Selection / bulk action state
     var isSelectionMode: Bool = false
     var selectedThoughtIds: Set<Int64> = []
@@ -213,7 +219,9 @@ final class DashboardViewModel {
                     var results = try await store.fetchFiltered(
                         category: category,
                         source: sourceFilter,
-                        after: afterDate
+                        after: afterDate,
+                        tag: tagFilter,
+                        favoritesOnly: showFavoritesOnly
                     )
                     // Auto-hide completed tasks unless explicitly viewing Done filter
                     if taskStatusFilter == nil {
@@ -238,6 +246,13 @@ final class DashboardViewModel {
                 } else if taskStatusFilter == nil {
                     // Auto-hide completed tasks from search results too
                     results = results.filter { $0.taskStatus != .done }
+                }
+                // Apply tag and favorites filters to search results
+                if let tagFilter {
+                    results = results.filter { ($0.tags ?? []).contains(tagFilter) }
+                }
+                if showFavoritesOnly {
+                    results = results.filter { $0.isFavorited }
                 }
                 // Apply therapy sub-filter to search results
                 if category == .therapy, therapyFilter != .all {
@@ -290,6 +305,9 @@ final class DashboardViewModel {
             selfLearnableCount = try await store.countTherapy(classification: .selfLearnable)
             bringToTherapistCount = try await store.countTherapy(classification: .bringToTherapist)
             unclassifiedTherapyCount = try await store.countUnclassifiedTherapy()
+            // Tags and favorites counts
+            allTags = try await store.allUniqueTags()
+            favoritesCount = try await store.countFavorites()
         } catch {
             NSLog("Dashboard: failed to load counts — \(error.localizedDescription)")
         }
@@ -775,6 +793,57 @@ final class DashboardViewModel {
         }
 
         return text
+    }
+
+    // MARK: - Tags & Favorites
+
+    /// Toggle the favorite status of a thought.
+    func toggleFavorite(thoughtId: Int64) async {
+        do {
+            try await store.toggleFavorite(id: thoughtId)
+            await loadThoughts()
+            await loadCounts()
+        } catch {
+            NSLog("Dashboard: failed to toggle favorite — \(error.localizedDescription)")
+        }
+    }
+
+    /// Add a tag to a thought.
+    func addTag(thoughtId: Int64, tag: String) async {
+        let trimmed = tag.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        do {
+            try await store.addTag(id: thoughtId, tag: trimmed)
+            await loadThoughts()
+            await loadCounts()
+        } catch {
+            NSLog("Dashboard: failed to add tag — \(error.localizedDescription)")
+        }
+    }
+
+    /// Remove a tag from a thought.
+    func removeTag(thoughtId: Int64, tag: String) async {
+        do {
+            try await store.removeTag(id: thoughtId, tag: tag)
+            await loadThoughts()
+            await loadCounts()
+        } catch {
+            NSLog("Dashboard: failed to remove tag — \(error.localizedDescription)")
+        }
+    }
+
+    /// Add a tag to all selected thoughts in bulk.
+    func bulkAddTag(tag: String) async {
+        let trimmed = tag.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        do {
+            try await store.bulkAddTag(ids: selectedThoughtIds, tag: trimmed)
+            selectedThoughtIds.removeAll()
+            await loadThoughts()
+            await loadCounts()
+        } catch {
+            NSLog("Dashboard: bulk add tag failed — \(error.localizedDescription)")
+        }
     }
 
     // MARK: - Delete
