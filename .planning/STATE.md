@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 29 of 36 (Vigil Core API — Foundation)
-Plan: 01 complete
-Status: Plan 01 executed
-Last activity: 2026-04-04 - Vigil Core scaffold + health endpoint
+Plan: 02 complete
+Status: Plan 02 executed
+Last activity: 2026-04-04 - SQLite database bridge + summary endpoint
 
-Progress: █░░░░░░░░░ ~5%
+Progress: █░░░░░░░░░ ~10%
 
 ## Performance Metrics
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 29, plan 01 complete
+Stopped at: Phase 29, plan 02 complete
 Resume file: None
-Notes: vigil-core/ scaffold created with Hono + TypeScript, health endpoint at /v1/health on port 3001
+Notes: vigil-core/ reads Jarvis SQLite (read-only), GET /v1/summary returns live thought data
