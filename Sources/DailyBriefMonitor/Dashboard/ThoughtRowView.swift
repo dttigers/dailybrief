@@ -6,6 +6,15 @@ struct ThoughtRowView: View {
 
     let thought: Thought
 
+    /// Whether this row shows full content (expanded).
+    var isExpanded: Bool = false
+
+    /// Whether this row is in inline edit mode.
+    var isEditing: Bool = false
+
+    /// Bound to the ViewModel's editedContent for the active editor.
+    var editedContent: Binding<String>?
+
     /// Called when the user clicks the status icon on a task thought. Nil for non-tasks.
     var onStatusToggle: (() -> Void)?
 
@@ -15,12 +24,26 @@ struct ThoughtRowView: View {
     /// Called when the user deletes this thought from the context menu.
     var onDelete: (() -> Void)?
 
+    /// Called to toggle expand/collapse.
+    var onToggleExpand: (() -> Void)?
+
+    /// Called to enter edit mode.
+    var onStartEdit: (() -> Void)?
+
+    /// Called to save the current edit.
+    var onSaveEdit: (() -> Void)?
+
+    /// Called to cancel the current edit.
+    var onCancelEdit: (() -> Void)?
+
     /// Whether this thought is currently being re-triaged.
     var isRetriaging: Bool = false
 
+    @FocusState private var isEditorFocused: Bool
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // Content row — optional status icon + text
+            // Content row — optional status icon + text/editor
             HStack(alignment: .top, spacing: 6) {
                 if let status = thought.taskStatus, thought.category == .task {
                     Button {
@@ -34,12 +57,32 @@ struct ThoughtRowView: View {
                     .help("Status: \(status.displayName) — click to cycle")
                 }
 
-                Text(thought.content)
-                    .font(.body)
-                    .lineLimit(2)
-                    .truncationMode(.tail)
-                    .strikethrough(thought.taskStatus == .done)
-                    .foregroundStyle(thought.taskStatus == .done ? .secondary : .primary)
+                if isEditing, let editedContent {
+                    VStack(alignment: .leading, spacing: 4) {
+                        TextEditor(text: editedContent)
+                            .font(.body)
+                            .frame(minHeight: 40, maxHeight: 120)
+                            .focused($isEditorFocused)
+                            .onAppear { isEditorFocused = true }
+
+                        HStack(spacing: 8) {
+                            Button("Save") { onSaveEdit?() }
+                                .keyboardShortcut(.return, modifiers: .command)
+                            Button("Cancel", role: .cancel) { onCancelEdit?() }
+                                .keyboardShortcut(.escape, modifiers: [])
+                        }
+                        .font(.caption)
+                    }
+                } else {
+                    Text(thought.content)
+                        .font(.body)
+                        .lineLimit(isExpanded ? nil : 2)
+                        .truncationMode(.tail)
+                        .strikethrough(thought.taskStatus == .done)
+                        .foregroundStyle(thought.taskStatus == .done ? .secondary : .primary)
+                        .onTapGesture(count: 2) { onStartEdit?() }
+                        .onTapGesture(count: 1) { onToggleExpand?() }
+                }
             }
 
             // Metadata row: category pill + confidence + re-triage + timestamp
@@ -89,6 +132,16 @@ struct ThoughtRowView: View {
         }
         .padding(.vertical, 4)
         .contextMenu {
+            Button {
+                onToggleExpand?()
+            } label: {
+                Label(isExpanded ? "Collapse" : "Expand", systemImage: isExpanded ? "chevron.up" : "chevron.down")
+            }
+            Button {
+                onStartEdit?()
+            } label: {
+                Label("Edit", systemImage: "pencil")
+            }
             if let onStatusToggle {
                 Button {
                     onStatusToggle()

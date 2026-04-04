@@ -7,6 +7,7 @@ struct DashboardView: View {
 
     @State var viewModel: DashboardViewModel
     @State private var isDropTargeted = false
+    @Environment(\.undoManager) private var undoManager
 
     var body: some View {
         NavigationSplitView {
@@ -261,6 +262,12 @@ struct DashboardView: View {
                 List(viewModel.thoughts) { thought in
                     ThoughtRowView(
                         thought: thought,
+                        isExpanded: viewModel.expandedThoughtIds.contains(thought.id ?? -1),
+                        isEditing: viewModel.editingThoughtId == thought.id,
+                        editedContent: Binding(
+                            get: { viewModel.editedContent },
+                            set: { viewModel.editedContent = $0 }
+                        ),
                         onStatusToggle: thought.category == .task ? {
                             Task { await viewModel.cycleTaskStatus(for: thought) }
                         } : nil,
@@ -269,6 +276,18 @@ struct DashboardView: View {
                         },
                         onDelete: {
                             Task { await viewModel.deleteThought(thought) }
+                        },
+                        onToggleExpand: {
+                            viewModel.toggleExpanded(thought)
+                        },
+                        onStartEdit: {
+                            viewModel.startEditing(thought)
+                        },
+                        onSaveEdit: {
+                            Task { await viewModel.saveEdit(undoManager: undoManager) }
+                        },
+                        onCancelEdit: {
+                            viewModel.cancelEdit()
                         },
                         isRetriaging: viewModel.retriagingThoughtId == thought.id
                     )
