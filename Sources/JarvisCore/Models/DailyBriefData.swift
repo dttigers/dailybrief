@@ -59,6 +59,10 @@ public struct DailyBriefData: Sendable {
     // AI-recommended work order priority (case numbers in urgency order)
     public var workOrderPriorityOrder: [String]?
 
+    // Therapy prep data
+    public var therapyPatterns: [TherapyPattern]
+    public var therapyPrep: TherapyPrep?
+
     public init(
         date: Date,
         workOrders: [WorkOrder],
@@ -76,7 +80,9 @@ public struct DailyBriefData: Sendable {
         taskThoughts: [Thought] = [],
         recentThoughts: [Thought] = [],
         insights: [Insight] = [],
-        workOrderPriorityOrder: [String]? = nil
+        workOrderPriorityOrder: [String]? = nil,
+        therapyPatterns: [TherapyPattern] = [],
+        therapyPrep: TherapyPrep? = nil
     ) {
         self.date = date
         self.workOrders = workOrders
@@ -95,6 +101,8 @@ public struct DailyBriefData: Sendable {
         self.recentThoughts = recentThoughts
         self.insights = insights
         self.workOrderPriorityOrder = workOrderPriorityOrder
+        self.therapyPatterns = therapyPatterns
+        self.therapyPrep = therapyPrep
     }
 
     public var dateString: String {

@@ -90,6 +90,31 @@ extension DailyBrief {
                 }
             }
 
+            // Fetch therapy patterns and prep when enabled
+            var therapyPatterns: [TherapyPattern] = []
+            var therapyPrep: TherapyPrep?
+            do {
+                let dbManager = try DatabaseManager()
+                let thoughtStore = ThoughtStore(database: dbManager)
+
+                let allTherapyThoughts = try await thoughtStore.fetchRecentTherapyThoughts(days: 30)
+                let bringToTherapistThoughts = try await thoughtStore.fetchRecentTherapyThoughts(days: 30, classification: .bringToTherapist)
+
+                let patternService = TherapyPatternService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+                let prepService = TherapyPrepService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+
+                therapyPatterns = await tryFetch("Therapy patterns") {
+                    try await patternService.detectPatterns(thoughts: allTherapyThoughts, lookbackDays: 30)
+                } ?? []
+
+                therapyPrep = await tryFetch("Therapy prep") {
+                    try await prepService.generatePrep(thoughts: bringToTherapistThoughts, patterns: therapyPatterns)
+                }
+                Logger.log("Therapy data: \(therapyPatterns.count) patterns, prep: \(therapyPrep != nil ? "yes" : "no")")
+            } catch {
+                Logger.error("Therapy data fetch failed, continuing without: \(error.localizedDescription)")
+            }
+
             // Build thought summaries for contextual affirmation (max 10, truncated to 50 chars)
             let allThoughts = unprocessedThoughts + taskThoughts + recentThoughts
             let thoughtSummaries = allThoughts.prefix(10).map { String($0.content.prefix(50)) }
@@ -175,7 +200,9 @@ extension DailyBrief {
                 taskThoughts: taskThoughts,
                 recentThoughts: recentThoughts,
                 insights: insights,
-                workOrderPriorityOrder: woPriorityOrder
+                workOrderPriorityOrder: woPriorityOrder,
+                therapyPatterns: therapyPatterns,
+                therapyPrep: therapyPrep
             )
 
             Logger.log("Data fetched: \(briefData.workOrders.count) work orders, \(briefData.todoItems.count) todos, game: \(briefData.gameScore != nil ? "yes" : "no"), standings: \(briefData.standings.count) teams")
