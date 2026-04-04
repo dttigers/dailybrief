@@ -1,35 +1,29 @@
 import {
   waitForEvenAppBridge,
-  CreateStartUpPageContainer,
-  TextContainerProperty,
+  OsEventTypeList,
 } from '@evenrealities/even_hub_sdk'
+import { buildHomeScreen } from './screens/home.ts'
 
 async function init(): Promise<void> {
   const bridge = await waitForEvenAppBridge()
 
-  const homeText = new TextContainerProperty({
-    xPosition: 0,
-    yPosition: 0,
-    width: 576,
-    height: 288,
-    borderWidth: 0,
-    borderColor: 0,
-    borderRadius: 0,
-    paddingLength: 8,
-    containerID: 1,
-    containerName: 'home',
-    content: 'VIGIL\n━━━━━━━━━━━━━━━━━━━━\nConnecting...',
-    isEventCapture: 1,
-  })
-
-  const container = new CreateStartUpPageContainer({
-    containerTotalNum: 1,
-    textObject: [homeText],
-  })
-
+  // Build and render the home screen
+  const container = buildHomeScreen()
   await bridge.createStartUpPageContainer(container)
 
-  console.log('Vigil G2 plugin initialized')
+  // Listen for lifecycle events
+  bridge.onEvenHubEvent((event) => {
+    if (event.sysEvent) {
+      const eventType = event.sysEvent.eventType
+      if (eventType === OsEventTypeList.FOREGROUND_ENTER_EVENT) {
+        console.log('Vigil foregrounded')
+      } else if (eventType === OsEventTypeList.FOREGROUND_EXIT_EVENT) {
+        console.log('Vigil backgrounded')
+      }
+    }
+  })
+
+  console.log('Vigil G2 plugin ready')
 }
 
 init()
