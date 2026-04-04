@@ -23,6 +23,25 @@ public enum ConfigLoader {
         }
     }
 
+    /// Loads existing config or creates a default config file if none exists.
+    /// Used by the menu bar app to ensure config always exists on startup.
+    public static func loadOrCreate() throws -> AppConfig {
+        if FileManager.default.fileExists(atPath: configPath) {
+            return try load()
+        }
+        // Create default config
+        let defaultConfig = AppConfig(
+            email: .init(emailAddress: "", appPassword: ""),
+            reminders: .init(),
+            sports: .init(),
+            ai: .init(claudeApiKey: ""),
+            pdf: .init(),
+            printing: .init()
+        )
+        try save(defaultConfig)
+        return defaultConfig
+    }
+
     public static func save(_ config: AppConfig) throws {
         let encoder = JSONEncoder()
         encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
