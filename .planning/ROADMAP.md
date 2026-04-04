@@ -11,6 +11,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v1.2 Daily Driver** — Phases 14-18 (shipped 2026-04-03)
 - ✅ **v1.3 Stability & Smarts** — Phases 19-23 (shipped 2026-04-04)
 - ✅ **v1.4 Intelligence & Organization** — Phases 24-28 (shipped 2026-04-04, early close)
+- 🚧 **v2.0 Vigil Platform** — Phases 29-36 (in progress)
 
 ## Completed Milestones
 
@@ -80,6 +81,102 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
+### 🚧 v2.0 Vigil Platform (In Progress)
+
+**Milestone Goal:** Extract intelligence into a platform-agnostic API (Vigil Core), build first external client (Even G2 smart glasses), and migrate the Mac app to be a thin client.
+
+**Constraints:**
+- Mac app must remain functional throughout migration — never break what works
+- Vigil Core runs on localhost only for v2.0 (no server deployment, no auth)
+- Even G2 display: 576x288, 4-bit greyscale, max 8 containers/page, no CSS/DOM
+- Phone and Mac must be on same Wi-Fi for glasses to reach API
+- API versioned from day one (/v1/ prefix on all routes)
+
+**Reference docs:** `.planning/references/vigil-architecture.pdf`, `.planning/references/vigil-evenhub-plan.pdf`
+
+#### Phase 29: Vigil Core API — Foundation
+
+**Goal**: Project setup (Node.js + Express/Hono, better-sqlite3), DB access to existing Jarvis SQLite, health + summary endpoints
+**Depends on**: Previous milestone complete
+**Research**: Unlikely (established patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 29-01: TBD (run /gsd:plan-phase 29 to break down)
+
+#### Phase 30: Vigil Core API — Full Endpoints
+
+**Goal**: Thoughts CRUD, work orders, reminders, brief, insights — full /v1/ REST API surface
+**Depends on**: Phase 29
+**Research**: Unlikely (CRUD endpoints, standard patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 30-01: TBD
+
+#### Phase 31: Vigil Core API — AI Integration
+
+**Goal**: Port Claude API calls from Swift to Node.js — triage, prioritization, affirmation, insights generation
+**Depends on**: Phase 30
+**Research**: Likely (porting Claude API calls to Anthropic Node.js SDK)
+**Research topics**: Current Anthropic SDK for Node.js, tool use patterns, streaming support
+**Plans**: TBD
+
+Plans:
+- [ ] 31-01: TBD
+
+#### Phase 32: Even G2 Plugin — Scaffold + Home Screen
+
+**Goal**: Vite + TypeScript Even Hub plugin project, SDK init, simulator setup, home screen with mock data
+**Depends on**: Phase 29 (needs running API)
+**Research**: Likely (Even Hub SDK — new integration)
+**Research topics**: @evenrealities/even_hub_sdk API, simulator usage, plugin packaging, display constraints
+**Plans**: TBD
+
+Plans:
+- [ ] 32-01: TBD
+
+#### Phase 33: Even G2 Plugin — All Screens + Navigation
+
+**Goal**: Work orders, reminders, affirmation screens; temple touchpad + R1 ring navigation; real API data with 60s refresh
+**Depends on**: Phase 32
+**Research**: Likely (continued Even Hub SDK — navigation patterns, multi-screen)
+**Research topics**: Even Hub screen transitions, touchpad/ring event handling, data refresh patterns
+**Plans**: TBD
+
+Plans:
+- [ ] 33-01: TBD
+
+#### Phase 34: Mac App Migration — First Services
+
+**Goal**: Redirect simplest Mac app services to call Vigil Core API instead of computing locally; verify feature parity
+**Depends on**: Phase 30
+**Research**: Unlikely (internal refactor — redirecting Swift URLSession calls)
+**Plans**: TBD
+
+Plans:
+- [ ] 34-01: TBD
+
+#### Phase 35: Mac App Migration — AI Services
+
+**Goal**: Redirect triage, prioritization, and insights from local Claude calls to Vigil Core API
+**Depends on**: Phase 31, Phase 34
+**Research**: Unlikely (same migration pattern as Phase 34)
+**Plans**: TBD
+
+Plans:
+- [ ] 35-01: TBD
+
+#### Phase 36: Integration & Polish
+
+**Goal**: End-to-end testing across all clients, LaunchAgent for API server auto-start, packaging G2 plugin for Even Hub submission
+**Depends on**: Phase 33, Phase 35
+**Research**: Unlikely (testing and packaging — established patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 36-01: TBD
+
 ## Domain Expertise
 
 None
@@ -116,3 +213,11 @@ None
 | 26. Therapy Intelligence | v1.4 | 2/2 | Complete | 2026-04-04 |
 | 27. Therapy Prep & Patterns | v1.4 | 3/3 | Complete | 2026-04-04 |
 | 28. Tags & Organization | v1.4 | 3/3 | Complete | 2026-04-04 |
+| 29. Vigil Core API — Foundation | v2.0 | 0/? | Not started | - |
+| 30. Vigil Core API — Full Endpoints | v2.0 | 0/? | Not started | - |
+| 31. Vigil Core API — AI Integration | v2.0 | 0/? | Not started | - |
+| 32. Even G2 Plugin — Scaffold + Home | v2.0 | 0/? | Not started | - |
+| 33. Even G2 Plugin — Screens + Nav | v2.0 | 0/? | Not started | - |
+| 34. Mac App Migration — First Services | v2.0 | 0/? | Not started | - |
+| 35. Mac App Migration — AI Services | v2.0 | 0/? | Not started | - |
+| 36. Integration & Polish | v2.0 | 0/? | Not started | - |

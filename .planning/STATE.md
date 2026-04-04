@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v2.0 Vigil Platform (planning)
+**Current focus:** v2.0 Vigil Platform
 
 ## Current Position
 
-Phase: v1.4 complete, v2.0 not yet created
-Plan: N/A
-Status: Milestone complete, planning next
-Last activity: 2026-04-04 - v1.4 closed early, pivoting to Vigil platform
+Phase: 29 of 36 (Vigil Core API — Foundation)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-04-04 - Milestone v2.0 created
 
-Progress: ██████████ 100% (v1.4)
+Progress: ░░░░░░░░░░ 0%
 
 ## Performance Metrics
 
@@ -61,9 +61,10 @@ None.
 - v1.3 Stability & Smarts shipped: 5 phases (19-23), 7 plans
 - v1.4 Intelligence & Organization shipped (early close): 5 phases (24-28), 11 plans — deferred phases 29-32
 - Pivoting to Vigil platform: Even G2 smart glasses + Vigil Core API
+- Milestone v2.0 Vigil Platform created: 8 phases (Phase 29-36) — Core API, Even G2 plugin, Mac app migration
 
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: v1.4 milestone complete, ready for v2.0 Vigil Platform
+Stopped at: Milestone v2.0 initialization
 Resume file: None
