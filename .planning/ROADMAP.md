@@ -205,7 +205,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 22-01: TBD
+- [ ] 22-01: OAuth2 IMAP backend (config + XOAUTH2 + device code CLI)
+- [ ] 22-02: Settings UI auth type picker + work email verification
 
 #### Phase 23: Polish & Integration
 
@@ -245,6 +246,6 @@ None
 | 18. Polish & Integration | v1.2 | 3/3 | Complete | 2026-04-03 |
 | 19. Bug Fixes | v1.3 | 2/2 | Complete | 2026-04-04 |
 | 20. Folder Watcher & Manual Triage | v1.3 | 2/2 | Complete | 2026-04-04 |
-| 21. AI Work Order Prioritization | v1.3 | 0/? | Not started | - |
-| 22. IMAP Work Email | v1.3 | 0/? | Not started | - |
+| 21. AI Work Order Prioritization | v1.3 | 1/1 | Complete | 2026-04-04 |
+| 22. IMAP Work Email | v1.3 | 0/2 | Planned | - |
 | 23. Polish & Integration | v1.3 | 0/? | Not started | - |
