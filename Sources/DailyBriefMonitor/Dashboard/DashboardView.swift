@@ -267,6 +267,9 @@ struct DashboardView: View {
                         onRetriage: {
                             Task { await viewModel.reTriageThought(thought) }
                         },
+                        onDelete: {
+                            Task { await viewModel.deleteThought(thought) }
+                        },
                         isRetriaging: viewModel.retriagingThoughtId == thought.id
                     )
                 }

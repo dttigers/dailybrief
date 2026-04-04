@@ -12,6 +12,9 @@ struct ThoughtRowView: View {
     /// Called when the user clicks the re-triage button. Nil when triage service unavailable.
     var onRetriage: (() -> Void)?
 
+    /// Called when the user deletes this thought from the context menu.
+    var onDelete: (() -> Void)?
+
     /// Whether this thought is currently being re-triaged.
     var isRetriaging: Bool = false
 
@@ -85,6 +88,28 @@ struct ThoughtRowView: View {
             }
         }
         .padding(.vertical, 4)
+        .contextMenu {
+            if let onStatusToggle {
+                Button {
+                    onStatusToggle()
+                } label: {
+                    Label("Cycle Status", systemImage: "arrow.triangle.2.circlepath")
+                }
+            }
+            if onRetriage != nil {
+                Button {
+                    onRetriage?()
+                } label: {
+                    Label("Re-categorize", systemImage: "arrow.clockwise")
+                }
+            }
+            Divider()
+            Button(role: .destructive) {
+                onDelete?()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
     }
 
     // MARK: - Formatters

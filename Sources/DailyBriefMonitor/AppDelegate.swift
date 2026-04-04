@@ -251,7 +251,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         let hostingView = NSHostingView(rootView: settingsView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 880, height: 560),
+            contentRect: NSRect(x: 0, y: 0, width: 750, height: 500),
             styleMask: [.titled, .closable, .resizable],
             backing: .buffered,
             defer: false

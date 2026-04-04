@@ -68,12 +68,15 @@ public actor ImageDescriptionService {
     /// Maximum base64-encoded size the Claude API accepts (5MB).
     private static let maxBase64Size = 5_242_880
 
+    /// Target size for compression — 1MB is plenty for vision descriptions.
+    private static let targetSize = 1_048_576
+
     public func describe(imageData: Data, mediaType: ImageMediaType) async throws -> String {
-        // Compress if the image exceeds Claude's 5MB base64 limit
+        // Always compress images above target size for faster uploads and lower cost
         let finalData: Data
         let finalMediaType: ImageMediaType
-        if imageData.count > Self.maxBase64Size {
-            guard let compressed = Self.compress(imageData, targetSize: Self.maxBase64Size) else {
+        if imageData.count > Self.targetSize {
+            guard let compressed = Self.compress(imageData, targetSize: Self.targetSize) else {
                 throw ImageDescriptionError.imageTooLarge
             }
             finalData = compressed

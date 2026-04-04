@@ -107,7 +107,12 @@ final class DashboardViewModel {
                 if category == .task, let statusFilter = taskStatusFilter {
                     thoughts = try await store.fetchTasks(status: statusFilter)
                 } else {
-                    thoughts = try await store.fetchAll(category: category)
+                    var results = try await store.fetchAll(category: category)
+                    // Auto-hide completed tasks unless explicitly viewing Done filter
+                    if taskStatusFilter == nil {
+                        results = results.filter { $0.taskStatus != .done }
+                    }
+                    thoughts = results
                 }
             } else {
                 // FTS5 search — then client-side filter by category if needed
@@ -117,6 +122,9 @@ final class DashboardViewModel {
                 }
                 if category == .task, let statusFilter = taskStatusFilter {
                     results = results.filter { $0.taskStatus == statusFilter }
+                } else if taskStatusFilter == nil {
+                    // Auto-hide completed tasks from search results too
+                    results = results.filter { $0.taskStatus != .done }
                 }
                 thoughts = results
             }
@@ -252,6 +260,7 @@ final class DashboardViewModel {
         isImporting = true
         importErrors = []
 
+        let autoDelete = (try? ConfigLoader.load().folderWatching.autoDeleteAfterProcessing) ?? false
         let total = urls.count
 
         for (index, url) in urls.enumerated() {
@@ -324,6 +333,16 @@ final class DashboardViewModel {
                         }
                     }
                 }
+
+                // Auto-delete source file after successful processing
+                if autoDelete {
+                    do {
+                        try FileManager.default.removeItem(at: url)
+                        NSLog("Dashboard: auto-deleted %@", filename)
+                    } catch {
+                        NSLog("Dashboard: failed to auto-delete %@: %@", filename, error.localizedDescription)
+                    }
+                }
             } catch {
                 importErrors.append("\(filename): \(error.localizedDescription)")
             }
@@ -354,6 +373,20 @@ final class DashboardViewModel {
             await loadCounts()
         } catch {
             NSLog("Dashboard: re-triage failed for thought %lld — %@", id, error.localizedDescription)
+        }
+    }
+
+    // MARK: - Delete
+
+    /// Delete a thought (marks for deletion sync, then refreshes).
+    func deleteThought(_ thought: Thought) async {
+        guard let id = thought.id else { return }
+        do {
+            try await store.delete(id: id)
+            await loadThoughts()
+            await loadCounts()
+        } catch {
+            NSLog("Dashboard: failed to delete thought %lld — %@", id, error.localizedDescription)
         }
     }
 

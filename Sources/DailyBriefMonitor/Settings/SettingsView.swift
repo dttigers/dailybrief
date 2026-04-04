@@ -2,41 +2,54 @@ import AppKit
 import JarvisCore
 import SwiftUI
 
+/// Settings item for the sidebar list.
+private enum SettingsPane: String, CaseIterable, Identifiable {
+    case ai = "AI"
+    case email = "Email / IMAP"
+    case sports = "Sports"
+    case pdf = "PDF"
+    case printing = "Printing"
+    case reminders = "Reminders"
+    case calendar = "Calendar"
+    case folders = "Folders"
+    case cloudSync = "Cloud Sync"
+    case insights = "Insights"
+
+    var id: String { rawValue }
+
+    var icon: String {
+        switch self {
+        case .ai: return "brain"
+        case .email: return "envelope"
+        case .sports: return "sportscourt"
+        case .pdf: return "doc.richtext"
+        case .printing: return "printer"
+        case .reminders: return "checklist"
+        case .calendar: return "calendar"
+        case .folders: return "folder.badge.gearshape"
+        case .cloudSync: return "icloud"
+        case .insights: return "lightbulb"
+        }
+    }
+}
+
 struct SettingsView: View {
     @Bindable var viewModel: SettingsViewModel
+    @State private var selectedPane: SettingsPane = .ai
 
     var body: some View {
         VStack(spacing: 0) {
-            TabView {
-                aiTab
-                    .tabItem { Label("AI", systemImage: "brain") }
-
-                emailTab
-                    .tabItem { Label("Email / IMAP", systemImage: "envelope") }
-
-                sportsTab
-                    .tabItem { Label("Sports", systemImage: "sportscourt") }
-
-                pdfTab
-                    .tabItem { Label("PDF", systemImage: "doc.richtext") }
-
-                printingTab
-                    .tabItem { Label("Printing", systemImage: "printer") }
-
-                remindersTab
-                    .tabItem { Label("Reminders", systemImage: "checklist") }
-
-                calendarTab
-                    .tabItem { Label("Calendar", systemImage: "calendar") }
-
-                foldersTab
-                    .tabItem { Label("Folders", systemImage: "folder.badge.gearshape") }
-
-                cloudSyncTab
-                    .tabItem { Label("Cloud Sync", systemImage: "icloud") }
-
-                insightsTab
-                    .tabItem { Label("Insights", systemImage: "lightbulb") }
+            NavigationSplitView {
+                List(SettingsPane.allCases, selection: $selectedPane) { pane in
+                    Label(pane.rawValue, systemImage: pane.icon)
+                        .tag(pane)
+                }
+                .navigationSplitViewColumnWidth(min: 140, ideal: 160, max: 200)
+            } detail: {
+                ScrollView {
+                    detailContent
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             }
 
             Divider()
@@ -44,7 +57,25 @@ struct SettingsView: View {
             bottomBar
                 .padding(12)
         }
-        .frame(minWidth: 850, idealWidth: 850, minHeight: 500)
+        .frame(minWidth: 700, idealWidth: 750, minHeight: 450)
+    }
+
+    // MARK: - Detail Router
+
+    @ViewBuilder
+    private var detailContent: some View {
+        switch selectedPane {
+        case .ai: aiTab
+        case .email: emailTab
+        case .sports: sportsTab
+        case .pdf: pdfTab
+        case .printing: printingTab
+        case .reminders: remindersTab
+        case .calendar: calendarTab
+        case .folders: foldersTab
+        case .cloudSync: cloudSyncTab
+        case .insights: insightsTab
+        }
     }
 
     // MARK: - Tabs
@@ -58,7 +89,6 @@ struct SettingsView: View {
     }
 
     private var emailTab: some View {
-        ScrollView {
         Form {
             Section("Connection") {
                 TextField("IMAP Host", text: $viewModel.imapHost, prompt: Text("imap.gmail.com"))
@@ -107,11 +137,9 @@ struct SettingsView: View {
             }
         }
         .padding()
-        }
     }
 
     private var sportsTab: some View {
-        ScrollView {
         Form {
             // MLB Section
             Section {
@@ -210,7 +238,6 @@ struct SettingsView: View {
             }
         }
         .padding()
-        }
     }
 
     private var pdfTab: some View {
@@ -238,7 +265,6 @@ struct SettingsView: View {
     }
 
     private var calendarTab: some View {
-        ScrollView {
         Form {
             Toggle("Enable Google Calendar", isOn: $viewModel.googleCalendarEnabled)
 
@@ -303,11 +329,9 @@ struct SettingsView: View {
             }
         }
         .padding()
-        }
     }
 
     private var foldersTab: some View {
-        ScrollView {
         Form {
             Toggle("Enable Folder Watching", isOn: $viewModel.folderWatchingEnabled)
 
@@ -355,7 +379,6 @@ struct SettingsView: View {
             }
         }
         .padding()
-        }
     }
 
     private var cloudSyncTab: some View {

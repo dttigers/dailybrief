@@ -85,13 +85,16 @@ public actor ThoughtStore {
     }
 
     /// Fetch thoughts with optional category filter, ordered by createdAt descending.
+    /// Excludes thoughts marked for deletion.
     public func fetchAll(
         category: ThoughtCategory? = nil,
         limit: Int = 100,
         offset: Int = 0
     ) async throws -> [Thought] {
         try await db.reader.read { db in
-            var request = Thought.order(Thought.Columns.createdAt.desc)
+            var request = Thought
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
+                .order(Thought.Columns.createdAt.desc)
             if let category {
                 request = request.filter(Thought.Columns.category == category.rawValue)
             }
@@ -114,6 +117,7 @@ public actor ThoughtStore {
             return try Thought
                 .all()
                 .distinct()
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
                 .joining(required: Thought.thoughtsFts.matching(pattern))
                 .order(Thought.Columns.createdAt.desc)
                 .limit(limit)
@@ -121,10 +125,11 @@ public actor ThoughtStore {
         }
     }
 
-    /// Count thoughts, optionally filtered by category.
+    /// Count thoughts, optionally filtered by category. Excludes deleted.
     public func count(category: ThoughtCategory? = nil) async throws -> Int {
         try await db.reader.read { db in
-            var request = Thought.all()
+            var request = Thought
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
             if let category {
                 request = request.filter(Thought.Columns.category == category.rawValue)
             }
@@ -150,11 +155,12 @@ public actor ThoughtStore {
         }
     }
 
-    /// Fetch thoughts with category == .task, optionally filtered by task status.
+    /// Fetch thoughts with category == .task, optionally filtered by task status. Excludes deleted.
     public func fetchTasks(status: TaskStatus? = nil, limit: Int = 100) async throws -> [Thought] {
         try await db.reader.read { db in
             var request = Thought
                 .filter(Thought.Columns.category == ThoughtCategory.task.rawValue)
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
                 .order(Thought.Columns.createdAt.desc)
             if let status {
                 request = request.filter(Thought.Columns.taskStatus == status.rawValue)
@@ -163,11 +169,12 @@ public actor ThoughtStore {
         }
     }
 
-    /// Count thoughts with category == .task, optionally filtered by task status.
+    /// Count thoughts with category == .task, optionally filtered by task status. Excludes deleted.
     public func countTasks(status: TaskStatus? = nil) async throws -> Int {
         try await db.reader.read { db in
             var request = Thought
                 .filter(Thought.Columns.category == ThoughtCategory.task.rawValue)
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
             if let status {
                 request = request.filter(Thought.Columns.taskStatus == status.rawValue)
             }
