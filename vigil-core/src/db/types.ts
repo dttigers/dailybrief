@@ -32,6 +32,34 @@ export interface Thought {
   isFavorited: number;
 }
 
+export interface ThoughtCreateInput {
+  content: string;
+  source: CaptureSource;
+  category?: ThoughtCategory;
+  tags?: string[];
+}
+
+export interface ThoughtUpdateInput {
+  content?: string;
+  category?: ThoughtCategory;
+  taskStatus?: TaskStatus;
+  therapyClassification?: TherapyClassification;
+  tags?: string[];
+  isFavorited?: boolean;
+}
+
+export interface ThoughtResponse
+  extends Omit<Thought, "tags"> {
+  tags: string[];
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 export interface ThoughtLink {
   id: number;
   sourceThoughtId: number;

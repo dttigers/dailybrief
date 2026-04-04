@@ -13,6 +13,12 @@ const DB_PATH = join(
 
 let db: Database.Database | null = null;
 
+export function withDb<T>(fn: (db: Database.Database) => T): T | null {
+  const instance = getDb();
+  if (!instance) return null;
+  return fn(instance);
+}
+
 export function getDb(): Database.Database | null {
   if (db) return db;
 
@@ -24,7 +30,7 @@ export function getDb(): Database.Database | null {
   }
 
   try {
-    db = new Database(DB_PATH, { readonly: true });
+    db = new Database(DB_PATH);
     const result = db.prepare("SELECT COUNT(*) as count FROM thoughts").get() as
       | { count: number }
       | undefined;
