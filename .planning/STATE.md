@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 31 of 36 (Vigil Core AI Integration) — In progress
-Plan: 01 complete (1/?)
-Status: Plan 31-01 complete
-Last activity: 2026-04-04 - Plan 31-01 complete (AI client module + triage endpoint)
+Plan: 02 complete (2/?)
+Status: Plan 31-02 complete
+Last activity: 2026-04-04 - Plan 31-02 complete (affirmation + insights endpoints)
 
-Progress: ██░░░░░░░░ 25%
+Progress: ████░░░░░░ 50%
 
 ## Performance Metrics
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Plan 31-01 complete, ready for plan 31-02
+Stopped at: Plan 31-02 complete, ready for plan 31-03
 Resume file: None
-Notes: AI client module created (ai/client.ts, ai/types.ts). POST /v1/triage endpoint live. Pattern established for all subsequent AI endpoints. Requires ANTHROPIC_API_KEY env var.
+Notes: AI client module created (ai/client.ts, ai/types.ts). POST /v1/triage, /v1/affirmation, /v1/insights endpoints live. Affirmation uses daily file cache at ~/.cache/dailybrief/. Insights filters confidence >= 0.5.
