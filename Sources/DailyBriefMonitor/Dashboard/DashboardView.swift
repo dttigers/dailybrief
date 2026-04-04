@@ -7,6 +7,7 @@ struct DashboardView: View {
 
     @State var viewModel: DashboardViewModel
     @State private var isDropTargeted = false
+    @State private var showTherapyPrep = false
     @Environment(\.undoManager) private var undoManager
 
     var body: some View {
@@ -48,7 +49,18 @@ struct DashboardView: View {
                 }
                 .disabled(!viewModel.canImportImage || viewModel.isImporting)
                 .help("Describe and capture images")
+
+                Button {
+                    showTherapyPrep = true
+                } label: {
+                    Label("Therapy Prep", systemImage: "brain.head.profile")
+                }
+                .help("Generate therapy session prep")
             }
+        }
+        .sheet(isPresented: $showTherapyPrep) {
+            TherapyPrepView(viewModel: viewModel)
+                .frame(minWidth: 500, minHeight: 400)
         }
         .task {
             await viewModel.refresh()
