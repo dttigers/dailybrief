@@ -1,0 +1,44 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:dailybrief}",
+            "name": "Debug DailyBriefMonitor",
+            "target": "DailyBriefMonitor",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug DailyBriefMonitor"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:dailybrief}",
+            "name": "Release DailyBriefMonitor",
+            "target": "DailyBriefMonitor",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release DailyBriefMonitor"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:dailybrief}",
+            "name": "Debug DailyBrief",
+            "target": "DailyBrief",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug DailyBrief"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:dailybrief}",
+            "name": "Release DailyBrief",
+            "target": "DailyBrief",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release DailyBrief"
+        }
+    ]
+}
