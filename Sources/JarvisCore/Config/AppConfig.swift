@@ -120,7 +120,7 @@ public struct AppConfig: Codable, Sendable {
 
         // Backward-compatible decoding: old configs have "email" field for address
         private enum CodingKeys: String, CodingKey {
-            case emailAddress = "email_address"
+            case emailAddress
             case email // old key for backward compat
             case appPassword
             case imapHost, imapPort, useTLS

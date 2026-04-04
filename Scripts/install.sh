@@ -24,6 +24,13 @@ if [ -f "$OLD_CLI_PLIST" ]; then
     echo "  Removed old CLI LaunchAgent (scheduling now built into monitor)"
 fi
 
+# Remove stale /usr/local/bin symlink if present (old dev shortcut)
+if [ -L "/usr/local/bin/dailybrief" ]; then
+    echo "Removing stale /usr/local/bin/dailybrief symlink..."
+    rm -f "/usr/local/bin/dailybrief"
+    echo "  Removed (correct binary is at $INSTALL_DIR/DailyBrief)"
+fi
+
 # 1. Build both targets in release mode
 echo "Building release binaries..."
 cd "$REPO_DIR"
