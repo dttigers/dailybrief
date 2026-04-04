@@ -241,7 +241,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 25-01: TBD
+- [ ] 25-01: Multi-Select & Bulk Actions
+- [ ] 25-02: Source & Date Filters
 
 #### Phase 26: Therapy Intelligence
 
