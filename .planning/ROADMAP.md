@@ -129,16 +129,17 @@ Plans:
 - [x] 31-03: Therapy endpoints (classify, patterns, prep)
 - [x] 31-04: Prioritize + describe-image endpoints
 
-#### Phase 32: Even G2 Plugin — Scaffold + Home Screen
+#### Phase 32: Even G2 Plugin — Scaffold + Home Screen ✓
 
 **Goal**: Vite + TypeScript Even Hub plugin project, SDK init, simulator setup, home screen with mock data
 **Depends on**: Phase 29 (needs running API)
 **Research**: Likely (Even Hub SDK — new integration)
 **Research topics**: @evenrealities/even_hub_sdk API, simulator usage, plugin packaging, display constraints
-**Plans**: TBD
+**Plans**: 2
 
 Plans:
-- [ ] 32-01: TBD
+- [x] 32-01: Project scaffold + Vite+TS + Even Hub SDK bridge
+- [x] 32-02: Home screen with mock Vigil data
 
 #### Phase 33: Even G2 Plugin — All Screens + Navigation
 
@@ -220,7 +221,7 @@ None
 | 29. Vigil Core API — Foundation | v2.0 | 2/2 | Complete | 2026-04-04 |
 | 30. Vigil Core API — Full Endpoints | v2.0 | 3/3 | Complete | 2026-04-04 |
 | 31. Vigil Core API — AI Integration | v2.0 | 4/4 | Complete | 2026-04-04 |
-| 32. Even G2 Plugin — Scaffold + Home | v2.0 | 0/? | Not started | - |
+| 32. Even G2 Plugin — Scaffold + Home | v2.0 | 2/2 | Complete | 2026-04-04 |
 | 33. Even G2 Plugin — Screens + Nav | v2.0 | 0/? | Not started | - |
 | 34. Mac App Migration — First Services | v2.0 | 0/? | Not started | - |
 | 35. Mac App Migration — AI Services | v2.0 | 0/? | Not started | - |
