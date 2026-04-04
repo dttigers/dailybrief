@@ -4,6 +4,7 @@ import {
 } from '@evenrealities/even_hub_sdk'
 import { buildHomeScreen } from './screens/home.ts'
 import { handleNavEvent } from './navigation.ts'
+import { fetchSummary, fetchAffirmation } from './api.ts'
 
 const NAV_EVENTS = new Set([
   OsEventTypeList.SCROLL_TOP_EVENT,
@@ -14,8 +15,12 @@ const NAV_EVENTS = new Set([
 async function init(): Promise<void> {
   const bridge = await waitForEvenAppBridge()
 
-  // Build and render the home screen
-  const container = buildHomeScreen()
+  // Fetch real data and build the home screen
+  const [summary, affirmation] = await Promise.all([
+    fetchSummary(),
+    fetchAffirmation(),
+  ])
+  const container = buildHomeScreen(summary, affirmation)
   await bridge.createStartUpPageContainer(container)
 
   // Listen for lifecycle + navigation events

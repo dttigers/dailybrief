@@ -1,35 +1,11 @@
 import {
   CreateStartUpPageContainer,
+  RebuildPageContainer,
   TextContainerProperty,
 } from '@evenrealities/even_hub_sdk'
 
 import type { VigilSummary, VigilAffirmation } from '../types.ts'
 import { DISPLAY_WIDTH, DIVIDER, ContainerId } from '../constants.ts'
-
-// Mock data matching Vigil API response shapes — swapped for real API data in Phase 33
-
-export const MOCK_SUMMARY: VigilSummary = {
-  total: 12,
-  byCategory: { task: 3, idea: 5, note: 4 },
-  tasksByStatus: { pending: 3, done: 0 },
-  favorites: 2,
-  linkedThoughts: 1,
-  recent: [
-    {
-      id: 1,
-      content: 'Fix HVAC unit at Store #142',
-      category: 'task',
-      source: 'voice',
-      createdAt: '2026-04-04T10:00:00Z',
-      tags: ['urgent', 'hvac'],
-    },
-  ],
-}
-
-export const MOCK_AFFIRMATION: VigilAffirmation = {
-  affirmation:
-    "You've been handling a lot of competing priorities today. That takes real skill.",
-}
 
 function formatTime(): string {
   const now = new Date()
@@ -46,10 +22,14 @@ function formatTime(): string {
  * Layout: 3 stacked text containers (header, body, footer)
  * within the 576x288 greyscale display.
  */
-export function buildHomeScreen(): CreateStartUpPageContainer {
-  const summary = MOCK_SUMMARY
-  const affirmation = MOCK_AFFIRMATION
-
+/**
+ * Build home screen text containers from API data.
+ * Shared layout logic for both startup and rebuild variants.
+ */
+function buildHomeContainers(
+  summary: VigilSummary,
+  affirmation: VigilAffirmation,
+): TextContainerProperty[] {
   const pendingCount = summary.tasksByStatus['pending'] ?? 0
   const topPriority = summary.recent[0]?.content ?? 'No tasks'
 
@@ -113,8 +93,27 @@ export function buildHomeScreen(): CreateStartUpPageContainer {
     isEventCapture: 0,
   })
 
+  return [header, body, footer]
+}
+
+export function buildHomeScreen(
+  summary: VigilSummary,
+  affirmation: VigilAffirmation,
+): CreateStartUpPageContainer {
+  const textObject = buildHomeContainers(summary, affirmation)
   return new CreateStartUpPageContainer({
-    containerTotalNum: 3,
-    textObject: [header, body, footer],
+    containerTotalNum: textObject.length,
+    textObject,
+  })
+}
+
+export function rebuildHomeScreen(
+  summary: VigilSummary,
+  affirmation: VigilAffirmation,
+): RebuildPageContainer {
+  const textObject = buildHomeContainers(summary, affirmation)
+  return new RebuildPageContainer({
+    containerTotalNum: textObject.length,
+    textObject,
   })
 }

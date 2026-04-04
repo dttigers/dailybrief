@@ -6,10 +6,10 @@ import {
 } from '@evenrealities/even_hub_sdk'
 import type { EvenAppBridge } from '@evenrealities/even_hub_sdk'
 
-import { buildHomeScreen } from './screens/home.ts'
+import { rebuildHomeScreen } from './screens/home.ts'
 import { buildWorkOrdersScreen } from './screens/work-orders.ts'
 import { buildAffirmationScreen } from './screens/affirmation.ts'
-import { fetchBrief, fetchAffirmation } from './api.ts'
+import { fetchSummary, fetchBrief, fetchAffirmation } from './api.ts'
 
 // Screen identifiers — const object pattern (erasableSyntaxOnly)
 export const Screen = {
@@ -43,13 +43,11 @@ export function getPrevScreen(current: ScreenName): ScreenName {
 async function buildScreen(screen: ScreenName): Promise<RebuildPageContainer> {
   switch (screen) {
     case Screen.HOME: {
-      // Reuse home builder — convert CreateStartUpPageContainer to RebuildPageContainer
-      // Plan 03 will refactor home to accept API data directly
-      const home = buildHomeScreen()
-      return new RebuildPageContainer({
-        containerTotalNum: home.containerTotalNum,
-        textObject: home.textObject,
-      })
+      const [summary, affirmation] = await Promise.all([
+        fetchSummary(),
+        fetchAffirmation(),
+      ])
+      return rebuildHomeScreen(summary, affirmation)
     }
     case Screen.WORK_ORDERS: {
       const brief = await fetchBrief()
