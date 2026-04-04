@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 24 of 32 (Thought Editing)
+Phase: 25 of 32 (Bulk Actions & Filtering)
 Plan: 01 complete
-Status: Phase complete
-Last activity: 2026-04-04 - Plan 24-01 executed (inline editing with undo)
+Status: In progress
+Last activity: 2026-04-04 - Plan 25-01 executed (multi-select with bulk delete/recategorize/re-triage)
 
 Progress: █░░░░░░░░░ 11%
 
@@ -61,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 24 plan 01 complete
+Stopped at: Phase 25 plan 01 complete
 Resume file: None
