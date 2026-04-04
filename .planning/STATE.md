@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 33 of 36 (G2 Screens + Navigation)
-Plan: 01 complete
+Plan: 02 complete
 Status: In progress
-Last activity: 2026-04-04 - Plan 01 complete (API client + navigation state machine)
+Last activity: 2026-04-04 - Plan 02 complete (work orders + affirmation screens, live API navigation)
 
 Progress: ██░░░░░░░░ 39%
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 33 Plan 01 complete, plans 02-03 remain
+Stopped at: Phase 33 Plan 02 complete, plan 03 remains
 Resume file: None
-Notes: API client (api.ts) with graceful fallbacks ready. Navigation state machine cycles HOME/WORK_ORDERS/AFFIRMATION via swipe events. Placeholder screens in place for Plan 02/03 replacement. RebuildPageContainer pattern established for screen switching.
+Notes: All 3 screen builders exist. Navigation fetches live API data for work orders (fetchBrief) and affirmation (fetchAffirmation). Home screen still uses mock data — Plan 03 refactors home to accept API data. ListContainerProperty pattern established for scrollable lists. formatTime() duplicated in home.ts and affirmation.ts — consolidate in Plan 03.
