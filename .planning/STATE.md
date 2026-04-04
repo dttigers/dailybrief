@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 25 of 32 (Bulk Actions & Filtering)
-Plan: 02 complete
-Status: Phase complete
-Last activity: 2026-04-04 - Phase 25 complete (multi-select bulk actions + source/date filters)
+Phase: 26 of 32 (Therapy Intelligence)
+Plan: 01 complete
+Status: In progress
+Last activity: 2026-04-04 - Plan 01 complete (TherapyClassification model, DB migration, CloudKit sync, classification service)
 
 Progress: ██░░░░░░░░ 22%
 
@@ -61,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 25 complete
+Stopped at: Phase 26, plan 01 complete
 Resume file: None
