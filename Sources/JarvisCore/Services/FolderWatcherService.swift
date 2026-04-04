@@ -30,6 +30,7 @@ public actor FolderWatcherService {
     private let imageDescriptionService: ImageDescriptionService?
     private let captureService: CaptureService
     private let triageService: TriageService?
+    private let thoughtStore: ThoughtStore
     private let config: AppConfig.FolderWatchingConfig
 
     private var processedFiles: Set<String> = []
@@ -60,12 +61,14 @@ public actor FolderWatcherService {
         imageDescriptionService: ImageDescriptionService?,
         captureService: CaptureService,
         triageService: TriageService?,
+        thoughtStore: ThoughtStore,
         config: AppConfig.FolderWatchingConfig
     ) {
         self.transcriptionService = transcriptionService
         self.imageDescriptionService = imageDescriptionService
         self.captureService = captureService
         self.triageService = triageService
+        self.thoughtStore = thoughtStore
         self.config = config
         self.processedFiles = Self.loadManifest()
     }
@@ -234,6 +237,11 @@ public actor FolderWatcherService {
         if let triageService, thought.id != nil {
             do {
                 let result = try await triageService.triage(text)
+                if var t = try await thoughtStore.fetch(id: thought.id!) {
+                    t.category = result.category
+                    t.confidence = result.confidence
+                    _ = try await thoughtStore.update(t)
+                }
                 NSLog("FolderWatcherService: Triaged '%@' as %@ (%.0f%%)", filename, result.category.rawValue, result.confidence * 100)
             } catch {
                 NSLog("FolderWatcherService: Triage failed for %@: %@", filename, error.localizedDescription)
@@ -264,6 +272,11 @@ public actor FolderWatcherService {
         if let triageService, thought.id != nil {
             do {
                 let result = try await triageService.triage(description)
+                if var t = try await thoughtStore.fetch(id: thought.id!) {
+                    t.category = result.category
+                    t.confidence = result.confidence
+                    _ = try await thoughtStore.update(t)
+                }
                 NSLog("FolderWatcherService: Triaged '%@' as %@ (%.0f%%)", filename, result.category.rawValue, result.confidence * 100)
             } catch {
                 NSLog("FolderWatcherService: Triage failed for %@: %@", filename, error.localizedDescription)
