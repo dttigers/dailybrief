@@ -15,7 +15,11 @@ actor EmailService {
             port: config.imapPort,
             email: config.emailAddress,
             password: config.appPassword,
-            useTLS: config.useTLS
+            useTLS: config.useTLS,
+            authType: config.authType,
+            oauth2ClientId: config.oauth2ClientId,
+            oauth2TenantId: config.oauth2TenantId,
+            oauth2RefreshToken: config.oauth2RefreshToken
         )
 
         let cutoffDate = Calendar.current.date(byAdding: .day, value: -config.lookbackDays, to: Date())!
@@ -71,13 +75,23 @@ private actor IMAPClient {
     let email: String
     let password: String
     let useTLS: Bool
+    let authType: String
+    let oauth2ClientId: String
+    let oauth2TenantId: String
+    let oauth2RefreshToken: String
 
-    init(host: String, port: Int, email: String, password: String, useTLS: Bool) {
+    init(host: String, port: Int, email: String, password: String, useTLS: Bool,
+         authType: String = "app_password", oauth2ClientId: String = "",
+         oauth2TenantId: String = "", oauth2RefreshToken: String = "") {
         self.host = host
         self.port = port
         self.email = email
         self.password = password
         self.useTLS = useTLS
+        self.authType = authType
+        self.oauth2ClientId = oauth2ClientId
+        self.oauth2TenantId = oauth2TenantId
+        self.oauth2RefreshToken = oauth2RefreshToken
     }
 
     func searchAndFetch(folder: String, criteria: String) async throws -> [String] {
@@ -91,11 +105,45 @@ private actor IMAPClient {
             connectCode = "mail = imaplib.IMAP4('\(host)', \(port))"
         }
 
+        let authCode: String
+        if authType == "oauth2" {
+            authCode = """
+                # Exchange refresh token for access token
+                import urllib.request, urllib.parse
+                token_url = 'https://login.microsoftonline.com/\(oauth2TenantId)/oauth2/v2.0/token'
+                token_data = urllib.parse.urlencode({
+                    'grant_type': 'refresh_token',
+                    'client_id': '\(oauth2ClientId)',
+                    'refresh_token': '\(oauth2RefreshToken)',
+                    'scope': 'https://outlook.office365.com/.default'
+                }).encode()
+                token_req = urllib.request.Request(token_url, data=token_data, method='POST')
+                try:
+                    token_resp = urllib.request.urlopen(token_req)
+                    token_json = json.loads(token_resp.read().decode())
+                    access_token = token_json['access_token']
+                except Exception as te:
+                    print(json.dumps({"error": f"OAuth2 token exchange failed: {te}"}), file=sys.stderr)
+                    print(json.dumps([]))
+                    sys.exit(1)
+                # Authenticate with XOAUTH2
+                auth_string = f'user=\(email)\\x01auth=Bearer {access_token}\\x01\\x01'
+                try:
+                    mail.authenticate('XOAUTH2', lambda x: auth_string.encode())
+                except Exception as ae:
+                    print(json.dumps({"error": "OAuth2 authentication failed — check Azure AD app permissions and refresh token."}), file=sys.stderr)
+                    print(json.dumps([]))
+                    sys.exit(1)
+            """
+        } else {
+            authCode = "    mail.login('\(email)', '\(password)')"
+        }
+
         let script = """
         import imaplib, email, sys, json
         try:
             \(connectCode)
-            mail.login('\(email)', '\(password)')
+        \(authCode)
             mail.select('\(folder)', readonly=True)
             status, data = mail.search(None, '\(criteria)')
             if status != 'OK':

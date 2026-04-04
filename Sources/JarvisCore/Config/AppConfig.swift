@@ -87,6 +87,10 @@ public struct AppConfig: Codable, Sendable {
         public var useTLS: Bool
         public var searchSubjectPattern: String
         public var lookbackDays: Int
+        public var authType: String
+        public var oauth2ClientId: String
+        public var oauth2TenantId: String
+        public var oauth2RefreshToken: String
 
         public init(
             emailAddress: String,
@@ -95,7 +99,11 @@ public struct AppConfig: Codable, Sendable {
             imapPort: Int = 993,
             useTLS: Bool = true,
             searchSubjectPattern: String = "Case CS",
-            lookbackDays: Int = 3
+            lookbackDays: Int = 3,
+            authType: String = "app_password",
+            oauth2ClientId: String = "",
+            oauth2TenantId: String = "",
+            oauth2RefreshToken: String = ""
         ) {
             self.emailAddress = emailAddress
             self.appPassword = appPassword
@@ -104,6 +112,10 @@ public struct AppConfig: Codable, Sendable {
             self.useTLS = useTLS
             self.searchSubjectPattern = searchSubjectPattern
             self.lookbackDays = lookbackDays
+            self.authType = authType
+            self.oauth2ClientId = oauth2ClientId
+            self.oauth2TenantId = oauth2TenantId
+            self.oauth2RefreshToken = oauth2RefreshToken
         }
 
         // Backward-compatible decoding: old configs have "email" field for address
@@ -113,6 +125,7 @@ public struct AppConfig: Codable, Sendable {
             case appPassword
             case imapHost, imapPort, useTLS
             case searchSubjectPattern, lookbackDays
+            case authType, oauth2ClientId, oauth2TenantId, oauth2RefreshToken
         }
 
         public init(from decoder: Decoder) throws {
@@ -129,6 +142,10 @@ public struct AppConfig: Codable, Sendable {
             useTLS = try container.decodeIfPresent(Bool.self, forKey: .useTLS) ?? true
             searchSubjectPattern = try container.decodeIfPresent(String.self, forKey: .searchSubjectPattern) ?? "Case CS"
             lookbackDays = try container.decodeIfPresent(Int.self, forKey: .lookbackDays) ?? 3
+            authType = try container.decodeIfPresent(String.self, forKey: .authType) ?? "app_password"
+            oauth2ClientId = try container.decodeIfPresent(String.self, forKey: .oauth2ClientId) ?? ""
+            oauth2TenantId = try container.decodeIfPresent(String.self, forKey: .oauth2TenantId) ?? ""
+            oauth2RefreshToken = try container.decodeIfPresent(String.self, forKey: .oauth2RefreshToken) ?? ""
         }
 
         public func encode(to encoder: Encoder) throws {
@@ -140,6 +157,10 @@ public struct AppConfig: Codable, Sendable {
             try container.encode(useTLS, forKey: .useTLS)
             try container.encode(searchSubjectPattern, forKey: .searchSubjectPattern)
             try container.encode(lookbackDays, forKey: .lookbackDays)
+            try container.encode(authType, forKey: .authType)
+            try container.encode(oauth2ClientId, forKey: .oauth2ClientId)
+            try container.encode(oauth2TenantId, forKey: .oauth2TenantId)
+            try container.encode(oauth2RefreshToken, forKey: .oauth2RefreshToken)
         }
     }
 
