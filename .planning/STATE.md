@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 27 of 32 (Therapy Prep & Patterns)
-Plan: 03 complete
-Status: Phase complete
-Last activity: 2026-04-04 - Phase 27 complete (therapy pattern recognition, session prep AI, PDF integration, dashboard TherapyPrepView)
+Phase: 28 of 32 (Tags & Organization)
+Plan: 01 complete
+Status: In progress
+Last activity: 2026-04-04 - Plan 28-01 complete (v5 migration, tags/favorites/links storage layer)
 
 Progress: █████░░░░░ 50%
 
@@ -61,5 +61,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 27 complete
+Stopped at: Phase 28, plan 01 complete
 Resume file: None
