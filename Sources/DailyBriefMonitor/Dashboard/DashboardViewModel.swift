@@ -38,6 +38,9 @@ final class DashboardViewModel {
     var insights: [Insight] = []
     var isLoadingInsights = false
 
+    // Re-triage state
+    var retriagingThoughtId: Int64?
+
     // Import state
     var isImporting = false
     var importProgress: ImportProgress?
@@ -329,6 +332,29 @@ final class DashboardViewModel {
         isImporting = false
         importProgress = nil
         await refresh()
+    }
+
+    // MARK: - Re-Triage
+
+    /// Re-run AI categorization on a single thought.
+    func reTriageThought(_ thought: Thought) async {
+        guard let id = thought.id, let triageService else { return }
+
+        retriagingThoughtId = id
+        defer { retriagingThoughtId = nil }
+
+        do {
+            let result = try await triageService.triage(thought.content)
+            if var t = try await store.fetch(id: id) {
+                t.category = result.category
+                t.confidence = result.confidence
+                try await store.update(t)
+            }
+            await loadThoughts()
+            await loadCounts()
+        } catch {
+            NSLog("Dashboard: re-triage failed for thought %lld — %@", id, error.localizedDescription)
+        }
     }
 
     // MARK: - Private
