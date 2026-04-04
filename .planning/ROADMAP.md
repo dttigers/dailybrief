@@ -9,6 +9,7 @@ Transform the existing DailyBrief CLI and menu bar monitor into a full personal 
 - ✅ **v1.0 MVP** — Phases 1-7 (shipped 2026-04-02)
 - ✅ **v1.1 Always On** — Phases 8-13 (shipped 2026-04-03)
 - ✅ **v1.2 Daily Driver** — Phases 14-18 (shipped 2026-04-03)
+- 🚧 **v1.3 Stability & Smarts** — Phases 19-23 (in progress)
 
 ## Completed Milestones
 
@@ -161,6 +162,61 @@ Plans:
 
 </details>
 
+### 🚧 v1.3 Stability & Smarts (In Progress)
+
+**Milestone Goal:** Fix daily-use bugs for reliability, then add manual triage, AI work order prioritization, and IMAP work email integration.
+
+#### Phase 19: Bug Fixes
+
+**Goal**: Fix config startup error, duplicate thoughts in dashboard, audio upload triage, and settings tab resizing
+**Depends on**: Previous milestone complete
+**Research**: Unlikely (debugging existing code)
+**Plans**: TBD
+
+Plans:
+- [ ] 19-01: TBD (run /gsd:plan-phase 19 to break down)
+
+#### Phase 20: Folder Watcher & Manual Triage
+
+**Goal**: Verify folder watcher and auto-delete work correctly. Add UI button to manually re-run AI triage on any thought.
+**Depends on**: Phase 19
+**Research**: Unlikely (existing patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 20-01: TBD
+
+#### Phase 21: AI Work Order Prioritization
+
+**Goal**: Use Claude AI to analyze work orders and recommend priority/urgency ranking
+**Depends on**: Phase 20
+**Research**: Unlikely (already using Claude API in app)
+**Plans**: TBD
+
+Plans:
+- [ ] 21-01: TBD
+
+#### Phase 22: IMAP Work Email
+
+**Goal**: Test and implement direct IMAP access for work email as alternative to Gmail API
+**Depends on**: Phase 21
+**Research**: Likely (IMAP protocol integration, authentication patterns)
+**Research topics**: Swift IMAP libraries, OAuth2 vs app passwords for work email, email parsing
+**Plans**: TBD
+
+Plans:
+- [ ] 22-01: TBD
+
+#### Phase 23: Polish & Integration
+
+**Goal**: Tie everything together — edge cases, refinement, cross-feature integration testing, UX polish
+**Depends on**: Phase 22
+**Research**: Unlikely (internal patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 23-01: TBD
+
 ## Domain Expertise
 
 None
@@ -187,3 +243,8 @@ None
 | 16. Task Status Workflow | v1.2 | 4/4 | Complete | 2026-04-03 |
 | 17. Multi-Sport Support | v1.2 | 4/4 | Complete | 2026-04-03 |
 | 18. Polish & Integration | v1.2 | 3/3 | Complete | 2026-04-03 |
+| 19. Bug Fixes | v1.3 | 0/? | Not started | - |
+| 20. Folder Watcher & Manual Triage | v1.3 | 0/? | Not started | - |
+| 21. AI Work Order Prioritization | v1.3 | 0/? | Not started | - |
+| 22. IMAP Work Email | v1.3 | 0/? | Not started | - |
+| 23. Polish & Integration | v1.3 | 0/? | Not started | - |

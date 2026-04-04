@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-04-03)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v1.2 Daily Driver shipped — planning next milestone
+**Current focus:** v1.3 Stability & Smarts — fix bugs, add manual triage, AI prioritization, IMAP email
 
 ## Current Position
 
-Phase: 18 of 18 (Polish & Integration) — COMPLETE
-Plan: All complete
-Status: v1.2 Daily Driver milestone archived — ready for next milestone
-Last activity: 2026-04-03 — v1.2 milestone complete and archived
+Phase: 19 of 23 (Bug Fixes)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-04-04 - Milestone v1.3 created
 
-Progress: ██████████ 100%
+Progress: ░░░░░░░░░░ 0%
 
 ## Performance Metrics
 
@@ -47,16 +47,17 @@ None.
 
 ### Blockers/Concerns
 
-None.
+- IMAP work email is exploratory — test feasibility first
 
 ### Roadmap Evolution
 
 - v1.0 MVP shipped: 7 phases (1-7), 17 plans
 - v1.1 Always On shipped: 6 phases (8-13), 16 plans
 - v1.2 Daily Driver shipped: 5 phases (14-18), 14 plans
+- v1.3 Stability & Smarts created: bug fixes + new features, 5 phases (Phase 19-23)
 
 ## Session Continuity
 
-Last session: 2026-04-03
-Stopped at: v1.2 Daily Driver milestone archived
+Last session: 2026-04-04
+Stopped at: Milestone v1.3 initialization
 Resume file: None
