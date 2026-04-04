@@ -1,6 +1,10 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
 import { health } from "./routes/health.js";
+import { getDb } from "./db/index.js";
+
+// Initialize database connection at startup
+getDb();
 
 const app = new Hono();
 
