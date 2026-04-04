@@ -9,13 +9,14 @@ Transform the existing DailyBrief CLI and menu bar monitor into a full personal 
 - ✅ **v1.0 MVP** — Phases 1-7 (shipped 2026-04-02)
 - ✅ **v1.1 Always On** — Phases 8-13 (shipped 2026-04-03)
 - ✅ **v1.2 Daily Driver** — Phases 14-18 (shipped 2026-04-03)
-- 🚧 **v1.3 Stability & Smarts** — Phases 19-23 (in progress)
+- ✅ **v1.3 Stability & Smarts** — Phases 19-23 (shipped 2026-04-04)
 
 ## Completed Milestones
 
 - ✅ [v1.0 MVP](milestones/v1.0-ROADMAP.md) (Phases 1-7) — SHIPPED 2026-04-02
 - ✅ [v1.1 Always On](milestones/v1.1-ROADMAP.md) (Phases 8-13) — SHIPPED 2026-04-03
 - ✅ [v1.2 Daily Driver](milestones/v1.2-ROADMAP.md) (Phases 14-18) — SHIPPED 2026-04-03
+- ✅ [v1.3 Stability & Smarts](milestones/v1.3-ROADMAP.md) (Phases 19-23) — SHIPPED 2026-04-04
 
 <details>
 <summary>✅ v1.0 MVP (Phases 1-7) — SHIPPED 2026-04-02</summary>
@@ -162,7 +163,8 @@ Plans:
 
 </details>
 
-### 🚧 v1.3 Stability & Smarts (In Progress)
+<details>
+<summary>✅ v1.3 Stability & Smarts (Phases 19-23) — SHIPPED 2026-04-04</summary>
 
 **Milestone Goal:** Fix daily-use bugs for reliability, then add manual triage, AI work order prioritization, and IMAP work email integration.
 
@@ -186,15 +188,14 @@ Plans:
 - [x] 20-01: Manual re-triage button on dashboard thought rows
 - [x] 20-02: Folder watcher diagnostic logging & end-to-end verification
 
-#### Phase 21: AI Work Order Prioritization
+#### Phase 21: AI Work Order Prioritization ✅
 
 **Goal**: Use Claude AI to analyze work orders and recommend priority/urgency ranking
 **Depends on**: Phase 20
-**Research**: Unlikely (already using Claude API in app)
-**Plans**: TBD
+**Completed**: 2026-04-04
 
 Plans:
-- [ ] 21-01: TBD
+- [x] 21-01: WorkOrderPrioritizer actor + AI priority sort in PDF
 
 #### Phase 22: IMAP Work Email ✅
 
@@ -206,15 +207,16 @@ Plans:
 - [x] 22-01: OAuth2 IMAP backend (config + XOAUTH2 + device code CLI)
 - [x] 22-02: Settings UI auth type picker + work email verification (checkpoint deferred)
 
-#### Phase 23: Polish & Integration
+#### Phase 23: Polish & Integration ✅
 
-**Goal**: Tie everything together — edge cases, refinement, cross-feature integration testing, UX polish
+**Goal**: Final build verification and v1.3 milestone closure
 **Depends on**: Phase 22
-**Research**: Unlikely (internal patterns)
-**Plans**: TBD
+**Completed**: 2026-04-04
 
 Plans:
-- [ ] 23-01: TBD
+- [x] 23-01: Final build verification + v1.3 milestone closure
+
+</details>
 
 ## Domain Expertise
 
@@ -246,4 +248,4 @@ None
 | 20. Folder Watcher & Manual Triage | v1.3 | 2/2 | Complete | 2026-04-04 |
 | 21. AI Work Order Prioritization | v1.3 | 1/1 | Complete | 2026-04-04 |
 | 22. IMAP Work Email | v1.3 | 2/2 | Complete* | 2026-04-04 |
-| 23. Polish & Integration | v1.3 | 0/? | Not started | - |
+| 23. Polish & Integration | v1.3 | 1/1 | Complete | 2026-04-04 |

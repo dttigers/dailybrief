@@ -40,6 +40,10 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Multi-sport support — MLB, NFL, NBA, NHL with team pickers and ESPN API — v1.2
 - ✓ Multi-file upload — batch photo/audio import from dashboard toolbar — v1.2
 - ✓ LaunchAgent reliability — fixed exit code -4, auto-delete processed files — v1.2
+- ✓ Bug fixes — FTS5 dedup, config startup error, settings window sizing, folder watcher triage persistence — v1.3
+- ✓ Manual re-triage — UI button to re-run AI triage on any thought — v1.3
+- ✓ AI work order prioritization — Claude-powered urgency ranking with daily cache — v1.3
+- ✓ OAuth2 IMAP work email — device code flow, XOAUTH2 auth, configurable host/port — v1.3
 
 ### Active
 
@@ -59,12 +63,12 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
-Shipped v1.2 Daily Driver with ~8,900 LOC Swift across 58 files in 7 days total (v1.0 + v1.1 + v1.2).
-Tech stack: Swift 6.2, SwiftUI, SPM, GRDB/SQLite with FTS5, CloudKit, Claude API (SwiftAnthropic), Google Calendar REST API with OAuth2, ESPN REST API.
-10 major services: CaptureService, TriageService, VoiceCaptureService, ImageDescriptionService, GoogleCalendarService, BriefScheduler, FolderWatcherService, InsightService, SyncService, ESPNSportsService.
+Shipped v1.3 Stability & Smarts with ~9,400 LOC Swift across 59 files in 8 days total (v1.0 + v1.1 + v1.2 + v1.3).
+Tech stack: Swift 6.2, SwiftUI, SPM, GRDB/SQLite with FTS5, CloudKit, Claude API (SwiftAnthropic), Google Calendar REST API with OAuth2, ESPN REST API, IMAP with XOAUTH2.
+11 major services: CaptureService, TriageService, VoiceCaptureService, ImageDescriptionService, GoogleCalendarService, BriefScheduler, FolderWatcherService, InsightService, SyncService, ESPNSportsService, WorkOrderPrioritizer.
 3 UI surfaces: floating capture panel (Cmd+Shift+J), central dashboard with settings (850px wide), daily PDF brief (3 pages).
 Always-on via LaunchAgent with auto-start at login. CloudKit sync across multiple Macs with last-write-wins conflict resolution.
-v1.2 additions: configurable IMAP email, task status workflow, multi-sport (MLB/NFL/NBA/NHL), multi-file upload, shared image conversion utility.
+v1.3 additions: bug fixes (FTS5 dedup, config startup, settings sizing), manual re-triage, AI work order prioritization, OAuth2 IMAP work email.
 
 ## Constraints
 
@@ -94,6 +98,8 @@ v1.2 additions: configurable IMAP email, task status workflow, multi-sport (MLB/
 | CloudKit over Supabase for sync | Native Apple integration, no server costs, privacy-first | ✓ Good |
 | Last-write-wins conflict resolution | Simple, predictable for single-user multi-Mac sync | ✓ Good |
 | CoreGraphics for image conversion | No external dependencies, handles HEIC/TIFF/BMP natively | ✓ Good |
+| OAuth2 device code flow for IMAP auth | Headless-friendly (no browser redirect needed); works in CLI and menu bar contexts; Azure AD compatible | ✓ Good |
+| Actor-based WorkOrderPrioritizer with daily cache | Hash-based cache invalidation avoids redundant API calls; actor isolation for thread safety | ✓ Good |
 
 ---
-*Last updated: 2026-04-03 after v1.2 milestone*
+*Last updated: 2026-04-04 after v1.3 milestone*
