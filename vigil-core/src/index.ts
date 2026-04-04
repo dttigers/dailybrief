@@ -11,6 +11,7 @@ import { triage } from "./routes/triage.js";
 import { affirmation } from "./routes/affirmation.js";
 import { insights } from "./routes/insights.js";
 import { prioritize } from "./routes/prioritize.js";
+import { describeImage } from "./routes/describe-image.js";
 import { getDb } from "./db/index.js";
 
 // Initialize database connection at startup
@@ -29,6 +30,7 @@ app.route("/v1", triage);
 app.route("/v1", affirmation);
 app.route("/v1", insights);
 app.route("/v1", prioritize);
+app.route("/v1", describeImage);
 
 const port = Number(process.env.PORT) || 3001;
 
