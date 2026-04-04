@@ -176,15 +176,15 @@ Plans:
 - [x] 19-01: Fix duplicate thoughts in FTS5 search + folder watcher triage persistence
 - [x] 19-02: Fix config startup error + settings window sizing
 
-#### Phase 20: Folder Watcher & Manual Triage
+#### Phase 20: Folder Watcher & Manual Triage ✅
 
 **Goal**: Verify folder watcher and auto-delete work correctly. Add UI button to manually re-run AI triage on any thought.
 **Depends on**: Phase 19
-**Research**: Unlikely (existing patterns)
-**Plans**: TBD
+**Completed**: 2026-04-04
 
 Plans:
-- [ ] 20-01: TBD
+- [x] 20-01: Manual re-triage button on dashboard thought rows
+- [x] 20-02: Folder watcher diagnostic logging & end-to-end verification
 
 #### Phase 21: AI Work Order Prioritization
 
@@ -244,7 +244,7 @@ None
 | 17. Multi-Sport Support | v1.2 | 4/4 | Complete | 2026-04-03 |
 | 18. Polish & Integration | v1.2 | 3/3 | Complete | 2026-04-03 |
 | 19. Bug Fixes | v1.3 | 2/2 | Complete | 2026-04-04 |
-| 20. Folder Watcher & Manual Triage | v1.3 | 0/? | Not started | - |
+| 20. Folder Watcher & Manual Triage | v1.3 | 2/2 | Complete | 2026-04-04 |
 | 21. AI Work Order Prioritization | v1.3 | 0/? | Not started | - |
 | 22. IMAP Work Email | v1.3 | 0/? | Not started | - |
 | 23. Polish & Integration | v1.3 | 0/? | Not started | - |
