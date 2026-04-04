@@ -263,7 +263,9 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 27-01: TBD
+- [ ] 27-01: Core Services (TherapyPatternService + TherapyPrepService + models + ThoughtStore queries)
+- [ ] 27-02: PDF Integration (DailyBriefData wiring + PageThreeRenderer therapy prep section)
+- [ ] 27-03: Dashboard Therapy Prep UI (TherapyPrepView + generate + copy export)
 
 #### Phase 28: Tags & Organization
 
