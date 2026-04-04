@@ -2,13 +2,14 @@
 
 import {
   RebuildPageContainer,
-  TextContainerProperty,
   OsEventTypeList,
 } from '@evenrealities/even_hub_sdk'
 import type { EvenAppBridge } from '@evenrealities/even_hub_sdk'
 
 import { buildHomeScreen } from './screens/home.ts'
-import { DISPLAY_WIDTH, DIVIDER, ContainerId } from './constants.ts'
+import { buildWorkOrdersScreen } from './screens/work-orders.ts'
+import { buildAffirmationScreen } from './screens/affirmation.ts'
+import { fetchBrief, fetchAffirmation } from './api.ts'
 
 // Screen identifiers — const object pattern (erasableSyntaxOnly)
 export const Screen = {
@@ -38,92 +39,26 @@ export function getPrevScreen(current: ScreenName): ScreenName {
   return SCREEN_ORDER[(idx - 1 + SCREEN_ORDER.length) % SCREEN_ORDER.length]
 }
 
-/** Build a placeholder screen for screens not yet implemented */
-function buildPlaceholderScreen(
-  title: string,
-  headerId: number,
-  bodyId: number,
-  footerId: number,
-  navHint: string,
-): RebuildPageContainer {
-  const header = new TextContainerProperty({
-    xPosition: 0,
-    yPosition: 0,
-    width: DISPLAY_WIDTH,
-    height: 40,
-    borderWidth: 0,
-    borderColor: 0,
-    borderRadius: 0,
-    paddingLength: 8,
-    containerID: headerId,
-    containerName: `${title.toLowerCase().replace(/\s+/g, '-')}-header`,
-    content: `${title}\n${DIVIDER}`,
-    isEventCapture: 0,
-  })
-
-  const body = new TextContainerProperty({
-    xPosition: 0,
-    yPosition: 40,
-    width: DISPLAY_WIDTH,
-    height: 210,
-    borderWidth: 0,
-    borderColor: 0,
-    borderRadius: 0,
-    paddingLength: 8,
-    containerID: bodyId,
-    containerName: `${title.toLowerCase().replace(/\s+/g, '-')}-body`,
-    content: `${title} - Coming Soon`,
-    isEventCapture: 1,
-  })
-
-  const footer = new TextContainerProperty({
-    xPosition: 0,
-    yPosition: 250,
-    width: DISPLAY_WIDTH,
-    height: 38,
-    borderWidth: 0,
-    borderColor: 0,
-    borderRadius: 0,
-    paddingLength: 8,
-    containerID: footerId,
-    containerName: `${title.toLowerCase().replace(/\s+/g, '-')}-footer`,
-    content: navHint,
-    isEventCapture: 0,
-  })
-
-  return new RebuildPageContainer({
-    containerTotalNum: 3,
-    textObject: [header, body, footer],
-  })
-}
-
-/** Build the screen container for a given screen name */
-function buildScreen(screen: ScreenName): RebuildPageContainer {
+/** Build the screen container for a given screen name, fetching live data */
+async function buildScreen(screen: ScreenName): Promise<RebuildPageContainer> {
   switch (screen) {
     case Screen.HOME: {
       // Reuse home builder — convert CreateStartUpPageContainer to RebuildPageContainer
+      // Plan 03 will refactor home to accept API data directly
       const home = buildHomeScreen()
       return new RebuildPageContainer({
         containerTotalNum: home.containerTotalNum,
         textObject: home.textObject,
       })
     }
-    case Screen.WORK_ORDERS:
-      return buildPlaceholderScreen(
-        'Work Orders',
-        ContainerId.WORK_ORDERS_HEADER,
-        ContainerId.WORK_ORDERS_LIST,
-        ContainerId.WORK_ORDERS_FOOTER,
-        '↑ home  ↓ affirmation',
-      )
-    case Screen.AFFIRMATION:
-      return buildPlaceholderScreen(
-        'Affirmation',
-        ContainerId.AFFIRMATION_HEADER,
-        ContainerId.AFFIRMATION_BODY,
-        ContainerId.AFFIRMATION_FOOTER,
-        '↑ work orders  ⊡⊡ home',
-      )
+    case Screen.WORK_ORDERS: {
+      const brief = await fetchBrief()
+      return buildWorkOrdersScreen(brief.openTasks)
+    }
+    case Screen.AFFIRMATION: {
+      const result = await fetchAffirmation()
+      return buildAffirmationScreen(result.affirmation)
+    }
   }
 }
 
@@ -133,7 +68,7 @@ export async function navigateTo(
   bridge: EvenAppBridge,
 ): Promise<void> {
   currentScreen = screen
-  const container = buildScreen(screen)
+  const container = await buildScreen(screen)
   await bridge.rebuildPageContainer(container)
   console.log(`[vigil-g2] navigated to: ${screen}`)
 }
