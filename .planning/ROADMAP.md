@@ -231,7 +231,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 24-01: TBD (run /gsd:plan-phase 24 to break down)
+- [x] 24-01: Inline editing with undo + expand/collapse
 
 #### Phase 25: Bulk Actions & Filtering
 
@@ -346,7 +346,7 @@ None
 | 21. AI Work Order Prioritization | v1.3 | 1/1 | Complete | 2026-04-04 |
 | 22. IMAP Work Email | v1.3 | 2/2 | Complete* | 2026-04-04 |
 | 23. Polish & Integration | v1.3 | 1/1 | Complete | 2026-04-04 |
-| 24. Thought Editing | v1.4 | 0/? | Not started | - |
+| 24. Thought Editing | v1.4 | 1/1 | Complete | 2026-04-04 |
 | 25. Bulk Actions & Filtering | v1.4 | 0/? | Not started | - |
 | 26. Therapy Intelligence | v1.4 | 0/? | Not started | - |
 | 27. Therapy Prep & Patterns | v1.4 | 0/? | Not started | - |
