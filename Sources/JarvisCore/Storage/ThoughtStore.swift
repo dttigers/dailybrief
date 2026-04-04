@@ -131,6 +131,8 @@ public actor ThoughtStore {
         category: ThoughtCategory? = nil,
         source: CaptureSource? = nil,
         after: Date? = nil,
+        tag: String? = nil,
+        favoritesOnly: Bool = false,
         limit: Int = 100,
         offset: Int = 0
     ) async throws -> [Thought] {
@@ -147,6 +149,12 @@ public actor ThoughtStore {
             if let after {
                 request = request.filter(Thought.Columns.createdAt >= after)
             }
+            if let tag {
+                request = request.filter(Thought.Columns.tags.like("%\"\(tag)\"%"))
+            }
+            if favoritesOnly {
+                request = request.filter(Thought.Columns.isFavorited == true)
+            }
             return try request.limit(limit, offset: offset).fetchAll(db)
         }
     }
@@ -155,7 +163,9 @@ public actor ThoughtStore {
     public func countFiltered(
         category: ThoughtCategory? = nil,
         source: CaptureSource? = nil,
-        after: Date? = nil
+        after: Date? = nil,
+        tag: String? = nil,
+        favoritesOnly: Bool = false
     ) async throws -> Int {
         try await db.reader.read { db in
             var request = Thought
@@ -168,6 +178,12 @@ public actor ThoughtStore {
             }
             if let after {
                 request = request.filter(Thought.Columns.createdAt >= after)
+            }
+            if let tag {
+                request = request.filter(Thought.Columns.tags.like("%\"\(tag)\"%"))
+            }
+            if favoritesOnly {
+                request = request.filter(Thought.Columns.isFavorited == true)
             }
             return try request.fetchCount(db)
         }
@@ -334,6 +350,214 @@ public actor ThoughtStore {
                 .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
                 .filter(Thought.Columns.therapyClassification == nil)
                 .fetchCount(db)
+        }
+    }
+
+    // MARK: Tag Operations
+
+    /// Add a tag to a thought. Creates the tags array if nil. Deduplicates.
+    @discardableResult
+    public func addTag(id: Int64, tag: String) throws -> Thought? {
+        try db.write { db in
+            guard var thought = try Thought.fetchOne(db, key: id) else { return nil }
+            var currentTags = thought.tags ?? []
+            guard !currentTags.contains(tag) else { return thought }
+            currentTags.append(tag)
+            thought.tags = currentTags
+            thought.modifiedAt = Date()
+            thought.syncStatus = .pending
+            try thought.update(db)
+            return thought
+        }
+    }
+
+    /// Remove a tag from a thought.
+    @discardableResult
+    public func removeTag(id: Int64, tag: String) throws -> Thought? {
+        try db.write { db in
+            guard var thought = try Thought.fetchOne(db, key: id) else { return nil }
+            guard var currentTags = thought.tags else { return thought }
+            currentTags.removeAll { $0 == tag }
+            thought.tags = currentTags.isEmpty ? nil : currentTags
+            thought.modifiedAt = Date()
+            thought.syncStatus = .pending
+            try thought.update(db)
+            return thought
+        }
+    }
+
+    /// Fetch thoughts that contain a specific tag.
+    public func fetchByTag(tag: String, limit: Int = 100, offset: Int = 0) async throws -> [Thought] {
+        try await db.reader.read { db in
+            try Thought
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
+                .filter(Thought.Columns.tags.like("%\"\(tag)\"%"))
+                .order(Thought.Columns.createdAt.desc)
+                .limit(limit, offset: offset)
+                .fetchAll(db)
+        }
+    }
+
+    /// Return all unique tags across all thoughts, sorted alphabetically.
+    public func allUniqueTags() async throws -> [String] {
+        try await db.reader.read { db in
+            let rows = try Row.fetchAll(
+                db,
+                sql: "SELECT tags FROM thoughts WHERE tags IS NOT NULL AND syncStatus != ?",
+                arguments: [SyncStatus.pendingDeletion.rawValue]
+            )
+            var tagSet = Set<String>()
+            let decoder = JSONDecoder()
+            for row in rows {
+                guard let jsonString: String = row["tags"],
+                      let data = jsonString.data(using: .utf8),
+                      let tags = try? decoder.decode([String].self, from: data) else { continue }
+                for tag in tags {
+                    tagSet.insert(tag)
+                }
+            }
+            return tagSet.sorted()
+        }
+    }
+
+    /// Add a tag to multiple thoughts in a single transaction. Returns count modified.
+    @discardableResult
+    public func bulkAddTag(ids: Set<Int64>, tag: String) throws -> Int {
+        guard !ids.isEmpty else { return 0 }
+        return try db.write { db in
+            let now = Date()
+            var count = 0
+            for id in ids {
+                guard var thought = try Thought.fetchOne(db, key: id) else { continue }
+                var currentTags = thought.tags ?? []
+                guard !currentTags.contains(tag) else { continue }
+                currentTags.append(tag)
+                thought.tags = currentTags
+                thought.modifiedAt = now
+                thought.syncStatus = .pending
+                try thought.update(db)
+                count += 1
+            }
+            return count
+        }
+    }
+
+    /// Remove a tag from multiple thoughts in a single transaction. Returns count modified.
+    @discardableResult
+    public func bulkRemoveTag(ids: Set<Int64>, tag: String) throws -> Int {
+        guard !ids.isEmpty else { return 0 }
+        return try db.write { db in
+            let now = Date()
+            var count = 0
+            for id in ids {
+                guard var thought = try Thought.fetchOne(db, key: id) else { continue }
+                guard var currentTags = thought.tags, currentTags.contains(tag) else { continue }
+                currentTags.removeAll { $0 == tag }
+                thought.tags = currentTags.isEmpty ? nil : currentTags
+                thought.modifiedAt = now
+                thought.syncStatus = .pending
+                try thought.update(db)
+                count += 1
+            }
+            return count
+        }
+    }
+
+    // MARK: Favorite Operations
+
+    /// Toggle the favorite status of a thought.
+    @discardableResult
+    public func toggleFavorite(id: Int64) throws -> Thought? {
+        try db.write { db in
+            guard var thought = try Thought.fetchOne(db, key: id) else { return nil }
+            thought.isFavorited = !thought.isFavorited
+            thought.modifiedAt = Date()
+            thought.syncStatus = .pending
+            try thought.update(db)
+            return thought
+        }
+    }
+
+    /// Fetch favorited thoughts, ordered by modifiedAt descending.
+    public func fetchFavorites(limit: Int = 100, offset: Int = 0) async throws -> [Thought] {
+        try await db.reader.read { db in
+            try Thought
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
+                .filter(Thought.Columns.isFavorited == true)
+                .order(Thought.Columns.modifiedAt.desc)
+                .limit(limit, offset: offset)
+                .fetchAll(db)
+        }
+    }
+
+    /// Count favorited thoughts.
+    public func countFavorites() async throws -> Int {
+        try await db.reader.read { db in
+            try Thought
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
+                .filter(Thought.Columns.isFavorited == true)
+                .fetchCount(db)
+        }
+    }
+
+    // MARK: Link Operations
+
+    /// Create a bidirectional link between two thoughts. Returns the link (source→target direction).
+    @discardableResult
+    public func linkThoughts(sourceId: Int64, targetId: Int64) throws -> ThoughtLink? {
+        try db.write { db in
+            // Insert source→target
+            var link = ThoughtLink(sourceThoughtId: sourceId, targetThoughtId: targetId)
+            try link.insert(db, onConflict: .ignore)
+
+            // Insert reverse target→source
+            var reverse = ThoughtLink(sourceThoughtId: targetId, targetThoughtId: sourceId)
+            try reverse.insert(db, onConflict: .ignore)
+
+            return link
+        }
+    }
+
+    /// Remove a bidirectional link between two thoughts.
+    public func unlinkThoughts(sourceId: Int64, targetId: Int64) throws {
+        try db.write { db in
+            try db.execute(
+                sql: "DELETE FROM thought_links WHERE (sourceThoughtId = ? AND targetThoughtId = ?) OR (sourceThoughtId = ? AND targetThoughtId = ?)",
+                arguments: [sourceId, targetId, targetId, sourceId]
+            )
+        }
+    }
+
+    /// Fetch all thoughts linked to a given thought (bidirectional).
+    public func fetchLinkedThoughts(thoughtId: Int64) async throws -> [Thought] {
+        try await db.reader.read { db in
+            try Thought.fetchAll(db, sql: """
+                SELECT DISTINCT t.* FROM thoughts t
+                INNER JOIN thought_links tl ON (
+                    (tl.sourceThoughtId = ? AND tl.targetThoughtId = t.id)
+                    OR (tl.targetThoughtId = ? AND tl.sourceThoughtId = t.id)
+                )
+                WHERE t.syncStatus != ?
+                ORDER BY t.createdAt DESC
+                """,
+                arguments: [thoughtId, thoughtId, SyncStatus.pendingDeletion.rawValue]
+            )
+        }
+    }
+
+    /// Count thoughts linked to a given thought.
+    public func countLinks(thoughtId: Int64) async throws -> Int {
+        try await db.reader.read { db in
+            let count = try Int.fetchOne(db, sql: """
+                SELECT COUNT(DISTINCT CASE
+                    WHEN tl.sourceThoughtId = ? THEN tl.targetThoughtId
+                    ELSE tl.sourceThoughtId
+                END) FROM thought_links tl
+                WHERE tl.sourceThoughtId = ? OR tl.targetThoughtId = ?
+                """,
+                arguments: [thoughtId, thoughtId, thoughtId]
+            )
+            return count ?? 0
         }
     }
 
