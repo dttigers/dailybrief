@@ -9,17 +9,17 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 30 of 36 (Vigil Core — Full Endpoints)
-Plan: 03 complete (3/?)
-Status: In progress
-Last activity: 2026-04-04 - Plan 30-03 complete (Brief aggregation, bulk operations)
+Phase: 30 of 36 (Vigil Core API — Full Endpoints) ✓
+Plan: All complete (3/3)
+Status: Phase complete
+Last activity: 2026-04-04 - Phase 30 complete (Full /v1/ REST API surface)
 
 Progress: ██░░░░░░░░ 25%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 67
+- Total plans completed: 70
 - Total execution time: ~9 days
 - Average duration: ~5 min per plan
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 30, plan 03 complete. Ready for plan 04.
+Stopped at: Phase 30 complete, ready for Phase 31
 Resume file: None
-Notes: vigil-core/ now read-write. Endpoints: GET /v1/health, GET /v1/summary, GET/POST/PUT/DELETE /v1/thoughts (CRUD + FTS5 search + filters), POST/DELETE /v1/thoughts/:id/tags, GET /v1/tags, PUT /v1/thoughts/:id/favorite, POST/DELETE/GET /v1/thoughts/:id/links, GET /v1/brief, POST /v1/thoughts/bulk/delete, POST /v1/thoughts/bulk/recategorize, POST /v1/thoughts/bulk/tag
+Notes: vigil-core/ full /v1/ API surface complete. Endpoints: GET /v1/health, GET /v1/summary, GET/POST/PUT/DELETE /v1/thoughts (CRUD + FTS5 search + 7 filters), POST/DELETE /v1/thoughts/:id/tags, GET /v1/tags, PUT /v1/thoughts/:id/favorite, POST/DELETE/GET /v1/thoughts/:id/links, GET /v1/brief (aggregated for G2), POST /v1/thoughts/bulk/{delete,recategorize,tag}

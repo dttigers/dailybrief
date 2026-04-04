@@ -105,15 +105,17 @@ Plans:
 - [x] 29-01: Project scaffold + Hono server + health endpoint
 - [x] 29-02: Database connection + summary endpoint
 
-#### Phase 30: Vigil Core API — Full Endpoints
+#### Phase 30: Vigil Core API — Full Endpoints ✓
 
 **Goal**: Thoughts CRUD, work orders, reminders, brief, insights — full /v1/ REST API surface
 **Depends on**: Phase 29
 **Research**: Unlikely (CRUD endpoints, standard patterns)
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 30-01: TBD
+- [x] 30-01: Thoughts CRUD + search (DB read-write upgrade, FTS5)
+- [x] 30-02: Tags, favorites, bidirectional thought links
+- [x] 30-03: Brief aggregation + bulk operations
 
 #### Phase 31: Vigil Core API — AI Integration
 
@@ -215,7 +217,7 @@ None
 | 27. Therapy Prep & Patterns | v1.4 | 3/3 | Complete | 2026-04-04 |
 | 28. Tags & Organization | v1.4 | 3/3 | Complete | 2026-04-04 |
 | 29. Vigil Core API — Foundation | v2.0 | 2/2 | Complete | 2026-04-04 |
-| 30. Vigil Core API — Full Endpoints | v2.0 | 0/? | Not started | - |
+| 30. Vigil Core API — Full Endpoints | v2.0 | 3/3 | Complete | 2026-04-04 |
 | 31. Vigil Core API — AI Integration | v2.0 | 0/? | Not started | - |
 | 32. Even G2 Plugin — Scaffold + Home | v2.0 | 0/? | Not started | - |
 | 33. Even G2 Plugin — Screens + Nav | v2.0 | 0/? | Not started | - |
