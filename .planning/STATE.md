@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-04-03)
 
 ## Current Position
 
-Phase: 19 of 23 (Bug Fixes) — COMPLETE
-Plan: 2/2 complete
-Status: Phase complete
-Last activity: 2026-04-04 - Phase 19 complete (all bug fixes shipped)
+Phase: 20 of 23 (Folder Watcher & Manual Triage) — IN PROGRESS
+Plan: 1/? complete
+Status: Plan 01 complete — manual re-triage button shipped
+Last activity: 2026-04-04 - Plan 20-01 complete (re-triage button on dashboard)
 
 Progress: ██░░░░░░░░ 20%
 
@@ -59,5 +59,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 19 complete, ready for Phase 20
+Stopped at: Phase 20, plan 01 complete
 Resume file: None
