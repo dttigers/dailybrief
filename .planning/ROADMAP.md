@@ -238,11 +238,11 @@ Plans:
 **Goal**: Multi-select thoughts with bulk delete/retriage/recategorize, plus source/date/category search filters
 **Depends on**: Phase 24
 **Research**: Unlikely (internal patterns)
-**Plans**: TBD
+**Completed**: 2026-04-04
 
 Plans:
-- [ ] 25-01: Multi-Select & Bulk Actions
-- [ ] 25-02: Source & Date Filters
+- [x] 25-01: Multi-Select & Bulk Actions
+- [x] 25-02: Source & Date Filters
 
 #### Phase 26: Therapy Intelligence
 
@@ -348,7 +348,7 @@ None
 | 22. IMAP Work Email | v1.3 | 2/2 | Complete* | 2026-04-04 |
 | 23. Polish & Integration | v1.3 | 1/1 | Complete | 2026-04-04 |
 | 24. Thought Editing | v1.4 | 1/1 | Complete | 2026-04-04 |
-| 25. Bulk Actions & Filtering | v1.4 | 0/? | Not started | - |
+| 25. Bulk Actions & Filtering | v1.4 | 2/2 | Complete | 2026-04-04 |
 | 26. Therapy Intelligence | v1.4 | 0/? | Not started | - |
 | 27. Therapy Prep & Patterns | v1.4 | 0/? | Not started | - |
 | 28. Tags & Organization | v1.4 | 0/? | Not started | - |
