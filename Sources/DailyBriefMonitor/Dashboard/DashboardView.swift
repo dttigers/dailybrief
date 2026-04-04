@@ -263,7 +263,11 @@ struct DashboardView: View {
                         thought: thought,
                         onStatusToggle: thought.category == .task ? {
                             Task { await viewModel.cycleTaskStatus(for: thought) }
-                        } : nil
+                        } : nil,
+                        onRetriage: {
+                            Task { await viewModel.reTriageThought(thought) }
+                        },
+                        isRetriaging: viewModel.retriagingThoughtId == thought.id
                     )
                 }
             }

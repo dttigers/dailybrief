@@ -9,6 +9,12 @@ struct ThoughtRowView: View {
     /// Called when the user clicks the status icon on a task thought. Nil for non-tasks.
     var onStatusToggle: (() -> Void)?
 
+    /// Called when the user clicks the re-triage button. Nil when triage service unavailable.
+    var onRetriage: (() -> Void)?
+
+    /// Whether this thought is currently being re-triaged.
+    var isRetriaging: Bool = false
+
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             // Content row — optional status icon + text
@@ -33,22 +39,42 @@ struct ThoughtRowView: View {
                     .foregroundStyle(thought.taskStatus == .done ? .secondary : .primary)
             }
 
-            // Metadata row: category pill + confidence + timestamp
+            // Metadata row: category pill + confidence + re-triage + timestamp
             HStack(spacing: 8) {
-                if let category = thought.category {
-                    Text(category.displayName)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(category.displayColor.opacity(0.85))
-                        .clipShape(Capsule())
-                }
-
-                if let confidence = thought.confidence {
-                    Text("\(Int(confidence * 100))%")
+                if isRetriaging {
+                    ProgressView()
+                        .controlSize(.small)
+                    Text("Categorizing...")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                } else {
+                    if let category = thought.category {
+                        Text(category.displayName)
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(category.displayColor.opacity(0.85))
+                            .clipShape(Capsule())
+                    }
+
+                    if let confidence = thought.confidence {
+                        Text("\(Int(confidence * 100))%")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if onRetriage != nil {
+                        Button {
+                            onRetriage?()
+                        } label: {
+                            Image(systemName: "arrow.clockwise")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help("Re-categorize this thought")
+                    }
                 }
 
                 Spacer()
