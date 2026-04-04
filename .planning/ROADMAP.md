@@ -254,18 +254,16 @@ Plans:
 - [x] 26-01: Model, Storage & Classification Service
 - [x] 26-02: Triage Wiring & Dashboard UI
 
-#### Phase 27: Therapy Prep & Patterns
+#### Phase 27: Therapy Prep & Patterns ✅
 
 **Goal**: Pattern recognition across therapy thoughts over time, therapy prep export for sessions, AI-generated session summary
 **Depends on**: Phase 26
-**Research**: Likely (pattern recognition prompt engineering, therapy prep best practices)
-**Research topics**: Cross-thought pattern detection prompts; therapy session prep format; recurring theme identification
-**Plans**: TBD
+**Completed**: 2026-04-04
 
 Plans:
-- [ ] 27-01: Core Services (TherapyPatternService + TherapyPrepService + models + ThoughtStore queries)
-- [ ] 27-02: PDF Integration (DailyBriefData wiring + PageThreeRenderer therapy prep section)
-- [ ] 27-03: Dashboard Therapy Prep UI (TherapyPrepView + generate + copy export)
+- [x] 27-01: Core Services (TherapyPatternService + TherapyPrepService + models + ThoughtStore queries)
+- [x] 27-02: PDF Integration (DailyBriefData wiring + PageThreeRenderer therapy prep section)
+- [x] 27-03: Dashboard Therapy Prep UI (TherapyPrepView + generate + copy export)
 
 #### Phase 28: Tags & Organization
 
@@ -351,7 +349,7 @@ None
 | 24. Thought Editing | v1.4 | 1/1 | Complete | 2026-04-04 |
 | 25. Bulk Actions & Filtering | v1.4 | 2/2 | Complete | 2026-04-04 |
 | 26. Therapy Intelligence | v1.4 | 2/2 | Complete | 2026-04-04 |
-| 27. Therapy Prep & Patterns | v1.4 | 0/? | Not started | - |
+| 27. Therapy Prep & Patterns | v1.4 | 3/3 | Complete | 2026-04-04 |
 | 28. Tags & Organization | v1.4 | 0/? | Not started | - |
 | 29. Export System | v1.4 | 0/? | Not started | - |
 | 30. Brief History | v1.4 | 0/? | Not started | - |
