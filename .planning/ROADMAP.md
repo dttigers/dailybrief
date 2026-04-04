@@ -141,16 +141,18 @@ Plans:
 - [x] 32-01: Project scaffold + Vite+TS + Even Hub SDK bridge
 - [x] 32-02: Home screen with mock Vigil data
 
-#### Phase 33: Even G2 Plugin — All Screens + Navigation
+#### Phase 33: Even G2 Plugin — All Screens + Navigation ✓
 
 **Goal**: Work orders, reminders, affirmation screens; temple touchpad + R1 ring navigation; real API data with 60s refresh
 **Depends on**: Phase 32
 **Research**: Likely (continued Even Hub SDK — navigation patterns, multi-screen)
 **Research topics**: Even Hub screen transitions, touchpad/ring event handling, data refresh patterns
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 33-01: TBD
+- [x] 33-01: API client + navigation state machine
+- [x] 33-02: Work orders & affirmation screens
+- [x] 33-03: Live home data + 60s auto-refresh
 
 #### Phase 34: Mac App Migration — First Services
 
@@ -222,7 +224,7 @@ None
 | 30. Vigil Core API — Full Endpoints | v2.0 | 3/3 | Complete | 2026-04-04 |
 | 31. Vigil Core API — AI Integration | v2.0 | 4/4 | Complete | 2026-04-04 |
 | 32. Even G2 Plugin — Scaffold + Home | v2.0 | 2/2 | Complete | 2026-04-04 |
-| 33. Even G2 Plugin — Screens + Nav | v2.0 | 0/? | Not started | - |
+| 33. Even G2 Plugin — Screens + Nav | v2.0 | 3/3 | Complete | 2026-04-04 |
 | 34. Mac App Migration — First Services | v2.0 | 0/? | Not started | - |
 | 35. Mac App Migration — AI Services | v2.0 | 0/? | Not started | - |
 | 36. Integration & Polish | v2.0 | 0/? | Not started | - |
