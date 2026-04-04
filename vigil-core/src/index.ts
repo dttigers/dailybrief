@@ -7,6 +7,7 @@ import { tags } from "./routes/tags.js";
 import { links } from "./routes/links.js";
 import { brief } from "./routes/brief.js";
 import { bulk } from "./routes/bulk.js";
+import { triage } from "./routes/triage.js";
 import { getDb } from "./db/index.js";
 
 // Initialize database connection at startup
@@ -21,6 +22,7 @@ app.route("/v1", tags);
 app.route("/v1", links);
 app.route("/v1", brief);
 app.route("/v1", bulk);
+app.route("/v1", triage);
 
 const port = Number(process.env.PORT) || 3001;
 
