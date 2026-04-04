@@ -44,7 +44,7 @@ struct SettingsView: View {
             bottomBar
                 .padding(12)
         }
-        .frame(width: 850, height: 500)
+        .frame(minWidth: 850, idealWidth: 850, minHeight: 500)
     }
 
     // MARK: - Tabs
@@ -58,6 +58,7 @@ struct SettingsView: View {
     }
 
     private var emailTab: some View {
+        ScrollView {
         Form {
             Section("Connection") {
                 TextField("IMAP Host", text: $viewModel.imapHost, prompt: Text("imap.gmail.com"))
@@ -76,9 +77,11 @@ struct SettingsView: View {
             }
         }
         .padding()
+        }
     }
 
     private var sportsTab: some View {
+        ScrollView {
         Form {
             // MLB Section
             Section {
@@ -177,6 +180,7 @@ struct SettingsView: View {
             }
         }
         .padding()
+        }
     }
 
     private var pdfTab: some View {
@@ -204,6 +208,7 @@ struct SettingsView: View {
     }
 
     private var calendarTab: some View {
+        ScrollView {
         Form {
             Toggle("Enable Google Calendar", isOn: $viewModel.googleCalendarEnabled)
 
@@ -268,9 +273,11 @@ struct SettingsView: View {
             }
         }
         .padding()
+        }
     }
 
     private var foldersTab: some View {
+        ScrollView {
         Form {
             Toggle("Enable Folder Watching", isOn: $viewModel.folderWatchingEnabled)
 
@@ -318,6 +325,7 @@ struct SettingsView: View {
             }
         }
         .padding()
+        }
     }
 
     private var cloudSyncTab: some View {

@@ -116,6 +116,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                     imageDescriptionService: imageDescService,
                     captureService: service,
                     triageService: triageService,
+                    thoughtStore: thoughtStore,
                     config: config.folderWatching
                 )
                 self.folderWatcher = watcher
@@ -240,8 +241,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         let hostingView = NSHostingView(rootView: settingsView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 600, height: 420),
-            styleMask: [.titled, .closable],
+            contentRect: NSRect(x: 0, y: 0, width: 880, height: 560),
+            styleMask: [.titled, .closable, .resizable],
             backing: .buffered,
             defer: false
         )
