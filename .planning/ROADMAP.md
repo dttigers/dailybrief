@@ -99,11 +99,11 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 **Goal**: Project setup (Node.js + Express/Hono, better-sqlite3), DB access to existing Jarvis SQLite, health + summary endpoints
 **Depends on**: Previous milestone complete
 **Research**: Unlikely (established patterns)
-**Plans**: TBD
+**Plans**: 2
 
 Plans:
-- [ ] 29-01: Project scaffold + Hono server + health endpoint
-- [ ] 29-02: Database connection + summary endpoint
+- [x] 29-01: Project scaffold + Hono server + health endpoint
+- [x] 29-02: Database connection + summary endpoint
 
 #### Phase 30: Vigil Core API — Full Endpoints
 
@@ -214,7 +214,7 @@ None
 | 26. Therapy Intelligence | v1.4 | 2/2 | Complete | 2026-04-04 |
 | 27. Therapy Prep & Patterns | v1.4 | 3/3 | Complete | 2026-04-04 |
 | 28. Tags & Organization | v1.4 | 3/3 | Complete | 2026-04-04 |
-| 29. Vigil Core API — Foundation | v2.0 | 0/? | Not started | - |
+| 29. Vigil Core API — Foundation | v2.0 | 2/2 | Complete | 2026-04-04 |
 | 30. Vigil Core API — Full Endpoints | v2.0 | 0/? | Not started | - |
 | 31. Vigil Core API — AI Integration | v2.0 | 0/? | Not started | - |
 | 32. Even G2 Plugin — Scaffold + Home | v2.0 | 0/? | Not started | - |

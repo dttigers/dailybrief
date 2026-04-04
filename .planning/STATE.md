@@ -9,17 +9,17 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 29 of 36 (Vigil Core API — Foundation)
-Plan: 02 complete
-Status: Plan 02 executed
-Last activity: 2026-04-04 - SQLite database bridge + summary endpoint
+Phase: 29 of 36 (Vigil Core API — Foundation) ✓
+Plan: All complete (2/2)
+Status: Phase complete
+Last activity: 2026-04-04 - Phase 29 complete (Vigil Core scaffold + DB bridge)
 
-Progress: █░░░░░░░░░ ~10%
+Progress: █░░░░░░░░░ 12.5%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 65
+- Total plans completed: 67
 - Total execution time: ~9 days
 - Average duration: ~5 min per plan
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 29, plan 02 complete
+Stopped at: Phase 29 complete, ready for Phase 30
 Resume file: None
-Notes: vigil-core/ reads Jarvis SQLite (read-only), GET /v1/summary returns live thought data
+Notes: vigil-core/ project created with Hono server on port 3001. Reads Jarvis SQLite (read-only). Endpoints: GET /v1/health, GET /v1/summary
