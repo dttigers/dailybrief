@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 30 of 36 (Vigil Core — Full Endpoints)
-Plan: 01 complete (1/?)
+Plan: 02 complete (2/?)
 Status: In progress
-Last activity: 2026-04-04 - Plan 30-01 complete (Thoughts CRUD + search)
+Last activity: 2026-04-04 - Plan 30-02 complete (Tags, favorites, thought links)
 
-Progress: █░░░░░░░░░ 12.5%
+Progress: ██░░░░░░░░ 25%
 
 ## Performance Metrics
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 30, plan 01 complete. Ready for plan 02.
+Stopped at: Phase 30, plan 02 complete. Ready for plan 03.
 Resume file: None
-Notes: vigil-core/ now read-write. Endpoints: GET /v1/health, GET /v1/summary, GET/POST/PUT/DELETE /v1/thoughts (CRUD + FTS5 search + filters)
+Notes: vigil-core/ now read-write. Endpoints: GET /v1/health, GET /v1/summary, GET/POST/PUT/DELETE /v1/thoughts (CRUD + FTS5 search + filters), POST/DELETE /v1/thoughts/:id/tags, GET /v1/tags, PUT /v1/thoughts/:id/favorite, POST/DELETE/GET /v1/thoughts/:id/links
