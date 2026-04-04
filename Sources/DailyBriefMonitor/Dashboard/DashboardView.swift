@@ -8,6 +8,8 @@ struct DashboardView: View {
     @State var viewModel: DashboardViewModel
     @State private var isDropTargeted = false
     @State private var showTherapyPrep = false
+    @State private var bulkTagText = ""
+    @State private var showBulkTagPopover = false
     @Environment(\.undoManager) private var undoManager
 
     var body: some View {
@@ -66,9 +68,11 @@ struct DashboardView: View {
             await viewModel.refresh()
         }
         .onChange(of: viewModel.selectedFilter) {
-            // Reset task status sub-filter, therapy filter, and selection when switching categories
+            // Reset task status sub-filter, therapy filter, tag filter, favorites, and selection when switching categories
             viewModel.taskStatusFilter = nil
             viewModel.therapyFilter = .all
+            viewModel.tagFilter = nil
+            viewModel.showFavoritesOnly = false
             viewModel.selectedThoughtIds.removeAll()
             Task { await viewModel.loadThoughts() }
         }
@@ -85,6 +89,14 @@ struct DashboardView: View {
             Task { await viewModel.loadThoughts() }
         }
         .onChange(of: viewModel.dateRangeFilter) {
+            viewModel.selectedThoughtIds.removeAll()
+            Task { await viewModel.loadThoughts() }
+        }
+        .onChange(of: viewModel.tagFilter) {
+            viewModel.selectedThoughtIds.removeAll()
+            Task { await viewModel.loadThoughts() }
+        }
+        .onChange(of: viewModel.showFavoritesOnly) {
             viewModel.selectedThoughtIds.removeAll()
             Task { await viewModel.loadThoughts() }
         }
@@ -215,6 +227,63 @@ struct DashboardView: View {
                     .buttonStyle(.plain)
                     .padding(.vertical, 2)
                     .opacity(viewModel.dateRangeFilter == range ? 1.0 : 0.6)
+                }
+            }
+
+            // Favorites filter
+            Section {
+                Button {
+                    viewModel.showFavoritesOnly.toggle()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "star.fill")
+                            .foregroundStyle(.yellow)
+                            .font(.caption)
+                        Text("Favorites")
+                            .font(.subheadline)
+                        Spacer()
+                        Text("\(viewModel.favoritesCount)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(nsColor: .quaternaryLabelColor))
+                            .clipShape(Capsule())
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 2)
+                .opacity(viewModel.showFavoritesOnly ? 1.0 : 0.6)
+            }
+
+            // Tags section
+            Section("Tags") {
+                if viewModel.allTags.isEmpty {
+                    Text("No tags yet")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(viewModel.allTags, id: \.self) { tag in
+                        Button {
+                            if viewModel.tagFilter == tag {
+                                viewModel.tagFilter = nil
+                            } else {
+                                viewModel.tagFilter = tag
+                            }
+                        } label: {
+                            HStack(spacing: 6) {
+                                Image(systemName: "tag")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text(tag)
+                                    .font(.subheadline)
+                                Spacer()
+                            }
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.vertical, 2)
+                        .opacity(viewModel.tagFilter == tag ? 1.0 : 0.6)
+                    }
                 }
             }
         }
@@ -390,6 +459,54 @@ struct DashboardView: View {
                 .background(Color(nsColor: .controlBackgroundColor))
             }
 
+            // Active filter chips
+            if viewModel.tagFilter != nil || viewModel.showFavoritesOnly {
+                HStack(spacing: 8) {
+                    if let tagFilter = viewModel.tagFilter {
+                        HStack(spacing: 4) {
+                            Text("Tag: \(tagFilter)")
+                                .font(.caption)
+                            Button {
+                                viewModel.tagFilter = nil
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 8, weight: .bold))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.secondary.opacity(0.2))
+                        .clipShape(Capsule())
+                    }
+
+                    if viewModel.showFavoritesOnly {
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.fill")
+                                .font(.caption2)
+                                .foregroundStyle(.yellow)
+                            Text("Favorites")
+                                .font(.caption)
+                            Button {
+                                viewModel.showFavoritesOnly = false
+                            } label: {
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 8, weight: .bold))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.secondary.opacity(0.2))
+                        .clipShape(Capsule())
+                    }
+
+                    Spacer()
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+            }
+
             // Bulk action bar
             if viewModel.isSelectionMode && !viewModel.selectedThoughtIds.isEmpty {
                 HStack(spacing: 12) {
@@ -443,6 +560,64 @@ struct DashboardView: View {
                         }
                         .controlSize(.small)
                         .disabled(viewModel.isBulkProcessing)
+
+                        Button {
+                            showBulkTagPopover = true
+                        } label: {
+                            Label("Add Tag", systemImage: "tag")
+                        }
+                        .controlSize(.small)
+                        .disabled(viewModel.isBulkProcessing)
+                        .popover(isPresented: $showBulkTagPopover) {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Add Tag to Selected")
+                                    .font(.headline)
+                                HStack {
+                                    TextField("Tag name...", text: $bulkTagText)
+                                        .textFieldStyle(.roundedBorder)
+                                        .onSubmit {
+                                            let tag = bulkTagText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                            guard !tag.isEmpty else { return }
+                                            Task { await viewModel.bulkAddTag(tag: tag) }
+                                            bulkTagText = ""
+                                            showBulkTagPopover = false
+                                        }
+                                    Button("Add") {
+                                        let tag = bulkTagText.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        guard !tag.isEmpty else { return }
+                                        Task { await viewModel.bulkAddTag(tag: tag) }
+                                        bulkTagText = ""
+                                        showBulkTagPopover = false
+                                    }
+                                    .disabled(bulkTagText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                                }
+                                if !viewModel.allTags.isEmpty {
+                                    Divider()
+                                    Text("Existing Tags")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                    ScrollView {
+                                        LazyVStack(alignment: .leading, spacing: 4) {
+                                            ForEach(viewModel.allTags, id: \.self) { tag in
+                                                Button {
+                                                    Task { await viewModel.bulkAddTag(tag: tag) }
+                                                    showBulkTagPopover = false
+                                                } label: {
+                                                    Text(tag)
+                                                        .font(.subheadline)
+                                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                                        .contentShape(Rectangle())
+                                                }
+                                                .buttonStyle(.plain)
+                                            }
+                                        }
+                                    }
+                                    .frame(maxHeight: 120)
+                                }
+                            }
+                            .padding()
+                            .frame(width: 220)
+                        }
                     }
                 }
                 .padding(.horizontal, 12)
@@ -613,7 +788,8 @@ struct DashboardView: View {
     }
 
     private var hasActiveFilters: Bool {
-        viewModel.sourceFilter != nil || viewModel.dateRangeFilter != .all
+        viewModel.sourceFilter != nil || viewModel.dateRangeFilter != .all ||
+        viewModel.tagFilter != nil || viewModel.showFavoritesOnly
     }
 
     // MARK: - Empty State
