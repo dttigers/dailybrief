@@ -195,10 +195,16 @@ public actor FolderWatcherService {
 
         let newFiles = contents.filter { filename in
             let ext = (filename as NSString).pathExtension.lowercased()
-            return validExtensions.contains(ext) && !processedFiles.contains(filename)
+            guard validExtensions.contains(ext) else { return false }
+            if processedFiles.contains(filename) {
+                NSLog("[FolderWatcher] Skipping already-processed: %@", filename)
+                return false
+            }
+            return true
         }
 
         for filename in newFiles {
+            NSLog("[FolderWatcher] New file detected: %@", filename)
             let fullPath = (path as NSString).appendingPathComponent(filename)
             let fileURL = URL(fileURLWithPath: fullPath)
 
@@ -206,24 +212,27 @@ public actor FolderWatcherService {
                 switch type {
                 case .audio:
                     try await processAudioFile(url: fileURL, filename: filename)
+                    NSLog("[FolderWatcher] Audio processed: %@ → thought created", filename)
                 case .image:
                     try await processImageFile(url: fileURL, filename: filename)
+                    NSLog("[FolderWatcher] Image processed: %@ → thought created", filename)
                 }
 
                 processedFiles.insert(filename)
                 Self.saveManifest(processedFiles)
-                NSLog("FolderWatcherService: Successfully processed %@", filename)
 
                 if config.autoDeleteAfterProcessing {
                     do {
                         try FileManager.default.removeItem(atPath: fullPath)
-                        NSLog("FolderWatcherService: Auto-deleted processed file %@", filename)
+                        NSLog("[FolderWatcher] Auto-deleted: %@", filename)
                     } catch {
-                        NSLog("FolderWatcherService: Failed to auto-delete %@: %@", filename, error.localizedDescription)
+                        NSLog("[FolderWatcher] Failed to auto-delete %@: %@", filename, error.localizedDescription)
                     }
+                } else {
+                    NSLog("[FolderWatcher] Auto-delete disabled, keeping: %@", filename)
                 }
             } catch {
-                NSLog("FolderWatcherService: Failed to process %@: %@", filename, error.localizedDescription)
+                NSLog("[FolderWatcher] Failed to process %@: %@", filename, error.localizedDescription)
                 // Skip file — will retry on next scan
             }
         }
@@ -242,9 +251,9 @@ public actor FolderWatcherService {
                     t.confidence = result.confidence
                     _ = try await thoughtStore.update(t)
                 }
-                NSLog("FolderWatcherService: Triaged '%@' as %@ (%.0f%%)", filename, result.category.rawValue, result.confidence * 100)
+                NSLog("[FolderWatcher] Triage result: %@ (%.0f%% confidence)", result.category.rawValue, result.confidence * 100)
             } catch {
-                NSLog("FolderWatcherService: Triage failed for %@: %@", filename, error.localizedDescription)
+                NSLog("[FolderWatcher] Triage failed for %@: %@", filename, error.localizedDescription)
                 // Non-fatal — thought is still captured
             }
         }
@@ -277,9 +286,9 @@ public actor FolderWatcherService {
                     t.confidence = result.confidence
                     _ = try await thoughtStore.update(t)
                 }
-                NSLog("FolderWatcherService: Triaged '%@' as %@ (%.0f%%)", filename, result.category.rawValue, result.confidence * 100)
+                NSLog("[FolderWatcher] Triage result: %@ (%.0f%% confidence)", result.category.rawValue, result.confidence * 100)
             } catch {
-                NSLog("FolderWatcherService: Triage failed for %@: %@", filename, error.localizedDescription)
+                NSLog("[FolderWatcher] Triage failed for %@: %@", filename, error.localizedDescription)
                 // Non-fatal — thought is still captured
             }
         }
