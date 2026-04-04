@@ -73,3 +73,93 @@ therapy.post("/therapy/classify", async (c) => {
     return c.json({ error: message }, 500);
   }
 });
+
+// ── Patterns ──────────────────────────────────────────────────────────────
+
+interface PatternThought {
+  id: number;
+  content: string;
+  therapyClassification: string;
+  createdAt: string;
+}
+
+const PATTERNS_SYSTEM_PROMPT = `You are a pattern detection tool, NOT a therapist. Your role is to surface observations to help the user prepare for therapy sessions.
+
+Analyze the user's therapy-related thoughts and identify recurring emotional themes, behavioral patterns, and unresolved concerns. For each pattern:
+- Name the theme concisely
+- Describe what you observe in 1-2 sentences
+- Count how many thoughts relate to this theme
+- Note whether the theme appears to be increasing, stable, or decreasing in frequency based on timestamps
+- List the thought IDs that exhibit this pattern
+- Rate your confidence (0.0-1.0) in the pattern being genuine, not surface-level
+
+Focus on genuine patterns. Look for: recurring emotional states or triggers, behavioral cycles (avoidance, rumination), unresolved concerns that keep appearing, relationship dynamics that repeat, progress or regression in specific areas.`;
+
+// POST /therapy/patterns — Detect patterns across therapy thoughts
+therapy.post("/therapy/patterns", async (c) => {
+  let body: { thoughts?: PatternThought[]; days?: number };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  if (!body.thoughts || !Array.isArray(body.thoughts) || body.thoughts.length < 5) {
+    return c.json(
+      { error: "At least 5 thoughts are required for pattern detection" },
+      400
+    );
+  }
+
+  if (!getAIClient()) {
+    return c.json(
+      { error: "AI service unavailable. ANTHROPIC_API_KEY not configured." },
+      503
+    );
+  }
+
+  const days = body.days || 30;
+  const thoughtLines = body.thoughts
+    .map((t) => `[${t.id}] (${t.therapyClassification}, ${t.createdAt}) ${t.content}`)
+    .join("\n");
+
+  const userMessage = `Here are my therapy-related thoughts from the last ${days} days:\n${thoughtLines}\n\nAnalyze these thoughts and identify recurring patterns. Return a JSON array:\n[{"theme": "...", "description": "...", "frequency": N, "trend": "increasing|stable|decreasing", "related_thought_ids": [], "confidence": 0.0-1.0}]\n\nReturn ONLY the JSON array, no other text.`;
+
+  try {
+    const raw = await callClaude({
+      system: PATTERNS_SYSTEM_PROMPT,
+      userMessage,
+      maxTokens: 1024,
+    });
+
+    let parsed: Array<{
+      theme: string;
+      description: string;
+      frequency: number;
+      trend: "increasing" | "stable" | "decreasing";
+      related_thought_ids: number[];
+      confidence: number;
+    }>;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return c.json({ error: "AI response parse error", raw }, 502);
+    }
+
+    const patterns: TherapyPattern[] = parsed
+      .filter((p) => p.confidence >= 0.5)
+      .map((p) => ({
+        theme: p.theme,
+        description: p.description,
+        frequency: p.frequency,
+        trend: p.trend,
+        relatedThoughtIds: p.related_thought_ids,
+        confidence: p.confidence,
+      }));
+
+    return c.json({ patterns }, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown AI error";
+    return c.json({ error: message }, 500);
+  }
+});
