@@ -163,3 +163,108 @@ therapy.post("/therapy/patterns", async (c) => {
     return c.json({ error: message }, 500);
   }
 });
+
+// ── Prep ──────────────────────────────────────────────────────────────────
+
+interface PrepThought {
+  id: number;
+  content: string;
+  createdAt: string;
+}
+
+interface PrepPattern {
+  theme: string;
+  trend: string;
+  confidence: number;
+  description: string;
+}
+
+const PREP_SYSTEM_PROMPT = `You are organizing the user's own thoughts for their therapy prep, NOT providing therapy or clinical advice.
+
+Generate a structured therapy session preparation from the user's recent thoughts that they marked for therapist discussion. Your job is to:
+- Organize thoughts into clear discussion topics
+- Provide brief context for each topic so the user can reference it quickly
+- Assign urgency levels (high/medium/low) based on emotional intensity and how pressing the topic seems
+- If recurring patterns are provided, use them to add context about themes that keep appearing
+- Identify overall themes across all topics
+- Suggest a session focus based on what seems most pressing or important
+
+Keep topics concise and actionable. The user should be able to glance at this prep before their session and know exactly what to discuss.`;
+
+// POST /therapy/prep — Generate structured therapy session prep
+therapy.post("/therapy/prep", async (c) => {
+  let body: { thoughts?: PrepThought[]; patterns?: PrepPattern[] };
+  try {
+    body = await c.req.json();
+  } catch {
+    return c.json({ error: "Invalid JSON body" }, 400);
+  }
+
+  if (!body.thoughts || !Array.isArray(body.thoughts) || body.thoughts.length < 1) {
+    return c.json(
+      { error: "At least 1 thought is required for session prep" },
+      400
+    );
+  }
+
+  if (!getAIClient()) {
+    return c.json(
+      { error: "AI service unavailable. ANTHROPIC_API_KEY not configured." },
+      503
+    );
+  }
+
+  const thoughtLines = body.thoughts
+    .map((t) => `[${t.id}] (${t.createdAt}) ${t.content}`)
+    .join("\n");
+
+  let patternSection = "";
+  if (body.patterns && body.patterns.length > 0) {
+    const patternLines = body.patterns
+      .map((p) => `- ${p.theme} (${p.trend}, confidence: ${p.confidence}): ${p.description}`)
+      .join("\n");
+    patternSection = `\n\nDetected recurring patterns for additional context:\n${patternLines}`;
+  }
+
+  const userMessage = `Here are my recent thoughts marked for discussion with my therapist:\n${thoughtLines}${patternSection}\n\nGenerate a structured therapy session prep. Return a JSON object:\n{"items": [{"topic": "...", "context": "...", "urgency": "high|medium|low", "related_thought_ids": []}], "overall_themes": ["..."], "suggested_focus": "..."}\n\nReturn ONLY the JSON object, no other text.`;
+
+  try {
+    const raw = await callClaude({
+      system: PREP_SYSTEM_PROMPT,
+      userMessage,
+      maxTokens: 1024,
+    });
+
+    let parsed: {
+      items: Array<{
+        topic: string;
+        context: string;
+        urgency: "high" | "medium" | "low";
+        related_thought_ids: number[];
+      }>;
+      overall_themes: string[];
+      suggested_focus: string;
+    };
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return c.json({ error: "AI response parse error", raw }, 502);
+    }
+
+    const prep: TherapyPrep = {
+      items: parsed.items.map((item) => ({
+        topic: item.topic,
+        context: item.context,
+        urgency: item.urgency,
+        relatedThoughtIds: item.related_thought_ids,
+      })),
+      overallThemes: parsed.overall_themes,
+      suggestedFocus: parsed.suggested_focus,
+    };
+
+    return c.json(prep, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown AI error";
+    return c.json({ error: message }, 500);
+  }
+});
