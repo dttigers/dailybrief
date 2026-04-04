@@ -68,6 +68,9 @@ final class DashboardViewModel {
     // Re-triage state
     var retriagingThoughtId: Int64?
 
+    // Therapy re-classify state
+    var reclassifyingThoughtId: Int64?
+
     // Expand/collapse state
     var expandedThoughtIds: Set<Int64> = []
 
@@ -105,6 +108,7 @@ final class DashboardViewModel {
     private let imageDescriptionService: ImageDescriptionService?
     private let triageService: TriageService?
     private let insightService: InsightService?
+    private let therapyClassificationService: TherapyClassificationService?
     private var searchTask: Task<Void, Never>?
 
     var canImportAudio: Bool { transcriptionService != nil && captureService != nil }
@@ -118,7 +122,8 @@ final class DashboardViewModel {
         transcriptionService: TranscriptionService? = nil,
         imageDescriptionService: ImageDescriptionService? = nil,
         triageService: TriageService? = nil,
-        insightService: InsightService? = nil
+        insightService: InsightService? = nil,
+        therapyClassificationService: TherapyClassificationService? = nil
     ) {
         self.store = store
         self.captureService = captureService
@@ -126,6 +131,7 @@ final class DashboardViewModel {
         self.imageDescriptionService = imageDescriptionService
         self.triageService = triageService
         self.insightService = insightService
+        self.therapyClassificationService = therapyClassificationService
     }
 
     // MARK: - Public Methods
@@ -357,6 +363,10 @@ final class DashboardViewModel {
                                 t.category = result.category
                                 t.confidence = result.confidence
                                 try await store.update(t)
+                                // Auto-classify therapy thoughts after import triage
+                                if result.category == .therapy {
+                                    await classifyTherapyIfNeeded(t)
+                                }
                             }
                         } catch {
                             NSLog("Batch triage failed for %@: %@", filename, error.localizedDescription)
@@ -390,6 +400,10 @@ final class DashboardViewModel {
                                 t.category = result.category
                                 t.confidence = result.confidence
                                 try await store.update(t)
+                                // Auto-classify therapy thoughts after import triage
+                                if result.category == .therapy {
+                                    await classifyTherapyIfNeeded(t)
+                                }
                             }
                         } catch {
                             NSLog("Batch triage failed for %@: %@", filename, error.localizedDescription)
@@ -431,11 +445,57 @@ final class DashboardViewModel {
                 t.category = result.category
                 t.confidence = result.confidence
                 try await store.update(t)
+                // Auto-classify therapy thoughts after triage
+                if result.category == .therapy {
+                    await classifyTherapyIfNeeded(t)
+                }
             }
             await loadThoughts()
             await loadCounts()
         } catch {
             NSLog("Dashboard: re-triage failed for thought %lld — %@", id, error.localizedDescription)
+        }
+    }
+
+    // MARK: - Therapy Classification
+
+    /// Auto-classify a therapy thought if it hasn't been classified yet.
+    private func classifyTherapyIfNeeded(_ thought: Thought) async {
+        guard thought.category == .therapy,
+              thought.therapyClassification == nil,
+              let therapyClassificationService,
+              let id = thought.id else { return }
+
+        do {
+            let result = try await therapyClassificationService.classify(thought.content)
+            if var t = try await store.fetch(id: id) {
+                t.therapyClassification = result.classification
+                try await store.update(t)
+            }
+            NSLog("Dashboard: therapy classification for thought %lld — %@ (%.0f%% confidence): %@",
+                  id, result.classification.rawValue, result.confidence * 100, result.reasoning)
+        } catch {
+            NSLog("Dashboard: therapy classification failed for thought %lld — %@", id, error.localizedDescription)
+        }
+    }
+
+    /// Re-run therapy classification on a single therapy thought.
+    func reClassifyTherapy(_ thought: Thought) async {
+        guard let id = thought.id, let therapyClassificationService else { return }
+
+        reclassifyingThoughtId = id
+        defer { reclassifyingThoughtId = nil }
+
+        do {
+            let result = try await therapyClassificationService.classify(thought.content)
+            if var t = try await store.fetch(id: id) {
+                t.therapyClassification = result.classification
+                try await store.update(t)
+            }
+            await loadThoughts()
+            await loadCounts()
+        } catch {
+            NSLog("Dashboard: re-classify failed for thought %lld — %@", id, error.localizedDescription)
         }
     }
 
@@ -567,6 +627,10 @@ final class DashboardViewModel {
                     t.category = result.category
                     t.confidence = result.confidence
                     try await store.update(t)
+                    // Auto-classify therapy thoughts after bulk triage
+                    if result.category == .therapy {
+                        await classifyTherapyIfNeeded(t)
+                    }
                 }
             } catch {
                 NSLog("Dashboard: bulk retriage failed for thought %lld — %@", id, error.localizedDescription)

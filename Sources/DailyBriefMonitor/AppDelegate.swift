@@ -24,6 +24,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     // Insights
     private var insightService: InsightService?
 
+    // Therapy classification
+    private var therapyClassificationService: TherapyClassificationService?
+
     // Cloud sync
     private var syncService: SyncService?
     private var syncTimer: Timer?
@@ -44,6 +47,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
             let insightService = InsightService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
             self.insightService = insightService
+
+            let therapyClassService = TherapyClassificationService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+            self.therapyClassificationService = therapyClassService
         }
 
         // Create transcription service (uses Apple SFSpeechRecognizer)
@@ -126,6 +132,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                     imageDescriptionService: imageDescService,
                     captureService: service,
                     triageService: triageService,
+                    therapyClassificationService: self.therapyClassificationService,
                     thoughtStore: thoughtStore,
                     config: config.folderWatching
                 )
@@ -211,7 +218,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             transcriptionService: transcriptionService,
             imageDescriptionService: imageDescriptionService,
             triageService: triageService,
-            insightService: insightService
+            insightService: insightService,
+            therapyClassificationService: therapyClassificationService
         )
         let dashboardView = DashboardView(viewModel: viewModel)
         let hostingView = NSHostingView(rootView: dashboardView)

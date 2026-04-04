@@ -30,6 +30,7 @@ public actor FolderWatcherService {
     private let imageDescriptionService: ImageDescriptionService?
     private let captureService: CaptureService
     private let triageService: TriageService?
+    private let therapyClassificationService: TherapyClassificationService?
     private let thoughtStore: ThoughtStore
     private let config: AppConfig.FolderWatchingConfig
 
@@ -61,6 +62,7 @@ public actor FolderWatcherService {
         imageDescriptionService: ImageDescriptionService?,
         captureService: CaptureService,
         triageService: TriageService?,
+        therapyClassificationService: TherapyClassificationService? = nil,
         thoughtStore: ThoughtStore,
         config: AppConfig.FolderWatchingConfig
     ) {
@@ -68,6 +70,7 @@ public actor FolderWatcherService {
         self.imageDescriptionService = imageDescriptionService
         self.captureService = captureService
         self.triageService = triageService
+        self.therapyClassificationService = therapyClassificationService
         self.thoughtStore = thoughtStore
         self.config = config
         self.processedFiles = Self.loadManifest()
@@ -250,6 +253,21 @@ public actor FolderWatcherService {
                     t.category = result.category
                     t.confidence = result.confidence
                     _ = try await thoughtStore.update(t)
+
+                    // Auto-classify therapy thoughts after triage
+                    if result.category == .therapy, let therapyClassificationService {
+                        do {
+                            let classResult = try await therapyClassificationService.classify(text)
+                            if var updated = try await thoughtStore.fetch(id: thought.id!) {
+                                updated.therapyClassification = classResult.classification
+                                _ = try await thoughtStore.update(updated)
+                            }
+                            NSLog("[FolderWatcher] Therapy classification: %@ (%.0f%%)", classResult.classification.rawValue, classResult.confidence * 100)
+                        } catch {
+                            NSLog("[FolderWatcher] Therapy classification failed for %@: %@", filename, error.localizedDescription)
+                            // Non-fatal — thought is still captured and triaged
+                        }
+                    }
                 }
                 NSLog("[FolderWatcher] Triage result: %@ (%.0f%% confidence)", result.category.rawValue, result.confidence * 100)
             } catch {
@@ -285,6 +303,21 @@ public actor FolderWatcherService {
                     t.category = result.category
                     t.confidence = result.confidence
                     _ = try await thoughtStore.update(t)
+
+                    // Auto-classify therapy thoughts after triage
+                    if result.category == .therapy, let therapyClassificationService {
+                        do {
+                            let classResult = try await therapyClassificationService.classify(description)
+                            if var updated = try await thoughtStore.fetch(id: thought.id!) {
+                                updated.therapyClassification = classResult.classification
+                                _ = try await thoughtStore.update(updated)
+                            }
+                            NSLog("[FolderWatcher] Therapy classification: %@ (%.0f%%)", classResult.classification.rawValue, classResult.confidence * 100)
+                        } catch {
+                            NSLog("[FolderWatcher] Therapy classification failed for %@: %@", filename, error.localizedDescription)
+                            // Non-fatal — thought is still captured and triaged
+                        }
+                    }
                 }
                 NSLog("[FolderWatcher] Triage result: %@ (%.0f%% confidence)", result.category.rawValue, result.confidence * 100)
             } catch {

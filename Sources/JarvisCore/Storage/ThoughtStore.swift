@@ -272,6 +272,33 @@ public actor ThoughtStore {
         }
     }
 
+    /// Count therapy-category thoughts, optionally filtered by classification. Excludes deleted.
+    /// Pass `nil` for classification to count all therapy thoughts.
+    /// Pass a specific classification to count only that sub-type.
+    /// Pass `.some(nil)` is not supported — use `countUnclassifiedTherapy()` for nil-classification count.
+    public func countTherapy(classification: TherapyClassification? = nil) async throws -> Int {
+        try await db.reader.read { db in
+            var request = Thought
+                .filter(Thought.Columns.category == ThoughtCategory.therapy.rawValue)
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
+            if let classification {
+                request = request.filter(Thought.Columns.therapyClassification == classification.rawValue)
+            }
+            return try request.fetchCount(db)
+        }
+    }
+
+    /// Count therapy-category thoughts with no classification (nil therapyClassification). Excludes deleted.
+    public func countUnclassifiedTherapy() async throws -> Int {
+        try await db.reader.read { db in
+            try Thought
+                .filter(Thought.Columns.category == ThoughtCategory.therapy.rawValue)
+                .filter(Thought.Columns.syncStatus != SyncStatus.pendingDeletion.rawValue)
+                .filter(Thought.Columns.therapyClassification == nil)
+                .fetchCount(db)
+        }
+    }
+
     // MARK: Bulk Operations
 
     /// Mark all matching thoughts as pendingDeletion in a single write transaction.
