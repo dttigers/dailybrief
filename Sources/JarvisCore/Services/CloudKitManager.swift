@@ -13,6 +13,8 @@ public struct ThoughtCloudData: Sendable {
     public let source: CaptureSource
     public let taskStatus: TaskStatus?
     public let therapyClassification: TherapyClassification?
+    public let tags: [String]?
+    public let isFavorited: Bool
     public let createdAt: Date
     public let modifiedAt: Date
 }
@@ -111,6 +113,8 @@ public actor CloudKitManager {
         record["createdAt"] = thought.createdAt as NSDate
         record["taskStatus"] = thought.taskStatus?.rawValue as NSString?
         record["therapyClassification"] = thought.therapyClassification?.rawValue as NSString?
+        record["tags"] = thought.tags.flatMap { try? JSONEncoder().encode($0) }.flatMap { String(data: $0, encoding: .utf8) } as NSString?
+        record["isFavorited"] = NSNumber(value: thought.isFavorited ? 1 : 0)
         record["modifiedAt"] = thought.modifiedAt as NSDate
         return record
     }
@@ -132,6 +136,13 @@ public actor CloudKitManager {
         let taskStatus = taskStatusRaw.flatMap { TaskStatus(rawValue: $0) }
         let therapyClassificationRaw = record["therapyClassification"] as? String
         let therapyClassification = therapyClassificationRaw.flatMap { TherapyClassification(rawValue: $0) }
+        let tagsJSON = record["tags"] as? String
+        let tags: [String]? = tagsJSON.flatMap { json in
+            guard let data = json.data(using: .utf8) else { return nil }
+            return try? JSONDecoder().decode([String].self, from: data)
+        }
+        let isFavoritedNumber = record["isFavorited"] as? NSNumber
+        let isFavorited = isFavoritedNumber?.intValue == 1
         let createdAt = record["createdAt"] as? Date ?? record.creationDate ?? Date()
         let modifiedAt = record["modifiedAt"] as? Date ?? record.modificationDate ?? Date()
 
@@ -143,6 +154,8 @@ public actor CloudKitManager {
             source: source,
             taskStatus: taskStatus,
             therapyClassification: therapyClassification,
+            tags: tags,
+            isFavorited: isFavorited,
             createdAt: createdAt,
             modifiedAt: modifiedAt
         )

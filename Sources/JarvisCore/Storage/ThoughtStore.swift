@@ -659,6 +659,8 @@ public actor ThoughtStore {
                 existing.source = data.source
                 existing.taskStatus = data.taskStatus
                 existing.therapyClassification = data.therapyClassification
+                existing.tags = data.tags
+                existing.isFavorited = data.isFavorited
                 existing.modifiedAt = data.modifiedAt
                 existing.syncStatus = .synced
                 existing.lastSyncedAt = Date()
@@ -674,6 +676,8 @@ public actor ThoughtStore {
                     modifiedAt: data.modifiedAt,
                     taskStatus: data.taskStatus,
                     therapyClassification: data.therapyClassification,
+                    tags: data.tags,
+                    isFavorited: data.isFavorited,
                     cloudKitRecordID: data.cloudKitRecordID,
                     syncStatus: .synced,
                     lastSyncedAt: Date()
