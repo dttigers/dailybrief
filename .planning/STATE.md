@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 42 of 44 (Mac App Server Migration) — Plan 01 COMPLETE
+Phase: 43 of 44 (HTTPS & Domain) — Plan 01 COMPLETE
 Plan: 1/1 complete
-Status: Phase 42 plan 01 complete, Mac app VigilAPIClient has Bearer auth and production URL
-Last activity: 2026-04-05 — Added Bearer auth to Mac app VigilAPIClient, pointed at Railway production URL, updated user config
+Status: Phase 43 plan 01 complete, CORS middleware added, custom domain deferred (Railway default kept)
+Last activity: 2026-04-05 — Added CORS middleware to Vigil Core API, decided to keep Railway default domain
 
-Progress: ███░░░░░░░ 37%
+Progress: ████░░░░░░ 42%
 
 ## Performance Metrics
 
@@ -68,6 +68,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Phase 42 plan 01 complete
+Stopped at: Phase 43 plan 01 complete
 Resume file: None
-Notes: Phase 42 Mac App Server Migration plan 01 complete. VigilAPIClient now accepts optional apiKey and sends Bearer auth on all requests. Default URL points at Railway production. Both CLI and menu bar entry points pass apiKey from config. User must add their vk_ API key to ~/.config/dailybrief/config.json.
+Notes: Phase 43 HTTPS & Domain plan 01 complete. CORS middleware added to Vigil Core API (hono/cors, configurable origins). User chose to keep Railway default domain — custom domain deferred. Ready for phase 44.
