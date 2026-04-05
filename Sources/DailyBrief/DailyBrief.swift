@@ -6,7 +6,7 @@ import JarvisCore
 struct DailyBrief: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Generate a daily briefing PDF with work orders, todos, sports scores, and an ADHD affirmation.",
-        subcommands: [Generate.self, History.self, Complete.self, Uncomplete.self, ListCompleted.self, EmailAuth.self],
+        subcommands: [Generate.self, History.self, Export.self, Complete.self, Uncomplete.self, ListCompleted.self, EmailAuth.self],
         defaultSubcommand: Generate.self
     )
 }
@@ -539,6 +539,114 @@ extension DailyBrief {
             }
             print("")
             print("Showing \(response.data.count) of \(response.total) briefs")
+        }
+    }
+}
+
+// MARK: - Export
+
+extension DailyBrief {
+    struct Export: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(
+            abstract: "Export thoughts as JSON, CSV, or Markdown."
+        )
+
+        @Option(help: "Output format: json, csv, or markdown (default: json)")
+        var format: String = "json"
+
+        @Option(help: "Filter by category (task, therapy, idea, reflection, project)")
+        var category: String?
+
+        @Option(help: "Start date filter (YYYY-MM-DD)")
+        var from: String?
+
+        @Option(help: "End date filter (YYYY-MM-DD)")
+        var to: String?
+
+        @Option(help: "Output file path (default: ~/Documents/DailyBrief/vigil-export-DATE.FORMAT)")
+        var output: String?
+
+        @Option(help: "Path to config file")
+        var configPath: String?
+
+        func run() async throws {
+            let validFormats = ["json", "csv", "markdown"]
+            guard validFormats.contains(format) else {
+                print("Error: format must be one of: json, csv, markdown")
+                throw ExitCode.failure
+            }
+
+            let dateRegex = #"^\d{4}-\d{2}-\d{2}$"#
+            if let from = from, from.range(of: dateRegex, options: .regularExpression) == nil {
+                print("Error: --from must be in YYYY-MM-DD format")
+                throw ExitCode.failure
+            }
+            if let to = to, to.range(of: dateRegex, options: .regularExpression) == nil {
+                print("Error: --to must be in YYYY-MM-DD format")
+                throw ExitCode.failure
+            }
+
+            let config: AppConfig
+            do {
+                config = try ConfigLoader.load(from: configPath)
+            } catch {
+                Logger.error("Config error: \(error.localizedDescription)")
+                throw error
+            }
+
+            let apiClient = VigilAPIClient(
+                baseURL: URL(string: config.apiBaseUrl)!,
+                apiKey: config.apiKey
+            )
+
+            // Build query params
+            var params: [String: String] = ["format": format]
+            if let category = category { params["category"] = category }
+            if let from = from { params["from"] = from }
+            if let to = to { params["to"] = to }
+
+            // Determine Accept header
+            let acceptHeader: String
+            switch format {
+            case "csv": acceptHeader = "text/csv"
+            case "markdown": acceptHeader = "text/markdown"
+            default: acceptHeader = "application/json"
+            }
+
+            let data: Data
+            do {
+                data = try await apiClient.getRawData(path: "/export", query: params, accept: acceptHeader)
+            } catch {
+                print("Error fetching export: \(error.localizedDescription)")
+                throw ExitCode.failure
+            }
+
+            // Determine file extension
+            let ext: String
+            switch format {
+            case "csv": ext = "csv"
+            case "markdown": ext = "md"
+            default: ext = "json"
+            }
+
+            // Determine output path
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            let dateStr = formatter.string(from: Date())
+
+            let outputPath: String
+            if let output = output {
+                outputPath = ConfigLoader.expandPath(output)
+            } else {
+                let outputDir = ConfigLoader.expandPath("~/Documents/DailyBrief")
+                try ConfigLoader.ensureDirectoryExists(outputDir)
+                outputPath = (outputDir as NSString).appendingPathComponent("vigil-export-\(dateStr).\(ext)")
+            }
+
+            // Write to file
+            try data.write(to: URL(fileURLWithPath: outputPath))
+
+            print("Exported to \(outputPath) (\(data.count) bytes)")
         }
     }
 }

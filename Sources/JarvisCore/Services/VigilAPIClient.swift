@@ -183,6 +183,31 @@ public actor VigilAPIClient {
         return httpResponse.statusCode
     }
 
+    /// Perform a GET request and return raw Data (no JSON decoding).
+    /// Useful for non-JSON responses like CSV or Markdown exports.
+    /// - Parameters:
+    ///   - path: API path relative to baseURL (e.g., `/export`).
+    ///   - query: Optional query parameters.
+    ///   - accept: Accept header value (e.g., `text/csv`). Defaults to `application/json`.
+    /// - Returns: Raw response Data.
+    public func getRawData(path: String, query: [String: String] = [:], accept: String = "application/json") async throws -> Data {
+        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        if !query.isEmpty {
+            components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
+        }
+
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "GET"
+        request.setValue(accept, forHTTPHeaderField: "Accept")
+        if let apiKey, !apiKey.isEmpty {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+
+        let (data, response) = try await executeRequest(request)
+        try validateResponse(data: data, response: response)
+        return data
+    }
+
     // MARK: Private Helpers
 
     /// Execute a URLRequest, wrapping URLSession errors.
