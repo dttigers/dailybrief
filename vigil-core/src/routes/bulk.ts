@@ -102,6 +102,55 @@ bulk.post("/thoughts/bulk/recategorize", async (c) => {
   }
 });
 
+// POST /thoughts/bulk/therapy-classify — Bulk therapy classification
+bulk.post("/thoughts/bulk/therapy-classify", async (c) => {
+  const db = getDb();
+  if (!db) return c.json({ error: "Database not available" }, 503);
+
+  try {
+    const body = await c.req.json();
+    const { ids, classification } = body;
+
+    if (!validateIds(ids)) {
+      return c.json(
+        { error: "ids must be a non-empty array of integers" },
+        400,
+      );
+    }
+
+    const VALID_CLASSIFICATIONS = ["selfLearnable", "bringToTherapist"] as const;
+    if (
+      !classification ||
+      !VALID_CLASSIFICATIONS.includes(
+        classification as (typeof VALID_CLASSIFICATIONS)[number],
+      )
+    ) {
+      return c.json(
+        {
+          error: `classification must be one of: ${VALID_CLASSIFICATIONS.join(", ")}`,
+        },
+        400,
+      );
+    }
+
+    const now = new Date().toISOString();
+    const placeholders = ids.map(() => "?").join(", ");
+
+    const result = db.transaction(() => {
+      return db
+        .prepare(
+          `UPDATE thoughts SET therapyClassification = ?, syncStatus = 'pending', modifiedAt = ? WHERE id IN (${placeholders}) AND syncStatus != 'pendingDeletion'`,
+        )
+        .run(classification, now, ...ids);
+    })();
+
+    return c.json({ updated: result.changes });
+  } catch (err) {
+    console.error("[vigil-core] Bulk therapy classify failed:", err);
+    return c.json({ error: "Bulk therapy classify failed" }, 500);
+  }
+});
+
 // POST /thoughts/bulk/tag — Bulk add/remove tag
 bulk.post("/thoughts/bulk/tag", async (c) => {
   const db = getDb();
