@@ -6,7 +6,7 @@ import JarvisCore
 struct DailyBrief: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Generate a daily briefing PDF with work orders, todos, sports scores, and an ADHD affirmation.",
-        subcommands: [Generate.self, Complete.self, Uncomplete.self, ListCompleted.self, EmailAuth.self],
+        subcommands: [Generate.self, History.self, Complete.self, Uncomplete.self, ListCompleted.self, EmailAuth.self],
         defaultSubcommand: Generate.self
     )
 }
@@ -449,6 +449,96 @@ extension DailyBrief {
                 print("Template config created at \(path)")
                 print("Edit it with your API keys and preferences before running.")
             }
+        }
+    }
+}
+
+// MARK: - History
+
+extension DailyBrief {
+    struct History: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(
+            abstract: "List and reprint past daily briefs."
+        )
+
+        @Option(help: "Number of briefs to show (default: 14)")
+        var limit: Int = 14
+
+        @Option(help: "Reprint a past brief by date (YYYY-MM-DD)")
+        var reprint: String?
+
+        @Option(help: "Path to config file")
+        var configPath: String?
+
+        func run() async throws {
+            let config: AppConfig
+            do {
+                config = try ConfigLoader.load(from: configPath)
+            } catch {
+                Logger.error("Config error: \(error.localizedDescription)")
+                throw error
+            }
+
+            let apiClient = VigilAPIClient(
+                baseURL: URL(string: config.apiBaseUrl)!,
+                apiKey: config.apiKey
+            )
+
+            // Reprint mode: find and print a specific date's PDF
+            if let reprintDate = reprint {
+                guard reprintDate.range(of: #"^\d{4}-\d{2}-\d{2}$"#, options: .regularExpression) != nil else {
+                    print("Error: Date must be in YYYY-MM-DD format")
+                    throw ExitCode.failure
+                }
+
+                // Check if PDF exists locally
+                let outputDir = ConfigLoader.expandPath(config.pdf.outputDirectory)
+                let pdfFilename = "daily_sheet_\(reprintDate).pdf"
+                let pdfPath = (outputDir as NSString).appendingPathComponent(pdfFilename)
+
+                if FileManager.default.fileExists(atPath: pdfPath) {
+                    try PrintService.printPDF(at: pdfPath, config: config.printing)
+                    print("Reprinted brief for \(reprintDate)")
+                } else {
+                    // Try to get info from API
+                    if let record: BriefRecord = try? await apiClient.get(path: "/briefs/\(reprintDate)") {
+                        print("PDF not found locally. Brief was generated on \(record.date) with \(record.thoughtCount) thoughts.")
+                    } else {
+                        print("PDF not found locally and no record found in API for \(reprintDate).")
+                    }
+                }
+                return
+            }
+
+            // List mode: show recent briefs
+            let query = ["limit": String(limit)]
+            let response: PaginatedResponse<BriefRecord>
+            do {
+                response = try await apiClient.get(path: "/briefs", query: query)
+            } catch {
+                print("Error fetching brief history: \(error.localizedDescription)")
+                throw ExitCode.failure
+            }
+
+            if response.data.isEmpty {
+                print("No briefs found. Generate a brief first with: dailybrief generate")
+                return
+            }
+
+            // Print formatted table
+            print("")
+            print(String(format: "%-12s  %-9s  %-6s  %@", "Date", "Thoughts", "Tasks", "PDF"))
+            print(String(repeating: "-", count: 60))
+            for record in response.data {
+                let pdf = record.pdfFilename ?? "-"
+                print(String(format: "%-12s  %-9d  %-6d  %@",
+                    record.date,
+                    record.thoughtCount,
+                    record.taskCount,
+                    pdf))
+            }
+            print("")
+            print("Showing \(response.data.count) of \(response.total) briefs")
         }
     }
 }
