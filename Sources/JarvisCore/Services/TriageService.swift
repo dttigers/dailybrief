@@ -115,3 +115,7 @@ public actor TriageService {
         return TriageResult(category: category, confidence: confidence)
     }
 }
+
+// MARK: - Protocol Conformance
+
+extension TriageService: TriageProviding {}

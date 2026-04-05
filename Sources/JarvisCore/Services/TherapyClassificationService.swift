@@ -126,3 +126,7 @@ public actor TherapyClassificationService {
         return TherapyClassificationResult(classification: classification, confidence: confidence, reasoning: reasoning)
     }
 }
+
+// MARK: - Protocol Conformance
+
+extension TherapyClassificationService: TherapyClassifyProviding {}

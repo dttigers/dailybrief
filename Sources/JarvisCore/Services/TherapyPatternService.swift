@@ -140,3 +140,7 @@ public actor TherapyPatternService {
         return patterns.filter { $0.confidence >= 0.5 }
     }
 }
+
+// MARK: - Protocol Conformance
+
+extension TherapyPatternService: TherapyPatternProviding {}

@@ -152,3 +152,7 @@ public actor TherapyPrepService {
         }
     }
 }
+
+// MARK: - Protocol Conformance
+
+extension TherapyPrepService: TherapyPrepProviding {}

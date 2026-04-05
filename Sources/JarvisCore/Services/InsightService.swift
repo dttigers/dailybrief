@@ -122,3 +122,7 @@ public actor InsightService {
         return insights.filter { $0.confidence >= 0.5 }
     }
 }
+
+// MARK: - Protocol Conformance
+
+extension InsightService: InsightProviding {}

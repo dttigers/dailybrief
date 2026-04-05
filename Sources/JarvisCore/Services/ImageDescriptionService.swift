@@ -217,3 +217,7 @@ public actor ImageDescriptionService {
         }
     }
 }
+
+// MARK: - Protocol Conformance
+
+extension ImageDescriptionService: ImageDescriptionProviding {}
