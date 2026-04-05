@@ -467,3 +467,78 @@ public actor APITherapyPrepService: TherapyPrepProviding {
         )
     }
 }
+
+// MARK: - Chat Types
+
+/// A single message in a chat conversation.
+public struct ChatMessage: Codable, Sendable {
+    public let role: String
+    public let content: String
+
+    public init(role: String, content: String) {
+        self.role = role
+        self.content = content
+    }
+}
+
+/// Response from the chat endpoint.
+public struct ChatResponse: Decodable, Sendable {
+    public let response: String
+    public let contextUsed: Int
+}
+
+/// Errors thrown by chat operations.
+public enum ChatError: Error, LocalizedError {
+    case apiError(String)
+    case emptyResponse
+
+    public var errorDescription: String? {
+        switch self {
+        case .apiError(let message):
+            return "Chat error: \(message)"
+        case .emptyResponse:
+            return "The assistant returned an empty response"
+        }
+    }
+}
+
+/// Protocol for chat service providers.
+public protocol ChatProviding: Sendable {
+    func chat(messages: [ChatMessage], includeContext: Bool) async throws -> ChatResponse
+}
+
+// MARK: - APIChatService
+
+/// Vigil Core API-backed chat service.
+public actor APIChatService: ChatProviding {
+
+    private let client: VigilAPIClient
+
+    public init(client: VigilAPIClient) {
+        self.client = client
+    }
+
+    private struct ChatRequest: Encodable {
+        let messages: [ChatMessage]
+        let includeContext: Bool
+        let contextLimit: Int
+    }
+
+    public func chat(messages: [ChatMessage], includeContext: Bool) async throws -> ChatResponse {
+        let response: ChatResponse
+        do {
+            response = try await client.post(
+                path: "/chat",
+                body: ChatRequest(messages: messages, includeContext: includeContext, contextLimit: 20)
+            )
+        } catch let error as VigilAPIError {
+            throw ChatError.apiError(error.localizedDescription)
+        }
+
+        guard !response.response.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw ChatError.emptyResponse
+        }
+
+        return response
+    }
+}
