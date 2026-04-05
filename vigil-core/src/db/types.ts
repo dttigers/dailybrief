@@ -1,4 +1,16 @@
-// TypeScript types matching the Jarvis SQLite schema
+// TypeScript types for Vigil — Drizzle schema inference + legacy SQLite types
+
+import { thoughts, thoughtLinks } from "./schema.js";
+
+// ── Drizzle-inferred types (for PostgreSQL routes, Plans 37-02+) ────────────
+
+export type DrizzleThought = typeof thoughts.$inferSelect;
+export type NewThought = typeof thoughts.$inferInsert;
+
+export type DrizzleThoughtLink = typeof thoughtLinks.$inferSelect;
+export type NewThoughtLink = typeof thoughtLinks.$inferInsert;
+
+// ── Validation unions (used for runtime checks) ────────────────────────────
 
 export type ThoughtCategory =
   | "task"
@@ -15,6 +27,8 @@ export type TherapyClassification = "selfLearnable" | "bringToTherapist";
 
 export type SyncStatus = "pending" | "synced" | "pendingDeletion";
 
+// ── Legacy types (for existing SQLite routes — removed in Plan 37-04) ───────
+
 export interface Thought {
   id: number;
   content: string;
@@ -28,9 +42,18 @@ export interface Thought {
   lastSyncedAt: string | null;
   taskStatus: string | null;
   therapyClassification: string | null;
-  tags: string | null; // JSON array stored as TEXT
+  tags: string | null; // JSON array stored as TEXT in SQLite
   isFavorited: number;
 }
+
+export interface ThoughtLink {
+  id: number;
+  sourceThoughtId: number;
+  targetThoughtId: number;
+  createdAt: string;
+}
+
+// ── Input/output types for API layer ────────────────────────────────────────
 
 export interface ThoughtCreateInput {
   content: string;
@@ -58,11 +81,4 @@ export interface PaginatedResponse<T> {
   total: number;
   limit: number;
   offset: number;
-}
-
-export interface ThoughtLink {
-  id: number;
-  sourceThoughtId: number;
-  targetThoughtId: number;
-  createdAt: string;
 }

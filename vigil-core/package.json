@@ -11,11 +11,15 @@
     "@anthropic-ai/sdk": "^0.82.0",
     "@hono/node-server": "^1.14.0",
     "better-sqlite3": "^11.8.0",
-    "hono": "^4.7.0"
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.7.0",
+    "postgres": "^3.4.9"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.0",
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.20.0",
+    "drizzle-kit": "^0.31.10",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
   }
