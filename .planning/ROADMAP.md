@@ -11,7 +11,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v1.2 Daily Driver** — Phases 14-18 (shipped 2026-04-03)
 - ✅ **v1.3 Stability & Smarts** — Phases 19-23 (shipped 2026-04-04)
 - ✅ **v1.4 Intelligence & Organization** — Phases 24-28 (shipped 2026-04-04, early close)
-- 🚧 **v2.0 Vigil Platform** — Phases 29-36 (in progress)
+- ✅ **v2.0 Vigil Platform** — Phases 29-36 (shipped 2026-04-04)
 
 ## Completed Milestones
 
@@ -20,6 +20,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ [v1.2 Daily Driver](milestones/v1.2-ROADMAP.md) (Phases 14-18) — SHIPPED 2026-04-03
 - ✅ [v1.3 Stability & Smarts](milestones/v1.3-ROADMAP.md) (Phases 19-23) — SHIPPED 2026-04-04
 - ✅ [v1.4 Intelligence & Organization](milestones/v1.4-ROADMAP.md) (Phases 24-28) — SHIPPED 2026-04-04 (early close)
+- ✅ [v2.0 Vigil Platform](milestones/v2.0-ROADMAP.md) (Phases 29-36) — SHIPPED 2026-04-04
 
 <details>
 <summary>✅ v1.0 MVP (Phases 1-7) — SHIPPED 2026-04-02</summary>
@@ -81,113 +82,21 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
-### 🚧 v2.0 Vigil Platform (In Progress)
+<details>
+<summary>✅ v2.0 Vigil Platform (Phases 29-36) — SHIPPED 2026-04-04</summary>
 
-**Milestone Goal:** Extract intelligence into a platform-agnostic API (Vigil Core), build first external client (Even G2 smart glasses), and migrate the Mac app to be a thin client.
-
-**Constraints:**
-- Mac app must remain functional throughout migration — never break what works
-- Vigil Core runs on localhost only for v2.0 (no server deployment, no auth)
-- Even G2 display: 576x288, 4-bit greyscale, max 8 containers/page, no CSS/DOM
-- Phone and Mac must be on same Wi-Fi for glasses to reach API
-- API versioned from day one (/v1/ prefix on all routes)
+- [x] Phase 29: Vigil Core API — Foundation (2/2 plans) — completed 2026-04-04
+- [x] Phase 30: Vigil Core API — Full Endpoints (3/3 plans) — completed 2026-04-04
+- [x] Phase 31: Vigil Core API — AI Integration (4/4 plans) — completed 2026-04-04
+- [x] Phase 32: Even G2 Plugin — Scaffold + Home (2/2 plans) — completed 2026-04-04
+- [x] Phase 33: Even G2 Plugin — Screens + Nav (3/3 plans) — completed 2026-04-04
+- [x] Phase 34: Mac App Migration — First Services (4/4 plans) — completed 2026-04-04
+- [x] Phase 35: Mac App Migration — AI Services (3/3 plans) — completed 2026-04-04
+- [x] Phase 36: Integration & Polish (1/1 plan) — completed 2026-04-04
 
 **Reference docs:** `.planning/references/vigil-architecture.pdf`, `.planning/references/vigil-evenhub-plan.pdf`
 
-#### Phase 29: Vigil Core API — Foundation
-
-**Goal**: Project setup (Node.js + Express/Hono, better-sqlite3), DB access to existing Jarvis SQLite, health + summary endpoints
-**Depends on**: Previous milestone complete
-**Research**: Unlikely (established patterns)
-**Plans**: 2
-
-Plans:
-- [x] 29-01: Project scaffold + Hono server + health endpoint
-- [x] 29-02: Database connection + summary endpoint
-
-#### Phase 30: Vigil Core API — Full Endpoints ✓
-
-**Goal**: Thoughts CRUD, work orders, reminders, brief, insights — full /v1/ REST API surface
-**Depends on**: Phase 29
-**Research**: Unlikely (CRUD endpoints, standard patterns)
-**Plans**: 3
-
-Plans:
-- [x] 30-01: Thoughts CRUD + search (DB read-write upgrade, FTS5)
-- [x] 30-02: Tags, favorites, bidirectional thought links
-- [x] 30-03: Brief aggregation + bulk operations
-
-#### Phase 31: Vigil Core API — AI Integration ✓
-
-**Goal**: Port Claude API calls from Swift to Node.js — triage, prioritization, affirmation, insights generation
-**Depends on**: Phase 30
-**Plans**: 4
-
-Plans:
-- [x] 31-01: Anthropic SDK client + triage endpoint
-- [x] 31-02: Affirmation + insights endpoints
-- [x] 31-03: Therapy endpoints (classify, patterns, prep)
-- [x] 31-04: Prioritize + describe-image endpoints
-
-#### Phase 32: Even G2 Plugin — Scaffold + Home Screen ✓
-
-**Goal**: Vite + TypeScript Even Hub plugin project, SDK init, simulator setup, home screen with mock data
-**Depends on**: Phase 29 (needs running API)
-**Research**: Likely (Even Hub SDK — new integration)
-**Research topics**: @evenrealities/even_hub_sdk API, simulator usage, plugin packaging, display constraints
-**Plans**: 2
-
-Plans:
-- [x] 32-01: Project scaffold + Vite+TS + Even Hub SDK bridge
-- [x] 32-02: Home screen with mock Vigil data
-
-#### Phase 33: Even G2 Plugin — All Screens + Navigation ✓
-
-**Goal**: Work orders, reminders, affirmation screens; temple touchpad + R1 ring navigation; real API data with 60s refresh
-**Depends on**: Phase 32
-**Research**: Likely (continued Even Hub SDK — navigation patterns, multi-screen)
-**Research topics**: Even Hub screen transitions, touchpad/ring event handling, data refresh patterns
-**Plans**: 3
-
-Plans:
-- [x] 33-01: API client + navigation state machine
-- [x] 33-02: Work orders & affirmation screens
-- [x] 33-03: Live home data + 60s auto-refresh
-
-#### Phase 34: Mac App Migration — First Services ✓
-
-**Goal**: Redirect simplest Mac app services to call Vigil Core API instead of computing locally; verify feature parity
-**Depends on**: Phase 30
-**Research**: Unlikely (internal refactor — redirecting Swift URLSession calls)
-**Plans**: 4
-
-Plans:
-- [x] 34-01: API endpoint extensions (date range filtering + bulk therapy classify)
-- [x] 34-02: ThoughtRepository protocol + VigilAPIClient HTTP client
-- [x] 34-03: APIThoughtStore full implementation
-- [x] 34-04: Config toggle + consumer wiring
-
-#### Phase 35: Mac App Migration — AI Services ✓
-
-**Goal**: Redirect triage, prioritization, and insights from local Claude calls to Vigil Core API
-**Depends on**: Phase 31, Phase 34
-**Research**: Unlikely (same migration pattern as Phase 34)
-**Plans**: 3
-
-Plans:
-- [x] 35-01: AI service protocols + API-backed implementations
-- [x] 35-02: DailyBrief CLI affirmation + prioritization migration
-- [x] 35-03: Wire consumers to protocol types with config toggle
-
-#### Phase 36: Integration & Polish
-
-**Goal**: End-to-end testing across all clients, LaunchAgent for API server auto-start, packaging G2 plugin for Even Hub submission
-**Depends on**: Phase 33, Phase 35
-**Research**: Unlikely (testing and packaging — established patterns)
-**Plans**: 1
-
-Plans:
-- [x] 36-01: LaunchAgent auto-start, G2 plugin build, end-to-end verification
+</details>
 
 ## Domain Expertise
 

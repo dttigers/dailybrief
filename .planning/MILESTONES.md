@@ -1,5 +1,33 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v2.0 Vigil Platform (Shipped: 2026-04-04)
+
+**Delivered:** Platform-agnostic Vigil Core API (Node.js/Hono/TypeScript) with 20+ REST endpoints, Even G2 smart glasses plugin with 3-screen navigation, and full Mac app migration to API backend via protocol abstraction and config toggle.
+
+**Phases completed:** 29-36 (22 plans total)
+
+**Key accomplishments:**
+
+- Vigil Core API — full REST surface with thoughts CRUD, tags/favorites/links, brief aggregation, bulk operations, FTS5 search
+- AI service layer — triage, affirmation, insights, therapy, prioritization, and image description ported from Swift to Node.js with caching
+- Even G2 smart glasses plugin — Vite+TypeScript with home, work orders, and affirmation screens, live API data, 60s auto-refresh
+- Mac app protocol migration — ThoughtRepository + 6 AI service protocols abstracting local GRDB vs API backends
+- Config-driven backend selection — single `vigil.useAPI` flag switches entire Mac app between local and Vigil Core API mode
+- LaunchAgent auto-start — Vigil Core API starts on login alongside existing DailyBrief scheduler
+
+**Stats:**
+
+- 102 files created/modified
+- ~11,737 lines added (Swift + TypeScript)
+- 8 phases, 22 plans
+- 1 day (2026-04-04)
+
+**Git range:** `feat(29-01)` → `feat(36-01)`
+
+**What's next:** TBD — next milestone planning (server deployment, G2 hardware testing, or new features)
+
+---
+
 ## v1.4 Intelligence & Organization (Shipped: 2026-04-04, Early Close)
 
 **Delivered:** Dashboard power tools — inline thought editing with undo, bulk actions, source/date filters, AI therapy intelligence (classification + pattern recognition + session prep), and tags/favorites/thought-to-thought linking. Closed early to pivot to Vigil platform (Even G2 smart glasses + Vigil Core API).
