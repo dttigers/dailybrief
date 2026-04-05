@@ -38,8 +38,18 @@ thoughts.get("/thoughts", (c) => {
     const tag = c.req.query("tag");
     const favoritesOnly = c.req.query("favoritesOnly");
     const q = c.req.query("q");
+    const after = c.req.query("after");
+    const before = c.req.query("before");
     const limit = Math.min(Math.max(Number(c.req.query("limit")) || 50, 1), 200);
     const offset = Math.max(Number(c.req.query("offset")) || 0, 0);
+
+    // Validate date params
+    if (after && isNaN(Date.parse(after))) {
+      return c.json({ error: "after must be a valid ISO 8601 date string" }, 400);
+    }
+    if (before && isNaN(Date.parse(before))) {
+      return c.json({ error: "before must be a valid ISO 8601 date string" }, 400);
+    }
 
     const conditions: string[] = ["t.syncStatus != 'pendingDeletion'"];
     const params: unknown[] = [];
@@ -77,6 +87,14 @@ thoughts.get("/thoughts", (c) => {
     }
     if (favoritesOnly === "true") {
       conditions.push("t.isFavorited = 1");
+    }
+    if (after) {
+      conditions.push("t.createdAt > ?");
+      params.push(after);
+    }
+    if (before) {
+      conditions.push("t.createdAt < ?");
+      params.push(before);
     }
 
     const whereClause = conditions.length
