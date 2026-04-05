@@ -170,7 +170,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 49-01: TBD
+- [ ] 49-01: Config model + PDF layout system + renderer refactor
+- [ ] 49-02: Settings UI for PDF configuration
 
 #### Phase 50: Dashboard AI Chat
 
