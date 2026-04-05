@@ -9,17 +9,17 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 33 of 36 (G2 Screens + Navigation)
-Plan: 03 complete
-Status: Phase 33 complete
-Last activity: 2026-04-04 - Phase 33 complete (all screens + navigation + live API data + auto-refresh)
+Phase: 34 of 36 (Mac Migration First)
+Plan: 01 complete
+Status: In progress
+Last activity: 2026-04-04 - Plan 34-01 complete (API date range filtering + bulk therapy classify)
 
 Progress: █████░░░░░ 50%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 79
+- Total plans completed: 80
 - Total execution time: ~9 days
 - Average duration: ~5 min per plan
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 33 complete
+Stopped at: Phase 34, Plan 01 complete
 Resume file: None
-Notes: Phase 33 complete. All 3 G2 screens (home, work orders, affirmation) fetch live data from Vigil Core API. Navigation via temple touchpad swipes (up/down cycle, double-tap home). 60s auto-refresh with foreground lifecycle management. No mock data remains. formatTime() duplicated in home.ts and affirmation.ts — low priority cleanup.
+Notes: Plan 34-01 complete. Extended Vigil Core API with after/before date range filtering on GET /thoughts and new POST /thoughts/bulk/therapy-classify endpoint. Both needed for Mac app ThoughtStore migration.
