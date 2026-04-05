@@ -242,10 +242,91 @@ struct SettingsView: View {
 
     private var pdfTab: some View {
         Form {
-            TextField("Output Directory", text: $viewModel.pdfOutputDirectory)
-            Stepper("Keep Days: \(viewModel.pdfKeepDays)", value: $viewModel.pdfKeepDays, in: 1...365)
+            Section("Output") {
+                TextField("Output Directory", text: $viewModel.pdfOutputDirectory)
+                Stepper("Keep Days: \(viewModel.pdfKeepDays)", value: $viewModel.pdfKeepDays, in: 1...365)
+            }
+
+            Section("Paper Size") {
+                Picker("Size", selection: $viewModel.pdfPaperSize) {
+                    Text("Notebook (3.75\" × 7.5\")").tag("notebook")
+                    Text("A5 (5.8\" × 8.3\")").tag("a5")
+                    Text("Half Letter (5.5\" × 8.5\")").tag("half-letter")
+                    Text("Full Letter (8.5\" × 11\")").tag("letter")
+                    Text("Custom").tag("custom")
+                }
+
+                if viewModel.pdfPaperSize == "custom" {
+                    HStack {
+                        TextField("Width (inches)", value: $viewModel.pdfCustomWidthInches, format: .number)
+                        Text("×")
+                        TextField("Height (inches)", value: $viewModel.pdfCustomHeightInches, format: .number)
+                    }
+                }
+
+                Text(paperSizeDescription)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Layout") {
+                HStack {
+                    Text("Margins: \(Int(viewModel.pdfMarginPoints))pt")
+                    Slider(value: $viewModel.pdfMarginPoints, in: 4...36, step: 2)
+                }
+
+                HStack {
+                    Text("Font Scale: \(viewModel.pdfFontScale, specifier: "%.2f")×")
+                    Slider(value: $viewModel.pdfFontScale, in: 0.75...1.5, step: 0.05)
+                }
+
+                Text("Font scale adjusts all text sizes proportionally")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Sections") {
+                Toggle("Work Orders", isOn: sectionBinding("workOrders"))
+                Toggle("To Do List", isOn: sectionBinding("todo"))
+                Toggle("Calendar", isOn: sectionBinding("calendar"))
+                Toggle("Sports", isOn: sectionBinding("sports"))
+                Toggle("Affirmation", isOn: sectionBinding("affirmation"))
+                Toggle("Captured Thoughts", isOn: sectionBinding("thoughts"))
+                Toggle("AI Insights", isOn: sectionBinding("insights"))
+                Toggle("Therapy Prep", isOn: sectionBinding("therapyPrep"))
+
+                Text("Disabled sections are omitted from the PDF")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding()
+    }
+
+    private var paperSizeDescription: String {
+        switch viewModel.pdfPaperSize {
+        case "notebook": return "Prints on letter paper with centered 3.75\" × 7.5\" content area (trim to notebook size)"
+        case "a5": return "Standard A5 paper (148mm × 210mm)"
+        case "half-letter": return "Half US Letter (5.5\" × 8.5\")"
+        case "letter": return "Full US Letter (8.5\" × 11\")"
+        case "custom": return "Custom dimensions — content fills page minus margins"
+        default: return ""
+        }
+    }
+
+    private func sectionBinding(_ section: String) -> Binding<Bool> {
+        Binding(
+            get: { viewModel.pdfEnabledSections.contains(section) },
+            set: { enabled in
+                if enabled {
+                    if !viewModel.pdfEnabledSections.contains(section) {
+                        viewModel.pdfEnabledSections.append(section)
+                    }
+                } else {
+                    viewModel.pdfEnabledSections.removeAll { $0 == section }
+                }
+            }
+        )
     }
 
     private var printingTab: some View {
