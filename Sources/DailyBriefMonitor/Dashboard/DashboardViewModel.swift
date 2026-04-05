@@ -132,7 +132,7 @@ final class DashboardViewModel {
 
     // MARK: - Private
 
-    private let store: ThoughtStore
+    private let store: any ThoughtRepository
     private let captureService: CaptureService?
     private let transcriptionService: TranscriptionService?
     private let imageDescriptionService: ImageDescriptionService?
@@ -149,7 +149,7 @@ final class DashboardViewModel {
     // MARK: - Initialization
 
     init(
-        store: ThoughtStore,
+        store: any ThoughtRepository,
         captureService: CaptureService? = nil,
         transcriptionService: TranscriptionService? = nil,
         imageDescriptionService: ImageDescriptionService? = nil,

@@ -20,10 +20,10 @@ public enum CaptureError: Error, LocalizedError {
 /// Service layer for capturing thoughts. Wraps ThoughtStore with capture-specific logic.
 public actor CaptureService {
 
-    private let store: ThoughtStore
+    private let store: any ThoughtRepository
 
-    /// Creates a CaptureService backed by the given ThoughtStore.
-    public init(store: ThoughtStore) {
+    /// Creates a CaptureService backed by the given ThoughtRepository.
+    public init(store: any ThoughtRepository) {
         self.store = store
     }
 
@@ -41,9 +41,8 @@ public actor CaptureService {
             throw CaptureError.emptyContent
         }
 
-        var thought = Thought(content: trimmed, source: source)
-        try await store.save(&thought)
-        return thought
+        let thought = Thought(content: trimmed, source: source)
+        return try await store.saveThought(thought)
     }
 
     /// Captures a text thought. Returns the saved Thought with assigned ID.
