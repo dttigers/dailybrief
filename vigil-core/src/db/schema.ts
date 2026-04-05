@@ -7,6 +7,7 @@ import {
   jsonb,
   boolean,
   integer,
+  date,
   index,
   unique,
   uniqueIndex,
@@ -60,6 +61,27 @@ export const apiKeys = pgTable(
     isActive: boolean("is_active").notNull().default(true),
   },
   (table) => [uniqueIndex("uq_api_keys_key_hash").on(table.keyHash)],
+);
+
+// ── briefs table ───────────────────────────────────────────────────────────
+
+export const briefs = pgTable(
+  "briefs",
+  {
+    id: serial("id").primaryKey(),
+    date: date("date").notNull().unique(),
+    summary: jsonb("summary").notNull(),
+    pdfFilename: text("pdf_filename"),
+    thoughtCount: integer("thought_count").notNull(),
+    taskCount: integer("task_count").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    uniqueIndex("uq_briefs_date").on(table.date),
+    index("idx_briefs_created_at").on(table.createdAt),
+  ],
 );
 
 // ── thought_links table ─────────────────────────────────────────────────────
