@@ -162,16 +162,15 @@ Plans:
 Plans:
 - [x] 48-01: API export endpoint + CLI export subcommand
 
-#### Phase 49: Configurable PDF
+#### Phase 49: Configurable PDF ✅
 
 **Goal**: Paper size selection (A5, half-letter, full letter, custom) and layout customization (margins, section ordering, font sizes) in settings UI
 **Depends on**: Phase 48
-**Research**: Unlikely (existing PDF infrastructure)
-**Plans**: TBD
+**Completed**: 2026-04-05
 
 Plans:
-- [ ] 49-01: Config model + PDF layout system + renderer refactor
-- [ ] 49-02: Settings UI for PDF configuration
+- [x] 49-01: Config model + PDF layout system + renderer refactor
+- [x] 49-02: Settings UI for PDF configuration
 
 #### Phase 50: Dashboard AI Chat
 
@@ -239,5 +238,5 @@ None
 | 46. Remove Dual Code Paths | v2.2 | 4/4 | Complete | 2026-04-05 |
 | 47. Brief History | v2.2 | 3/3 | Complete | 2026-04-05 |
 | 48. Export System | v2.2 | 1/1 | Complete | 2026-04-05 |
-| 49. Configurable PDF | v2.2 | 0/? | Not started | - |
+| 49. Configurable PDF | v2.2 | 2/2 | Complete | 2026-04-05 |
 | 50. Dashboard AI Chat | v2.2 | 0/? | Not started | - |
