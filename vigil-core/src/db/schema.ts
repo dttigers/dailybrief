@@ -9,6 +9,7 @@ import {
   integer,
   index,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // ── thoughts table ──────────────────────────────────────────────────────────
@@ -41,6 +42,24 @@ export const thoughts = pgTable(
     index("idx_thoughts_category").on(table.category),
     index("idx_thoughts_sync_status").on(table.syncStatus),
   ],
+);
+
+// ── api_keys table ─────────────────────────────────────────────────────────
+
+export const apiKeys = pgTable(
+  "api_keys",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    keyHash: text("key_hash").notNull(),
+    keyPrefix: text("key_prefix").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
+    isActive: boolean("is_active").notNull().default(true),
+  },
+  (table) => [uniqueIndex("uq_api_keys_key_hash").on(table.keyHash)],
 );
 
 // ── thought_links table ─────────────────────────────────────────────────────
