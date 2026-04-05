@@ -1,7 +1,10 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
+import { timeout } from "hono/timeout";
 import { serve } from "@hono/node-server";
 import { bearerAuth } from "./middleware/auth.js";
+import { rateLimiter } from "./middleware/rate-limit.js";
 import { health } from "./routes/health.js";
 import { summary } from "./routes/summary.js";
 import { thoughts } from "./routes/thoughts.js";
@@ -35,6 +38,15 @@ app.use(
     allowHeaders: ["Content-Type", "Authorization"],
   })
 );
+
+// Security headers — X-Content-Type-Options, X-Frame-Options, etc.
+app.use("*", secureHeaders());
+
+// Request timeout — 30 seconds max per request
+app.use("*", timeout(30_000));
+
+// Rate limiting — 100 requests per 60s per IP (configurable via env)
+app.use("*", rateLimiter);
 
 // Health route — no auth required (monitoring)
 app.route("/v1", health);
