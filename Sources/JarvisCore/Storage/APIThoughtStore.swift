@@ -120,7 +120,6 @@ public actor APIThoughtStore: ThoughtRepository {
     private func toThought(_ r: APIThoughtResponse) -> Thought {
         let createdAt = Self.parseISO8601(r.createdAt) ?? Date()
         let modifiedAt = Self.parseISO8601(r.modifiedAt) ?? Date()
-        let lastSyncedAt = r.lastSyncedAt.flatMap { Self.parseISO8601($0) }
 
         return Thought(
             id: r.id,
@@ -133,10 +132,7 @@ public actor APIThoughtStore: ThoughtRepository {
             taskStatus: r.taskStatus.flatMap { TaskStatus(rawValue: $0) },
             therapyClassification: r.therapyClassification.flatMap { TherapyClassification(rawValue: $0) },
             tags: (r.tags ?? []).isEmpty ? nil : r.tags,
-            isFavorited: r.isFavorited,
-            cloudKitRecordID: r.cloudKitRecordID,
-            syncStatus: .synced,
-            lastSyncedAt: lastSyncedAt
+            isFavorited: r.isFavorited
         )
     }
 

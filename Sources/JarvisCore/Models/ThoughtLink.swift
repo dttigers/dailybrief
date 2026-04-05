@@ -1,17 +1,11 @@
 import Foundation
-import GRDB
 
 /// A bidirectional link between two thoughts.
-/// Links are local-only (not synced to CloudKit) for v1.
-public struct ThoughtLink: Codable, Sendable, FetchableRecord, PersistableRecord {
-
-    // MARK: Database Table
-
-    public static let databaseTableName = "thought_links"
+public struct ThoughtLink: Codable, Sendable {
 
     // MARK: Properties
 
-    /// Auto-increment primary key. Nil before first insert.
+    /// Primary key. Nil before first insert.
     public var id: Int64?
 
     /// The source thought in this link pair.

@@ -1,17 +1,16 @@
 import Foundation
-import GRDB
 
 // MARK: - Supporting Types
 
 /// How a thought was captured into the system.
-public enum CaptureSource: String, Codable, Sendable, DatabaseValueConvertible {
+public enum CaptureSource: String, Codable, Sendable {
     case text
     case voice
     case image
 }
 
 /// AI-assigned category for a triaged thought.
-public enum ThoughtCategory: String, Codable, Sendable, CaseIterable, DatabaseValueConvertible {
+public enum ThoughtCategory: String, Codable, Sendable, CaseIterable {
     case task
     case therapy
     case idea
@@ -20,7 +19,7 @@ public enum ThoughtCategory: String, Codable, Sendable, CaseIterable, DatabaseVa
 }
 
 /// Task lifecycle status for task-category thoughts.
-public enum TaskStatus: String, Codable, Sendable, DatabaseValueConvertible {
+public enum TaskStatus: String, Codable, Sendable {
     case open
     case inProgress
     case done
@@ -29,51 +28,19 @@ public enum TaskStatus: String, Codable, Sendable, DatabaseValueConvertible {
 /// Therapy classification for therapy-category thoughts.
 /// Indicates whether a thought can be worked through independently
 /// or should be brought to a therapist session.
-public enum TherapyClassification: String, Codable, Sendable, DatabaseValueConvertible {
+public enum TherapyClassification: String, Codable, Sendable {
     case selfLearnable
     case bringToTherapist
 }
 
-/// Sync state for CloudKit synchronization.
-public enum SyncStatus: String, Codable, Sendable, DatabaseValueConvertible {
-    /// Needs upload to CloudKit (new or modified locally).
-    case pending
-    /// Matches CloudKit record.
-    case synced
-    /// Deleted locally; deletion needs syncing to CloudKit.
-    case pendingDeletion
-}
-
 // MARK: - Thought Model
 
-/// A captured thought — the core data unit of Jarvis.
-public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, MutablePersistableRecord {
-
-    // MARK: Database Table
-
-    public static let databaseTableName = "thoughts"
-
-    /// Type-safe column references for GRDB queries.
-    public enum Columns {
-        public static let id = Column(CodingKeys.id)
-        public static let content = Column(CodingKeys.content)
-        public static let category = Column(CodingKeys.category)
-        public static let confidence = Column(CodingKeys.confidence)
-        public static let source = Column(CodingKeys.source)
-        public static let createdAt = Column(CodingKeys.createdAt)
-        public static let modifiedAt = Column(CodingKeys.modifiedAt)
-        public static let cloudKitRecordID = Column(CodingKeys.cloudKitRecordID)
-        public static let taskStatus = Column(CodingKeys.taskStatus)
-        public static let therapyClassification = Column(CodingKeys.therapyClassification)
-        public static let tags = Column(CodingKeys.tags)
-        public static let isFavorited = Column(CodingKeys.isFavorited)
-        public static let syncStatus = Column(CodingKeys.syncStatus)
-        public static let lastSyncedAt = Column(CodingKeys.lastSyncedAt)
-    }
+/// A captured thought — the core data unit of Vigil.
+public struct Thought: Codable, Sendable, Identifiable {
 
     // MARK: Properties
 
-    /// Auto-increment primary key. Nil before first insert.
+    /// Primary key. Nil before first insert.
     public var id: Int64?
 
     /// The captured thought text (required, non-empty).
@@ -94,12 +61,6 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
     /// When the thought was last modified.
     public var modifiedAt: Date
 
-    /// UUID string used as CKRecord.ID name. Generated once on creation, never changes.
-    public var cloudKitRecordID: String
-
-    /// Tracks sync state for CloudKit synchronization.
-    public var syncStatus: SyncStatus
-
     /// Task lifecycle status. Nil for non-task thoughts.
     public var taskStatus: TaskStatus?
 
@@ -107,14 +68,10 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
     public var therapyClassification: TherapyClassification?
 
     /// User-assigned tags for organization. Nil means no tags (distinct from empty array).
-    /// Stored as JSON array in SQLite TEXT column.
     public var tags: [String]?
 
     /// Whether the user has marked this thought as a favorite.
     public var isFavorited: Bool
-
-    /// When this thought was last synced to CloudKit. Nil if never synced.
-    public var lastSyncedAt: Date?
 
     // MARK: Initialization
 
@@ -129,10 +86,7 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
         taskStatus: TaskStatus? = nil,
         therapyClassification: TherapyClassification? = nil,
         tags: [String]? = nil,
-        isFavorited: Bool = false,
-        cloudKitRecordID: String = UUID().uuidString,
-        syncStatus: SyncStatus = .pending,
-        lastSyncedAt: Date? = nil
+        isFavorited: Bool = false
     ) {
         self.id = id
         self.content = content
@@ -145,14 +99,5 @@ public struct Thought: Codable, Sendable, Identifiable, FetchableRecord, Mutable
         self.therapyClassification = therapyClassification
         self.tags = tags
         self.isFavorited = isFavorited
-        self.cloudKitRecordID = cloudKitRecordID
-        self.syncStatus = syncStatus
-        self.lastSyncedAt = lastSyncedAt
-    }
-
-    // MARK: MutablePersistableRecord
-
-    public mutating func didInsert(_ inserted: InsertionSuccess) {
-        id = inserted.rowID
     }
 }
