@@ -30,7 +30,7 @@ function buildHomeContainers(
   summary: VigilSummary,
   affirmation: VigilAffirmation,
 ): TextContainerProperty[] {
-  const pendingCount = summary.tasksByStatus['pending'] ?? 0
+  const pendingCount = (summary.tasksByStatus['open'] ?? 0) + (summary.tasksByStatus['inProgress'] ?? 0)
   const topPriority = summary.recent[0]?.content ?? 'No tasks'
 
   // Header: brand + time

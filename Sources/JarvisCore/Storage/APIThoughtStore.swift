@@ -17,8 +17,8 @@ private struct APIThoughtResponse: Decodable, Sendable {
     let lastSyncedAt: String?
     let taskStatus: String?
     let therapyClassification: String?
-    let tags: [String]
-    let isFavorited: Int
+    let tags: [String]?
+    let isFavorited: Bool
 }
 
 /// Response wrapper for the /tags endpoint.
@@ -132,8 +132,8 @@ public actor APIThoughtStore: ThoughtRepository {
             modifiedAt: modifiedAt,
             taskStatus: r.taskStatus.flatMap { TaskStatus(rawValue: $0) },
             therapyClassification: r.therapyClassification.flatMap { TherapyClassification(rawValue: $0) },
-            tags: r.tags.isEmpty ? nil : r.tags,
-            isFavorited: r.isFavorited != 0,
+            tags: (r.tags ?? []).isEmpty ? nil : r.tags,
+            isFavorited: r.isFavorited,
             cloudKitRecordID: r.cloudKitRecordID,
             syncStatus: .synced,
             lastSyncedAt: lastSyncedAt
