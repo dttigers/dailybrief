@@ -10,7 +10,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private var captureService: CaptureService?
     private var triageService: (any TriageProviding)?
     private var thoughtStore: (any ThoughtRepository)?
-    private var localThoughtStore: ThoughtStore?  // Concrete store for sync-only operations
     private var globalHotKey: GlobalHotKey?
     private var dashboardWindow: NSWindow?
     private var settingsWindow: NSWindow?
@@ -18,9 +17,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     // Audio & image services
     private var transcriptionService: TranscriptionService?
     private var imageDescriptionService: (any ImageDescriptionProviding)?
-
-    // Folder watching
-    private var folderWatcher: FolderWatcherService?
 
     // Insights
     private var insightService: (any InsightProviding)?
@@ -32,10 +28,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private var therapyPatternService: (any TherapyPatternProviding)?
     private var therapyPrepService: (any TherapyPrepProviding)?
 
-    // Cloud sync
-    private var syncService: SyncService?
-    private var syncTimer: Timer?
-
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSLog("DailyBriefMonitor: applicationDidFinishLaunching started")
 
@@ -45,65 +37,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
         NSLog("DailyBriefMonitor: initializing data store...")
         do {
-            // Check if Vigil API mode is enabled
-            let useVigilAPI = (try? ConfigLoader.load())?.vigil?.useApi == true
-            let apiBaseURL = (try? ConfigLoader.load())?.vigil?.apiBaseUrl ?? "https://vigil-core-production.up.railway.app/v1"
-            let apiKey = (try? ConfigLoader.load())?.vigil?.apiKey
+            let config = try ConfigLoader.load()
+            let client = VigilAPIClient(
+                baseURL: URL(string: config.apiBaseUrl)!,
+                apiKey: config.apiKey
+            )
 
-            // Load AI services — API-backed or local Claude depending on config
-            NSLog("DailyBriefMonitor: loading AI services...")
-            var concreteTriageService: TriageService?
-            var concreteImageDescService: ImageDescriptionService?
-            var concreteTherapyClassService: TherapyClassificationService?
+            // AI services — all API-backed
+            NSLog("DailyBriefMonitor: loading API AI services...")
+            self.triageService = APITriageService(client: client)
+            self.imageDescriptionService = APIImageDescriptionService(client: client)
+            self.insightService = APIInsightService(client: client)
+            self.therapyClassificationService = APITherapyClassificationService(client: client)
+            self.therapyPatternService = APITherapyPatternService(client: client)
+            self.therapyPrepService = APITherapyPrepService(client: client)
 
-            if useVigilAPI {
-                NSLog("DailyBriefMonitor: using Vigil API AI services")
-                let client = VigilAPIClient(baseURL: URL(string: apiBaseURL)!, apiKey: apiKey)
-                self.triageService = APITriageService(client: client)
-                self.imageDescriptionService = APIImageDescriptionService(client: client)
-                self.insightService = APIInsightService(client: client)
-                self.therapyClassificationService = APITherapyClassificationService(client: client)
-                self.therapyPatternService = APITherapyPatternService(client: client)
-                self.therapyPrepService = APITherapyPrepService(client: client)
-            } else if let config = try? ConfigLoader.load() {
-                NSLog("DailyBriefMonitor: using local Claude AI services")
-                let localTriage = TriageService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-                concreteTriageService = localTriage
-                self.triageService = localTriage
-
-                let localImageDesc = ImageDescriptionService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-                concreteImageDescService = localImageDesc
-                self.imageDescriptionService = localImageDesc
-
-                self.insightService = InsightService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-
-                let localTherapyClass = TherapyClassificationService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-                concreteTherapyClassService = localTherapyClass
-                self.therapyClassificationService = localTherapyClass
-
-                self.therapyPatternService = TherapyPatternService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-                self.therapyPrepService = TherapyPrepService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-            }
-
-            let repository: any ThoughtRepository
-            let localStore: ThoughtStore?
-
-            if useVigilAPI {
-                NSLog("DailyBriefMonitor: using Vigil API backend at %@", apiBaseURL)
-                let client = VigilAPIClient(baseURL: URL(string: apiBaseURL)!, apiKey: apiKey)
-                repository = APIThoughtStore(client: client)
-                localStore = nil
-            } else {
-                NSLog("DailyBriefMonitor: using local GRDB backend")
-                let dbManager = try DatabaseManager()
-                let store = ThoughtStore(database: dbManager)
-                repository = store
-                localStore = store
-            }
-
+            // Thought store — API-backed
+            let repository: any ThoughtRepository = APIThoughtStore(client: client)
             let thoughtStore = repository
             self.thoughtStore = thoughtStore
-            self.localThoughtStore = localStore
             let service = CaptureService(store: thoughtStore)
             captureService = service
 
@@ -111,16 +63,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             let panel = CapturePanel()
             panel.contentView = NSHostingView(
                 rootView: CaptureView(
-                    onCapture: { [weak self] text in
+                    onCapture: { text in
                         let thought = try await service.captureText(text)
-                        // Trigger sync after capture (non-blocking)
-                        if let syncService = self?.syncService {
-                            Task { try? await syncService.sync() }
-                        }
                         return thought
                     },
                     onTriage: self.triageService.map { triage in
-                        return { [weak self] thoughtId, content in
+                        return { thoughtId, content in
                             do {
                                 let result = try await triage.triage(content)
                                 if var thought = try await thoughtStore.fetch(id: thoughtId) {
@@ -130,10 +78,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                                         thought.taskStatus = .open
                                     }
                                     try await thoughtStore.update(thought)
-                                    // Trigger sync after triage (non-blocking)
-                                    if let syncService = self?.syncService {
-                                        Task { try? await syncService.sync() }
-                                    }
                                 }
                                 return result
                             } catch {
@@ -162,46 +106,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                 )
             )
             capturePanel = panel
-
-            // Start folder watcher if enabled
-            NSLog("DailyBriefMonitor: checking folder watcher config...")
-            do {
-                let fwConfig = try ConfigLoader.load()
-                NSLog("DailyBriefMonitor: folder watcher enabled=%d, autoDelete=%d, audio=%@, image=%@",
-                      fwConfig.folderWatching.enabled ? 1 : 0,
-                      fwConfig.folderWatching.autoDeleteAfterProcessing ? 1 : 0,
-                      fwConfig.folderWatching.audioFolderPath,
-                      fwConfig.folderWatching.imageFolderPath)
-            } catch {
-                NSLog("DailyBriefMonitor: config load failed: %@", error.localizedDescription)
-            }
-            if let config = try? ConfigLoader.load(), config.folderWatching.enabled, let localStore {
-                let watcher = FolderWatcherService(
-                    transcriptionService: transcription,
-                    imageDescriptionService: concreteImageDescService,
-                    captureService: service,
-                    triageService: concreteTriageService,
-                    therapyClassificationService: concreteTherapyClassService,
-                    thoughtStore: localStore,
-                    config: config.folderWatching
-                )
-                self.folderWatcher = watcher
-                Task { await watcher.start() }
-            }
-
-            // Start cloud sync if enabled (only in local GRDB mode)
-            NSLog("DailyBriefMonitor: checking cloud sync config...")
-            if let config = try? ConfigLoader.load(), config.cloudSync.enabled, CloudKitManager.isAvailable, let localStore {
-                let cloudKitManager = CloudKitManager()
-                let syncService = SyncService(cloudKit: cloudKitManager, store: localStore)
-                self.syncService = syncService
-                Task { try? await syncService.sync() }
-                let interval = TimeInterval(config.cloudSync.autoSyncIntervalMinutes * 60)
-                syncTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
-                    guard let syncService = self?.syncService else { return }
-                    Task { try? await syncService.sync() }
-                }
-            }
         } catch {
             // Log error but don't crash — capture button will be non-functional
             NSLog("DailyBriefMonitor: FATAL startup error: %@", error.localizedDescription)
@@ -211,7 +115,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             panel.contentView = NSHostingView(
                 rootView: CaptureView(
                     onCapture: { _ in
-                        throw CaptureError.emptyContent // Placeholder — DB unavailable
+                        throw CaptureError.emptyContent // Placeholder — config unavailable
                     },
                     onDismiss: { [weak panel] in
                         panel?.hidePanel()
@@ -227,13 +131,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
     func applicationWillTerminate(_ notification: Notification) {
         globalHotKey?.unregister()
-        if let watcher = folderWatcher {
-            Task { await watcher.stop() }
-        }
-        syncTimer?.invalidate()
-        if let syncService {
-            Task { try? await syncService.sync() }
-        }
     }
 
     /// Toggles the floating capture panel.
