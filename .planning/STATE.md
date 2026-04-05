@@ -9,17 +9,17 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 40 of 44 (Data Migration) — Plan 01 COMPLETE
+Phase: 41 of 44 (G2 Plugin Production URL) — Plan 01 COMPLETE
 Plan: 1/1 complete
-Status: Phase 40 plan 01 complete, 45 thoughts migrated to production PostgreSQL
-Last activity: 2026-04-05 — Migrated all SQLite data to production Railway PostgreSQL
+Status: Phase 41 plan 01 complete, G2 plugin API URL and auth configurable via env vars, .ehpk packaging working
+Last activity: 2026-04-05 — Made G2 plugin production-ready with configurable API URL, Bearer auth, and .ehpk packaging
 
 Progress: ███░░░░░░░ 37%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 93
+- Total plans completed: 94
 - Total execution time: ~10 days
 - Average duration: ~5 min per plan
 
@@ -68,6 +68,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Phase 40 plan 01 complete
+Stopped at: Phase 41 plan 01 complete
 Resume file: None
-Notes: Phase 40 Data Migration plan 01 complete. All 45 thoughts from local SQLite migrated to production PostgreSQL on Railway. Timestamps, categories, tags, and cloudKitRecordID values preserved. No thought_links existed in SQLite. Verified via direct DB query — count match confirmed.
+Notes: Phase 41 G2 Plugin Production URL plan 01 complete. API URL and API key now configurable via VITE_API_URL and VITE_API_KEY env vars. Bearer auth headers on all fetch calls. Production build targets Railway URL. .ehpk packaging via evenhub pack working. app.json updated with required Even Hub manifest fields.
