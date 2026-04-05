@@ -233,6 +233,20 @@ extension DailyBrief {
                 Logger.log("Printing skipped (--no-print)")
             }
 
+            // Save brief snapshot to API (non-critical — don't fail generate on error)
+            let allThoughtsForSnapshot = unprocessedThoughts + taskThoughts + recentThoughts
+            let snapshot = buildBriefSnapshot(
+                date: briefData.date,
+                briefData: briefData,
+                allThoughts: allThoughtsForSnapshot,
+                pdfFilename: filename
+            )
+            if let _ = try? await apiClient.post(path: "/briefs", body: snapshot) as BriefRecord {
+                Logger.log("Brief snapshot saved to API")
+            } else {
+                Logger.error("Brief snapshot save failed (non-critical)")
+            }
+
             // Cleanup old PDFs
             cleanupOldPDFs(directory: outputDir, keepDays: config.pdf.keepDays)
 
@@ -318,6 +332,54 @@ extension DailyBrief {
             }
             if data.recentThoughts.isEmpty { print("  (none)") }
             print()
+        }
+
+        private func buildBriefSnapshot(
+            date: Date,
+            briefData: DailyBriefData,
+            allThoughts: [Thought],
+            pdfFilename: String
+        ) -> BriefSnapshot {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            let dateString = formatter.string(from: date)
+
+            // Category counts from all thoughts
+            var categoryCounts: [String: Int] = [:]
+            for thought in allThoughts {
+                let key = thought.category?.rawValue ?? "uncategorized"
+                categoryCounts[key, default: 0] += 1
+            }
+
+            // Top task summaries (first 5 task titles, truncated)
+            let topTasks = briefData.taskThoughts.prefix(5).map {
+                String($0.content.prefix(80))
+            }
+
+            // Sports summary
+            var sportsSummary: String? = nil
+            if let game = briefData.gameScore {
+                sportsSummary = "\(briefData.teamName): \(game.summaryLine1)"
+            }
+
+            let summary = BriefSnapshot.BriefSummary(
+                categoryCounts: categoryCounts,
+                openTaskCount: briefData.taskThoughts.count,
+                topTaskSummaries: Array(topTasks),
+                hasTherapyData: briefData.therapyPrep != nil || !briefData.therapyPatterns.isEmpty,
+                sportsSummary: sportsSummary,
+                affirmation: briefData.affirmation,
+                calendarEventCount: briefData.calendarEvents.count,
+                workOrderCount: briefData.workOrders.count
+            )
+
+            return BriefSnapshot(
+                date: dateString,
+                summary: summary,
+                pdfFilename: pdfFilename,
+                thoughtCount: allThoughts.count,
+                taskCount: briefData.taskThoughts.count
+            )
         }
 
         private func cleanupOldPDFs(directory: String, keepDays: Int) {
