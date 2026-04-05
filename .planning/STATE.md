@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 37 of 44 (PostgreSQL Migration)
-Plan: 03 complete
-Status: Ready for plan 04
-Last activity: 2026-04-05 — Plan 37-03 complete (tags, links, bulk routes migrated to Drizzle)
+Plan: 04 complete
+Status: Ready for plan 05 (or next phase)
+Last activity: 2026-04-05 — Plan 37-04 complete (summary/brief migrated, better-sqlite3 removed)
 
-Progress: ███░░░░░░░ 30%
+Progress: ████░░░░░░ 40%
 
 ## Performance Metrics
 
@@ -68,6 +68,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Plan 37-03 complete
+Stopped at: Plan 37-04 complete
 Resume file: None
-Notes: Tags, links, and bulk routes migrated to Drizzle ORM. JSONB native operations for tags, transactions for bidirectional links, inArray for batch ops. Ready for Plan 37-04.
+Notes: All routes migrated to Drizzle ORM. better-sqlite3 fully removed. Health endpoint has db check. Graceful shutdown handlers added. Codebase is fully PostgreSQL-ready with zero SQLite references.
