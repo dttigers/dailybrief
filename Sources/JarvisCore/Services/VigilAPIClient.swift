@@ -26,7 +26,7 @@ public enum VigilAPIError: Error, LocalizedError {
 // MARK: - Response Types
 
 /// Paginated response wrapper for list endpoints.
-public struct PaginatedResponse<T: Decodable>: Decodable {
+public struct PaginatedResponse<T: Decodable & Sendable>: Decodable, Sendable {
     public let data: [T]
     public let total: Int
     public let limit: Int
@@ -34,7 +34,7 @@ public struct PaginatedResponse<T: Decodable>: Decodable {
 }
 
 /// Response for bulk update operations.
-public struct CountResponse: Decodable {
+public struct CountResponse: Decodable, Sendable {
     public let updated: Int
 }
 

@@ -14,7 +14,7 @@ public protocol ThoughtRepository: Actor {
 
     /// Update a thought and return the saved version.
     @discardableResult
-    func update(_ thought: Thought) throws -> Thought
+    func update(_ thought: Thought) async throws -> Thought
 
     /// Mark a thought for deletion. Returns true if a row was updated.
     @discardableResult
@@ -62,7 +62,7 @@ public protocol ThoughtRepository: Actor {
 
     /// Update the task status of a thought.
     @discardableResult
-    func updateTaskStatus(id: Int64, status: TaskStatus) throws -> Thought
+    func updateTaskStatus(id: Int64, status: TaskStatus) async throws -> Thought
 
     /// Fetch task-category thoughts, optionally filtered by status.
     func fetchTasks(status: TaskStatus?, limit: Int) async throws -> [Thought]
@@ -101,17 +101,17 @@ public protocol ThoughtRepository: Actor {
 
     /// Bulk update therapy classification for matching thoughts. Returns count updated.
     @discardableResult
-    func bulkUpdateTherapyClassification(ids: Set<Int64>, classification: TherapyClassification) throws -> Int
+    func bulkUpdateTherapyClassification(ids: Set<Int64>, classification: TherapyClassification) async throws -> Int
 
     // MARK: Tag Operations
 
     /// Add a tag to a thought.
     @discardableResult
-    func addTag(id: Int64, tag: String) throws -> Thought?
+    func addTag(id: Int64, tag: String) async throws -> Thought?
 
     /// Remove a tag from a thought.
     @discardableResult
-    func removeTag(id: Int64, tag: String) throws -> Thought?
+    func removeTag(id: Int64, tag: String) async throws -> Thought?
 
     /// Fetch thoughts containing a specific tag.
     func fetchByTag(tag: String, limit: Int, offset: Int) async throws -> [Thought]
@@ -121,17 +121,17 @@ public protocol ThoughtRepository: Actor {
 
     /// Add a tag to multiple thoughts. Returns count modified.
     @discardableResult
-    func bulkAddTag(ids: Set<Int64>, tag: String) throws -> Int
+    func bulkAddTag(ids: Set<Int64>, tag: String) async throws -> Int
 
     /// Remove a tag from multiple thoughts. Returns count modified.
     @discardableResult
-    func bulkRemoveTag(ids: Set<Int64>, tag: String) throws -> Int
+    func bulkRemoveTag(ids: Set<Int64>, tag: String) async throws -> Int
 
     // MARK: Favorite Operations
 
     /// Toggle the favorite status of a thought.
     @discardableResult
-    func toggleFavorite(id: Int64) throws -> Thought?
+    func toggleFavorite(id: Int64) async throws -> Thought?
 
     /// Fetch favorited thoughts.
     func fetchFavorites(limit: Int, offset: Int) async throws -> [Thought]
@@ -143,10 +143,10 @@ public protocol ThoughtRepository: Actor {
 
     /// Create a bidirectional link between two thoughts.
     @discardableResult
-    func linkThoughts(sourceId: Int64, targetId: Int64) throws -> ThoughtLink?
+    func linkThoughts(sourceId: Int64, targetId: Int64) async throws -> ThoughtLink?
 
     /// Remove a bidirectional link between two thoughts.
-    func unlinkThoughts(sourceId: Int64, targetId: Int64) throws
+    func unlinkThoughts(sourceId: Int64, targetId: Int64) async throws
 
     /// Fetch all thoughts linked to a given thought.
     func fetchLinkedThoughts(thoughtId: Int64) async throws -> [Thought]
@@ -158,9 +158,9 @@ public protocol ThoughtRepository: Actor {
 
     /// Mark matching thoughts for deletion. Returns count updated.
     @discardableResult
-    func bulkDelete(ids: Set<Int64>) throws -> Int
+    func bulkDelete(ids: Set<Int64>) async throws -> Int
 
     /// Update category for matching thoughts. Returns count updated.
     @discardableResult
-    func bulkUpdateCategory(ids: Set<Int64>, category: ThoughtCategory) throws -> Int
+    func bulkUpdateCategory(ids: Set<Int64>, category: ThoughtCategory) async throws -> Int
 }

@@ -51,7 +51,7 @@ public actor ThoughtStore: ThoughtRepository {
     /// Update a thought and return the saved version. Sets `modifiedAt` to now and marks as pending sync.
     /// Use this variant when calling across actor boundaries (no `inout` parameter).
     @discardableResult
-    public func update(_ thought: Thought) throws -> Thought {
+    public func update(_ thought: Thought) async throws -> Thought {
         try db.write { db in
             var t = thought
             t.modifiedAt = Date()
@@ -213,7 +213,7 @@ public actor ThoughtStore: ThoughtRepository {
     /// Update the task status of a thought and return the saved version.
     /// Sets modifiedAt to now and marks as pending sync.
     @discardableResult
-    public func updateTaskStatus(id: Int64, status: TaskStatus) throws -> Thought {
+    public func updateTaskStatus(id: Int64, status: TaskStatus) async throws -> Thought {
         try db.write { db in
             guard var thought = try Thought.fetchOne(db, key: id) else {
                 throw ThoughtStoreError.notFound(id: id)
@@ -277,7 +277,7 @@ public actor ThoughtStore: ThoughtRepository {
     /// Update therapy classification for all matching thoughts in a single write transaction.
     /// Returns the count of rows updated.
     @discardableResult
-    public func bulkUpdateTherapyClassification(ids: Set<Int64>, classification: TherapyClassification) throws -> Int {
+    public func bulkUpdateTherapyClassification(ids: Set<Int64>, classification: TherapyClassification) async throws -> Int {
         guard !ids.isEmpty else { return 0 }
         return try db.write { db in
             let now = Date()
@@ -364,7 +364,7 @@ public actor ThoughtStore: ThoughtRepository {
 
     /// Add a tag to a thought. Creates the tags array if nil. Deduplicates.
     @discardableResult
-    public func addTag(id: Int64, tag: String) throws -> Thought? {
+    public func addTag(id: Int64, tag: String) async throws -> Thought? {
         try db.write { db in
             guard var thought = try Thought.fetchOne(db, key: id) else { return nil }
             var currentTags = thought.tags ?? []
@@ -380,7 +380,7 @@ public actor ThoughtStore: ThoughtRepository {
 
     /// Remove a tag from a thought.
     @discardableResult
-    public func removeTag(id: Int64, tag: String) throws -> Thought? {
+    public func removeTag(id: Int64, tag: String) async throws -> Thought? {
         try db.write { db in
             guard var thought = try Thought.fetchOne(db, key: id) else { return nil }
             guard var currentTags = thought.tags else { return thought }
@@ -429,7 +429,7 @@ public actor ThoughtStore: ThoughtRepository {
 
     /// Add a tag to multiple thoughts in a single transaction. Returns count modified.
     @discardableResult
-    public func bulkAddTag(ids: Set<Int64>, tag: String) throws -> Int {
+    public func bulkAddTag(ids: Set<Int64>, tag: String) async throws -> Int {
         guard !ids.isEmpty else { return 0 }
         return try db.write { db in
             let now = Date()
@@ -451,7 +451,7 @@ public actor ThoughtStore: ThoughtRepository {
 
     /// Remove a tag from multiple thoughts in a single transaction. Returns count modified.
     @discardableResult
-    public func bulkRemoveTag(ids: Set<Int64>, tag: String) throws -> Int {
+    public func bulkRemoveTag(ids: Set<Int64>, tag: String) async throws -> Int {
         guard !ids.isEmpty else { return 0 }
         return try db.write { db in
             let now = Date()
@@ -474,7 +474,7 @@ public actor ThoughtStore: ThoughtRepository {
 
     /// Toggle the favorite status of a thought.
     @discardableResult
-    public func toggleFavorite(id: Int64) throws -> Thought? {
+    public func toggleFavorite(id: Int64) async throws -> Thought? {
         try db.write { db in
             guard var thought = try Thought.fetchOne(db, key: id) else { return nil }
             thought.isFavorited = !thought.isFavorited
@@ -511,7 +511,7 @@ public actor ThoughtStore: ThoughtRepository {
 
     /// Create a bidirectional link between two thoughts. Returns the link (source→target direction).
     @discardableResult
-    public func linkThoughts(sourceId: Int64, targetId: Int64) throws -> ThoughtLink? {
+    public func linkThoughts(sourceId: Int64, targetId: Int64) async throws -> ThoughtLink? {
         try db.write { db in
             // Insert source→target
             let link = ThoughtLink(sourceThoughtId: sourceId, targetThoughtId: targetId)
@@ -526,7 +526,7 @@ public actor ThoughtStore: ThoughtRepository {
     }
 
     /// Remove a bidirectional link between two thoughts.
-    public func unlinkThoughts(sourceId: Int64, targetId: Int64) throws {
+    public func unlinkThoughts(sourceId: Int64, targetId: Int64) async throws {
         try db.write { db in
             try db.execute(
                 sql: "DELETE FROM thought_links WHERE (sourceThoughtId = ? AND targetThoughtId = ?) OR (sourceThoughtId = ? AND targetThoughtId = ?)",
@@ -573,7 +573,7 @@ public actor ThoughtStore: ThoughtRepository {
     /// Mark all matching thoughts as pendingDeletion in a single write transaction.
     /// Returns the count of rows updated.
     @discardableResult
-    public func bulkDelete(ids: Set<Int64>) throws -> Int {
+    public func bulkDelete(ids: Set<Int64>) async throws -> Int {
         guard !ids.isEmpty else { return 0 }
         return try db.write { db in
             let placeholders = ids.map { _ in "?" }.joined(separator: ", ")
@@ -587,7 +587,7 @@ public actor ThoughtStore: ThoughtRepository {
     /// Update category (and taskStatus) for all matching thoughts in a single write transaction.
     /// Returns the count of rows updated.
     @discardableResult
-    public func bulkUpdateCategory(ids: Set<Int64>, category: ThoughtCategory) throws -> Int {
+    public func bulkUpdateCategory(ids: Set<Int64>, category: ThoughtCategory) async throws -> Int {
         guard !ids.isEmpty else { return 0 }
         return try db.write { db in
             let now = Date()
