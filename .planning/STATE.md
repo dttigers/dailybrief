@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 37 of 44 (PostgreSQL Migration)
-Plan: 01 complete
-Status: Ready for plan 02
-Last activity: 2026-04-05 — Plan 37-01 complete (Drizzle schema + connection + migration)
+Plan: 02 complete
+Status: Ready for plan 03
+Last activity: 2026-04-05 — Plan 37-02 complete (thoughts route migrated to Drizzle ORM)
 
-Progress: █░░░░░░░░░ 10%
+Progress: ██░░░░░░░░ 20%
 
 ## Performance Metrics
 
@@ -68,6 +68,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Plan 37-01 complete
+Stopped at: Plan 37-02 complete
 Resume file: None
-Notes: Drizzle ORM schema + postgres.js connection + migration infrastructure in place. Legacy SQLite types preserved for coexistence. Ready for Plan 37-02.
+Notes: All 5 thoughts CRUD endpoints migrated to Drizzle ORM. FTS uses tsvector/plainto_tsquery. Created local ThoughtApiResponse for date serialization. Ready for Plan 37-03.
