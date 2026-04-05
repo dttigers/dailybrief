@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 37 of 44 (PostgreSQL Migration)
-Plan: 02 complete
-Status: Ready for plan 03
-Last activity: 2026-04-05 — Plan 37-02 complete (thoughts route migrated to Drizzle ORM)
+Plan: 03 complete
+Status: Ready for plan 04
+Last activity: 2026-04-05 — Plan 37-03 complete (tags, links, bulk routes migrated to Drizzle)
 
-Progress: ██░░░░░░░░ 20%
+Progress: ███░░░░░░░ 30%
 
 ## Performance Metrics
 
@@ -68,6 +68,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Plan 37-02 complete
+Stopped at: Plan 37-03 complete
 Resume file: None
-Notes: All 5 thoughts CRUD endpoints migrated to Drizzle ORM. FTS uses tsvector/plainto_tsquery. Created local ThoughtApiResponse for date serialization. Ready for Plan 37-03.
+Notes: Tags, links, and bulk routes migrated to Drizzle ORM. JSONB native operations for tags, transactions for bidirectional links, inArray for batch ops. Ready for Plan 37-04.
