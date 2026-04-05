@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 37 of 44 (PostgreSQL Migration) — COMPLETE
-Plan: All 4/4 complete
-Status: Phase 37 complete, ready for Phase 38
-Last activity: 2026-04-05 — Phase 37 complete (all routes migrated to Drizzle, better-sqlite3 removed)
+Phase: 38 of 44 (API Key Authentication) — COMPLETE
+Plan: 1/1 complete
+Status: Phase 38 complete, ready for Phase 39
+Last activity: 2026-04-05 — Phase 38 complete (bearer token auth on all endpoints, key generation CLI)
 
-Progress: █░░░░░░░░░ 12.5%
+Progress: ██░░░░░░░░ 25%
 
 ## Performance Metrics
 
@@ -68,6 +68,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Phase 37 complete
+Stopped at: Phase 38 complete
 Resume file: None
-Notes: Phase 37 PostgreSQL Migration complete. All 7 route files migrated from better-sqlite3 to Drizzle ORM. FTS5 → tsvector, json_each → jsonb_array_elements_text. better-sqlite3 fully removed. TypeScript compiles cleanly. Ready for Phase 38 (API Key Authentication).
+Notes: Phase 38 API Key Authentication complete. api_keys table with SHA-256 hash storage, bearer token middleware on all routes except /v1/health, CLI key generation script. TypeScript compiles cleanly. Ready for Phase 39 (Railway Deploy).
