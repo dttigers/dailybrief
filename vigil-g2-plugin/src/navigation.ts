@@ -7,8 +7,9 @@ import {
 import type { EvenAppBridge } from '@evenrealities/even_hub_sdk'
 
 import { rebuildHomeScreen } from './screens/home.ts'
-import { buildWorkOrdersScreen } from './screens/work-orders.ts'
+import { buildWorkOrdersScreen, getLastFetchedTasks } from './screens/work-orders.ts'
 import { buildAffirmationScreen } from './screens/affirmation.ts'
+import { buildTaskDetailScreen } from './screens/task-detail.ts'
 import { fetchSummary, fetchBrief, fetchAffirmation } from './api.ts'
 
 // Screen identifiers — const object pattern (erasableSyntaxOnly)
@@ -16,6 +17,7 @@ export const Screen = {
   HOME: 'home',
   WORK_ORDERS: 'work-orders',
   AFFIRMATION: 'affirmation',
+  TASK_DETAIL: 'task-detail',
 } as const
 export type ScreenName = (typeof Screen)[keyof typeof Screen]
 
@@ -57,6 +59,11 @@ async function buildScreen(screen: ScreenName): Promise<RebuildPageContainer> {
       const result = await fetchAffirmation()
       return buildAffirmationScreen(result.affirmation)
     }
+    case Screen.TASK_DETAIL: {
+      // Sub-screen — on refresh, fall back to work orders list
+      const brief = await fetchBrief()
+      return buildWorkOrdersScreen(brief.openTasks)
+    }
   }
 }
 
@@ -78,11 +85,37 @@ export async function refreshCurrentScreen(
   await navigateTo(currentScreen, bridge)
 }
 
+/** Navigate to task detail sub-screen by list item index */
+export async function navigateToTaskDetail(
+  itemIndex: number,
+  bridge: EvenAppBridge,
+): Promise<void> {
+  const tasks = getLastFetchedTasks()
+  const task = tasks[itemIndex]
+  if (!task) return
+  currentScreen = Screen.TASK_DETAIL
+  const container = buildTaskDetailScreen(task)
+  await bridge.rebuildPageContainer(container)
+  console.log(`[vigil-g2] navigated to: task-detail (index ${itemIndex})`)
+}
+
 /** Handle navigation events from temple touchpad / R1 ring */
 export async function handleNavEvent(
   eventType: OsEventTypeList,
   bridge: EvenAppBridge,
 ): Promise<void> {
+  // Task detail is a sub-screen, not in SCREEN_ORDER — handle explicitly
+  if (currentScreen === Screen.TASK_DETAIL) {
+    if (eventType === OsEventTypeList.SCROLL_TOP_EVENT) {
+      await navigateTo(Screen.WORK_ORDERS, bridge)
+    } else if (eventType === OsEventTypeList.SCROLL_BOTTOM_EVENT) {
+      await navigateTo(Screen.AFFIRMATION, bridge)
+    } else if (eventType === OsEventTypeList.DOUBLE_CLICK_EVENT) {
+      await navigateTo(Screen.HOME, bridge)
+    }
+    return
+  }
+
   let target: ScreenName
 
   switch (eventType) {

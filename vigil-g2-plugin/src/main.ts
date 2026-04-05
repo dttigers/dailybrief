@@ -3,7 +3,7 @@ import {
   OsEventTypeList,
 } from '@evenrealities/even_hub_sdk'
 import { buildHomeScreen } from './screens/home.ts'
-import { handleNavEvent, refreshCurrentScreen } from './navigation.ts'
+import { handleNavEvent, navigateToTaskDetail, refreshCurrentScreen } from './navigation.ts'
 import { fetchSummary, fetchAffirmation } from './api.ts'
 
 const NAV_EVENTS = new Set([
@@ -44,6 +44,15 @@ async function init(): Promise<void> {
 
   // Listen for lifecycle + navigation events
   bridge.onEvenHubEvent((event) => {
+    // List item click → task detail
+    if (
+      event.listEvent?.eventType === OsEventTypeList.CLICK_EVENT &&
+      event.listEvent.currentSelectItemIndex != null
+    ) {
+      void navigateToTaskDetail(event.listEvent.currentSelectItemIndex, bridge)
+      return
+    }
+
     // List events (temple touchpad swipes on list containers)
     if (event.listEvent?.eventType && NAV_EVENTS.has(event.listEvent.eventType)) {
       void handleNavEvent(event.listEvent.eventType, bridge)

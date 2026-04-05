@@ -11,6 +11,13 @@ import { DISPLAY_WIDTH, DIVIDER, ContainerId } from '../constants.ts'
 const MAX_VISIBLE_ITEMS = 6
 const ITEM_CONTENT_MAX = 45
 
+/** Store last fetched tasks for detail screen navigation */
+let lastFetchedTasks: VigilBrief['openTasks'] = []
+
+export function getLastFetchedTasks(): VigilBrief['openTasks'] {
+  return lastFetchedTasks
+}
+
 /**
  * Build the work orders screen for the G2 display.
  *
@@ -20,6 +27,8 @@ const ITEM_CONTENT_MAX = 45
 export function buildWorkOrdersScreen(
   tasks: VigilBrief['openTasks'],
 ): RebuildPageContainer {
+  lastFetchedTasks = tasks
+
   // Header: title + count
   const headerContent = `WORK ORDERS          ${tasks.length} open\n${DIVIDER}`
 
@@ -50,7 +59,7 @@ export function buildWorkOrdersScreen(
     paddingLength: 8,
     containerID: ContainerId.WORK_ORDERS_FOOTER,
     containerName: 'work-orders-footer',
-    content: '↑ home  ↓ affirmation',
+    content: 'tap task for details  \u229d home',
     isEventCapture: 0,
   })
 
@@ -100,7 +109,7 @@ export function buildWorkOrdersScreen(
     itemContainer: new ListItemContainerProperty({
       itemCount: itemNames.length,
       itemWidth: DISPLAY_WIDTH - 16,
-      isItemSelectBorderEn: 0,
+      isItemSelectBorderEn: 1,
       itemName: itemNames,
     }),
   })
