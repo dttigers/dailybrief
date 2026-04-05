@@ -120,6 +120,7 @@ final class DashboardViewModel {
 
     // Brief history state
     var showingBriefHistory = false
+    var showingChat = false
 
     // Import state
     var isImporting = false

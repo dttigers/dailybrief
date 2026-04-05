@@ -7,6 +7,7 @@ struct DashboardView: View {
 
     @State var viewModel: DashboardViewModel
     @State var briefHistoryViewModel: BriefHistoryViewModel?
+    @State var chatViewModel: ChatViewModel?
     @State private var isDropTargeted = false
     // Therapy prep UI removed — classification routing kept, prep/patterns UI disabled
     @State private var bulkTagText = ""
@@ -293,6 +294,9 @@ struct DashboardView: View {
             Section {
                 Button {
                     viewModel.showingBriefHistory.toggle()
+                    if viewModel.showingBriefHistory {
+                        viewModel.showingChat = false
+                    }
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "clock.arrow.circlepath")
@@ -306,6 +310,28 @@ struct DashboardView: View {
                 .buttonStyle(.plain)
                 .padding(.vertical, 2)
                 .opacity(viewModel.showingBriefHistory ? 1.0 : 0.6)
+            }
+
+            // AI Chat section
+            Section {
+                Button {
+                    viewModel.showingChat.toggle()
+                    if viewModel.showingChat {
+                        viewModel.showingBriefHistory = false
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "bubble.left.and.text.bubble.right")
+                            .foregroundStyle(.blue)
+                            .font(.caption)
+                        Text("AI Chat")
+                            .font(.subheadline)
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 2)
+                .opacity(viewModel.showingChat ? 1.0 : 0.6)
             }
         }
         .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 260)
@@ -438,7 +464,9 @@ struct DashboardView: View {
 
     @ViewBuilder
     private var detail: some View {
-        if viewModel.showingBriefHistory, let historyVM = briefHistoryViewModel {
+        if viewModel.showingChat, let chatVM = chatViewModel {
+            ChatView(viewModel: chatVM)
+        } else if viewModel.showingBriefHistory, let historyVM = briefHistoryViewModel {
             BriefHistoryView(viewModel: historyVM)
         } else {
             thoughtsDetail

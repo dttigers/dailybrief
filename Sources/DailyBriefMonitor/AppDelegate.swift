@@ -172,7 +172,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             therapyPrepService: therapyPrepService
         )
         let briefHistoryVM = vigilAPIClient.map { BriefHistoryViewModel(apiClient: $0) }
-        let dashboardView = DashboardView(viewModel: viewModel, briefHistoryViewModel: briefHistoryVM)
+        let chatVM = vigilAPIClient.map { ChatViewModel(chatService: APIChatService(client: $0)) }
+        let dashboardView = DashboardView(viewModel: viewModel, briefHistoryViewModel: briefHistoryVM, chatViewModel: chatVM)
         let hostingView = NSHostingView(rootView: dashboardView)
 
         let window = NSWindow(
