@@ -11,15 +11,15 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 Phase: 35 of 36 (Mac Migration AI)
 Plan: 03 complete
-Status: In progress
-Last activity: 2026-04-04 - Plan 35-03 complete (AppDelegate, DashboardViewModel, FolderWatcherService wired to AI service protocol types with config-driven backend selection)
+Status: Phase 35 complete
+Last activity: 2026-04-04 - Phase 35 complete (AI service protocols, API implementations, consumer wiring, config toggle)
 
-Progress: ████████░░ 80%
+Progress: █████████░ 90%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 83
+- Total plans completed: 86
 - Total execution time: ~9 days
 - Average duration: ~5 min per plan
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 35, plan 03 complete
+Stopped at: Phase 35 complete
 Resume file: None
-Notes: Plan 35-03 complete. Mac app AI service consumers (AppDelegate, DashboardViewModel, FolderWatcherService) migrated to protocol types. Config toggle creates Vigil API or local Claude AI services. Build clean.
+Notes: Phase 35 complete. All 6 AI services (triage, insights, image description, therapy classify/patterns/prep) abstracted behind protocols. API-backed implementations call Vigil Core. DailyBrief CLI affirmation + prioritization migrated. All consumers (AppDelegate, DashboardViewModel, FolderWatcherService) use protocol types with config-driven backend selection. Build clean.

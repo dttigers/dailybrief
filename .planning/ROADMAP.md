@@ -167,15 +167,17 @@ Plans:
 - [x] 34-03: APIThoughtStore full implementation
 - [x] 34-04: Config toggle + consumer wiring
 
-#### Phase 35: Mac App Migration — AI Services
+#### Phase 35: Mac App Migration — AI Services ✓
 
 **Goal**: Redirect triage, prioritization, and insights from local Claude calls to Vigil Core API
 **Depends on**: Phase 31, Phase 34
 **Research**: Unlikely (same migration pattern as Phase 34)
-**Plans**: TBD
+**Plans**: 3
 
 Plans:
-- [ ] 35-01: TBD
+- [x] 35-01: AI service protocols + API-backed implementations
+- [x] 35-02: DailyBrief CLI affirmation + prioritization migration
+- [x] 35-03: Wire consumers to protocol types with config toggle
 
 #### Phase 36: Integration & Polish
 
@@ -229,5 +231,5 @@ None
 | 32. Even G2 Plugin — Scaffold + Home | v2.0 | 2/2 | Complete | 2026-04-04 |
 | 33. Even G2 Plugin — Screens + Nav | v2.0 | 3/3 | Complete | 2026-04-04 |
 | 34. Mac App Migration — First Services | v2.0 | 4/4 | Complete | 2026-04-04 |
-| 35. Mac App Migration — AI Services | v2.0 | 0/? | Not started | - |
+| 35. Mac App Migration — AI Services | v2.0 | 3/3 | Complete | 2026-04-04 |
 | 36. Integration & Polish | v2.0 | 0/? | Not started | - |
