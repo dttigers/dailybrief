@@ -153,15 +153,14 @@ Plans:
 - [x] 47-02: CLI integration (auto-save + history subcommand)
 - [x] 47-03: Dashboard UI (history list, detail view, reprint)
 
-#### Phase 48: Export System
+#### Phase 48: Export System ✅
 
 **Goal**: Export thoughts as Markdown, JSON, or CSV
 **Depends on**: Phase 47
-**Research**: Unlikely (standard formats)
-**Plans**: TBD
+**Completed**: 2026-04-05
 
 Plans:
-- [ ] 48-01: TBD
+- [x] 48-01: API export endpoint + CLI export subcommand
 
 #### Phase 49: Configurable PDF
 
@@ -238,6 +237,6 @@ None
 | 45. G2 Plugin UX Fixes | v2.2 | 0/? | Not started | - |
 | 46. Remove Dual Code Paths | v2.2 | 4/4 | Complete | 2026-04-05 |
 | 47. Brief History | v2.2 | 3/3 | Complete | 2026-04-05 |
-| 48. Export System | v2.2 | 0/? | Not started | - |
+| 48. Export System | v2.2 | 1/1 | Complete | 2026-04-05 |
 | 49. Configurable PDF | v2.2 | 0/? | Not started | - |
 | 50. Dashboard AI Chat | v2.2 | 0/? | Not started | - |

@@ -50,7 +50,7 @@ Deferred to future release. Tracked but not in current roadmap.
 
 ### Storage & Search
 
-- **STORE-03**: User can export entries as Markdown or JSON
+- [x] **STORE-03**: User can export entries as Markdown or JSON
 - **STORE-04**: Semantic/vector search (hybrid with FTS5)
 
 ### Dashboard
