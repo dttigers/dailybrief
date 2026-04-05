@@ -27,10 +27,10 @@ public actor FolderWatcherService {
     // MARK: - Properties
 
     private let transcriptionService: TranscriptionService
-    private let imageDescriptionService: ImageDescriptionService?
+    private let imageDescriptionService: (any ImageDescriptionProviding)?
     private let captureService: CaptureService
-    private let triageService: TriageService?
-    private let therapyClassificationService: TherapyClassificationService?
+    private let triageService: (any TriageProviding)?
+    private let therapyClassificationService: (any TherapyClassifyProviding)?
     private let thoughtStore: ThoughtStore
     private let config: AppConfig.FolderWatchingConfig
 
@@ -59,10 +59,10 @@ public actor FolderWatcherService {
     ///   - config: Folder watching configuration (paths and enabled flag).
     public init(
         transcriptionService: TranscriptionService,
-        imageDescriptionService: ImageDescriptionService?,
+        imageDescriptionService: (any ImageDescriptionProviding)?,
         captureService: CaptureService,
-        triageService: TriageService?,
-        therapyClassificationService: TherapyClassificationService? = nil,
+        triageService: (any TriageProviding)?,
+        therapyClassificationService: (any TherapyClassifyProviding)? = nil,
         thoughtStore: ThoughtStore,
         config: AppConfig.FolderWatchingConfig
     ) {

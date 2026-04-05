@@ -135,12 +135,12 @@ final class DashboardViewModel {
     private let store: any ThoughtRepository
     private let captureService: CaptureService?
     private let transcriptionService: TranscriptionService?
-    private let imageDescriptionService: ImageDescriptionService?
-    private let triageService: TriageService?
-    private let insightService: InsightService?
-    private let therapyClassificationService: TherapyClassificationService?
-    private let therapyPatternService: TherapyPatternService?
-    private let therapyPrepService: TherapyPrepService?
+    private let imageDescriptionService: (any ImageDescriptionProviding)?
+    private let triageService: (any TriageProviding)?
+    private let insightService: (any InsightProviding)?
+    private let therapyClassificationService: (any TherapyClassifyProviding)?
+    private let therapyPatternService: (any TherapyPatternProviding)?
+    private let therapyPrepService: (any TherapyPrepProviding)?
     private var searchTask: Task<Void, Never>?
 
     var canImportAudio: Bool { transcriptionService != nil && captureService != nil }
@@ -152,12 +152,12 @@ final class DashboardViewModel {
         store: any ThoughtRepository,
         captureService: CaptureService? = nil,
         transcriptionService: TranscriptionService? = nil,
-        imageDescriptionService: ImageDescriptionService? = nil,
-        triageService: TriageService? = nil,
-        insightService: InsightService? = nil,
-        therapyClassificationService: TherapyClassificationService? = nil,
-        therapyPatternService: TherapyPatternService? = nil,
-        therapyPrepService: TherapyPrepService? = nil
+        imageDescriptionService: (any ImageDescriptionProviding)? = nil,
+        triageService: (any TriageProviding)? = nil,
+        insightService: (any InsightProviding)? = nil,
+        therapyClassificationService: (any TherapyClassifyProviding)? = nil,
+        therapyPatternService: (any TherapyPatternProviding)? = nil,
+        therapyPrepService: (any TherapyPrepProviding)? = nil
     ) {
         self.store = store
         self.captureService = captureService
