@@ -164,3 +164,80 @@ public protocol ThoughtRepository: Actor {
     @discardableResult
     func bulkUpdateCategory(ids: Set<Int64>, category: ThoughtCategory) async throws -> Int
 }
+
+// MARK: - Default Parameter Extensions
+
+/// Provides default parameter values so callers using `any ThoughtRepository` get the same
+/// convenience as direct ThoughtStore usage.
+public extension ThoughtRepository {
+
+    func fetchAll(
+        category: ThoughtCategory? = nil,
+        limit: Int = 100,
+        offset: Int = 0
+    ) async throws -> [Thought] {
+        try await fetchAll(category: category, limit: limit, offset: offset)
+    }
+
+    func fetchFiltered(
+        category: ThoughtCategory? = nil,
+        source: CaptureSource? = nil,
+        after: Date? = nil,
+        tag: String? = nil,
+        favoritesOnly: Bool = false,
+        limit: Int = 100,
+        offset: Int = 0
+    ) async throws -> [Thought] {
+        try await fetchFiltered(category: category, source: source, after: after, tag: tag, favoritesOnly: favoritesOnly, limit: limit, offset: offset)
+    }
+
+    func countFiltered(
+        category: ThoughtCategory? = nil,
+        source: CaptureSource? = nil,
+        after: Date? = nil,
+        tag: String? = nil,
+        favoritesOnly: Bool = false
+    ) async throws -> Int {
+        try await countFiltered(category: category, source: source, after: after, tag: tag, favoritesOnly: favoritesOnly)
+    }
+
+    func count(category: ThoughtCategory? = nil) async throws -> Int {
+        try await count(category: category)
+    }
+
+    func search(query: String, limit: Int = 50) async throws -> [Thought] {
+        try await search(query: query, limit: limit)
+    }
+
+    func fetchTasks(status: TaskStatus? = nil, limit: Int = 100) async throws -> [Thought] {
+        try await fetchTasks(status: status, limit: limit)
+    }
+
+    func fetchTherapyThoughts(
+        classification: TherapyClassification? = nil,
+        limit: Int = 100,
+        offset: Int = 0
+    ) async throws -> [Thought] {
+        try await fetchTherapyThoughts(classification: classification, limit: limit, offset: offset)
+    }
+
+    func countTherapy(classification: TherapyClassification? = nil) async throws -> Int {
+        try await countTherapy(classification: classification)
+    }
+
+    func fetchRecentTherapyThoughts(
+        days: Int,
+        classification: TherapyClassification? = nil,
+        limit: Int = 200
+    ) async throws -> [Thought] {
+        try await fetchRecentTherapyThoughts(days: days, classification: classification, limit: limit)
+    }
+
+    func fetchByTag(tag: String, limit: Int = 100, offset: Int = 0) async throws -> [Thought] {
+        try await fetchByTag(tag: tag, limit: limit, offset: offset)
+    }
+
+    func fetchFavorites(limit: Int = 100, offset: Int = 0) async throws -> [Thought] {
+        try await fetchFavorites(limit: limit, offset: offset)
+    }
+}

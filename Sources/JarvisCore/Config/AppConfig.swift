@@ -11,6 +11,7 @@ public struct AppConfig: Codable, Sendable {
     public var folderWatching: FolderWatchingConfig
     public var insights: InsightsConfig
     public var cloudSync: CloudSyncConfig
+    public var vigil: VigilConfig?
 
     public init(
         email: EmailConfig,
@@ -22,7 +23,8 @@ public struct AppConfig: Codable, Sendable {
         googleCalendar: GoogleCalendarConfig = .init(),
         folderWatching: FolderWatchingConfig = .init(),
         insights: InsightsConfig = .init(),
-        cloudSync: CloudSyncConfig = .init()
+        cloudSync: CloudSyncConfig = .init(),
+        vigil: VigilConfig? = nil
     ) {
         self.email = email
         self.reminders = reminders
@@ -34,6 +36,7 @@ public struct AppConfig: Codable, Sendable {
         self.folderWatching = folderWatching
         self.insights = insights
         self.cloudSync = cloudSync
+        self.vigil = vigil
     }
 
     // Custom Decodable to support backward-compatible config loading
@@ -55,6 +58,7 @@ public struct AppConfig: Codable, Sendable {
         folderWatching = try container.decodeIfPresent(FolderWatchingConfig.self, forKey: .folderWatching) ?? .init()
         insights = try container.decodeIfPresent(InsightsConfig.self, forKey: .insights) ?? .init()
         cloudSync = try container.decodeIfPresent(CloudSyncConfig.self, forKey: .cloudSync) ?? .init()
+        vigil = try container.decodeIfPresent(VigilConfig.self, forKey: .vigil)
     }
 
     // Encode with "email" key (new format)
@@ -70,13 +74,14 @@ public struct AppConfig: Codable, Sendable {
         try container.encode(folderWatching, forKey: .folderWatching)
         try container.encode(insights, forKey: .insights)
         try container.encode(cloudSync, forKey: .cloudSync)
+        try container.encodeIfPresent(vigil, forKey: .vigil)
     }
 
     private enum CodingKeys: String, CodingKey {
         case email
         case gmail // backward-compatible decode key
         case reminders, sports, ai, pdf, printing
-        case googleCalendar, folderWatching, insights, cloudSync
+        case googleCalendar, folderWatching, insights, cloudSync, vigil
     }
 
     public struct EmailConfig: Codable, Sendable {
@@ -379,6 +384,19 @@ public struct AppConfig: Codable, Sendable {
         ) {
             self.enabled = enabled
             self.autoSyncIntervalMinutes = autoSyncIntervalMinutes
+        }
+    }
+
+    public struct VigilConfig: Codable, Sendable {
+        public var useAPI: Bool
+        public var apiBaseURL: String
+
+        public init(
+            useAPI: Bool = false,
+            apiBaseURL: String = "http://localhost:3001/v1"
+        ) {
+            self.useAPI = useAPI
+            self.apiBaseURL = apiBaseURL
         }
     }
 }

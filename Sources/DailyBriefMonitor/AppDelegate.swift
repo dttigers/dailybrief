@@ -9,7 +9,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private(set) var capturePanel: CapturePanel!
     private var captureService: CaptureService?
     private var triageService: TriageService?
-    private var thoughtStore: ThoughtStore?
+    private var thoughtStore: (any ThoughtRepository)?
+    private var localThoughtStore: ThoughtStore?  // Concrete store for sync-only operations
     private var globalHotKey: GlobalHotKey?
     private var dashboardWindow: NSWindow?
     private var settingsWindow: NSWindow?
@@ -66,11 +67,31 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         let transcription = TranscriptionService()
         self.transcriptionService = transcription
 
-        NSLog("DailyBriefMonitor: initializing database...")
+        NSLog("DailyBriefMonitor: initializing data store...")
         do {
-            let dbManager = try DatabaseManager()
-            let thoughtStore = ThoughtStore(database: dbManager)
+            // Check if Vigil API mode is enabled
+            let useVigilAPI = (try? ConfigLoader.load())?.vigil?.useAPI == true
+            let apiBaseURL = (try? ConfigLoader.load())?.vigil?.apiBaseURL ?? "http://localhost:3001/v1"
+
+            let repository: any ThoughtRepository
+            let localStore: ThoughtStore?
+
+            if useVigilAPI {
+                NSLog("DailyBriefMonitor: using Vigil API backend at %@", apiBaseURL)
+                let client = VigilAPIClient(baseURL: URL(string: apiBaseURL)!)
+                repository = APIThoughtStore(client: client)
+                localStore = nil
+            } else {
+                NSLog("DailyBriefMonitor: using local GRDB backend")
+                let dbManager = try DatabaseManager()
+                let store = ThoughtStore(database: dbManager)
+                repository = store
+                localStore = store
+            }
+
+            let thoughtStore = repository
             self.thoughtStore = thoughtStore
+            self.localThoughtStore = localStore
             let service = CaptureService(store: thoughtStore)
             captureService = service
 
@@ -136,25 +157,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             } catch {
                 NSLog("DailyBriefMonitor: config load failed: %@", error.localizedDescription)
             }
-            if let config = try? ConfigLoader.load(), config.folderWatching.enabled {
+            if let config = try? ConfigLoader.load(), config.folderWatching.enabled, let localStore {
                 let watcher = FolderWatcherService(
                     transcriptionService: transcription,
                     imageDescriptionService: imageDescService,
                     captureService: service,
                     triageService: triageService,
                     therapyClassificationService: self.therapyClassificationService,
-                    thoughtStore: thoughtStore,
+                    thoughtStore: localStore,
                     config: config.folderWatching
                 )
                 self.folderWatcher = watcher
                 Task { await watcher.start() }
             }
 
-            // Start cloud sync if enabled
+            // Start cloud sync if enabled (only in local GRDB mode)
             NSLog("DailyBriefMonitor: checking cloud sync config...")
-            if let config = try? ConfigLoader.load(), config.cloudSync.enabled, CloudKitManager.isAvailable {
+            if let config = try? ConfigLoader.load(), config.cloudSync.enabled, CloudKitManager.isAvailable, let localStore {
                 let cloudKitManager = CloudKitManager()
-                let syncService = SyncService(cloudKit: cloudKitManager, store: thoughtStore)
+                let syncService = SyncService(cloudKit: cloudKitManager, store: localStore)
                 self.syncService = syncService
                 Task { try? await syncService.sync() }
                 let interval = TimeInterval(config.cloudSync.autoSyncIntervalMinutes * 60)
