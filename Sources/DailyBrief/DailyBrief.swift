@@ -49,10 +49,23 @@ extension DailyBrief {
             let sportsService = SportsService(config: config.sports.mlb)
             let remindersService = RemindersService(config: config.reminders)
             let emailService = EmailService(config: config.email)
-            let aiProvider = ClaudeAIProvider(config: config.ai)
             let calendarService: GoogleCalendarService? = config.googleCalendar.enabled
                 ? GoogleCalendarService(config: config.googleCalendar) : nil
-            let prioritizer = WorkOrderPrioritizer(config: config.ai)
+
+            // Select AI backend based on config: Vigil Core API or direct Claude
+            let aiProvider: any AIProvider
+            let prioritizer: any WorkOrderPrioritizing
+            if config.vigil?.useAPI == true,
+               let apiBaseURL = URL(string: config.vigil?.apiBaseURL ?? "") {
+                let apiClient = VigilAPIClient(baseURL: apiBaseURL)
+                aiProvider = APIAIProvider(client: apiClient)
+                prioritizer = APIWorkOrderPrioritizer(client: apiClient)
+                Logger.log("Using Vigil Core API backend")
+            } else {
+                aiProvider = ClaudeAIProvider(config: config.ai)
+                prioritizer = WorkOrderPrioritizer(config: config.ai)
+                Logger.log("Using local Claude API backend")
+            }
 
             // Fetch captured thoughts from ThoughtStore first (local DB, fast)
             // so we can pass summaries into the affirmation prompt
