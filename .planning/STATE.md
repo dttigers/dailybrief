@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 34 of 36 (Mac Migration First)
-Plan: 04 complete
-Status: Phase 34 complete
-Last activity: 2026-04-04 - Phase 34 complete (ThoughtRepository protocol, APIThoughtStore, config toggle, consumer wiring)
+Phase: 35 of 36 (Mac Migration AI)
+Plan: 02 complete
+Status: In progress
+Last activity: 2026-04-04 - Plan 35-02 complete (APIAIProvider, WorkOrderPrioritizing protocol, APIWorkOrderPrioritizer, CLI config-driven backend selection)
 
 Progress: ███████░░░ 70%
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 34 complete
+Stopped at: Phase 35, plan 02 complete
 Resume file: None
-Notes: Phase 34 complete. Mac app migrated to ThoughtRepository protocol abstraction. APIThoughtStore implements all methods via Vigil Core API. Config toggle (vigil.useAPI) switches between local GRDB and API backend. DashboardViewModel and CaptureService use any ThoughtRepository. SyncService/FolderWatcher local-only. Vigil Core extended with date range filtering and bulk therapy classify. Build clean.
+Notes: Plan 35-02 complete. DailyBrief CLI AI services (affirmation + work order prioritization) migrated to support Vigil Core API backend. APIAIProvider calls /affirmation, APIWorkOrderPrioritizer calls /prioritize. WorkOrderPrioritizing protocol abstracts both implementations. Config toggle (vigil.useAPI) selects backend. Build clean.
