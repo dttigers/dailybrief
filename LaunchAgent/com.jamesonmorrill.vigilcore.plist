@@ -6,8 +6,8 @@
     <string>com.jamesonmorrill.vigilcore</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/usr/local/bin/node</string>
-        <string>/Users/jamesonmorrill/Desktop/Local AI/dailybrief/vigil-core/dist/index.js</string>
+        <string>/bin/bash</string>
+        <string>/Users/jamesonmorrill/Desktop/Local AI/dailybrief/LaunchAgent/vigil-core-start.sh</string>
     </array>
     <key>WorkingDirectory</key>
     <string>/Users/jamesonmorrill/Desktop/Local AI/dailybrief/vigil-core</string>
@@ -30,10 +30,6 @@
     <dict>
         <key>PATH</key>
         <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
-        <key>ANTHROPIC_API_KEY</key>
-        <string>REDACTED_API_KEY</string>
-        <key>PORT</key>
-        <string>3001</string>
     </dict>
 </dict>
 </plist>
