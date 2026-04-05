@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 34 of 36 (Mac Migration First)
-Plan: 03 complete
+Plan: 04 complete
 Status: In progress
-Last activity: 2026-04-04 - Plan 34-03 complete (APIThoughtStore implementation)
+Last activity: 2026-04-04 - Plan 34-04 complete (Config toggle and protocol wiring)
 
-Progress: █████░░░░░ 50%
+Progress: ██████░░░░ 60%
 
 ## Performance Metrics
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 34, Plan 03 complete
+Stopped at: Phase 34, Plan 04 complete
 Resume file: None
-Notes: Plan 34-03 complete. APIThoughtStore actor fully implements ThoughtRepository via Vigil Core REST API. All protocol methods migrated to async throws for network compatibility. PaginatedResponse/CountResponse made Sendable. Ready for DI wiring in Plan 04.
+Notes: Plan 34-04 complete. Config toggle (vigil.useAPI) switches Mac app between local GRDB and Vigil Core API. DashboardViewModel and CaptureService use any ThoughtRepository protocol. ThoughtRepository has default parameter extensions. SyncService/FolderWatcher local-only. Build clean.
