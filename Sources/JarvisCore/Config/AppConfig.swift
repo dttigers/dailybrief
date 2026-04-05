@@ -317,13 +317,47 @@ public struct AppConfig: Codable, Sendable {
     public struct PDFConfig: Codable, Sendable {
         public var outputDirectory: String
         public var keepDays: Int
+        public var paperSize: String
+        public var customWidthInches: Double
+        public var customHeightInches: Double
+        public var marginPoints: Double
+        public var fontScale: Double
+        public var enabledSections: [String]
 
         public init(
             outputDirectory: String = "~/Documents/DailyBrief",
-            keepDays: Int = 30
+            keepDays: Int = 30,
+            paperSize: String = "notebook",
+            customWidthInches: Double = 3.75,
+            customHeightInches: Double = 7.5,
+            marginPoints: Double = 12.0,
+            fontScale: Double = 1.0,
+            enabledSections: [String] = ["workOrders", "todo", "calendar", "sports", "affirmation", "thoughts", "insights", "therapyPrep"]
         ) {
             self.outputDirectory = outputDirectory
             self.keepDays = keepDays
+            self.paperSize = paperSize
+            self.customWidthInches = customWidthInches
+            self.customHeightInches = customHeightInches
+            self.marginPoints = marginPoints
+            self.fontScale = fontScale
+            self.enabledSections = enabledSections
+        }
+
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            outputDirectory = try container.decodeIfPresent(String.self, forKey: .outputDirectory) ?? "~/Documents/DailyBrief"
+            keepDays = try container.decodeIfPresent(Int.self, forKey: .keepDays) ?? 30
+            paperSize = try container.decodeIfPresent(String.self, forKey: .paperSize) ?? "notebook"
+            customWidthInches = try container.decodeIfPresent(Double.self, forKey: .customWidthInches) ?? 3.75
+            customHeightInches = try container.decodeIfPresent(Double.self, forKey: .customHeightInches) ?? 7.5
+            marginPoints = try container.decodeIfPresent(Double.self, forKey: .marginPoints) ?? 12.0
+            fontScale = try container.decodeIfPresent(Double.self, forKey: .fontScale) ?? 1.0
+            enabledSections = try container.decodeIfPresent([String].self, forKey: .enabledSections) ?? ["workOrders", "todo", "calendar", "sports", "affirmation", "thoughts", "insights", "therapyPrep"]
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case outputDirectory, keepDays, paperSize, customWidthInches, customHeightInches, marginPoints, fontScale, enabledSections
         }
     }
 

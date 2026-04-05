@@ -1,5 +1,98 @@
 import CoreGraphics
 @preconcurrency import CoreText
+import JarvisCore
+
+struct PDFLayout: Sendable {
+    let pageWidth: CGFloat
+    let pageHeight: CGFloat
+    let contentWidth: CGFloat
+    let contentHeight: CGFloat
+    let contentX: CGFloat
+    let contentY: CGFloat
+    let margin: CGFloat
+    let innerPadding: CGFloat
+    let titleSize: CGFloat
+    let headerSize: CGFloat
+    let bodySize: CGFloat
+    let smallSize: CGFloat
+    let tinySize: CGFloat
+    let tableRowHeight: CGFloat
+    let tableHeaderHeight: CGFloat
+    let checkboxSize: CGFloat
+    let noteLineSpacing: CGFloat
+    let enabledSections: Set<String>
+
+    static func layout(from config: AppConfig.PDFConfig) -> PDFLayout {
+        let scale = CGFloat(max(0.75, min(1.5, config.fontScale)))
+        let margin = CGFloat(config.marginPoints)
+
+        let pageWidth: CGFloat
+        let pageHeight: CGFloat
+        let contentWidth: CGFloat
+        let contentHeight: CGFloat
+        let contentX: CGFloat
+        let contentY: CGFloat
+
+        switch config.paperSize {
+        case "a5":
+            pageWidth = 420
+            pageHeight = 595
+            contentWidth = pageWidth - 2 * margin
+            contentHeight = pageHeight - 2 * margin
+            contentX = margin
+            contentY = margin
+        case "half-letter":
+            pageWidth = 396
+            pageHeight = 612
+            contentWidth = pageWidth - 2 * margin
+            contentHeight = pageHeight - 2 * margin
+            contentX = margin
+            contentY = margin
+        case "letter":
+            pageWidth = 612
+            pageHeight = 792
+            contentWidth = pageWidth - 2 * margin
+            contentHeight = pageHeight - 2 * margin
+            contentX = margin
+            contentY = margin
+        case "custom":
+            pageWidth = CGFloat(config.customWidthInches) * 72
+            pageHeight = CGFloat(config.customHeightInches) * 72
+            contentWidth = pageWidth - 2 * margin
+            contentHeight = pageHeight - 2 * margin
+            contentX = margin
+            contentY = margin
+        default: // "notebook"
+            pageWidth = 612
+            pageHeight = 792
+            contentWidth = 270   // 3.75" * 72
+            contentHeight = 540  // 7.5" * 72
+            contentX = (pageWidth - 270) / 2
+            contentY = (pageHeight - 540) / 2
+        }
+
+        return PDFLayout(
+            pageWidth: pageWidth,
+            pageHeight: pageHeight,
+            contentWidth: contentWidth,
+            contentHeight: contentHeight,
+            contentX: contentX,
+            contentY: contentY,
+            margin: margin,
+            innerPadding: 8 * scale,
+            titleSize: 14 * scale,
+            headerSize: 10 * scale,
+            bodySize: 8 * scale,
+            smallSize: 7 * scale,
+            tinySize: 6 * scale,
+            tableRowHeight: 14 * scale,
+            tableHeaderHeight: 16 * scale,
+            checkboxSize: 8 * scale,
+            noteLineSpacing: 16 * scale,
+            enabledSections: Set(config.enabledSections)
+        )
+    }
+}
 
 enum PDFStyles {
     // Page dimensions (US Letter)
@@ -36,21 +129,21 @@ enum PDFStyles {
     static let smallSize: CGFloat = 7
     static let tinySize: CGFloat = 6
 
-    // Fonts
-    static func titleFont() -> CTFont {
-        CTFontCreateWithName("Helvetica-Bold" as CFString, titleSize, nil)
+    // Fonts (parameterized for layout-driven sizes)
+    static func titleFont(size: CGFloat = titleSize) -> CTFont {
+        CTFontCreateWithName("Helvetica-Bold" as CFString, size, nil)
     }
-    static func headerFont() -> CTFont {
-        CTFontCreateWithName("Helvetica-Bold" as CFString, headerSize, nil)
+    static func headerFont(size: CGFloat = headerSize) -> CTFont {
+        CTFontCreateWithName("Helvetica-Bold" as CFString, size, nil)
     }
-    static func bodyFont() -> CTFont {
-        CTFontCreateWithName("Helvetica" as CFString, bodySize, nil)
+    static func bodyFont(size: CGFloat = bodySize) -> CTFont {
+        CTFontCreateWithName("Helvetica" as CFString, size, nil)
     }
-    static func monoFont() -> CTFont {
-        CTFontCreateWithName("Menlo" as CFString, smallSize, nil)
+    static func monoFont(size: CGFloat = smallSize) -> CTFont {
+        CTFontCreateWithName("Menlo" as CFString, size, nil)
     }
-    static func affirmationFont() -> CTFont {
-        CTFontCreateWithName("Georgia-Italic" as CFString, bodySize, nil)
+    static func affirmationFont(size: CGFloat = bodySize) -> CTFont {
+        CTFontCreateWithName("Georgia-Italic" as CFString, size, nil)
     }
 
     // Row heights
