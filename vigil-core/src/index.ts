@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { serve } from "@hono/node-server";
+import { bearerAuth } from "./middleware/auth.js";
 import { health } from "./routes/health.js";
 import { summary } from "./routes/summary.js";
 import { thoughts } from "./routes/thoughts.js";
@@ -20,7 +21,16 @@ testConnection();
 
 const app = new Hono();
 
+// Health route — no auth required (monitoring)
 app.route("/v1", health);
+
+// Auth middleware — all /v1/* routes except /v1/health require a valid API key
+app.use("/v1/*", async (c, next) => {
+  if (c.req.path === "/v1/health") return next();
+  return bearerAuth(c, next);
+});
+
+// Protected routes
 app.route("/v1", summary);
 app.route("/v1", thoughts);
 app.route("/v1", tags);
