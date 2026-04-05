@@ -12,6 +12,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v1.3 Stability & Smarts** — Phases 19-23 (shipped 2026-04-04)
 - ✅ **v1.4 Intelligence & Organization** — Phases 24-28 (shipped 2026-04-04, early close)
 - ✅ **v2.0 Vigil Platform** — Phases 29-36 (shipped 2026-04-04)
+- 🚧 **v2.1 Server Deployment** — Phases 37-44 (in progress)
 
 ## Completed Milestones
 
@@ -21,6 +22,93 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ [v1.3 Stability & Smarts](milestones/v1.3-ROADMAP.md) (Phases 19-23) — SHIPPED 2026-04-04
 - ✅ [v1.4 Intelligence & Organization](milestones/v1.4-ROADMAP.md) (Phases 24-28) — SHIPPED 2026-04-04 (early close)
 - ✅ [v2.0 Vigil Platform](milestones/v2.0-ROADMAP.md) (Phases 29-36) — SHIPPED 2026-04-04
+
+### 🚧 v2.1 Server Deployment (In Progress)
+
+**Milestone Goal:** Deploy Vigil Core API to a production server with PostgreSQL, authentication, and HTTPS — enabling the G2 glasses and future mobile clients to connect from anywhere.
+
+#### Phase 37: PostgreSQL Migration
+
+**Goal**: Replace better-sqlite3 with PostgreSQL via Drizzle ORM; define schema, migrations, and update all route queries
+**Depends on**: v2.0 complete
+**Research**: Likely (Drizzle ORM + PostgreSQL new to project)
+**Research topics**: Drizzle ORM setup with Hono, PostgreSQL schema patterns, migration workflow
+**Plans**: TBD
+
+Plans:
+- [ ] 37-01: TBD (run /gsd:plan-phase 37 to break down)
+
+#### Phase 38: API Key Authentication
+
+**Goal**: Add bearer token auth middleware, API key generation/validation, protect all endpoints
+**Depends on**: Phase 37
+**Research**: Unlikely (established patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 38-01: TBD
+
+#### Phase 39: Railway Deployment
+
+**Goal**: Deploy Vigil Core to Railway with managed Postgres addon, environment config, health checks, and CI/CD via GitHub
+**Depends on**: Phase 38
+**Research**: Likely (first deployment, Railway platform config)
+**Research topics**: Railway Node.js deployment, Postgres addon, environment variables, build config
+**Plans**: TBD
+
+Plans:
+- [ ] 39-01: TBD
+
+#### Phase 40: Data Migration
+
+**Goal**: Export existing SQLite thoughts and seed into production PostgreSQL database
+**Depends on**: Phase 39
+**Research**: Unlikely (one-time migration script)
+**Plans**: TBD
+
+Plans:
+- [ ] 40-01: TBD
+
+#### Phase 41: G2 Plugin Production URL
+
+**Goal**: Make API URL configurable in G2 plugin, build and pack .ehpk for Even Hub distribution
+**Depends on**: Phase 39
+**Research**: Unlikely (internal config change)
+**Plans**: TBD
+
+Plans:
+- [ ] 41-01: TBD
+
+#### Phase 42: Mac App Server Migration
+
+**Goal**: Point Mac app vigil.useAPI config at production server URL, validate all API paths end-to-end
+**Depends on**: Phase 39
+**Research**: Unlikely (config toggle already exists)
+**Plans**: TBD
+
+Plans:
+- [ ] 42-01: TBD
+
+#### Phase 43: HTTPS & Domain
+
+**Goal**: Configure custom domain, SSL certificates, and CORS for production client access
+**Depends on**: Phase 39
+**Research**: Likely (domain + Railway custom domain setup)
+**Research topics**: Railway custom domains, SSL provisioning, CORS configuration for G2/Mac clients
+**Plans**: TBD
+
+Plans:
+- [ ] 43-01: TBD
+
+#### Phase 44: Integration Testing & Hardening
+
+**Goal**: End-to-end validation across all 3 clients (Mac app, G2 glasses, API), error handling, rate limiting
+**Depends on**: Phases 41, 42, 43
+**Research**: Unlikely (internal patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 44-01: TBD
 
 <details>
 <summary>✅ v1.0 MVP (Phases 1-7) — SHIPPED 2026-04-02</summary>
@@ -142,3 +230,11 @@ None
 | 34. Mac App Migration — First Services | v2.0 | 4/4 | Complete | 2026-04-04 |
 | 35. Mac App Migration — AI Services | v2.0 | 3/3 | Complete | 2026-04-04 |
 | 36. Integration & Polish | v2.0 | 1/1 | Complete | 2026-04-04 |
+| 37. PostgreSQL Migration | v2.1 | 0/? | Not started | - |
+| 38. API Key Authentication | v2.1 | 0/? | Not started | - |
+| 39. Railway Deployment | v2.1 | 0/? | Not started | - |
+| 40. Data Migration | v2.1 | 0/? | Not started | - |
+| 41. G2 Plugin Production URL | v2.1 | 0/? | Not started | - |
+| 42. Mac App Server Migration | v2.1 | 0/? | Not started | - |
+| 43. HTTPS & Domain | v2.1 | 0/? | Not started | - |
+| 44. Integration Testing & Hardening | v2.1 | 0/? | Not started | - |

@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-04-04)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Planning next milestone
+**Current focus:** v2.1 Server Deployment — get Vigil Core online for G2 glasses and future mobile clients
 
 ## Current Position
 
-Phase: 36 of 36 (Integration & Polish)
-Plan: 01 complete
-Status: v2.0 Vigil Platform SHIPPED
-Last activity: 2026-04-04 — v2.0 milestone complete
+Phase: 37 of 44 (PostgreSQL Migration)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-04-05 — Milestone v2.1 created
 
-Progress: ██████████ 100%
+Progress: ░░░░░░░░░░ 0%
 
 ## Performance Metrics
 
@@ -33,6 +33,7 @@ Progress: ██████████ 100%
 | v1.3 Stability & Smarts | 19-23 | 7 | 1 day |
 | v1.4 Intelligence & Org | 24-28 | 11 | 1 day |
 | v2.0 Vigil Platform | 29-36 | 22 | 1 day |
+| v2.1 Server Deployment | 37-44 | TBD | in progress |
 
 ## Accumulated Context
 
@@ -62,10 +63,11 @@ None.
 - v1.3 Stability & Smarts shipped: 5 phases (19-23), 7 plans
 - v1.4 Intelligence & Organization shipped (early close): 5 phases (24-28), 11 plans
 - v2.0 Vigil Platform shipped: 8 phases (29-36), 22 plans — Core API, Even G2 plugin, Mac app migration
+- v2.1 Server Deployment created: 8 phases (37-44) — PostgreSQL, auth, Railway deploy, client migration
 
 ## Session Continuity
 
-Last session: 2026-04-04
-Stopped at: v2.0 Milestone archived
+Last session: 2026-04-05
+Stopped at: Milestone v2.1 initialization
 Resume file: None
-Notes: All 6 milestones complete. 36 phases, 87 plans total. Next: plan v2.1 or v3.0 milestone.
+Notes: G2 plugin textEvent navigation bug fixed. Vigil Core running on localhost:3001. Ready to plan Phase 37.

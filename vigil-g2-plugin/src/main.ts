@@ -44,9 +44,15 @@ async function init(): Promise<void> {
 
   // Listen for lifecycle + navigation events
   bridge.onEvenHubEvent((event) => {
-    // List events (temple touchpad swipes)
+    // List events (temple touchpad swipes on list containers)
     if (event.listEvent?.eventType && NAV_EVENTS.has(event.listEvent.eventType)) {
       void handleNavEvent(event.listEvent.eventType, bridge)
+      return
+    }
+
+    // Text events (temple touchpad swipes on text containers)
+    if (event.textEvent?.eventType && NAV_EVENTS.has(event.textEvent.eventType)) {
+      void handleNavEvent(event.textEvent.eventType, bridge)
       return
     }
 
