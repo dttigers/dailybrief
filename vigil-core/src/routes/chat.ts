@@ -101,7 +101,9 @@ chat.post("/chat", async (c) => {
     });
 
     return c.json({ response, contextUsed });
-  } catch {
-    return c.json({ error: "AI request failed" }, 502);
+  } catch (err) {
+    console.error("[chat] AI request failed:", err);
+    const message = err instanceof Error ? err.message : "AI request failed";
+    return c.json({ error: message }, 502);
   }
 });
