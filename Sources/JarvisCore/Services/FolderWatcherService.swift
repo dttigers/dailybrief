@@ -252,6 +252,9 @@ public actor FolderWatcherService {
                 if var t = try await thoughtStore.fetch(id: thought.id!) {
                     t.category = result.category
                     t.confidence = result.confidence
+                    if result.category == .task && t.taskStatus == nil {
+                        t.taskStatus = .open
+                    }
                     _ = try await thoughtStore.update(t)
 
                     // Auto-classify therapy thoughts after triage
@@ -302,6 +305,9 @@ public actor FolderWatcherService {
                 if var t = try await thoughtStore.fetch(id: thought.id!) {
                     t.category = result.category
                     t.confidence = result.confidence
+                    if result.category == .task && t.taskStatus == nil {
+                        t.taskStatus = .open
+                    }
                     _ = try await thoughtStore.update(t)
 
                     // Auto-classify therapy thoughts after triage

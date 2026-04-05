@@ -463,6 +463,9 @@ final class DashboardViewModel {
                             if var t = try await store.fetch(id: thought.id!) {
                                 t.category = result.category
                                 t.confidence = result.confidence
+                                if result.category == .task && t.taskStatus == nil {
+                                    t.taskStatus = .open
+                                }
                                 try await store.update(t)
                                 // Auto-classify therapy thoughts after import triage
                                 if result.category == .therapy {
@@ -500,6 +503,9 @@ final class DashboardViewModel {
                             if var t = try await store.fetch(id: thought.id!) {
                                 t.category = result.category
                                 t.confidence = result.confidence
+                                if result.category == .task && t.taskStatus == nil {
+                                    t.taskStatus = .open
+                                }
                                 try await store.update(t)
                                 // Auto-classify therapy thoughts after import triage
                                 if result.category == .therapy {
@@ -545,6 +551,9 @@ final class DashboardViewModel {
             if var t = try await store.fetch(id: id) {
                 t.category = result.category
                 t.confidence = result.confidence
+                if result.category == .task && t.taskStatus == nil {
+                    t.taskStatus = .open
+                }
                 try await store.update(t)
                 // Auto-classify therapy thoughts after triage
                 if result.category == .therapy {
@@ -727,6 +736,9 @@ final class DashboardViewModel {
                 if var t = try await store.fetch(id: id) {
                     t.category = result.category
                     t.confidence = result.confidence
+                    if result.category == .task && t.taskStatus == nil {
+                        t.taskStatus = .open
+                    }
                     try await store.update(t)
                     // Auto-classify therapy thoughts after bulk triage
                     if result.category == .therapy {

@@ -125,6 +125,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                                 if var thought = try await thoughtStore.fetch(id: thoughtId) {
                                     thought.category = result.category
                                     thought.confidence = result.confidence
+                                    if result.category == .task && thought.taskStatus == nil {
+                                        thought.taskStatus = .open
+                                    }
                                     try await thoughtStore.update(thought)
                                     // Trigger sync after triage (non-blocking)
                                     if let syncService = self?.syncService {
@@ -143,6 +146,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                             if var thought = try await thoughtStore.fetch(id: thoughtId) {
                                 thought.category = category
                                 thought.confidence = 1.0
+                                if category == .task && thought.taskStatus == nil {
+                                    thought.taskStatus = .open
+                                }
                                 try await thoughtStore.update(thought)
                             }
                         } catch {
