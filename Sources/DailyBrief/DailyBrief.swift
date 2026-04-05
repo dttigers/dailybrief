@@ -45,6 +45,13 @@ extension DailyBrief {
                 throw error
             }
 
+            // Initialize API client (used for all AI and data services)
+            let apiClient = VigilAPIClient(
+                baseURL: URL(string: config.apiBaseUrl)!,
+                apiKey: config.apiKey
+            )
+            Logger.log("Using Vigil Core API backend")
+
             // Initialize services
             let sportsService = SportsService(config: config.sports.mlb)
             let remindersService = RemindersService(config: config.reminders)
@@ -52,42 +59,27 @@ extension DailyBrief {
             let calendarService: GoogleCalendarService? = config.googleCalendar.enabled
                 ? GoogleCalendarService(config: config.googleCalendar) : nil
 
-            // Select AI backend based on config: Vigil Core API or direct Claude
-            let aiProvider: any AIProvider
-            let prioritizer: any WorkOrderPrioritizing
-            if config.vigil?.useApi == true,
-               let apiBaseURL = URL(string: config.vigil?.apiBaseUrl ?? "") {
-                let apiClient = VigilAPIClient(baseURL: apiBaseURL, apiKey: config.vigil?.apiKey)
-                aiProvider = APIAIProvider(client: apiClient)
-                prioritizer = APIWorkOrderPrioritizer(client: apiClient)
-                Logger.log("Using Vigil Core API backend")
-            } else {
-                aiProvider = ClaudeAIProvider(config: config.ai)
-                prioritizer = WorkOrderPrioritizer(config: config.ai)
-                Logger.log("Using local Claude API backend")
-            }
+            let aiProvider: any AIProvider = APIAIProvider(client: apiClient)
+            let prioritizer: any WorkOrderPrioritizing = APIWorkOrderPrioritizer(client: apiClient)
+            let thoughtStore = APIThoughtStore(client: apiClient)
 
-            // Fetch captured thoughts from ThoughtStore first (local DB, fast)
-            // so we can pass summaries into the affirmation prompt
+            // Fetch captured thoughts via API
             var unprocessedThoughts: [Thought] = []
             var taskThoughts: [Thought] = []
             var recentThoughts: [Thought] = []
 
             do {
-                let dbManager = try DatabaseManager()
-                let thoughtStore = ThoughtStore(database: dbManager)
-
-                let allRecent = try await thoughtStore.fetchAll(limit: 50)
+                let allRecent = try await thoughtStore.fetchAll(category: nil, limit: 50, offset: 0)
                 unprocessedThoughts = allRecent.filter { $0.category == nil }
                     .prefix(20).map { $0 }
-                taskThoughts = try await thoughtStore.fetchAll(category: .task, limit: 10)
+                taskThoughts = try await thoughtStore.fetchAll(category: .task, limit: 10, offset: 0)
 
                 let twentyFourHoursAgo = Date().addingTimeInterval(-86400)
                 recentThoughts = allRecent.filter {
                     $0.category != nil && $0.category != .task && $0.createdAt >= twentyFourHoursAgo
                 }
             } catch {
-                Logger.error("ThoughtStore init failed, continuing without thoughts: \(error.localizedDescription)")
+                Logger.error("Thought fetch failed, continuing without thoughts: \(error.localizedDescription)")
             }
 
             // Fetch AI insights when enabled (depends on allThoughts, so runs sequentially)
@@ -95,7 +87,7 @@ extension DailyBrief {
             if config.insights.enabled {
                 do {
                     let allForInsights = unprocessedThoughts + taskThoughts + recentThoughts
-                    let insightService = InsightService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+                    let insightService = APIInsightService(client: apiClient)
                     insights = try await insightService.generateInsights(thoughts: allForInsights, lookbackDays: config.insights.lookbackDays)
                     Logger.log("Generated \(insights.count) insights")
                 } catch {
@@ -103,18 +95,15 @@ extension DailyBrief {
                 }
             }
 
-            // Fetch therapy patterns and prep when enabled
+            // Fetch therapy patterns and prep
             var therapyPatterns: [TherapyPattern] = []
             var therapyPrep: TherapyPrep?
             do {
-                let dbManager = try DatabaseManager()
-                let thoughtStore = ThoughtStore(database: dbManager)
+                let allTherapyThoughts = try await thoughtStore.fetchRecentTherapyThoughts(days: 30, classification: nil, limit: 200)
+                let bringToTherapistThoughts = try await thoughtStore.fetchRecentTherapyThoughts(days: 30, classification: .bringToTherapist, limit: 200)
 
-                let allTherapyThoughts = try await thoughtStore.fetchRecentTherapyThoughts(days: 30)
-                let bringToTherapistThoughts = try await thoughtStore.fetchRecentTherapyThoughts(days: 30, classification: .bringToTherapist)
-
-                let patternService = TherapyPatternService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-                let prepService = TherapyPrepService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+                let patternService = APITherapyPatternService(client: apiClient)
+                let prepService = APITherapyPrepService(client: apiClient)
 
                 therapyPatterns = await tryFetch("Therapy patterns") {
                     try await patternService.detectPatterns(thoughts: allTherapyThoughts, lookbackDays: 30)
