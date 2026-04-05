@@ -99,20 +99,21 @@ Plans:
 **Depends on**: Phase 39
 **Research**: Likely (domain + Railway custom domain setup)
 **Research topics**: Railway custom domains, SSL provisioning, CORS configuration for G2/Mac clients
-**Plans**: TBD
+**Plans**: 1 plan in 1 wave
 
 Plans:
-- [ ] 43-01: TBD
+- [x] 43-01: CORS Middleware & Domain Config (Wave 1) — completed 2026-04-05
 
 #### Phase 44: Integration Testing & Hardening
 
 **Goal**: End-to-end validation across all 3 clients (Mac app, G2 glasses, API), error handling, rate limiting
 **Depends on**: Phases 41, 42, 43
 **Research**: Unlikely (internal patterns)
-**Plans**: TBD
+**Plans**: 2 plans in 2 waves
 
 Plans:
-- [ ] 44-01: TBD
+- [x] 44-01: Rate Limiting, Timeout & Security Headers (Wave 1) — completed 2026-04-05
+- [x] 44-02: API Smoke Test & E2E Client Verification (Wave 2) — completed 2026-04-05
 
 <details>
 <summary>✅ v1.0 MVP (Phases 1-7) — SHIPPED 2026-04-02</summary>
@@ -240,5 +241,5 @@ None
 | 40. Data Migration | v2.1 | 0/? | Not started | - |
 | 41. G2 Plugin Production URL | v2.1 | 0/? | Not started | - |
 | 42. Mac App Server Migration | v2.1 | 0/? | Not started | - |
-| 43. HTTPS & Domain | v2.1 | 0/? | Not started | - |
-| 44. Integration Testing & Hardening | v2.1 | 0/? | Not started | - |
+| 43. HTTPS & Domain | v2.1 | 1/1 | Complete | 2026-04-05 |
+| 44. Integration Testing & Hardening | v2.1 | 2/2 | Complete | 2026-04-05 |
