@@ -28,12 +28,12 @@ const app = new Hono();
 // CORS middleware — must run before auth so preflight OPTIONS requests are not rejected
 const corsOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
-  : ["*"];
+  : null;
 
 app.use(
   "*",
   cors({
-    origin: corsOrigins,
+    origin: corsOrigins ?? "*",
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowHeaders: ["Content-Type", "Authorization"],
   })
