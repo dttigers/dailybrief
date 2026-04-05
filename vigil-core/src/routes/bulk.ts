@@ -1,6 +1,7 @@
 import { Hono } from "hono";
-import { getDb } from "../db/index.js";
-import type { Thought } from "../db/types.js";
+import { eq, ne, and, inArray } from "drizzle-orm";
+import { db } from "../db/connection.js";
+import { thoughts } from "../db/schema.js";
 
 const VALID_CATEGORIES = [
   "task",
@@ -22,7 +23,6 @@ function validateIds(ids: unknown): ids is number[] {
 
 // POST /thoughts/bulk/delete — Bulk soft delete
 bulk.post("/thoughts/bulk/delete", async (c) => {
-  const db = getDb();
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
@@ -36,18 +36,16 @@ bulk.post("/thoughts/bulk/delete", async (c) => {
       );
     }
 
-    const now = new Date().toISOString();
-    const placeholders = ids.map(() => "?").join(", ");
+    const result = await db
+      .update(thoughts)
+      .set({
+        syncStatus: "pendingDeletion",
+        modifiedAt: new Date(),
+      })
+      .where(inArray(thoughts.id, ids))
+      .returning({ id: thoughts.id });
 
-    const result = db.transaction(() => {
-      return db
-        .prepare(
-          `UPDATE thoughts SET syncStatus = 'pendingDeletion', modifiedAt = ? WHERE id IN (${placeholders})`,
-        )
-        .run(now, ...ids);
-    })();
-
-    return c.json({ deleted: result.changes });
+    return c.json({ deleted: result.length });
   } catch (err) {
     console.error("[vigil-core] Bulk delete failed:", err);
     return c.json({ error: "Bulk delete failed" }, 500);
@@ -56,7 +54,6 @@ bulk.post("/thoughts/bulk/delete", async (c) => {
 
 // POST /thoughts/bulk/recategorize — Bulk category change
 bulk.post("/thoughts/bulk/recategorize", async (c) => {
-  const db = getDb();
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
@@ -84,18 +81,22 @@ bulk.post("/thoughts/bulk/recategorize", async (c) => {
       );
     }
 
-    const now = new Date().toISOString();
-    const placeholders = ids.map(() => "?").join(", ");
+    const result = await db
+      .update(thoughts)
+      .set({
+        category,
+        modifiedAt: new Date(),
+        syncStatus: "pending",
+      })
+      .where(
+        and(
+          inArray(thoughts.id, ids),
+          ne(thoughts.syncStatus, "pendingDeletion"),
+        ),
+      )
+      .returning({ id: thoughts.id });
 
-    const result = db.transaction(() => {
-      return db
-        .prepare(
-          `UPDATE thoughts SET category = ?, syncStatus = 'pending', modifiedAt = ? WHERE id IN (${placeholders}) AND syncStatus != 'pendingDeletion'`,
-        )
-        .run(category, now, ...ids);
-    })();
-
-    return c.json({ updated: result.changes });
+    return c.json({ updated: result.length });
   } catch (err) {
     console.error("[vigil-core] Bulk recategorize failed:", err);
     return c.json({ error: "Bulk recategorize failed" }, 500);
@@ -104,7 +105,6 @@ bulk.post("/thoughts/bulk/recategorize", async (c) => {
 
 // POST /thoughts/bulk/therapy-classify — Bulk therapy classification
 bulk.post("/thoughts/bulk/therapy-classify", async (c) => {
-  const db = getDb();
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
@@ -133,18 +133,22 @@ bulk.post("/thoughts/bulk/therapy-classify", async (c) => {
       );
     }
 
-    const now = new Date().toISOString();
-    const placeholders = ids.map(() => "?").join(", ");
+    const result = await db
+      .update(thoughts)
+      .set({
+        therapyClassification: classification,
+        modifiedAt: new Date(),
+        syncStatus: "pending",
+      })
+      .where(
+        and(
+          inArray(thoughts.id, ids),
+          ne(thoughts.syncStatus, "pendingDeletion"),
+        ),
+      )
+      .returning({ id: thoughts.id });
 
-    const result = db.transaction(() => {
-      return db
-        .prepare(
-          `UPDATE thoughts SET therapyClassification = ?, syncStatus = 'pending', modifiedAt = ? WHERE id IN (${placeholders}) AND syncStatus != 'pendingDeletion'`,
-        )
-        .run(classification, now, ...ids);
-    })();
-
-    return c.json({ updated: result.changes });
+    return c.json({ updated: result.length });
   } catch (err) {
     console.error("[vigil-core] Bulk therapy classify failed:", err);
     return c.json({ error: "Bulk therapy classify failed" }, 500);
@@ -153,7 +157,6 @@ bulk.post("/thoughts/bulk/therapy-classify", async (c) => {
 
 // POST /thoughts/bulk/tag — Bulk add/remove tag
 bulk.post("/thoughts/bulk/tag", async (c) => {
-  const db = getDb();
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
@@ -179,48 +182,46 @@ bulk.post("/thoughts/bulk/tag", async (c) => {
     }
 
     const trimmedTag = tag.trim();
-    const now = new Date().toISOString();
-    const placeholders = ids.map(() => "?").join(", ");
 
-    const updated = db.transaction(() => {
-      // Fetch all matching thoughts
-      const rows = db
-        .prepare(
-          `SELECT id, tags FROM thoughts WHERE id IN (${placeholders}) AND syncStatus != 'pendingDeletion'`,
-        )
-        .all(...ids) as Pick<Thought, "id" | "tags">[];
-
-      let count = 0;
-      const updateStmt = db.prepare(
-        "UPDATE thoughts SET tags = ?, syncStatus = 'pending', modifiedAt = ? WHERE id = ?",
+    // Fetch all matching thoughts
+    const matchingThoughts = await db
+      .select({ id: thoughts.id, tags: thoughts.tags })
+      .from(thoughts)
+      .where(
+        and(
+          inArray(thoughts.id, ids),
+          ne(thoughts.syncStatus, "pendingDeletion"),
+        ),
       );
 
-      for (const row of rows) {
-        const currentTags: string[] = row.tags
-          ? JSON.parse(row.tags)
-          : [];
+    let modifiedCount = 0;
 
+    await db.transaction(async (tx) => {
+      for (const t of matchingThoughts) {
+        const currentTags: string[] = (t.tags as string[]) || [];
         let newTags: string[];
+
         if (action === "add") {
-          if (currentTags.includes(trimmedTag)) {
-            continue; // Already has tag, skip
-          }
+          if (currentTags.includes(trimmedTag)) continue;
           newTags = [...currentTags, trimmedTag];
         } else {
-          if (!currentTags.includes(trimmedTag)) {
-            continue; // Doesn't have tag, skip
-          }
-          newTags = currentTags.filter((t) => t !== trimmedTag);
+          if (!currentTags.includes(trimmedTag)) continue;
+          newTags = currentTags.filter((x) => x !== trimmedTag);
         }
 
-        updateStmt.run(JSON.stringify(newTags), now, row.id);
-        count++;
+        await tx
+          .update(thoughts)
+          .set({
+            tags: newTags.length > 0 ? newTags : null,
+            modifiedAt: new Date(),
+            syncStatus: "pending",
+          })
+          .where(eq(thoughts.id, t.id));
+        modifiedCount++;
       }
+    });
 
-      return count;
-    })();
-
-    return c.json({ updated });
+    return c.json({ updated: modifiedCount });
   } catch (err) {
     console.error("[vigil-core] Bulk tag failed:", err);
     return c.json({ error: "Bulk tag failed" }, 500);
