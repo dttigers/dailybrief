@@ -14,7 +14,7 @@ public enum ThoughtStoreError: Error, LocalizedError {
 }
 
 /// Data access layer for thoughts — provides CRUD operations and FTS5 search.
-public actor ThoughtStore {
+public actor ThoughtStore: ThoughtRepository {
 
     // MARK: Properties
 
@@ -39,6 +39,13 @@ public actor ThoughtStore {
             try t.save(db)
             return t
         }
+    }
+
+    /// Save a thought and return the saved version. Actor-boundary-safe alternative to `save(_:inout)`.
+    public func saveThought(_ thought: Thought) async throws -> Thought {
+        var mutable = thought
+        try save(&mutable)
+        return mutable
     }
 
     /// Update a thought and return the saved version. Sets `modifiedAt` to now and marks as pending sync.
