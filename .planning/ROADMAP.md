@@ -33,10 +33,13 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 **Depends on**: v2.0 complete
 **Research**: Likely (Drizzle ORM + PostgreSQL new to project)
 **Research topics**: Drizzle ORM setup with Hono, PostgreSQL schema patterns, migration workflow
-**Plans**: TBD
+**Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 37-01: TBD (run /gsd:plan-phase 37 to break down)
+- [ ] 37-01: Drizzle Schema & Database Setup (Wave 1)
+- [ ] 37-02: Thoughts CRUD + FTS Route Migration (Wave 2, parallel)
+- [ ] 37-03: Tags, Links & Bulk Route Migration (Wave 2, parallel)
+- [ ] 37-04: Summary, Brief & Final Cleanup (Wave 3)
 
 #### Phase 38: API Key Authentication
 
