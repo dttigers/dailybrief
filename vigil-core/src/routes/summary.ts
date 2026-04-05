@@ -1,28 +1,31 @@
 import { Hono } from "hono";
-import { getDb } from "../db/index.js";
+import { db } from "../db/connection.js";
+import { thoughts, thoughtLinks } from "../db/schema.js";
+import { ne, eq, and, desc, count, sql } from "drizzle-orm";
 
 export const summary = new Hono();
 
-summary.get("/summary", (c) => {
-  const db = getDb();
+summary.get("/summary", async (c) => {
   if (!db) {
     return c.json({ error: "Database not available" }, 503);
   }
 
   try {
     // Total thought count (excluding soft-deleted)
-    const totalRow = db
-      .prepare(
-        "SELECT COUNT(*) as count FROM thoughts WHERE syncStatus != 'pendingDeletion'",
-      )
-      .get() as { count: number };
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(thoughts)
+      .where(ne(thoughts.syncStatus, "pendingDeletion"));
 
     // Counts by category
-    const categoryRows = db
-      .prepare(
-        "SELECT category, COUNT(*) as count FROM thoughts WHERE syncStatus != 'pendingDeletion' GROUP BY category",
-      )
-      .all() as { category: string | null; count: number }[];
+    const categoryRows = await db
+      .select({
+        category: thoughts.category,
+        count: count(),
+      })
+      .from(thoughts)
+      .where(ne(thoughts.syncStatus, "pendingDeletion"))
+      .groupBy(thoughts.category);
 
     const byCategory: Record<string, number> = {};
     for (const row of categoryRows) {
@@ -30,58 +33,67 @@ summary.get("/summary", (c) => {
     }
 
     // Task counts by status
-    const taskRows = db
-      .prepare(
-        "SELECT taskStatus, COUNT(*) as count FROM thoughts WHERE category = 'task' AND syncStatus != 'pendingDeletion' GROUP BY taskStatus",
+    const taskRows = await db
+      .select({
+        taskStatus: thoughts.taskStatus,
+        count: count(),
+      })
+      .from(thoughts)
+      .where(
+        and(
+          eq(thoughts.category, "task"),
+          ne(thoughts.syncStatus, "pendingDeletion"),
+        ),
       )
-      .all() as { taskStatus: string | null; count: number }[];
+      .groupBy(thoughts.taskStatus);
 
     const tasksByStatus: Record<string, number> = {};
     for (const row of taskRows) {
       tasksByStatus[row.taskStatus ?? "none"] = row.count;
     }
 
-    // Recent thoughts (last 5)
-    const recentRows = db
-      .prepare(
-        "SELECT id, content, category, source, createdAt, tags FROM thoughts WHERE syncStatus != 'pendingDeletion' ORDER BY createdAt DESC LIMIT 5",
-      )
-      .all() as {
-      id: number;
-      content: string;
-      category: string | null;
-      source: string;
-      createdAt: string;
-      tags: string | null;
-    }[];
+    // Favorites count
+    const [{ favCount }] = await db
+      .select({ favCount: count() })
+      .from(thoughts)
+      .where(
+        and(
+          eq(thoughts.isFavorited, true),
+          ne(thoughts.syncStatus, "pendingDeletion"),
+        ),
+      );
+
+    // Linked thoughts count
+    const [{ linkedCount }] = await db
+      .select({
+        linkedCount:
+          sql<number>`count(distinct ${thoughtLinks.sourceThoughtId})`,
+      })
+      .from(thoughtLinks);
+
+    // Recent 5 thoughts
+    const recentRows = await db
+      .select()
+      .from(thoughts)
+      .where(ne(thoughts.syncStatus, "pendingDeletion"))
+      .orderBy(desc(thoughts.createdAt))
+      .limit(5);
 
     const recent = recentRows.map((row) => ({
       id: row.id,
       content: row.content,
       category: row.category,
       source: row.source,
-      createdAt: row.createdAt,
-      tags: row.tags ? JSON.parse(row.tags) : [],
+      createdAt: row.createdAt.toISOString(),
+      tags: row.tags ?? [],
     }));
 
-    // Favorites count
-    const favRow = db
-      .prepare(
-        "SELECT COUNT(*) as count FROM thoughts WHERE isFavorited = 1 AND syncStatus != 'pendingDeletion'",
-      )
-      .get() as { count: number };
-
-    // Linked thoughts count
-    const linkedRow = db
-      .prepare("SELECT COUNT(DISTINCT sourceThoughtId) as count FROM thought_links")
-      .get() as { count: number };
-
     return c.json({
-      total: totalRow.count,
+      total,
       byCategory,
       tasksByStatus,
-      favorites: favRow.count,
-      linkedThoughts: linkedRow.count,
+      favorites: favCount,
+      linkedThoughts: linkedCount,
       recent,
     });
   } catch (err) {
