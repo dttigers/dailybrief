@@ -2,25 +2,25 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-04)
+See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v2.1 Server Deployment — get Vigil Core online for G2 glasses and future mobile clients
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 44 of 44 (Integration Testing & Hardening) — PHASE COMPLETE
-Plan: 2/2 complete
-Status: Phase 44 complete. All plans executed. v2.1 Server Deployment milestone ready to close.
-Last activity: 2026-04-05 — Smoke test script (12 endpoints), client verification (G2 build passes, Mac app deferred)
+Phase: 44 of 44 (Integration Testing & Hardening) — v2.1 SHIPPED
+Plan: All complete
+Status: v2.1 Server Deployment milestone shipped 2026-04-05
+Last activity: 2026-04-05 — v2.1 milestone complete, archived
 
 Progress: ██████████ 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 94
-- Total execution time: ~10 days
+- Total plans completed: 100
+- Total execution time: ~11 days
 - Average duration: ~5 min per plan
 
 **By Milestone:**
@@ -33,7 +33,7 @@ Progress: ██████████ 100%
 | v1.3 Stability & Smarts | 19-23 | 7 | 1 day |
 | v1.4 Intelligence & Org | 24-28 | 11 | 1 day |
 | v2.0 Vigil Platform | 29-36 | 22 | 1 day |
-| v2.1 Server Deployment | 37-44 | TBD | in progress |
+| v2.1 Server Deployment | 37-44 | 13 | 1 day |
 
 ## Accumulated Context
 
@@ -46,6 +46,7 @@ Full decision history available in milestone archives:
 - .planning/milestones/v1.2-ROADMAP.md
 - .planning/milestones/v1.4-ROADMAP.md
 - .planning/milestones/v2.0-ROADMAP.md
+- .planning/milestones/v2.1-ROADMAP.md
 
 ### Pending Todos
 
@@ -63,11 +64,11 @@ None.
 - v1.3 Stability & Smarts shipped: 5 phases (19-23), 7 plans
 - v1.4 Intelligence & Organization shipped (early close): 5 phases (24-28), 11 plans
 - v2.0 Vigil Platform shipped: 8 phases (29-36), 22 plans — Core API, Even G2 plugin, Mac app migration
-- v2.1 Server Deployment created: 8 phases (37-44) — PostgreSQL, auth, Railway deploy, client migration
+- v2.1 Server Deployment shipped: 8 phases (37-44), 13 plans — PostgreSQL, auth, Railway deploy, client migration, hardening
 
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Phase 44 complete — v2.1 milestone ready to close
+Stopped at: v2.1 milestone complete and archived
 Resume file: None
-Notes: Phase 44 complete. Plan 01: rate limiting, timeout, security headers. Plan 02: 12-endpoint smoke test script, G2 plugin build verified. All phases (37-44) of v2.1 Server Deployment milestone executed.
+Notes: All 7 milestones shipped. 44 phases, 100 plans across 11 days. Vigil Core API live on Railway with PostgreSQL.

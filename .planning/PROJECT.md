@@ -2,7 +2,7 @@
 
 ## What This Is
 
-An ambient AI life assistant built for ADHD brains. A native macOS app (formerly Jarvis) with frictionless text/voice/image capture, Claude AI auto-triage, therapy intelligence, tags/favorites/linking, a SwiftUI dashboard, and a daily printed PDF brief. Now a multi-client platform: Vigil Core API (Node.js/Hono) serves as the intelligence backend, the Mac app operates as either a local-first or API-connected client via config toggle, and Even G2 smart glasses provide ambient glanceable display of work orders, reminders, and affirmations.
+An ambient AI life assistant built for ADHD brains. A native macOS app (formerly Jarvis) with frictionless text/voice/image capture, Claude AI auto-triage, therapy intelligence, tags/favorites/linking, a SwiftUI dashboard, and a daily printed PDF brief. Now a multi-client platform deployed to production: Vigil Core API (Node.js/Hono/Drizzle/PostgreSQL) runs on Railway, the Mac app connects to the production server with bearer token auth, and Even G2 smart glasses provide ambient glanceable display of work orders, reminders, and affirmations.
 
 ## Core Value
 
@@ -52,19 +52,22 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Vigil Core API — platform-agnostic Node.js backend exposing REST API for all clients — v2.0
 - ✓ Even G2 smart glasses plugin — ambient display of work orders, reminders, affirmation — v2.0
 - ✓ Mac app migration — redirect Swift services to call Vigil Core instead of computing locally — v2.0
+- ✓ Server deployment — Vigil Core on Railway with managed PostgreSQL, bearer auth, HTTPS — v2.1
+- ✓ PostgreSQL migration — Drizzle ORM replacing better-sqlite3, tsvector FTS — v2.1
+- ✓ API hardening — rate limiting, timeouts, security headers, CORS, smoke tests — v2.1
+- ✓ Data migration — local SQLite thoughts migrated to production PostgreSQL — v2.1
 
 ### Active
 
 - [ ] Brief history — browse and reprint past daily briefs
 - [ ] Export system — thoughts as Markdown/JSON/CSV
 - [ ] CKSubscription push notifications — upgrade from polling-based sync
-- [ ] Server deployment — move Vigil Core from localhost to cloud for mobile/remote access
 - [ ] G2 hardware testing — validate plugin on physical Even G2 glasses
 - [ ] Remove dual code paths — retire local-only mode once API backend is proven stable
 
 ### Out of Scope
 
-- iOS/mobile app — build once Vigil Core runs on a server, not just localhost
+- iOS/mobile app — Vigil Core now on a server; build when ready to invest in mobile UX
 - Real-time voice assistant — this is capture-and-review, not conversational
 - Replacing the physical notebook — digital complements the traveler's notebook, doesn't replace it
 - Multi-user support — build after Vigil Core is proven on a server
@@ -72,19 +75,20 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
-Shipped v2.0 Vigil Platform with ~7,500 LOC across Swift + TypeScript in 10 days total (v1.0 through v2.0).
-Tech stack: Swift 6.2/SwiftUI/SPM (Mac app), Node.js/Hono/TypeScript/better-sqlite3 (Vigil Core API), Vite/TypeScript/Even Hub SDK (G2 plugin).
-3 client surfaces: Mac app (dashboard + capture panel + PDF brief), Vigil Core API (localhost:3001, 20+ REST endpoints), Even G2 plugin (3 screens).
-Mac app runs in dual mode: local GRDB or Vigil API backend, controlled by `vigil.useAPI` config flag.
-Two LaunchAgents: com.jarvis.dailybrief (brief scheduler) and com.vigil.core.api (API server).
-G2 plugin built but awaiting physical hardware for validation. Server deployment deferred — localhost only for v2.0.
+Shipped v2.1 Server Deployment — Vigil Core now live at vigil-core-production.up.railway.app with managed PostgreSQL.
+Tech stack: Swift 6.2/SwiftUI/SPM (Mac app), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API), Vite/TypeScript/Even Hub SDK (G2 plugin).
+3 client surfaces all connected to production: Mac app (dashboard + capture panel + PDF brief), Vigil Core API (Railway, 20+ REST endpoints), Even G2 plugin (3 screens).
+Mac app connects to production server with bearer token auth; local GRDB mode retained as fallback via `vigil.useAPI` config flag.
+API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s timeouts, security headers, and CORS.
+Two LaunchAgents: com.jarvis.dailybrief (brief scheduler) and com.vigil.core.api (local API server for dev).
+G2 plugin configured for production but awaiting physical hardware for validation.
 
 ## Constraints
 
 - **Platform**: macOS 14+ (Sonoma), Swift 6.2, SwiftUI
 - **AI Provider**: Anthropic Claude API (already integrated)
 - **Build System**: Swift Package Manager (existing setup)
-- **Data Storage**: Local GRDB/SQLite with FTS5 search (no cloud dependency)
+- **Data Storage**: Production PostgreSQL on Railway (Drizzle ORM, tsvector FTS); local GRDB/SQLite retained as Mac app fallback
 - **Voice Capture**: SFSpeechRecognizer for on-device transcription; external pocket recorder for mobile
 - **Physical Output**: Daily PDF must remain printable and glueable into traveler's notebook
 
@@ -117,7 +121,13 @@ G2 plugin built but awaiting physical hardware for validation. Server deployment
 | Protocol abstraction for Mac app migration | ThoughtRepository + AI service protocols enable gradual migration without breaking existing code | ✓ Good |
 | Config toggle (vigil.useAPI) for dual mode | Allows testing API backend while keeping local fallback; de-risks migration | ✓ Good |
 | snake_case config keys for cross-platform compat | Swift JSONEncoder requires snake_case; discovered during integration testing | ✓ Good |
-| Localhost-only for v2.0 | Avoids auth/deployment complexity; proves architecture before scaling | — Pending |
+| Localhost-only for v2.0 | Avoids auth/deployment complexity; proves architecture before scaling | ✓ Good — enabled confident v2.1 deployment |
+| Drizzle ORM over raw SQL for PostgreSQL | Type-safe queries, migration tooling, connection pooling built-in | ✓ Good |
+| Railway over self-hosted VPS | Managed Postgres addon, GitHub CI/CD, zero DevOps overhead | ✓ Good |
+| SHA-256 hashed bearer tokens (vk_ prefix) | Simple auth model, no session management needed for API-to-API calls | ✓ Good |
+| Keep Railway default domain | vigil-core-production.up.railway.app with HTTPS included; custom domain unnecessary for now | — Pending |
+| In-memory rate limiting over Redis | Single-instance deployment; no external dependency needed at current scale | ✓ Good |
+| Programmatic migrations on deploy | Drizzle migrate() runs idempotently on every Railway deploy; no manual step | ✓ Good |
 
 ---
-*Last updated: 2026-04-04 after v2.0 milestone*
+*Last updated: 2026-04-05 after v2.1 milestone*

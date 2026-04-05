@@ -1,5 +1,33 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v2.1 Server Deployment (Shipped: 2026-04-05)
+
+**Delivered:** Production deployment of Vigil Core API on Railway with PostgreSQL, bearer token authentication, data migration, and all 3 clients (Mac app, G2 glasses, API) connected to production server with hardened security.
+
+**Phases completed:** 37-44 (13 plans total)
+
+**Key accomplishments:**
+
+- Full PostgreSQL migration — replaced better-sqlite3 with Drizzle ORM across all routes, tsvector FTS
+- Production deployment on Railway — managed Postgres addon, programmatic migrations, public domain
+- Bearer token auth — SHA-256 hashed API keys (vk_ prefix) protecting all 12 route modules
+- Data migration — 45 thoughts from local SQLite to production PostgreSQL with integrity verification
+- Multi-client production config — G2 plugin and Mac app pointed at production URL with auth headers
+- API hardening — rate limiting (100 req/60s), 30s timeouts, security headers, CORS, 12-endpoint smoke test
+
+**Stats:**
+
+- 68 files created/modified
+- +7,014 / -825 lines (TypeScript + Swift)
+- 8 phases, 13 plans, ~25 tasks
+- 1 day (2026-04-05, ~4 hours active development)
+
+**Git range:** `docs(37)` → `fix(42-01)`
+
+**What's next:** TBD — next milestone planning
+
+---
+
 ## v2.0 Vigil Platform (Shipped: 2026-04-04)
 
 **Delivered:** Platform-agnostic Vigil Core API (Node.js/Hono/TypeScript) with 20+ REST endpoints, Even G2 smart glasses plugin with 3-screen navigation, and full Mac app migration to API backend via protocol abstraction and config toggle.
