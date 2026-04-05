@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 36 of 36 (Integration & Polish)
-Plan: 01 checkpoint-pending (tasks 1-2 complete, task 3 awaiting human verify)
-Status: Phase 36 in progress
-Last activity: 2026-04-04 - LaunchAgent created and running, G2 plugin built for submission
+Plan: 01 complete
+Status: Phase 36 complete — v2.0 MILESTONE COMPLETE
+Last activity: 2026-04-04 - Phase 36 complete (LaunchAgent auto-start, G2 plugin build, end-to-end verification approved)
 
-Progress: █████████▉ 98%
+Progress: ██████████ 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 86
+- Total plans completed: 87
 - Total execution time: ~9 days
 - Average duration: ~5 min per plan
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 36, Plan 01 Task 3 (checkpoint)
+Stopped at: v2.0 Milestone complete
 Resume file: None
-Notes: Vigil Core API running as LaunchAgent on port 3001 (auto-start, crash recovery). G2 plugin built for Even Hub submission. Awaiting human verification of complete v2.0 system before marking milestone complete.
+Notes: v2.0 Vigil Platform milestone complete. 8 phases (29-36), 87 total plans across all milestones. Vigil Core API running as LaunchAgent, G2 plugin built, Mac app migrated to API backend with config toggle. G2 hardware testing deferred.

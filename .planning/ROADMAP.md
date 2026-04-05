@@ -184,10 +184,10 @@ Plans:
 **Goal**: End-to-end testing across all clients, LaunchAgent for API server auto-start, packaging G2 plugin for Even Hub submission
 **Depends on**: Phase 33, Phase 35
 **Research**: Unlikely (testing and packaging — established patterns)
-**Plans**: TBD
+**Plans**: 1
 
 Plans:
-- [ ] 36-01: TBD
+- [x] 36-01: LaunchAgent auto-start, G2 plugin build, end-to-end verification
 
 ## Domain Expertise
 
@@ -232,4 +232,4 @@ None
 | 33. Even G2 Plugin — Screens + Nav | v2.0 | 3/3 | Complete | 2026-04-04 |
 | 34. Mac App Migration — First Services | v2.0 | 4/4 | Complete | 2026-04-04 |
 | 35. Mac App Migration — AI Services | v2.0 | 3/3 | Complete | 2026-04-04 |
-| 36. Integration & Polish | v2.0 | 0/? | Not started | - |
+| 36. Integration & Polish | v2.0 | 1/1 | Complete | 2026-04-04 |

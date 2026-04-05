@@ -1,9 +1,8 @@
 ---
 phase: 36-integration-polish
 plan: 01
-status: checkpoint-pending
-completed_tasks: 2/3
-checkpoint_at: task-3
+status: complete
+completed_tasks: 3/3
 ---
 
 # Plan 36-01 Summary: Integration & Polish
@@ -15,23 +14,21 @@ checkpoint_at: task-3
 - **Files:** `LaunchAgent/com.jamesonmorrill.vigilcore.plist`
 - **Result:** Vigil Core API auto-starts on login, restarts on crash, running on port 3001
 - **Verification:**
-  - `launchctl list | grep vigilcore` shows loaded (PID 66178)
+  - `launchctl list | grep vigilcore` shows loaded
   - `curl http://localhost:3001/v1/health` returns `{"status":"ok"}`
   - Logs created at `~/Library/Logs/DailyBrief/vigilcore-stdout.log`
-  - Database connected: 38 thoughts loaded
 
 ### Task 2: Build G2 plugin for Even Hub submission
 - **Commit:** N/A (build artifact only, dist/ is gitignored)
-- **Files:** `vigil-g2-plugin/dist/index.html`, `vigil-g2-plugin/dist/assets/index-DKpb7btj.js`
+- **Files:** `vigil-g2-plugin/dist/index.html`, `vigil-g2-plugin/dist/assets/`
 - **Result:** Clean build, dist/ ready for Even Hub submission
-- **Verification:**
-  - `dist/index.html` exists (0.31 kB)
-  - JS bundle built (64.50 kB, 24.77 kB gzipped)
-  - `app.json` has all required fields (name, version, description, entrypoint)
-  - Zero build errors
 
-## Pending
+### Task 3: End-to-end system verification
+- **Status:** Approved (G2 plugin deferred — no hardware yet)
+- API health check: passing
+- Mac app API mode: working with vigil config toggle
+- LaunchAgent auto-restart: verified
 
-### Task 3: CHECKPOINT - Full system verification
-- **Status:** Awaiting human verification
-- **Blocked by:** User needs to verify complete v2.0 system end-to-end
+## Issues Found
+
+- Config key casing: Swift's JSONEncoder uses `.convertToSnakeCase`, so vigil config keys must be snake_case in JSON (`use_api`, `api_base_url`), not camelCase. Fixed during verification.
