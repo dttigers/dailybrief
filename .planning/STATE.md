@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 43 of 44 (HTTPS & Domain) — Plan 01 COMPLETE
-Plan: 1/1 complete
-Status: Phase 43 plan 01 complete, CORS middleware added, custom domain deferred (Railway default kept)
-Last activity: 2026-04-05 — Added CORS middleware to Vigil Core API, decided to keep Railway default domain
+Phase: 44 of 44 (Integration Testing & Hardening) — Plan 01 COMPLETE
+Plan: 1/? complete
+Status: Phase 44 plan 01 complete, rate limiting + timeout + security headers middleware deployed
+Last activity: 2026-04-05 — Added rate limiter, request timeout, and security headers to Vigil Core API; deployed to Railway
 
-Progress: ████░░░░░░ 42%
+Progress: ████░░░░░░ 43%
 
 ## Performance Metrics
 
@@ -68,6 +68,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Phase 43 plan 01 complete
+Stopped at: Phase 44 plan 01 complete
 Resume file: None
-Notes: Phase 43 HTTPS & Domain plan 01 complete. CORS middleware added to Vigil Core API (hono/cors, configurable origins). User chose to keep Railway default domain — custom domain deferred. Ready for phase 44.
+Notes: Phase 44 plan 01 complete. Rate limiting (100 req/60s/IP), 30s request timeout, and security headers middleware deployed to Railway production. Railway CLI deploy requires `--path-as-root` for monorepo subdirectory. GitHub auto-deploy may need dashboard re-enable.
