@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:prod": "tsc && vite build --mode production",
+    "pack": "evenhub pack app.json dist",
+    "release": "npm run build:prod && npm run pack",
     "preview": "vite preview"
   },
   "devDependencies": {
