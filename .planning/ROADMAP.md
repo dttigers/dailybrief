@@ -142,15 +142,16 @@ Plans:
 - [x] 46-03: Simplify AppDelegate to API-only
 - [x] 46-04: Migrate CLI to API backend
 
-#### Phase 47: Brief History
+#### Phase 47: Brief History ✅
 
 **Goal**: Browse and reprint past daily briefs from the dashboard
 **Depends on**: Phase 46
-**Research**: Unlikely (internal patterns)
-**Plans**: TBD
+**Completed**: 2026-04-05
 
 Plans:
-- [ ] 47-01: TBD
+- [x] 47-01: Brief history backend (schema, migration, CRUD endpoints)
+- [x] 47-02: CLI integration (auto-save + history subcommand)
+- [x] 47-03: Dashboard UI (history list, detail view, reprint)
 
 #### Phase 48: Export System
 
@@ -236,7 +237,7 @@ None
 | 44. Integration Testing & Hardening | v2.1 | 2/2 | Complete | 2026-04-05 |
 | 45. G2 Plugin UX Fixes | v2.2 | 0/? | Not started | - |
 | 46. Remove Dual Code Paths | v2.2 | 4/4 | Complete | 2026-04-05 |
-| 47. Brief History | v2.2 | 0/? | Not started | - |
+| 47. Brief History | v2.2 | 3/3 | Complete | 2026-04-05 |
 | 48. Export System | v2.2 | 0/? | Not started | - |
 | 49. Configurable PDF | v2.2 | 0/? | Not started | - |
 | 50. Dashboard AI Chat | v2.2 | 0/? | Not started | - |
