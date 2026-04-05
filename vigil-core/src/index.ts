@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { cors } from "hono/cors";
 import { serve } from "@hono/node-server";
 import { bearerAuth } from "./middleware/auth.js";
 import { health } from "./routes/health.js";
@@ -20,6 +21,20 @@ import { testConnection, closeConnection } from "./db/connection.js";
 testConnection();
 
 const app = new Hono();
+
+// CORS middleware — must run before auth so preflight OPTIONS requests are not rejected
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
+  : ["*"];
+
+app.use(
+  "*",
+  cors({
+    origin: corsOrigins,
+    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // Health route — no auth required (monitoring)
 app.route("/v1", health);
