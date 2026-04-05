@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 48 of 50 (Export System)
+Phase: 49 of 50 (Configurable PDF)
 Plan: 1 of 1 planned
-Status: Plan 48-01 complete — export endpoint and CLI subcommand shipped
-Last activity: 2026-04-05 — Plan 48-01 complete (2 tasks)
+Status: Plan 49-01 complete — PDFLayout struct and configurable rendering pipeline
+Last activity: 2026-04-05 — Plan 49-01 complete (2 tasks)
 
 Progress: ██████████ 100%
 
@@ -70,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Plan 48-01 complete — export endpoint + CLI subcommand shipped
+Stopped at: Plan 49-01 complete — PDFLayout struct and configurable rendering pipeline
 Resume file: None
