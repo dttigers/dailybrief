@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 
 ## Current Position
 
-Phase: 46 of 50 (Remove Dual Code Paths)
-Plan: 4 of 4 planned
-Status: Plan 04 complete — CLI migrated to API-only, all dual code paths removed
-Last activity: 2026-04-05 — Plan 04 executed (2 tasks, 4 files modified)
+Phase: 47 of 50 (Brief History)
+Plan: 1 of 3 planned
+Status: Plan 01 complete — briefs table schema, migration, and CRUD endpoints added
+Last activity: 2026-04-05 — Plan 01 executed (2 tasks, 5 files modified)
 
-Progress: ██████████ 100%
+Progress: ███░░░░░░░ 33%
 
 ## Performance Metrics
 
@@ -70,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Phase 46 complete — all 4 plans executed, all dual code paths removed from project
+Stopped at: Phase 47, Plan 01 complete — briefs table and API endpoints ready
 Resume file: None
