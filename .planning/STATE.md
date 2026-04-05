@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 35 of 36 (Mac Migration AI)
-Plan: 02 complete
+Plan: 03 complete
 Status: In progress
-Last activity: 2026-04-04 - Plan 35-02 complete (APIAIProvider, WorkOrderPrioritizing protocol, APIWorkOrderPrioritizer, CLI config-driven backend selection)
+Last activity: 2026-04-04 - Plan 35-03 complete (AppDelegate, DashboardViewModel, FolderWatcherService wired to AI service protocol types with config-driven backend selection)
 
-Progress: ███████░░░ 70%
+Progress: ████████░░ 80%
 
 ## Performance Metrics
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 35, plan 02 complete
+Stopped at: Phase 35, plan 03 complete
 Resume file: None
-Notes: Plan 35-02 complete. DailyBrief CLI AI services (affirmation + work order prioritization) migrated to support Vigil Core API backend. APIAIProvider calls /affirmation, APIWorkOrderPrioritizer calls /prioritize. WorkOrderPrioritizing protocol abstracts both implementations. Config toggle (vigil.useAPI) selects backend. Build clean.
+Notes: Plan 35-03 complete. Mac app AI service consumers (AppDelegate, DashboardViewModel, FolderWatcherService) migrated to protocol types. Config toggle creates Vigil API or local Claude AI services. Build clean.
