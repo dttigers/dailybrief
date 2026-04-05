@@ -27,32 +27,6 @@ export type TherapyClassification = "selfLearnable" | "bringToTherapist";
 
 export type SyncStatus = "pending" | "synced" | "pendingDeletion";
 
-// ── Legacy types (for existing SQLite routes — removed in Plan 37-04) ───────
-
-export interface Thought {
-  id: number;
-  content: string;
-  category: string | null;
-  confidence: number | null;
-  source: string;
-  createdAt: string;
-  modifiedAt: string;
-  cloudKitRecordID: string;
-  syncStatus: string;
-  lastSyncedAt: string | null;
-  taskStatus: string | null;
-  therapyClassification: string | null;
-  tags: string | null; // JSON array stored as TEXT in SQLite
-  isFavorited: number;
-}
-
-export interface ThoughtLink {
-  id: number;
-  sourceThoughtId: number;
-  targetThoughtId: number;
-  createdAt: string;
-}
-
 // ── Input/output types for API layer ────────────────────────────────────────
 
 export interface ThoughtCreateInput {
@@ -69,11 +43,6 @@ export interface ThoughtUpdateInput {
   therapyClassification?: TherapyClassification;
   tags?: string[];
   isFavorited?: boolean;
-}
-
-export interface ThoughtResponse
-  extends Omit<Thought, "tags"> {
-  tags: string[];
 }
 
 export interface PaginatedResponse<T> {

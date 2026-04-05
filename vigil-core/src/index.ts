@@ -13,10 +13,10 @@ import { insights } from "./routes/insights.js";
 import { prioritize } from "./routes/prioritize.js";
 import { describeImage } from "./routes/describe-image.js";
 import { therapy } from "./routes/therapy.js";
-import { getDb } from "./db/index.js";
+import { testConnection, closeConnection } from "./db/connection.js";
 
-// Initialize database connection at startup
-getDb();
+// Verify database connection at startup
+testConnection();
 
 const app = new Hono();
 
@@ -38,4 +38,17 @@ const port = Number(process.env.PORT) || 3001;
 
 serve({ fetch: app.fetch, port }, () => {
   console.log(`Vigil Core API running on port ${port}`);
+});
+
+// Graceful shutdown
+process.on("SIGTERM", async () => {
+  console.log("[vigil-core] SIGTERM received, closing connections...");
+  await closeConnection();
+  process.exit(0);
+});
+
+process.on("SIGINT", async () => {
+  console.log("[vigil-core] SIGINT received, closing connections...");
+  await closeConnection();
+  process.exit(0);
 });
