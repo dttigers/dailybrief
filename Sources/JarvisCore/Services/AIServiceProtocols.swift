@@ -24,6 +24,11 @@ public protocol ImageDescriptionProviding: Actor {
     func describe(imageData: Data, mediaType: ImageMediaType) async throws -> String
     /// Describes an image from a file URL.
     func describe(imageURL: URL) async throws -> String
+    /// Analyzes an image and returns multiple descriptions when the image contains
+    /// multiple distinct subjects (e.g., a notebook page with several topics).
+    func describeSubjects(imageData: Data, mediaType: ImageMediaType) async throws -> [String]
+    /// Analyzes an image file and returns multiple descriptions for distinct subjects.
+    func describeSubjects(imageURL: URL) async throws -> [String]
 }
 
 /// Protocol for therapy thought classification services.

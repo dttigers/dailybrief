@@ -46,7 +46,7 @@ describeImage.post("/describe-image", async (c) => {
   }
 
   try {
-    const description = await callClaudeMultimodal({
+    const rawText = await callClaudeMultimodal({
       content: [
         {
           type: "image",
@@ -58,13 +58,39 @@ describeImage.post("/describe-image", async (c) => {
         },
         {
           type: "text",
-          text: "Describe this image concisely in 1-2 sentences. Focus on what is shown and any text visible in the image. This will be stored as a thought capture.",
+          text: `Analyze this image of handwritten notes or a notebook page. Identify each distinct subject, topic, or thought present. Return a JSON array where each element represents one distinct subject:
+
+[{"subject": "brief topic label", "content": "full description of this subject/thought"}]
+
+If the image contains only one subject, return a single-element array. If it's not a notebook/notes image, return a single element describing what you see. Return ONLY the JSON array, no other text.`,
         },
       ],
-      maxTokens: 300,
+      maxTokens: 1000,
     });
 
-    return c.json({ description }, 200);
+    // Parse multi-subject JSON response into descriptions array
+    let descriptions: string[];
+    try {
+      const parsed = JSON.parse(rawText.trim()) as Array<{
+        subject?: string;
+        content?: string;
+      }>;
+      descriptions = parsed
+        .map((entry) => {
+          const content = entry.content?.trim();
+          if (!content) return null;
+          const subject = entry.subject?.trim();
+          return subject ? `${subject}: ${content}` : content;
+        })
+        .filter((d): d is string => d !== null);
+      if (descriptions.length === 0) descriptions = [rawText.trim()];
+    } catch {
+      // Fallback: if not valid JSON, treat as single description
+      descriptions = [rawText.trim()];
+    }
+
+    // Return both formats for backward compatibility
+    return c.json({ description: descriptions[0], descriptions }, 200);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown AI error";
     return c.json({ error: message }, 502);

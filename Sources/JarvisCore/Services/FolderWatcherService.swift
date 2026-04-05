@@ -288,47 +288,50 @@ public actor FolderWatcherService {
             return
         }
 
-        let description: String
+        let descriptions: [String]
         if ImageConversion.needsConversion(url) {
             let jpegData = try ImageConversion.convertToJPEG(from: url)
             let ext = url.pathExtension.lowercased()
             NSLog("FolderWatcherService: Converted %@ from %@ to JPEG (%d bytes)", filename, ext, jpegData.count)
-            description = try await imageDescriptionService.describe(imageData: jpegData, mediaType: .jpeg)
+            descriptions = try await imageDescriptionService.describeSubjects(imageData: jpegData, mediaType: .jpeg)
         } else {
-            description = try await imageDescriptionService.describe(imageURL: url)
+            descriptions = try await imageDescriptionService.describeSubjects(imageURL: url)
         }
-        let thought = try await captureService.capture(description, source: .image)
 
-        if let triageService, thought.id != nil {
-            do {
-                let result = try await triageService.triage(description)
-                if var t = try await thoughtStore.fetch(id: thought.id!) {
-                    t.category = result.category
-                    t.confidence = result.confidence
-                    if result.category == .task && t.taskStatus == nil {
-                        t.taskStatus = .open
-                    }
-                    _ = try await thoughtStore.update(t)
+        for description in descriptions {
+            let thought = try await captureService.capture(description, source: .image)
 
-                    // Auto-classify therapy thoughts after triage
-                    if result.category == .therapy, let therapyClassificationService {
-                        do {
-                            let classResult = try await therapyClassificationService.classify(description)
-                            if var updated = try await thoughtStore.fetch(id: thought.id!) {
-                                updated.therapyClassification = classResult.classification
-                                _ = try await thoughtStore.update(updated)
+            if let triageService, thought.id != nil {
+                do {
+                    let result = try await triageService.triage(description)
+                    if var t = try await thoughtStore.fetch(id: thought.id!) {
+                        t.category = result.category
+                        t.confidence = result.confidence
+                        if result.category == .task && t.taskStatus == nil {
+                            t.taskStatus = .open
+                        }
+                        _ = try await thoughtStore.update(t)
+
+                        // Auto-classify therapy thoughts after triage
+                        if result.category == .therapy, let therapyClassificationService {
+                            do {
+                                let classResult = try await therapyClassificationService.classify(description)
+                                if var updated = try await thoughtStore.fetch(id: thought.id!) {
+                                    updated.therapyClassification = classResult.classification
+                                    _ = try await thoughtStore.update(updated)
+                                }
+                                NSLog("[FolderWatcher] Therapy classification: %@ (%.0f%%)", classResult.classification.rawValue, classResult.confidence * 100)
+                            } catch {
+                                NSLog("[FolderWatcher] Therapy classification failed for %@: %@", filename, error.localizedDescription)
+                                // Non-fatal — thought is still captured and triaged
                             }
-                            NSLog("[FolderWatcher] Therapy classification: %@ (%.0f%%)", classResult.classification.rawValue, classResult.confidence * 100)
-                        } catch {
-                            NSLog("[FolderWatcher] Therapy classification failed for %@: %@", filename, error.localizedDescription)
-                            // Non-fatal — thought is still captured and triaged
                         }
                     }
+                    NSLog("[FolderWatcher] Triage result: %@ (%.0f%% confidence)", result.category.rawValue, result.confidence * 100)
+                } catch {
+                    NSLog("[FolderWatcher] Triage failed for %@: %@", filename, error.localizedDescription)
+                    // Non-fatal — thought is still captured
                 }
-                NSLog("[FolderWatcher] Triage result: %@ (%.0f%% confidence)", result.category.rawValue, result.confidence * 100)
-            } catch {
-                NSLog("[FolderWatcher] Triage failed for %@: %@", filename, error.localizedDescription)
-                // Non-fatal — thought is still captured
             }
         }
     }

@@ -478,42 +478,44 @@ final class DashboardViewModel {
                     }
 
                 case .image:
-                    let description: String
+                    let descriptions: [String]
 
                     if let descService = imageDescriptionService {
                         importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Analyzing")
 
                         if ImageConversion.needsConversion(url) {
                             let jpegData = try ImageConversion.convertToJPEG(from: url)
-                            description = try await descService.describe(imageData: jpegData, mediaType: .jpeg)
+                            descriptions = try await descService.describeSubjects(imageData: jpegData, mediaType: .jpeg)
                         } else {
-                            description = try await descService.describe(imageURL: url)
+                            descriptions = try await descService.describeSubjects(imageURL: url)
                         }
                     } else {
-                        description = "Image: \(filename)"
+                        descriptions = ["Image: \(filename)"]
                     }
 
                     importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Saving")
-                    let thought = try await captureService.capture(description, source: .image)
+                    for description in descriptions {
+                        let thought = try await captureService.capture(description, source: .image)
 
-                    if let triageService {
-                        importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Categorizing")
-                        do {
-                            let result = try await triageService.triage(description)
-                            if var t = try await store.fetch(id: thought.id!) {
-                                t.category = result.category
-                                t.confidence = result.confidence
-                                if result.category == .task && t.taskStatus == nil {
-                                    t.taskStatus = .open
+                        if let triageService {
+                            importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Categorizing")
+                            do {
+                                let result = try await triageService.triage(description)
+                                if var t = try await store.fetch(id: thought.id!) {
+                                    t.category = result.category
+                                    t.confidence = result.confidence
+                                    if result.category == .task && t.taskStatus == nil {
+                                        t.taskStatus = .open
+                                    }
+                                    try await store.update(t)
+                                    // Auto-classify therapy thoughts after import triage
+                                    if result.category == .therapy {
+                                        await classifyTherapyIfNeeded(t)
+                                    }
                                 }
-                                try await store.update(t)
-                                // Auto-classify therapy thoughts after import triage
-                                if result.category == .therapy {
-                                    await classifyTherapyIfNeeded(t)
-                                }
+                            } catch {
+                                NSLog("Batch triage failed for %@: %@", filename, error.localizedDescription)
                             }
-                        } catch {
-                            NSLog("Batch triage failed for %@: %@", filename, error.localizedDescription)
                         }
                     }
                 }

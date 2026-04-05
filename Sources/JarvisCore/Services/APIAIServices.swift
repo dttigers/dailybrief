@@ -166,6 +166,40 @@ public actor APIImageDescriptionService: ImageDescriptionProviding {
         return try await describe(imageData: data, mediaType: mediaType)
     }
 
+    // MARK: - Multi-Subject Description
+
+    private struct DescribeSubjectsResponse: Decodable {
+        let descriptions: [String]
+    }
+
+    public func describeSubjects(imageData: Data, mediaType: ImageMediaType) async throws -> [String] {
+        let base64String = imageData.base64EncodedString()
+
+        let response: DescribeSubjectsResponse
+        do {
+            response = try await client.post(
+                path: "/describe-image",
+                body: DescribeImageRequest(image: base64String, mediaType: mediaType.mimeType)
+            )
+        } catch let error as VigilAPIError {
+            throw ImageDescriptionError.apiError(error.localizedDescription)
+        }
+
+        let descriptions = response.descriptions.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard !descriptions.isEmpty else {
+            throw ImageDescriptionError.parseError("API returned no descriptions")
+        }
+
+        return descriptions
+    }
+
+    public func describeSubjects(imageURL: URL) async throws -> [String] {
+        let data = try Data(contentsOf: imageURL)
+        let mediaType = Self.mediaType(for: imageURL)
+        return try await describeSubjects(imageData: data, mediaType: mediaType)
+    }
+
     /// Detects the image media type from a file extension.
     private static func mediaType(for url: URL) -> ImageMediaType {
         switch url.pathExtension.lowercased() {
