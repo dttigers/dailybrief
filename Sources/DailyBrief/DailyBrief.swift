@@ -55,8 +55,8 @@ extension DailyBrief {
             // Select AI backend based on config: Vigil Core API or direct Claude
             let aiProvider: any AIProvider
             let prioritizer: any WorkOrderPrioritizing
-            if config.vigil?.useAPI == true,
-               let apiBaseURL = URL(string: config.vigil?.apiBaseURL ?? "") {
+            if config.vigil?.useApi == true,
+               let apiBaseURL = URL(string: config.vigil?.apiBaseUrl ?? "") {
                 let apiClient = VigilAPIClient(baseURL: apiBaseURL)
                 aiProvider = APIAIProvider(client: apiClient)
                 prioritizer = APIWorkOrderPrioritizer(client: apiClient)

@@ -46,8 +46,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         NSLog("DailyBriefMonitor: initializing data store...")
         do {
             // Check if Vigil API mode is enabled
-            let useVigilAPI = (try? ConfigLoader.load())?.vigil?.useAPI == true
-            let apiBaseURL = (try? ConfigLoader.load())?.vigil?.apiBaseURL ?? "http://localhost:3001/v1"
+            let useVigilAPI = (try? ConfigLoader.load())?.vigil?.useApi == true
+            let apiBaseURL = (try? ConfigLoader.load())?.vigil?.apiBaseUrl ?? "http://localhost:3001/v1"
 
             // Load AI services — API-backed or local Claude depending on config
             NSLog("DailyBriefMonitor: loading AI services...")

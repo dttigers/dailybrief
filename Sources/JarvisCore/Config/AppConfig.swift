@@ -388,15 +388,15 @@ public struct AppConfig: Codable, Sendable {
     }
 
     public struct VigilConfig: Codable, Sendable {
-        public var useAPI: Bool
-        public var apiBaseURL: String
+        public var useApi: Bool
+        public var apiBaseUrl: String
 
         public init(
-            useAPI: Bool = false,
-            apiBaseURL: String = "http://localhost:3001/v1"
+            useApi: Bool = false,
+            apiBaseUrl: String = "http://localhost:3001/v1"
         ) {
-            self.useAPI = useAPI
-            self.apiBaseURL = apiBaseURL
+            self.useApi = useApi
+            self.apiBaseUrl = apiBaseUrl
         }
     }
 }

@@ -284,38 +284,32 @@ public actor ImageDescriptionService {
 
     /// Downscales and JPEG-compresses image data to fit within `targetSize` bytes.
     private static func compress(_ data: Data, targetSize: Int) -> Data? {
-        guard let image = NSImage(data: data),
-              let tiffData = image.tiffRepresentation,
-              let bitmap = NSBitmapImageRep(data: tiffData) else {
-            return nil
-        }
+        guard let image = NSImage(data: data) else { return nil }
 
-        // Try progressively lower JPEG quality
-        for quality in stride(from: 0.7, through: 0.1, by: -0.1) {
-            if let jpeg = bitmap.representation(using: .jpeg, properties: [.compressionFactor: quality]),
-               jpeg.count <= targetSize {
-                return jpeg
+        var currentImage = image
+        // Try up to 4 rounds of downscaling (original, 50%, 25%, 12.5%)
+        for _ in 0..<4 {
+            guard let tiffData = currentImage.tiffRepresentation,
+                  let bitmap = NSBitmapImageRep(data: tiffData) else {
+                return nil
             }
-        }
 
-        // Still too big — downscale to 50% and retry
-        let newW = image.size.width * 0.5
-        let newH = image.size.height * 0.5
-        let resized = NSImage(size: NSSize(width: newW, height: newH))
-        resized.lockFocus()
-        image.draw(in: NSRect(x: 0, y: 0, width: newW, height: newH))
-        resized.unlockFocus()
-
-        guard let resizedTiff = resized.tiffRepresentation,
-              let resizedBitmap = NSBitmapImageRep(data: resizedTiff) else {
-            return nil
-        }
-
-        for quality in stride(from: 0.7, through: 0.1, by: -0.1) {
-            if let jpeg = resizedBitmap.representation(using: .jpeg, properties: [.compressionFactor: quality]),
-               jpeg.count <= targetSize {
-                return jpeg
+            for quality in stride(from: 0.7, through: 0.1, by: -0.1) {
+                if let jpeg = bitmap.representation(using: .jpeg, properties: [.compressionFactor: quality]),
+                   jpeg.count <= targetSize {
+                    return jpeg
+                }
             }
+
+            // Downscale to 50% and retry
+            let newW = currentImage.size.width * 0.5
+            let newH = currentImage.size.height * 0.5
+            guard newW >= 100 && newH >= 100 else { return nil }
+            let resized = NSImage(size: NSSize(width: newW, height: newH))
+            resized.lockFocus()
+            currentImage.draw(in: NSRect(x: 0, y: 0, width: newW, height: newH))
+            resized.unlockFocus()
+            currentImage = resized
         }
 
         return nil

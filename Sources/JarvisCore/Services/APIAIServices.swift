@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 // MARK: - API AI Services
@@ -126,6 +127,9 @@ public actor APIImageDescriptionService: ImageDescriptionProviding {
 
     private let client: VigilAPIClient
 
+    /// Target size for compression — 1MB raw keeps base64 under Claude's 5MB limit.
+    private static let targetSize = 1_048_576
+
     public init(client: VigilAPIClient) {
         self.client = client
     }
@@ -139,14 +143,26 @@ public actor APIImageDescriptionService: ImageDescriptionProviding {
         let description: String
     }
 
+    /// Compresses image data if needed and returns (finalData, finalMediaType).
+    private func prepareImage(_ imageData: Data, mediaType: ImageMediaType) throws -> (Data, ImageMediaType) {
+        if imageData.count > Self.targetSize {
+            guard let compressed = Self.compress(imageData, targetSize: Self.targetSize) else {
+                throw ImageDescriptionError.imageTooLarge
+            }
+            return (compressed, .jpeg)
+        }
+        return (imageData, mediaType)
+    }
+
     public func describe(imageData: Data, mediaType: ImageMediaType) async throws -> String {
-        let base64String = imageData.base64EncodedString()
+        let (finalData, finalMediaType) = try prepareImage(imageData, mediaType: mediaType)
+        let base64String = finalData.base64EncodedString()
 
         let response: DescribeImageResponse
         do {
             response = try await client.post(
                 path: "/describe-image",
-                body: DescribeImageRequest(image: base64String, mediaType: mediaType.mimeType)
+                body: DescribeImageRequest(image: base64String, mediaType: finalMediaType.mimeType)
             )
         } catch let error as VigilAPIError {
             throw ImageDescriptionError.apiError(error.localizedDescription)
@@ -173,13 +189,14 @@ public actor APIImageDescriptionService: ImageDescriptionProviding {
     }
 
     public func describeSubjects(imageData: Data, mediaType: ImageMediaType) async throws -> [String] {
-        let base64String = imageData.base64EncodedString()
+        let (finalData, finalMediaType) = try prepareImage(imageData, mediaType: mediaType)
+        let base64String = finalData.base64EncodedString()
 
         let response: DescribeSubjectsResponse
         do {
             response = try await client.post(
                 path: "/describe-image",
-                body: DescribeImageRequest(image: base64String, mediaType: mediaType.mimeType)
+                body: DescribeImageRequest(image: base64String, mediaType: finalMediaType.mimeType)
             )
         } catch let error as VigilAPIError {
             throw ImageDescriptionError.apiError(error.localizedDescription)
@@ -198,6 +215,39 @@ public actor APIImageDescriptionService: ImageDescriptionProviding {
         let data = try Data(contentsOf: imageURL)
         let mediaType = Self.mediaType(for: imageURL)
         return try await describeSubjects(imageData: data, mediaType: mediaType)
+    }
+
+    // MARK: - Compression
+
+    /// Downscales and JPEG-compresses image data to fit within `targetSize` bytes.
+    private static func compress(_ data: Data, targetSize: Int) -> Data? {
+        guard let image = NSImage(data: data) else { return nil }
+
+        var currentImage = image
+        for _ in 0..<4 {
+            guard let tiffData = currentImage.tiffRepresentation,
+                  let bitmap = NSBitmapImageRep(data: tiffData) else {
+                return nil
+            }
+
+            for quality in stride(from: 0.7, through: 0.1, by: -0.1) {
+                if let jpeg = bitmap.representation(using: .jpeg, properties: [.compressionFactor: quality]),
+                   jpeg.count <= targetSize {
+                    return jpeg
+                }
+            }
+
+            let newW = currentImage.size.width * 0.5
+            let newH = currentImage.size.height * 0.5
+            guard newW >= 100 && newH >= 100 else { return nil }
+            let resized = NSImage(size: NSSize(width: newW, height: newH))
+            resized.lockFocus()
+            currentImage.draw(in: NSRect(x: 0, y: 0, width: newW, height: newH))
+            resized.unlockFocus()
+            currentImage = resized
+        }
+
+        return nil
     }
 
     /// Detects the image media type from a file extension.
