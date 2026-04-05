@@ -2,7 +2,17 @@
 
 import type { VigilSummary, VigilBrief, VigilAffirmation } from './types.ts'
 
-const BASE_URL = 'http://localhost:3001/v1'
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/v1'
+const API_KEY = import.meta.env.VITE_API_KEY || ''
+
+/** Returns headers for API requests, including Bearer auth when API_KEY is set */
+function authHeaders(): Record<string, string> {
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  if (API_KEY) {
+    headers['Authorization'] = `Bearer ${API_KEY}`
+  }
+  return headers
+}
 
 /** Fallback data returned when API calls fail — ensures display always renders */
 const EMPTY_SUMMARY: VigilSummary = {
@@ -36,7 +46,7 @@ const FALLBACK_AFFIRMATION: VigilAffirmation = {
 /** GET /v1/summary */
 export async function fetchSummary(): Promise<VigilSummary> {
   try {
-    const res = await fetch(`${BASE_URL}/summary`)
+    const res = await fetch(`${BASE_URL}/summary`, { headers: authHeaders() })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return (await res.json()) as VigilSummary
   } catch (err) {
@@ -48,7 +58,7 @@ export async function fetchSummary(): Promise<VigilSummary> {
 /** GET /v1/brief */
 export async function fetchBrief(): Promise<VigilBrief> {
   try {
-    const res = await fetch(`${BASE_URL}/brief`)
+    const res = await fetch(`${BASE_URL}/brief`, { headers: authHeaders() })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     return (await res.json()) as VigilBrief
   } catch (err) {
@@ -62,7 +72,7 @@ export async function fetchAffirmation(): Promise<VigilAffirmation> {
   try {
     const res = await fetch(`${BASE_URL}/affirmation`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authHeaders(),
       body: '{}',
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
