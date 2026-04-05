@@ -41,6 +41,30 @@ export async function callClaude(options: {
   return block.text;
 }
 
+export async function callClaudeConversation(options: {
+  system: string;
+  messages: Array<{ role: "user" | "assistant"; content: string }>;
+  maxTokens: number;
+}): Promise<string> {
+  const ai = getAIClient();
+  if (!ai) throw new Error("AI client not available");
+
+  const model = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
+
+  const response = await ai.messages.create({
+    model,
+    max_tokens: options.maxTokens,
+    system: options.system,
+    messages: options.messages,
+  });
+
+  const block = response.content[0];
+  if (block.type !== "text") {
+    throw new Error(`Unexpected response type: ${block.type}`);
+  }
+  return block.text;
+}
+
 export async function callClaudeMultimodal(options: {
   system?: string;
   content: MessageParam["content"];
