@@ -60,7 +60,8 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 39-01: TBD
+- [x] 39-01: Dockerfile & Migration Script (Wave 1) — completed 2026-04-05
+- [x] 39-02: Railway Deploy, API Key & Verification (Wave 2) — completed 2026-04-05
 
 #### Phase 40: Data Migration
 
@@ -235,7 +236,7 @@ None
 | 36. Integration & Polish | v2.0 | 1/1 | Complete | 2026-04-04 |
 | 37. PostgreSQL Migration | v2.1 | 4/4 | Complete | 2026-04-05 |
 | 38. API Key Authentication | v2.1 | 0/? | Not started | - |
-| 39. Railway Deployment | v2.1 | 0/? | Not started | - |
+| 39. Railway Deployment | v2.1 | 2/2 | Complete | 2026-04-05 |
 | 40. Data Migration | v2.1 | 0/? | Not started | - |
 | 41. G2 Plugin Production URL | v2.1 | 0/? | Not started | - |
 | 42. Mac App Server Migration | v2.1 | 0/? | Not started | - |
