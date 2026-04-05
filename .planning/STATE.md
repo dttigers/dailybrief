@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Planning next milestone
+**Current focus:** v2.2 Polish & Power — stabilize, customize, AI chat
 
 ## Current Position
 
-Phase: 44 of 44 (Integration Testing & Hardening) — v2.1 SHIPPED
-Plan: All complete
-Status: v2.1 Server Deployment milestone shipped 2026-04-05
-Last activity: 2026-04-05 — v2.1 milestone complete, archived
+Phase: 45 of 50 (G2 Plugin UX Fixes)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-04-05 — Milestone v2.2 created
 
-Progress: ██████████ 100%
+Progress: ░░░░░░░░░░ 0%
 
 ## Performance Metrics
 
@@ -54,7 +54,7 @@ None.
 
 ### Blockers/Concerns
 
-None.
+- G2 UX fixes depend on Even Hub SDK capabilities for swipe gestures — research needed
 
 ### Roadmap Evolution
 
@@ -65,10 +65,10 @@ None.
 - v1.4 Intelligence & Organization shipped (early close): 5 phases (24-28), 11 plans
 - v2.0 Vigil Platform shipped: 8 phases (29-36), 22 plans — Core API, Even G2 plugin, Mac app migration
 - v2.1 Server Deployment shipped: 8 phases (37-44), 13 plans — PostgreSQL, auth, Railway deploy, client migration, hardening
+- Milestone v2.2 created: Polish & Power, 6 phases (Phase 45-50) — G2 UX, code cleanup, brief history, export, PDF config, AI chat
 
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: v2.1 milestone complete and archived
+Stopped at: Milestone v2.2 initialization
 Resume file: None
-Notes: All 7 milestones shipped. 44 phases, 100 plans across 11 days. Vigil Core API live on Railway with PostgreSQL.

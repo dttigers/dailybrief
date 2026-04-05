@@ -13,6 +13,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v1.4 Intelligence & Organization** — Phases 24-28 (shipped 2026-04-04, early close)
 - ✅ **v2.0 Vigil Platform** — Phases 29-36 (shipped 2026-04-04)
 - ✅ **v2.1 Server Deployment** — Phases 37-44 (shipped 2026-04-05)
+- 🚧 **v2.2 Polish & Power** — Phases 45-50 (in progress)
 
 ## Completed Milestones
 
@@ -114,6 +115,71 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
+### 🚧 v2.2 Polish & Power (In Progress)
+
+**Milestone Goal:** Stabilize shipped features, add user customization, and introduce AI chat as a new interaction paradigm
+
+#### Phase 45: G2 Plugin UX Fixes
+
+**Goal**: Fix task expansion (full content visibility in work orders list) and swipe-back navigation
+**Depends on**: Previous milestone complete
+**Research**: Likely (Even Hub SDK gesture/navigation APIs)
+**Research topics**: Even Hub SDK swipe gesture support, navigation stack APIs, content overflow handling
+**Plans**: TBD
+
+Plans:
+- [ ] 45-01: TBD (run /gsd:plan-phase 45 to break down)
+
+#### Phase 46: Remove Dual Code Paths
+
+**Goal**: Retire local-only GRDB mode, remove vigil.useAPI toggle and all local-only code paths
+**Depends on**: Phase 45
+**Research**: Unlikely (internal cleanup)
+**Plans**: TBD
+
+Plans:
+- [ ] 46-01: TBD
+
+#### Phase 47: Brief History
+
+**Goal**: Browse and reprint past daily briefs from the dashboard
+**Depends on**: Phase 46
+**Research**: Unlikely (internal patterns)
+**Plans**: TBD
+
+Plans:
+- [ ] 47-01: TBD
+
+#### Phase 48: Export System
+
+**Goal**: Export thoughts as Markdown, JSON, or CSV
+**Depends on**: Phase 47
+**Research**: Unlikely (standard formats)
+**Plans**: TBD
+
+Plans:
+- [ ] 48-01: TBD
+
+#### Phase 49: Configurable PDF
+
+**Goal**: Paper size selection (A5, half-letter, full letter, custom) and layout customization (margins, section ordering, font sizes) in settings UI
+**Depends on**: Phase 48
+**Research**: Unlikely (existing PDF infrastructure)
+**Plans**: TBD
+
+Plans:
+- [ ] 49-01: TBD
+
+#### Phase 50: Dashboard AI Chat
+
+**Goal**: Chat panel in dashboard with thought context for Claude interaction — ask for answers, ideas, task breakdowns
+**Depends on**: Phase 49
+**Research**: Unlikely (existing Anthropic integration)
+**Plans**: TBD
+
+Plans:
+- [ ] 50-01: TBD
+
 ## Domain Expertise
 
 None
@@ -166,3 +232,9 @@ None
 | 42. Mac App Server Migration | v2.1 | 1/1 | Complete | 2026-04-05 |
 | 43. HTTPS & Domain | v2.1 | 1/1 | Complete | 2026-04-05 |
 | 44. Integration Testing & Hardening | v2.1 | 2/2 | Complete | 2026-04-05 |
+| 45. G2 Plugin UX Fixes | v2.2 | 0/? | Not started | - |
+| 46. Remove Dual Code Paths | v2.2 | 0/? | Not started | - |
+| 47. Brief History | v2.2 | 0/? | Not started | - |
+| 48. Export System | v2.2 | 0/? | Not started | - |
+| 49. Configurable PDF | v2.2 | 0/? | Not started | - |
+| 50. Dashboard AI Chat | v2.2 | 0/? | Not started | - |
