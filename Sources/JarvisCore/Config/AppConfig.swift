@@ -390,13 +390,16 @@ public struct AppConfig: Codable, Sendable {
     public struct VigilConfig: Codable, Sendable {
         public var useApi: Bool
         public var apiBaseUrl: String
+        public var apiKey: String
 
         public init(
             useApi: Bool = false,
-            apiBaseUrl: String = "http://localhost:3001/v1"
+            apiBaseUrl: String = "https://vigil-core-production.up.railway.app/v1",
+            apiKey: String = ""
         ) {
             self.useApi = useApi
             self.apiBaseUrl = apiBaseUrl
+            self.apiKey = apiKey
         }
     }
 }

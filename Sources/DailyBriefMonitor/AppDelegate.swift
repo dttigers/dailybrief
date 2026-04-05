@@ -47,7 +47,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         do {
             // Check if Vigil API mode is enabled
             let useVigilAPI = (try? ConfigLoader.load())?.vigil?.useApi == true
-            let apiBaseURL = (try? ConfigLoader.load())?.vigil?.apiBaseUrl ?? "http://localhost:3001/v1"
+            let apiBaseURL = (try? ConfigLoader.load())?.vigil?.apiBaseUrl ?? "https://vigil-core-production.up.railway.app/v1"
+            let apiKey = (try? ConfigLoader.load())?.vigil?.apiKey
 
             // Load AI services — API-backed or local Claude depending on config
             NSLog("DailyBriefMonitor: loading AI services...")
@@ -57,7 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
             if useVigilAPI {
                 NSLog("DailyBriefMonitor: using Vigil API AI services")
-                let client = VigilAPIClient(baseURL: URL(string: apiBaseURL)!)
+                let client = VigilAPIClient(baseURL: URL(string: apiBaseURL)!, apiKey: apiKey)
                 self.triageService = APITriageService(client: client)
                 self.imageDescriptionService = APIImageDescriptionService(client: client)
                 self.insightService = APIInsightService(client: client)
@@ -89,7 +90,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
             if useVigilAPI {
                 NSLog("DailyBriefMonitor: using Vigil API backend at %@", apiBaseURL)
-                let client = VigilAPIClient(baseURL: URL(string: apiBaseURL)!)
+                let client = VigilAPIClient(baseURL: URL(string: apiBaseURL)!, apiKey: apiKey)
                 repository = APIThoughtStore(client: client)
                 localStore = nil
             } else {

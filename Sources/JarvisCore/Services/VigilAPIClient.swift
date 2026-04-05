@@ -50,6 +50,7 @@ public actor VigilAPIClient {
 
     private let baseURL: URL
     private let session: URLSession
+    private let apiKey: String?
 
     private let jsonDecoder: JSONDecoder = {
         let decoder = JSONDecoder()
@@ -67,14 +68,24 @@ public actor VigilAPIClient {
 
     /// Creates a VigilAPIClient targeting the given base URL.
     /// - Parameters:
-    ///   - baseURL: The Vigil Core API base URL (e.g., `http://localhost:3001/v1`).
+    ///   - baseURL: The Vigil Core API base URL (e.g., `https://vigil-core-production.up.railway.app/v1`).
+    ///   - apiKey: Optional API key for Bearer authentication. When non-nil and non-empty, an Authorization header is sent.
     ///   - session: URLSession to use for requests. Defaults to `.shared`.
-    public init(baseURL: URL, session: URLSession = .shared) {
+    public init(baseURL: URL, apiKey: String? = nil, session: URLSession = .shared) {
         self.baseURL = baseURL
+        self.apiKey = apiKey
         self.session = session
     }
 
     // MARK: HTTP Methods
+
+    /// Apply common headers (Accept, Authorization) to a request.
+    private func applyHeaders(_ request: inout URLRequest) {
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if let apiKey, !apiKey.isEmpty {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+    }
 
     /// Perform a GET request and decode the response.
     /// - Parameters:
@@ -89,7 +100,7 @@ public actor VigilAPIClient {
 
         var request = URLRequest(url: components.url!)
         request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyHeaders(&request)
 
         return try await perform(request)
     }
@@ -103,7 +114,7 @@ public actor VigilAPIClient {
         var request = URLRequest(url: baseURL.appendingPathComponent(path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyHeaders(&request)
         request.httpBody = try encodeBody(body)
 
         return try await perform(request)
@@ -118,7 +129,7 @@ public actor VigilAPIClient {
         var request = URLRequest(url: baseURL.appendingPathComponent(path))
         request.httpMethod = "PUT"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyHeaders(&request)
         request.httpBody = try encodeBody(body)
 
         return try await perform(request)
@@ -129,7 +140,7 @@ public actor VigilAPIClient {
     public func delete(path: String) async throws {
         var request = URLRequest(url: baseURL.appendingPathComponent(path))
         request.httpMethod = "DELETE"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyHeaders(&request)
 
         let (data, response) = try await executeRequest(request)
         try validateResponse(data: data, response: response)
@@ -145,7 +156,7 @@ public actor VigilAPIClient {
         var request = URLRequest(url: baseURL.appendingPathComponent(path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        applyHeaders(&request)
         request.httpBody = try encodeBody(body)
 
         let (data, response) = try await executeRequest(request)

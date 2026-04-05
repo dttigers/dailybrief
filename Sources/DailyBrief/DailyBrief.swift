@@ -57,7 +57,7 @@ extension DailyBrief {
             let prioritizer: any WorkOrderPrioritizing
             if config.vigil?.useApi == true,
                let apiBaseURL = URL(string: config.vigil?.apiBaseUrl ?? "") {
-                let apiClient = VigilAPIClient(baseURL: apiBaseURL)
+                let apiClient = VigilAPIClient(baseURL: apiBaseURL, apiKey: config.vigil?.apiKey)
                 aiProvider = APIAIProvider(client: apiClient)
                 prioritizer = APIWorkOrderPrioritizer(client: apiClient)
                 Logger.log("Using Vigil Core API backend")
