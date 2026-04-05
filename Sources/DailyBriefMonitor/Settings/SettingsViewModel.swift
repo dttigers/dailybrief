@@ -83,6 +83,12 @@ final class SettingsViewModel {
     // MARK: - PDF
     var pdfOutputDirectory: String = "~/Documents/DailyBrief"
     var pdfKeepDays: Int = 30
+    var pdfPaperSize: String = "notebook"
+    var pdfCustomWidthInches: Double = 3.75
+    var pdfCustomHeightInches: Double = 7.5
+    var pdfMarginPoints: Double = 12.0
+    var pdfFontScale: Double = 1.0
+    var pdfEnabledSections: [String] = ["workOrders", "todo", "calendar", "sports", "affirmation", "thoughts", "insights", "therapyPrep"]
 
     // MARK: - Printing
     var printingEnabled: Bool = true
@@ -157,6 +163,12 @@ final class SettingsViewModel {
 
         pdfOutputDirectory = config.pdf.outputDirectory
         pdfKeepDays = config.pdf.keepDays
+        pdfPaperSize = config.pdf.paperSize
+        pdfCustomWidthInches = config.pdf.customWidthInches
+        pdfCustomHeightInches = config.pdf.customHeightInches
+        pdfMarginPoints = config.pdf.marginPoints
+        pdfFontScale = config.pdf.fontScale
+        pdfEnabledSections = config.pdf.enabledSections
 
         printingEnabled = config.printing.enabled
         printerName = config.printing.printerName
@@ -248,7 +260,13 @@ final class SettingsViewModel {
             ),
             pdf: .init(
                 outputDirectory: pdfOutputDirectory,
-                keepDays: pdfKeepDays
+                keepDays: pdfKeepDays,
+                paperSize: pdfPaperSize,
+                customWidthInches: pdfCustomWidthInches,
+                customHeightInches: pdfCustomHeightInches,
+                marginPoints: pdfMarginPoints,
+                fontScale: pdfFontScale,
+                enabledSections: pdfEnabledSections
             ),
             printing: .init(
                 enabled: printingEnabled,
