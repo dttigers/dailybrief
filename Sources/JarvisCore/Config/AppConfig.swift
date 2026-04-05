@@ -11,7 +11,8 @@ public struct AppConfig: Codable, Sendable {
     public var folderWatching: FolderWatchingConfig
     public var insights: InsightsConfig
     public var cloudSync: CloudSyncConfig
-    public var vigil: VigilConfig?
+    public var apiBaseUrl: String
+    public var apiKey: String
 
     public init(
         email: EmailConfig,
@@ -24,7 +25,8 @@ public struct AppConfig: Codable, Sendable {
         folderWatching: FolderWatchingConfig = .init(),
         insights: InsightsConfig = .init(),
         cloudSync: CloudSyncConfig = .init(),
-        vigil: VigilConfig? = nil
+        apiBaseUrl: String = "https://vigil-core-production.up.railway.app/v1",
+        apiKey: String = ""
     ) {
         self.email = email
         self.reminders = reminders
@@ -36,7 +38,8 @@ public struct AppConfig: Codable, Sendable {
         self.folderWatching = folderWatching
         self.insights = insights
         self.cloudSync = cloudSync
-        self.vigil = vigil
+        self.apiBaseUrl = apiBaseUrl
+        self.apiKey = apiKey
     }
 
     // Custom Decodable to support backward-compatible config loading
@@ -58,7 +61,21 @@ public struct AppConfig: Codable, Sendable {
         folderWatching = try container.decodeIfPresent(FolderWatchingConfig.self, forKey: .folderWatching) ?? .init()
         insights = try container.decodeIfPresent(InsightsConfig.self, forKey: .insights) ?? .init()
         cloudSync = try container.decodeIfPresent(CloudSyncConfig.self, forKey: .cloudSync) ?? .init()
-        vigil = try container.decodeIfPresent(VigilConfig.self, forKey: .vigil)
+        // Migrate from nested vigil.apiBaseUrl/vigil.apiKey to top-level fields
+        if let vigilObj = try container.decodeIfPresent(VigilConfig.self, forKey: .vigil) {
+            apiBaseUrl = vigilObj.apiBaseUrl
+            apiKey = vigilObj.apiKey
+        } else {
+            apiBaseUrl = try container.decodeIfPresent(String.self, forKey: .apiBaseUrl) ?? "https://vigil-core-production.up.railway.app/v1"
+            apiKey = try container.decodeIfPresent(String.self, forKey: .apiKey) ?? ""
+        }
+    }
+
+    /// Temporary struct for backward-compatible decoding of old nested vigil config
+    private struct VigilConfig: Codable {
+        var useApi: Bool
+        var apiBaseUrl: String
+        var apiKey: String
     }
 
     // Encode with "email" key (new format)
@@ -74,14 +91,17 @@ public struct AppConfig: Codable, Sendable {
         try container.encode(folderWatching, forKey: .folderWatching)
         try container.encode(insights, forKey: .insights)
         try container.encode(cloudSync, forKey: .cloudSync)
-        try container.encodeIfPresent(vigil, forKey: .vigil)
+        try container.encode(apiBaseUrl, forKey: .apiBaseUrl)
+        try container.encode(apiKey, forKey: .apiKey)
     }
 
     private enum CodingKeys: String, CodingKey {
         case email
         case gmail // backward-compatible decode key
         case reminders, sports, ai, pdf, printing
-        case googleCalendar, folderWatching, insights, cloudSync, vigil
+        case googleCalendar, folderWatching, insights, cloudSync
+        case apiBaseUrl, apiKey
+        case vigil // backward-compatible decode key (old nested format)
     }
 
     public struct EmailConfig: Codable, Sendable {
@@ -387,19 +407,4 @@ public struct AppConfig: Codable, Sendable {
         }
     }
 
-    public struct VigilConfig: Codable, Sendable {
-        public var useApi: Bool
-        public var apiBaseUrl: String
-        public var apiKey: String
-
-        public init(
-            useApi: Bool = false,
-            apiBaseUrl: String = "https://vigil-core-production.up.railway.app/v1",
-            apiKey: String = ""
-        ) {
-            self.useApi = useApi
-            self.apiBaseUrl = apiBaseUrl
-            self.apiKey = apiKey
-        }
-    }
 }
