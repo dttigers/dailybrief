@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 44 of 44 (Integration Testing & Hardening) — Plan 01 COMPLETE
-Plan: 1/? complete
-Status: Phase 44 plan 01 complete, rate limiting + timeout + security headers middleware deployed
-Last activity: 2026-04-05 — Added rate limiter, request timeout, and security headers to Vigil Core API; deployed to Railway
+Phase: 44 of 44 (Integration Testing & Hardening) — PHASE COMPLETE
+Plan: 2/2 complete
+Status: Phase 44 complete. All plans executed. v2.1 Server Deployment milestone ready to close.
+Last activity: 2026-04-05 — Smoke test script (12 endpoints), client verification (G2 build passes, Mac app deferred)
 
-Progress: ████░░░░░░ 43%
+Progress: ██████████ 100%
 
 ## Performance Metrics
 
@@ -68,6 +68,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Phase 44 plan 01 complete
+Stopped at: Phase 44 complete — v2.1 milestone ready to close
 Resume file: None
-Notes: Phase 44 plan 01 complete. Rate limiting (100 req/60s/IP), 30s request timeout, and security headers middleware deployed to Railway production. Railway CLI deploy requires `--path-as-root` for monorepo subdirectory. GitHub auto-deploy may need dashboard re-enable.
+Notes: Phase 44 complete. Plan 01: rate limiting, timeout, security headers. Plan 02: 12-endpoint smoke test script, G2 plugin build verified. All phases (37-44) of v2.1 Server Deployment milestone executed.
