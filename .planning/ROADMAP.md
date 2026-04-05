@@ -49,7 +49,7 @@ Plans:
 **Plans**: TBD
 
 Plans:
-- [ ] 38-01: TBD
+- [ ] 38-01: API Key Auth — Schema, Middleware & Route Protection (Wave 1)
 
 #### Phase 39: Railway Deployment
 
