@@ -1,11 +1,9 @@
 import { Hono } from "hono";
 import crypto from "crypto";
-import { getDb } from "../db/index.js";
-import type {
-  Thought,
-  ThoughtResponse,
-  PaginatedResponse,
-} from "../db/types.js";
+import { db } from "../db/connection.js";
+import { thoughts as thoughtsTable } from "../db/schema.js";
+import { eq, and, ne, gte, lte, desc, count, sql } from "drizzle-orm";
+import type { DrizzleThought, PaginatedResponse } from "../db/types.js";
 
 const VALID_SOURCES = ["text", "voice", "image"] as const;
 const VALID_CATEGORIES = [
@@ -16,18 +14,47 @@ const VALID_CATEGORIES = [
   "project",
 ] as const;
 
-function toResponse(row: Thought): ThoughtResponse {
+/** API response shape — dates as ISO strings, tags as string[] */
+interface ThoughtApiResponse {
+  id: number;
+  content: string;
+  category: string | null;
+  confidence: number | null;
+  source: string;
+  createdAt: string;
+  modifiedAt: string;
+  cloudKitRecordID: string;
+  syncStatus: string;
+  lastSyncedAt: string | null;
+  taskStatus: string | null;
+  therapyClassification: string | null;
+  tags: string[];
+  isFavorited: boolean;
+}
+
+function toResponse(row: DrizzleThought): ThoughtApiResponse {
   return {
-    ...row,
-    tags: row.tags ? JSON.parse(row.tags) : [],
+    id: row.id,
+    content: row.content,
+    category: row.category,
+    confidence: row.confidence,
+    source: row.source,
+    createdAt: row.createdAt.toISOString(),
+    modifiedAt: row.modifiedAt.toISOString(),
+    cloudKitRecordID: row.cloudKitRecordID,
+    syncStatus: row.syncStatus,
+    lastSyncedAt: row.lastSyncedAt?.toISOString() ?? null,
+    taskStatus: row.taskStatus,
+    therapyClassification: row.therapyClassification,
+    tags: row.tags ?? [],
+    isFavorited: row.isFavorited,
   };
 }
 
 export const thoughts = new Hono();
 
 // GET /thoughts — List with filters
-thoughts.get("/thoughts", (c) => {
-  const db = getDb();
+thoughts.get("/thoughts", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
@@ -51,71 +78,61 @@ thoughts.get("/thoughts", (c) => {
       return c.json({ error: "before must be a valid ISO 8601 date string" }, 400);
     }
 
-    const conditions: string[] = ["t.syncStatus != 'pendingDeletion'"];
-    const params: unknown[] = [];
+    // Build dynamic WHERE conditions
+    const conditions = [ne(thoughtsTable.syncStatus, "pendingDeletion")];
 
-    // FTS search
-    let fromClause = "thoughts t";
     if (q) {
-      fromClause =
-        "thoughts t JOIN thoughts_fts fts ON t.id = fts.rowid";
-      conditions.push("thoughts_fts MATCH ?");
-      params.push(q);
+      conditions.push(
+        sql`"thoughts"."search_vector" @@ plainto_tsquery('english', ${q})`,
+      );
     }
-
     if (category) {
-      conditions.push("t.category = ?");
-      params.push(category);
+      conditions.push(eq(thoughtsTable.category, category));
     }
     if (source) {
-      conditions.push("t.source = ?");
-      params.push(source);
+      conditions.push(eq(thoughtsTable.source, source));
     }
     if (taskStatus) {
-      conditions.push("t.taskStatus = ?");
-      params.push(taskStatus);
+      conditions.push(eq(thoughtsTable.taskStatus, taskStatus));
     }
     if (therapyClassification) {
-      conditions.push("t.therapyClassification = ?");
-      params.push(therapyClassification);
+      conditions.push(eq(thoughtsTable.therapyClassification, therapyClassification));
     }
     if (tag) {
       conditions.push(
-        "EXISTS (SELECT 1 FROM json_each(t.tags) WHERE json_each.value = ?)",
+        sql`${thoughtsTable.tags} @> ${JSON.stringify([tag])}::jsonb`,
       );
-      params.push(tag);
     }
     if (favoritesOnly === "true") {
-      conditions.push("t.isFavorited = 1");
+      conditions.push(eq(thoughtsTable.isFavorited, true));
     }
     if (after) {
-      conditions.push("t.createdAt > ?");
-      params.push(after);
+      conditions.push(gte(thoughtsTable.createdAt, new Date(after)));
     }
     if (before) {
-      conditions.push("t.createdAt < ?");
-      params.push(before);
+      conditions.push(lte(thoughtsTable.createdAt, new Date(before)));
     }
 
-    const whereClause = conditions.length
-      ? `WHERE ${conditions.join(" AND ")}`
-      : "";
+    const whereCondition = and(...conditions);
 
     // Count query
-    const countRow = db
-      .prepare(`SELECT COUNT(*) as count FROM ${fromClause} ${whereClause}`)
-      .get(...params) as { count: number };
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(thoughtsTable)
+      .where(whereCondition);
 
     // Data query
-    const rows = db
-      .prepare(
-        `SELECT t.* FROM ${fromClause} ${whereClause} ORDER BY t.createdAt DESC LIMIT ? OFFSET ?`,
-      )
-      .all(...params, limit, offset) as Thought[];
+    const rows = await db
+      .select()
+      .from(thoughtsTable)
+      .where(whereCondition)
+      .orderBy(desc(thoughtsTable.createdAt))
+      .limit(limit)
+      .offset(offset);
 
-    const response: PaginatedResponse<ThoughtResponse> = {
+    const response: PaginatedResponse<ThoughtApiResponse> = {
       data: rows.map(toResponse),
-      total: countRow.count,
+      total,
       limit,
       offset,
     };
@@ -128,21 +145,27 @@ thoughts.get("/thoughts", (c) => {
 });
 
 // GET /thoughts/:id — Single thought
-thoughts.get("/thoughts/:id", (c) => {
-  const db = getDb();
+thoughts.get("/thoughts/:id", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
-    const id = c.req.param("id");
-    const row = db
-      .prepare(
-        "SELECT * FROM thoughts WHERE id = ? AND syncStatus != 'pendingDeletion'",
+    const id = Number(c.req.param("id"));
+    if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
+
+    const rows = await db
+      .select()
+      .from(thoughtsTable)
+      .where(
+        and(
+          eq(thoughtsTable.id, id),
+          ne(thoughtsTable.syncStatus, "pendingDeletion"),
+        ),
       )
-      .get(id) as Thought | undefined;
+      .limit(1);
 
-    if (!row) return c.json({ error: "Thought not found" }, 404);
+    if (rows.length === 0) return c.json({ error: "Thought not found" }, 404);
 
-    return c.json(toResponse(row));
+    return c.json(toResponse(rows[0]));
   } catch (err) {
     console.error("[vigil-core] Get thought failed:", err);
     return c.json({ error: "Query failed" }, 500);
