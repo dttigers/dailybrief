@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 ## Current Position
 
 Phase: 37 of 44 (PostgreSQL Migration)
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-04-05 — Milestone v2.1 created
+Plan: 01 complete
+Status: Ready for plan 02
+Last activity: 2026-04-05 — Plan 37-01 complete (Drizzle schema + connection + migration)
 
-Progress: ░░░░░░░░░░ 0%
+Progress: █░░░░░░░░░ 10%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 87
+- Total plans completed: 88
 - Total execution time: ~10 days
 - Average duration: ~5 min per plan
 
@@ -68,6 +68,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Milestone v2.1 initialization
+Stopped at: Plan 37-01 complete
 Resume file: None
-Notes: G2 plugin textEvent navigation bug fixed. Vigil Core running on localhost:3001. Ready to plan Phase 37.
+Notes: Drizzle ORM schema + postgres.js connection + migration infrastructure in place. Legacy SQLite types preserved for coexistence. Ready for Plan 37-02.
