@@ -154,15 +154,18 @@ Plans:
 - [x] 33-02: Work orders & affirmation screens
 - [x] 33-03: Live home data + 60s auto-refresh
 
-#### Phase 34: Mac App Migration — First Services
+#### Phase 34: Mac App Migration — First Services ✓
 
 **Goal**: Redirect simplest Mac app services to call Vigil Core API instead of computing locally; verify feature parity
 **Depends on**: Phase 30
 **Research**: Unlikely (internal refactor — redirecting Swift URLSession calls)
-**Plans**: TBD
+**Plans**: 4
 
 Plans:
-- [ ] 34-01: TBD
+- [x] 34-01: API endpoint extensions (date range filtering + bulk therapy classify)
+- [x] 34-02: ThoughtRepository protocol + VigilAPIClient HTTP client
+- [x] 34-03: APIThoughtStore full implementation
+- [x] 34-04: Config toggle + consumer wiring
 
 #### Phase 35: Mac App Migration — AI Services
 
@@ -225,6 +228,6 @@ None
 | 31. Vigil Core API — AI Integration | v2.0 | 4/4 | Complete | 2026-04-04 |
 | 32. Even G2 Plugin — Scaffold + Home | v2.0 | 2/2 | Complete | 2026-04-04 |
 | 33. Even G2 Plugin — Screens + Nav | v2.0 | 3/3 | Complete | 2026-04-04 |
-| 34. Mac App Migration — First Services | v2.0 | 0/? | Not started | - |
+| 34. Mac App Migration — First Services | v2.0 | 4/4 | Complete | 2026-04-04 |
 | 35. Mac App Migration — AI Services | v2.0 | 0/? | Not started | - |
 | 36. Integration & Polish | v2.0 | 0/? | Not started | - |

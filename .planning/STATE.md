@@ -11,15 +11,15 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 Phase: 34 of 36 (Mac Migration First)
 Plan: 04 complete
-Status: In progress
-Last activity: 2026-04-04 - Plan 34-04 complete (Config toggle and protocol wiring)
+Status: Phase 34 complete
+Last activity: 2026-04-04 - Phase 34 complete (ThoughtRepository protocol, APIThoughtStore, config toggle, consumer wiring)
 
-Progress: ██████░░░░ 60%
+Progress: ███████░░░ 70%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 81
+- Total plans completed: 83
 - Total execution time: ~9 days
 - Average duration: ~5 min per plan
 
@@ -66,6 +66,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-04
-Stopped at: Phase 34, Plan 04 complete
+Stopped at: Phase 34 complete
 Resume file: None
-Notes: Plan 34-04 complete. Config toggle (vigil.useAPI) switches Mac app between local GRDB and Vigil Core API. DashboardViewModel and CaptureService use any ThoughtRepository protocol. ThoughtRepository has default parameter extensions. SyncService/FolderWatcher local-only. Build clean.
+Notes: Phase 34 complete. Mac app migrated to ThoughtRepository protocol abstraction. APIThoughtStore implements all methods via Vigil Core API. Config toggle (vigil.useAPI) switches between local GRDB and API backend. DashboardViewModel and CaptureService use any ThoughtRepository. SyncService/FolderWatcher local-only. Vigil Core extended with date range filtering and bulk therapy classify. Build clean.
