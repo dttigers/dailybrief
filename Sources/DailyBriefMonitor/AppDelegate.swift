@@ -8,7 +8,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
     private(set) var capturePanel: CapturePanel!
     private var captureService: CaptureService?
-    private var triageService: TriageService?
+    private var triageService: (any TriageProviding)?
     private var thoughtStore: (any ThoughtRepository)?
     private var localThoughtStore: ThoughtStore?  // Concrete store for sync-only operations
     private var globalHotKey: GlobalHotKey?
@@ -17,20 +17,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
     // Audio & image services
     private var transcriptionService: TranscriptionService?
-    private var imageDescriptionService: ImageDescriptionService?
+    private var imageDescriptionService: (any ImageDescriptionProviding)?
 
     // Folder watching
     private var folderWatcher: FolderWatcherService?
 
     // Insights
-    private var insightService: InsightService?
+    private var insightService: (any InsightProviding)?
 
     // Therapy classification
-    private var therapyClassificationService: TherapyClassificationService?
+    private var therapyClassificationService: (any TherapyClassifyProviding)?
 
     // Therapy pattern detection & session prep
-    private var therapyPatternService: TherapyPatternService?
-    private var therapyPrepService: TherapyPrepService?
+    private var therapyPatternService: (any TherapyPatternProviding)?
+    private var therapyPrepService: (any TherapyPrepProviding)?
 
     // Cloud sync
     private var syncService: SyncService?
@@ -38,30 +38,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSLog("DailyBriefMonitor: applicationDidFinishLaunching started")
-
-        // Load config for AI credentials (optional — triage disabled without config)
-        NSLog("DailyBriefMonitor: loading config...")
-        var triageService: TriageService?
-        var imageDescService: ImageDescriptionService?
-        if let config = try? ConfigLoader.load() {
-            triageService = TriageService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-            self.triageService = triageService
-
-            imageDescService = ImageDescriptionService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-            self.imageDescriptionService = imageDescService
-
-            let insightService = InsightService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-            self.insightService = insightService
-
-            let therapyClassService = TherapyClassificationService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-            self.therapyClassificationService = therapyClassService
-
-            let therapyPatternSvc = TherapyPatternService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-            self.therapyPatternService = therapyPatternSvc
-
-            let therapyPrepSvc = TherapyPrepService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
-            self.therapyPrepService = therapyPrepSvc
-        }
 
         // Create transcription service (uses Apple SFSpeechRecognizer)
         let transcription = TranscriptionService()
@@ -72,6 +48,41 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             // Check if Vigil API mode is enabled
             let useVigilAPI = (try? ConfigLoader.load())?.vigil?.useAPI == true
             let apiBaseURL = (try? ConfigLoader.load())?.vigil?.apiBaseURL ?? "http://localhost:3001/v1"
+
+            // Load AI services — API-backed or local Claude depending on config
+            NSLog("DailyBriefMonitor: loading AI services...")
+            var concreteTriageService: TriageService?
+            var concreteImageDescService: ImageDescriptionService?
+            var concreteTherapyClassService: TherapyClassificationService?
+
+            if useVigilAPI {
+                NSLog("DailyBriefMonitor: using Vigil API AI services")
+                let client = VigilAPIClient(baseURL: URL(string: apiBaseURL)!)
+                self.triageService = APITriageService(client: client)
+                self.imageDescriptionService = APIImageDescriptionService(client: client)
+                self.insightService = APIInsightService(client: client)
+                self.therapyClassificationService = APITherapyClassificationService(client: client)
+                self.therapyPatternService = APITherapyPatternService(client: client)
+                self.therapyPrepService = APITherapyPrepService(client: client)
+            } else if let config = try? ConfigLoader.load() {
+                NSLog("DailyBriefMonitor: using local Claude AI services")
+                let localTriage = TriageService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+                concreteTriageService = localTriage
+                self.triageService = localTriage
+
+                let localImageDesc = ImageDescriptionService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+                concreteImageDescService = localImageDesc
+                self.imageDescriptionService = localImageDesc
+
+                self.insightService = InsightService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+
+                let localTherapyClass = TherapyClassificationService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+                concreteTherapyClassService = localTherapyClass
+                self.therapyClassificationService = localTherapyClass
+
+                self.therapyPatternService = TherapyPatternService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+                self.therapyPrepService = TherapyPrepService(apiKey: config.ai.claudeApiKey, model: config.ai.claudeModel)
+            }
 
             let repository: any ThoughtRepository
             let localStore: ThoughtStore?
@@ -107,7 +118,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                         }
                         return thought
                     },
-                    onTriage: triageService.map { triage in
+                    onTriage: self.triageService.map { triage in
                         return { [weak self] thoughtId, content in
                             do {
                                 let result = try await triage.triage(content)
@@ -160,10 +171,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             if let config = try? ConfigLoader.load(), config.folderWatching.enabled, let localStore {
                 let watcher = FolderWatcherService(
                     transcriptionService: transcription,
-                    imageDescriptionService: imageDescService,
+                    imageDescriptionService: concreteImageDescService,
                     captureService: service,
-                    triageService: triageService,
-                    therapyClassificationService: self.therapyClassificationService,
+                    triageService: concreteTriageService,
+                    therapyClassificationService: concreteTherapyClassService,
                     thoughtStore: localStore,
                     config: config.folderWatching
                 )
