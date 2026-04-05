@@ -36,10 +36,10 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 **Plans**: 4 plans in 3 waves
 
 Plans:
-- [ ] 37-01: Drizzle Schema & Database Setup (Wave 1)
-- [ ] 37-02: Thoughts CRUD + FTS Route Migration (Wave 2, parallel)
-- [ ] 37-03: Tags, Links & Bulk Route Migration (Wave 2, parallel)
-- [ ] 37-04: Summary, Brief & Final Cleanup (Wave 3)
+- [x] 37-01: Drizzle Schema & Database Setup (Wave 1) — completed 2026-04-05
+- [x] 37-02: Thoughts CRUD + FTS Route Migration (Wave 2, parallel) — completed 2026-04-05
+- [x] 37-03: Tags, Links & Bulk Route Migration (Wave 2, parallel) — completed 2026-04-05
+- [x] 37-04: Summary, Brief & Final Cleanup (Wave 3) — completed 2026-04-05
 
 #### Phase 38: API Key Authentication
 
@@ -233,7 +233,7 @@ None
 | 34. Mac App Migration — First Services | v2.0 | 4/4 | Complete | 2026-04-04 |
 | 35. Mac App Migration — AI Services | v2.0 | 3/3 | Complete | 2026-04-04 |
 | 36. Integration & Polish | v2.0 | 1/1 | Complete | 2026-04-04 |
-| 37. PostgreSQL Migration | v2.1 | 0/? | Not started | - |
+| 37. PostgreSQL Migration | v2.1 | 4/4 | Complete | 2026-04-05 |
 | 38. API Key Authentication | v2.1 | 0/? | Not started | - |
 | 39. Railway Deployment | v2.1 | 0/? | Not started | - |
 | 40. Data Migration | v2.1 | 0/? | Not started | - |
