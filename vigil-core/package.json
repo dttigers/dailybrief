@@ -11,7 +11,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:migrate-prod": "node dist/db/migrate.js",
-    "db:generate-key": "tsx scripts/generate-key.ts"
+    "db:generate-key": "tsx scripts/generate-key.ts",
+    "db:migrate-sqlite": "tsx scripts/migrate-sqlite.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
@@ -21,8 +22,10 @@
     "postgres": "^3.4.9"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^22.0.0",
     "@types/pg": "^8.20.0",
+    "better-sqlite3": "^12.8.0",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
