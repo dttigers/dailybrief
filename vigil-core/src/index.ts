@@ -19,6 +19,7 @@ import { prioritize } from "./routes/prioritize.js";
 import { describeImage } from "./routes/describe-image.js";
 import { therapy } from "./routes/therapy.js";
 import { briefHistory } from "./routes/brief-history.js";
+import { exportRoute } from "./routes/export.js";
 import { testConnection, closeConnection } from "./db/connection.js";
 
 // Verify database connection at startup
@@ -72,6 +73,7 @@ app.route("/v1", prioritize);
 app.route("/v1", describeImage);
 app.route("/v1", therapy);
 app.route("/v1", briefHistory);
+app.route("/v1", exportRoute);
 
 const port = Number(process.env.PORT) || 3001;
 
