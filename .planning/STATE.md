@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 38 of 44 (API Key Authentication) — COMPLETE
-Plan: 1/1 complete
-Status: Phase 38 complete, ready for Phase 39
-Last activity: 2026-04-05 — Phase 38 complete (bearer token auth on all endpoints, key generation CLI)
+Phase: 39 of 44 (Railway Deployment) — IN PROGRESS
+Plan: 1/? complete
+Status: Plan 39-01 complete (Dockerfile + migration script), continuing phase 39
+Last activity: 2026-04-05 — Plan 39-01 complete (Dockerfile, .dockerignore, programmatic migrate.ts)
 
 Progress: ██░░░░░░░░ 25%
 
@@ -68,6 +68,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Phase 38 complete
+Stopped at: Phase 39, plan 01 complete
 Resume file: None
-Notes: Phase 38 API Key Authentication complete. api_keys table with SHA-256 hash storage, bearer token middleware on all routes except /v1/health, CLI key generation script. TypeScript compiles cleanly. Ready for Phase 39 (Railway Deploy).
+Notes: Plan 39-01 complete. Dockerfile (multi-stage node:20-alpine), .dockerignore, programmatic migrate.ts using drizzle-orm migrator. CMD runs migrations then app start. TypeScript compiles cleanly.
