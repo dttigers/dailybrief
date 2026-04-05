@@ -118,6 +118,9 @@ final class DashboardViewModel {
     var isBulkProcessing: Bool = false
     var bulkProgress: (current: Int, total: Int)?
 
+    // Brief history state
+    var showingBriefHistory = false
+
     // Import state
     var isImporting = false
     var importProgress: ImportProgress?

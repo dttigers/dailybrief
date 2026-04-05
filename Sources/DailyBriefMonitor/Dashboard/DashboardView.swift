@@ -6,6 +6,7 @@ import JarvisCore
 struct DashboardView: View {
 
     @State var viewModel: DashboardViewModel
+    @State var briefHistoryViewModel: BriefHistoryViewModel?
     @State private var isDropTargeted = false
     // Therapy prep UI removed — classification routing kept, prep/patterns UI disabled
     @State private var bulkTagText = ""
@@ -287,6 +288,25 @@ struct DashboardView: View {
                     }
                 }
             }
+
+            // Brief History section
+            Section {
+                Button {
+                    viewModel.showingBriefHistory.toggle()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .foregroundStyle(.purple)
+                            .font(.caption)
+                        Text("Brief History")
+                            .font(.subheadline)
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 2)
+                .opacity(viewModel.showingBriefHistory ? 1.0 : 0.6)
+            }
         }
         .navigationSplitViewColumnWidth(min: 160, ideal: 200, max: 260)
     }
@@ -418,6 +438,15 @@ struct DashboardView: View {
 
     @ViewBuilder
     private var detail: some View {
+        if viewModel.showingBriefHistory, let historyVM = briefHistoryViewModel {
+            BriefHistoryView(viewModel: historyVM)
+        } else {
+            thoughtsDetail
+        }
+    }
+
+    @ViewBuilder
+    private var thoughtsDetail: some View {
         VStack(spacing: 0) {
             // Batch import progress bar
             if let progress = viewModel.importProgress {

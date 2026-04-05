@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private var captureService: CaptureService?
     private var triageService: (any TriageProviding)?
     private var thoughtStore: (any ThoughtRepository)?
+    private var vigilAPIClient: VigilAPIClient?
     private var globalHotKey: GlobalHotKey?
     private var dashboardWindow: NSWindow?
     private var settingsWindow: NSWindow?
@@ -42,6 +43,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                 baseURL: URL(string: config.apiBaseUrl)!,
                 apiKey: config.apiKey
             )
+            self.vigilAPIClient = client
 
             // AI services — all API-backed
             NSLog("DailyBriefMonitor: loading API AI services...")
@@ -169,7 +171,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             therapyPatternService: therapyPatternService,
             therapyPrepService: therapyPrepService
         )
-        let dashboardView = DashboardView(viewModel: viewModel)
+        let briefHistoryVM = vigilAPIClient.map { BriefHistoryViewModel(apiClient: $0) }
+        let dashboardView = DashboardView(viewModel: viewModel, briefHistoryViewModel: briefHistoryVM)
         let hostingView = NSHostingView(rootView: dashboardView)
 
         let window = NSWindow(
