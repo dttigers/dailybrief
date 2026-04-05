@@ -174,7 +174,6 @@ thoughts.get("/thoughts/:id", async (c) => {
 
 // POST /thoughts — Create
 thoughts.post("/thoughts", async (c) => {
-  const db = getDb();
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
@@ -198,28 +197,16 @@ thoughts.post("/thoughts", async (c) => {
       );
     }
 
-    const now = new Date().toISOString();
-    const cloudKitRecordID = crypto.randomUUID();
-    const tagsJson = tags && Array.isArray(tags) ? JSON.stringify(tags) : null;
-
-    const result = db
-      .prepare(
-        `INSERT INTO thoughts (content, source, category, tags, cloudKitRecordID, syncStatus, createdAt, modifiedAt, isFavorited)
-         VALUES (?, ?, ?, ?, ?, 'pending', ?, ?, 0)`,
-      )
-      .run(
-        content.trim(),
+    const [created] = await db
+      .insert(thoughtsTable)
+      .values({
+        content: content.trim(),
         source,
-        category ?? null,
-        tagsJson,
-        cloudKitRecordID,
-        now,
-        now,
-      );
-
-    const created = db
-      .prepare("SELECT * FROM thoughts WHERE id = ?")
-      .get(result.lastInsertRowid) as Thought;
+        category: category ?? null,
+        tags: tags && Array.isArray(tags) ? tags : null,
+        cloudKitRecordID: crypto.randomUUID(),
+      })
+      .returning();
 
     return c.json(toResponse(created), 201);
   } catch (err) {
@@ -230,30 +217,32 @@ thoughts.post("/thoughts", async (c) => {
 
 // PUT /thoughts/:id — Update
 thoughts.put("/thoughts/:id", async (c) => {
-  const db = getDb();
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
-    const id = c.req.param("id");
+    const id = Number(c.req.param("id"));
+    if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
 
     // Check existence
-    const existing = db
-      .prepare(
-        "SELECT * FROM thoughts WHERE id = ? AND syncStatus != 'pendingDeletion'",
+    const existing = await db
+      .select({ id: thoughtsTable.id })
+      .from(thoughtsTable)
+      .where(
+        and(
+          eq(thoughtsTable.id, id),
+          ne(thoughtsTable.syncStatus, "pendingDeletion"),
+        ),
       )
-      .get(id) as Thought | undefined;
-    if (!existing) return c.json({ error: "Thought not found" }, 404);
+      .limit(1);
+    if (existing.length === 0) return c.json({ error: "Thought not found" }, 404);
 
     const body = await c.req.json();
-    const setClauses: string[] = [];
-    const params: unknown[] = [];
 
+    // Validation
     if (body.content !== undefined) {
       if (typeof body.content !== "string" || body.content.trim() === "") {
         return c.json({ error: "content must be non-empty string" }, 400);
       }
-      setClauses.push("content = ?");
-      params.push(body.content.trim());
     }
     if (body.category !== undefined) {
       if (!VALID_CATEGORIES.includes(body.category)) {
@@ -262,41 +251,28 @@ thoughts.put("/thoughts/:id", async (c) => {
           400,
         );
       }
-      setClauses.push("category = ?");
-      params.push(body.category);
     }
-    if (body.taskStatus !== undefined) {
-      setClauses.push("taskStatus = ?");
-      params.push(body.taskStatus);
-    }
-    if (body.therapyClassification !== undefined) {
-      setClauses.push("therapyClassification = ?");
-      params.push(body.therapyClassification);
-    }
-    if (body.tags !== undefined) {
-      setClauses.push("tags = ?");
-      params.push(Array.isArray(body.tags) ? JSON.stringify(body.tags) : null);
-    }
-    if (body.isFavorited !== undefined) {
-      setClauses.push("isFavorited = ?");
-      params.push(body.isFavorited ? 1 : 0);
-    }
+
+    // Build dynamic update object
+    const updates: Partial<typeof thoughtsTable.$inferInsert> = {};
+    if (body.content !== undefined) updates.content = body.content.trim();
+    if (body.category !== undefined) updates.category = body.category;
+    if (body.taskStatus !== undefined) updates.taskStatus = body.taskStatus;
+    if (body.therapyClassification !== undefined)
+      updates.therapyClassification = body.therapyClassification;
+    if (body.tags !== undefined)
+      updates.tags = Array.isArray(body.tags) ? body.tags : null;
+    if (body.isFavorited !== undefined) updates.isFavorited = body.isFavorited;
 
     // Always update modifiedAt and syncStatus
-    const now = new Date().toISOString();
-    setClauses.push("modifiedAt = ?");
-    params.push(now);
-    setClauses.push("syncStatus = 'pending'");
+    updates.modifiedAt = new Date();
+    updates.syncStatus = "pending";
 
-    params.push(id);
-
-    db.prepare(
-      `UPDATE thoughts SET ${setClauses.join(", ")} WHERE id = ?`,
-    ).run(...params);
-
-    const updated = db
-      .prepare("SELECT * FROM thoughts WHERE id = ?")
-      .get(id) as Thought;
+    const [updated] = await db
+      .update(thoughtsTable)
+      .set(updates)
+      .where(eq(thoughtsTable.id, id))
+      .returning();
 
     return c.json(toResponse(updated));
   } catch (err) {
@@ -306,24 +282,30 @@ thoughts.put("/thoughts/:id", async (c) => {
 });
 
 // DELETE /thoughts/:id — Soft delete
-thoughts.delete("/thoughts/:id", (c) => {
-  const db = getDb();
+thoughts.delete("/thoughts/:id", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
-    const id = c.req.param("id");
+    const id = Number(c.req.param("id"));
+    if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
 
-    const existing = db
-      .prepare(
-        "SELECT id FROM thoughts WHERE id = ? AND syncStatus != 'pendingDeletion'",
+    // Check existence
+    const existing = await db
+      .select({ id: thoughtsTable.id })
+      .from(thoughtsTable)
+      .where(
+        and(
+          eq(thoughtsTable.id, id),
+          ne(thoughtsTable.syncStatus, "pendingDeletion"),
+        ),
       )
-      .get(id) as { id: number } | undefined;
-    if (!existing) return c.json({ error: "Thought not found" }, 404);
+      .limit(1);
+    if (existing.length === 0) return c.json({ error: "Thought not found" }, 404);
 
-    const now = new Date().toISOString();
-    db.prepare(
-      "UPDATE thoughts SET syncStatus = 'pendingDeletion', modifiedAt = ? WHERE id = ?",
-    ).run(now, id);
+    await db
+      .update(thoughtsTable)
+      .set({ syncStatus: "pendingDeletion", modifiedAt: new Date() })
+      .where(eq(thoughtsTable.id, id));
 
     return c.body(null, 204);
   } catch (err) {
