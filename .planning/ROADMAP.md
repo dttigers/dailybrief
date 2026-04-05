@@ -130,18 +130,17 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 Plans:
 - [ ] 45-01: TBD (run /gsd:plan-phase 45 to break down)
 
-#### Phase 46: Remove Dual Code Paths
+#### Phase 46: Remove Dual Code Paths ✅
 
 **Goal**: Retire local-only GRDB mode, remove vigil.useAPI toggle and all local-only code paths
 **Depends on**: Phase 45
-**Research**: Unlikely (internal cleanup)
-**Plans**: TBD
+**Completed**: 2026-04-05
 
 Plans:
-- [ ] 46-01: Remove local storage layer (GRDB, CloudKit, folder watcher)
-- [ ] 46-02: Remove local AI services + config toggle
-- [ ] 46-03: Simplify AppDelegate to API-only
-- [ ] 46-04: Migrate CLI to API backend
+- [x] 46-01: Remove local storage layer (GRDB, CloudKit, folder watcher)
+- [x] 46-02: Remove local AI services + config toggle
+- [x] 46-03: Simplify AppDelegate to API-only
+- [x] 46-04: Migrate CLI to API backend
 
 #### Phase 47: Brief History
 
@@ -236,7 +235,7 @@ None
 | 43. HTTPS & Domain | v2.1 | 1/1 | Complete | 2026-04-05 |
 | 44. Integration Testing & Hardening | v2.1 | 2/2 | Complete | 2026-04-05 |
 | 45. G2 Plugin UX Fixes | v2.2 | 0/? | Not started | - |
-| 46. Remove Dual Code Paths | v2.2 | 0/4 | Planned | - |
+| 46. Remove Dual Code Paths | v2.2 | 4/4 | Complete | 2026-04-05 |
 | 47. Brief History | v2.2 | 0/? | Not started | - |
 | 48. Export System | v2.2 | 0/? | Not started | - |
 | 49. Configurable PDF | v2.2 | 0/? | Not started | - |
