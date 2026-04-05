@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-04-04)
 
 ## Current Position
 
-Phase: 41 of 44 (G2 Plugin Production URL) — Plan 01 COMPLETE
+Phase: 42 of 44 (Mac App Server Migration) — Plan 01 COMPLETE
 Plan: 1/1 complete
-Status: Phase 41 plan 01 complete, G2 plugin API URL and auth configurable via env vars, .ehpk packaging working
-Last activity: 2026-04-05 — Made G2 plugin production-ready with configurable API URL, Bearer auth, and .ehpk packaging
+Status: Phase 42 plan 01 complete, Mac app VigilAPIClient has Bearer auth and production URL
+Last activity: 2026-04-05 — Added Bearer auth to Mac app VigilAPIClient, pointed at Railway production URL, updated user config
 
 Progress: ███░░░░░░░ 37%
 
@@ -68,6 +68,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-04-05
-Stopped at: Phase 41 plan 01 complete
+Stopped at: Phase 42 plan 01 complete
 Resume file: None
-Notes: Phase 41 G2 Plugin Production URL plan 01 complete. API URL and API key now configurable via VITE_API_URL and VITE_API_KEY env vars. Bearer auth headers on all fetch calls. Production build targets Railway URL. .ehpk packaging via evenhub pack working. app.json updated with required Even Hub manifest fields.
+Notes: Phase 42 Mac App Server Migration plan 01 complete. VigilAPIClient now accepts optional apiKey and sends Bearer auth on all requests. Default URL points at Railway production. Both CLI and menu bar entry points pass apiKey from config. User must add their vk_ API key to ~/.config/dailybrief/config.json.
