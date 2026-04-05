@@ -1,10 +1,137 @@
 import Foundation
 
+// MARK: - AI Service Types
+//
+// Shared types used by AI service protocols and their implementations.
+
+/// The result of AI-powered thought categorization.
+public struct TriageResult: Codable, Sendable {
+    /// The assigned category for the thought.
+    public var category: ThoughtCategory
+    /// Confidence score from 0.0 to 1.0.
+    public var confidence: Double
+
+    public init(category: ThoughtCategory, confidence: Double) {
+        self.category = category
+        self.confidence = min(1.0, max(0.0, confidence))
+    }
+}
+
+/// Errors that can occur during thought triage.
+public enum TriageError: Error, LocalizedError {
+    case apiError(String)
+    case parseError(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .apiError(let detail): return "Triage API error: \(detail)"
+        case .parseError(let detail): return "Triage parse error: \(detail)"
+        }
+    }
+}
+
+/// Supported image media types for description services.
+public enum ImageMediaType: String, Sendable {
+    case jpeg, png, gif, webp
+
+    /// The MIME type string for this media type.
+    public var mimeType: String {
+        switch self {
+        case .jpeg: return "image/jpeg"
+        case .png: return "image/png"
+        case .gif: return "image/gif"
+        case .webp: return "image/webp"
+        }
+    }
+}
+
+/// Errors that can occur during image description.
+public enum ImageDescriptionError: Error, LocalizedError {
+    case apiError(String)
+    case parseError(String)
+    case imageTooLarge
+
+    public var errorDescription: String? {
+        switch self {
+        case .apiError(let detail): return "Image description API error: \(detail)"
+        case .parseError(let detail): return "Image description parse error: \(detail)"
+        case .imageTooLarge: return "Image data exceeds the 20MB size limit"
+        }
+    }
+}
+
+/// The result of AI-powered therapy thought classification.
+public struct TherapyClassificationResult: Codable, Sendable {
+    /// The assigned classification for the therapy thought.
+    public var classification: TherapyClassification
+    /// Confidence score from 0.0 to 1.0.
+    public var confidence: Double
+    /// Brief explanation for user transparency.
+    public var reasoning: String
+
+    public init(classification: TherapyClassification, confidence: Double, reasoning: String) {
+        self.classification = classification
+        self.confidence = min(1.0, max(0.0, confidence))
+        self.reasoning = reasoning
+    }
+}
+
+/// Errors that can occur during therapy classification.
+public enum TherapyClassificationError: Error, LocalizedError {
+    case apiError(String)
+    case parseError(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .apiError(let detail): return "Therapy classification API error: \(detail)"
+        case .parseError(let detail): return "Therapy classification parse error: \(detail)"
+        }
+    }
+}
+
+/// Errors that can occur during insight generation.
+public enum InsightError: Error, LocalizedError {
+    case apiError(String)
+    case parseError(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .apiError(let detail): return "Insight API error: \(detail)"
+        case .parseError(let detail): return "Insight parse error: \(detail)"
+        }
+    }
+}
+
+/// Errors that can occur during therapy pattern detection.
+public enum TherapyPatternError: Error, LocalizedError {
+    case apiError(String)
+    case parseError(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .apiError(let detail): return "Therapy pattern API error: \(detail)"
+        case .parseError(let detail): return "Therapy pattern parse error: \(detail)"
+        }
+    }
+}
+
+/// Errors that can occur during therapy prep generation.
+public enum TherapyPrepError: Error, LocalizedError {
+    case apiError(String)
+    case parseError(String)
+
+    public var errorDescription: String? {
+        switch self {
+        case .apiError(let detail): return "Therapy prep API error: \(detail)"
+        case .parseError(let detail): return "Therapy prep parse error: \(detail)"
+        }
+    }
+}
+
 // MARK: - AI Service Protocols
 //
 // Protocol abstractions for all AI services, enabling swappable backends
 // (local Claude API calls vs. Vigil Core API) without changing consumer code.
-// Follows the same pattern as ThoughtRepository protocol from Phase 34.
 
 /// Protocol for thought categorization services.
 public protocol TriageProviding: Actor {
