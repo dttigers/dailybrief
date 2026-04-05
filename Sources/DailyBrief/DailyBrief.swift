@@ -224,7 +224,8 @@ extension DailyBrief {
             let filename = "daily_sheet_\(formatter.string(from: Date())).pdf"
             let outputPath = (outputDir as NSString).appendingPathComponent(filename)
 
-            try PDFGenerator.generate(data: briefData, outputPath: outputPath)
+            let layout = PDFLayout.layout(from: config.pdf)
+            try PDFGenerator.generate(data: briefData, outputPath: outputPath, layout: layout)
 
             // Print
             if !noPrint {

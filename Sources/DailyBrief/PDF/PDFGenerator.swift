@@ -4,12 +4,12 @@ import Foundation
 import JarvisCore
 
 enum PDFGenerator {
-    static func generate(data: DailyBriefData, outputPath: String) throws {
+    static func generate(data: DailyBriefData, outputPath: String, layout: PDFLayout) throws {
         let dir = (outputPath as NSString).deletingLastPathComponent
         try FileManager.default.createDirectory(atPath: dir, withIntermediateDirectories: true)
 
         let url = URL(fileURLWithPath: outputPath) as CFURL
-        let pageRect = CGRect(x: 0, y: 0, width: PDFStyles.pageWidth, height: PDFStyles.pageHeight)
+        let pageRect = CGRect(x: 0, y: 0, width: layout.pageWidth, height: layout.pageHeight)
 
         guard let context = CGContext(url, mediaBox: nil, nil) else {
             throw PDFError.cannotCreateContext
@@ -18,22 +18,23 @@ enum PDFGenerator {
         // Page 1: Work Orders + To Do + Notes
         var mediaBox = pageRect
         context.beginPage(mediaBox: &mediaBox)
-        drawDashedBorder(context: context)
-        PageOneRenderer.draw(context: context, data: data)
+        drawDashedBorder(context: context, layout: layout)
+        PageOneRenderer.draw(context: context, data: data, layout: layout)
         context.endPage()
 
-        // Page 2: Tigers + Standings + Affirmation + Notes
+        // Page 2: Sports + Affirmation + Notes
         context.beginPage(mediaBox: &mediaBox)
-        drawDashedBorder(context: context)
-        PageTwoRenderer.draw(context: context, data: data)
+        drawDashedBorder(context: context, layout: layout)
+        PageTwoRenderer.draw(context: context, data: data, layout: layout)
         context.endPage()
 
-        // Page 3: Captured Thoughts (only if there are any)
+        // Page 3: Captured Thoughts (only if there are any and relevant sections enabled)
         let hasThoughts = !data.unprocessedThoughts.isEmpty || !data.taskThoughts.isEmpty || !data.recentThoughts.isEmpty
-        if hasThoughts {
+        let hasPageThreeSections = !layout.enabledSections.isDisjoint(with: ["thoughts", "insights", "therapyPrep"])
+        if hasThoughts && hasPageThreeSections {
             context.beginPage(mediaBox: &mediaBox)
-            drawDashedBorder(context: context)
-            PageThreeRenderer.draw(context: context, data: data)
+            drawDashedBorder(context: context, layout: layout)
+            PageThreeRenderer.draw(context: context, data: data, layout: layout)
             context.endPage()
         }
 
@@ -41,13 +42,13 @@ enum PDFGenerator {
         Logger.log("PDF generated at \(outputPath)")
     }
 
-    private static func drawDashedBorder(context: CGContext) {
+    private static func drawDashedBorder(context: CGContext, layout: PDFLayout) {
         let S = PDFStyles.self
         context.setStrokeColor(S.medGray)
         context.setLineWidth(S.borderLineWidth)
         context.setLineDash(phase: 0, lengths: S.dashPattern)
 
-        let rect = CGRect(x: S.contentX, y: S.contentY, width: S.contentWidth, height: S.contentHeight)
+        let rect = CGRect(x: layout.contentX, y: layout.contentY, width: layout.contentWidth, height: layout.contentHeight)
         context.stroke(rect)
 
         // Reset dash
@@ -55,8 +56,8 @@ enum PDFGenerator {
     }
 
     // Convert top-down Y within content area to CG bottom-up Y
-    static func cgY(_ topDownY: CGFloat) -> CGFloat {
-        PDFStyles.contentY + PDFStyles.contentHeight - topDownY
+    static func cgY(_ topDownY: CGFloat, layout: PDFLayout) -> CGFloat {
+        layout.contentY + layout.contentHeight - topDownY
     }
 
     static func drawText(_ text: String, at point: CGPoint, font: CTFont, color: CGColor, context: CGContext) {
