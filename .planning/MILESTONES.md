@@ -1,5 +1,33 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v2.2 Polish & Power (Shipped: 2026-04-05)
+
+**Delivered:** Stabilized the platform with local code path removal, added brief history browsing, thought export, configurable PDF layout, and dashboard AI chat with thought context — completing the transition from local tool to polished multi-client platform.
+
+**Phases completed:** 45-50 (12 plans total)
+
+**Key accomplishments:**
+
+- G2 plugin UX fixes — task detail screen with tap-to-expand and swipe navigation
+- Retired all local-only code paths — removed GRDB, CloudKit, local AI services (2,703 lines deleted)
+- Brief history — browse and reprint past daily briefs from dashboard and CLI
+- Export system — thoughts as JSON, CSV, or Markdown via API and CLI
+- Configurable PDF — paper size, margins, font scale, section toggles in settings UI
+- Dashboard AI chat — multi-turn conversation with Claude using thought context injection
+
+**Stats:**
+
+- 81 files created/modified
+- +6,687 / -3,774 lines (Swift + TypeScript)
+- 6 phases, 12 plans, ~24 tasks
+- 1 day (2026-04-05)
+
+**Git range:** `feat(45-01)` → `fix: bump vigil-core to 0.2.0`
+
+**What's next:** TBD — next milestone planning
+
+---
+
 ## v2.1 Server Deployment (Shipped: 2026-04-05)
 
 **Delivered:** Production deployment of Vigil Core API on Railway with PostgreSQL, bearer token authentication, data migration, and all 3 clients (Mac app, G2 glasses, API) connected to production server with hardened security.

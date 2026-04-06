@@ -56,14 +56,16 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ PostgreSQL migration — Drizzle ORM replacing better-sqlite3, tsvector FTS — v2.1
 - ✓ API hardening — rate limiting, timeouts, security headers, CORS, smoke tests — v2.1
 - ✓ Data migration — local SQLite thoughts migrated to production PostgreSQL — v2.1
+- ✓ G2 plugin UX — task detail screen with tap-to-expand and swipe navigation — v2.2
+- ✓ Remove dual code paths — retired GRDB, CloudKit, local AI services (API-only mode) — v2.2
+- ✓ Brief history — browse and reprint past daily briefs from dashboard and CLI — v2.2
+- ✓ Export system — thoughts as JSON, CSV, or Markdown via API and CLI — v2.2
+- ✓ Configurable PDF — paper size, margins, font scale, section toggles — v2.2
+- ✓ Dashboard AI chat — multi-turn Claude conversation with thought context injection — v2.2
 
 ### Active
 
-- [ ] Brief history — browse and reprint past daily briefs
-- [ ] Export system — thoughts as Markdown/JSON/CSV
-- [ ] CKSubscription push notifications — upgrade from polling-based sync
 - [ ] G2 hardware testing — validate plugin on physical Even G2 glasses
-- [ ] Remove dual code paths — retire local-only mode once API backend is proven stable
 
 ### Out of Scope
 
@@ -72,23 +74,24 @@ Capture every thought with zero friction and have the system organize it for you
 - Replacing the physical notebook — digital complements the traveler's notebook, doesn't replace it
 - Multi-user support — build after Vigil Core is proven on a server
 - Android XR — wait for SDK maturity, build after Even G2 shows traction
+- CKSubscription push notifications — CloudKit sync removed in v2.2; no longer relevant
 
 ## Context
 
-Shipped v2.1 Server Deployment — Vigil Core now live at vigil-core-production.up.railway.app with managed PostgreSQL.
-Tech stack: Swift 6.2/SwiftUI/SPM (Mac app), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API), Vite/TypeScript/Even Hub SDK (G2 plugin).
-3 client surfaces all connected to production: Mac app (dashboard + capture panel + PDF brief), Vigil Core API (Railway, 20+ REST endpoints), Even G2 plugin (3 screens).
-Mac app connects to production server with bearer token auth; local GRDB mode retained as fallback via `vigil.useAPI` config flag.
+Shipped v2.2 Polish & Power — platform is fully API-only, all local code paths retired.
+Tech stack: Swift 6.2/SwiftUI/SPM (Mac app, ~12,900 LOC), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API, ~5,000 LOC), Vite/TypeScript/Even Hub SDK (G2 plugin).
+3 client surfaces all connected to production: Mac app (dashboard + capture + PDF brief + AI chat), Vigil Core API (Railway, 20+ REST endpoints), Even G2 plugin (3 screens + task detail).
+Features added in v2.2: brief history browsing, thought export (JSON/CSV/MD), configurable PDF layout, dashboard AI chat with thought context.
 API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s timeouts, security headers, and CORS.
-Two LaunchAgents: com.jarvis.dailybrief (brief scheduler) and com.vigil.core.api (local API server for dev).
 G2 plugin configured for production but awaiting physical hardware for validation.
+50 phases and 111+ plans completed across 8 milestones in ~11 days.
 
 ## Constraints
 
 - **Platform**: macOS 14+ (Sonoma), Swift 6.2, SwiftUI
 - **AI Provider**: Anthropic Claude API (already integrated)
 - **Build System**: Swift Package Manager (existing setup)
-- **Data Storage**: Production PostgreSQL on Railway (Drizzle ORM, tsvector FTS); local GRDB/SQLite retained as Mac app fallback
+- **Data Storage**: Production PostgreSQL on Railway (Drizzle ORM, tsvector FTS)
 - **Voice Capture**: SFSpeechRecognizer for on-device transcription; external pocket recorder for mobile
 - **Physical Output**: Daily PDF must remain printable and glueable into traveler's notebook
 
@@ -119,7 +122,7 @@ G2 plugin configured for production but awaiting physical hardware for validatio
 | Hono over Express for Vigil Core API | Lightweight, TypeScript-first, edge-ready; minimal boilerplate | ✓ Good |
 | better-sqlite3 for direct Jarvis DB access | No ORM overhead, shared SQLite file between Mac app and API | ✓ Good |
 | Protocol abstraction for Mac app migration | ThoughtRepository + AI service protocols enable gradual migration without breaking existing code | ✓ Good |
-| Config toggle (vigil.useAPI) for dual mode | Allows testing API backend while keeping local fallback; de-risks migration | ✓ Good |
+| Config toggle (vigil.useAPI) for dual mode | Allowed testing API backend while keeping local fallback; retired in v2.2 | ✓ Good — served its purpose |
 | snake_case config keys for cross-platform compat | Swift JSONEncoder requires snake_case; discovered during integration testing | ✓ Good |
 | Localhost-only for v2.0 | Avoids auth/deployment complexity; proves architecture before scaling | ✓ Good — enabled confident v2.1 deployment |
 | Drizzle ORM over raw SQL for PostgreSQL | Type-safe queries, migration tooling, connection pooling built-in | ✓ Good |
@@ -129,5 +132,9 @@ G2 plugin configured for production but awaiting physical hardware for validatio
 | In-memory rate limiting over Redis | Single-instance deployment; no external dependency needed at current scale | ✓ Good |
 | Programmatic migrations on deploy | Drizzle migrate() runs idempotently on every Railway deploy; no manual step | ✓ Good |
 
+| PDFLayout computed from PDFConfig | Flat struct with all dimensions, drives all renderers; notebook preset hardcodes 270x540 | ✓ Good |
+| maxTokens 1024 for chat | ADHD-friendly concise replies from Claude | ✓ Good |
+| Retire local GRDB/CloudKit/AI in v2.2 | API backend proven stable in v2.1; dual code paths were maintenance burden | ✓ Good |
+
 ---
-*Last updated: 2026-04-05 after v2.1 milestone*
+*Last updated: 2026-04-05 after v2.2 milestone*

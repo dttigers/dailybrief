@@ -13,7 +13,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v1.4 Intelligence & Organization** — Phases 24-28 (shipped 2026-04-04, early close)
 - ✅ **v2.0 Vigil Platform** — Phases 29-36 (shipped 2026-04-04)
 - ✅ **v2.1 Server Deployment** — Phases 37-44 (shipped 2026-04-05)
-- 🚧 **v2.2 Polish & Power** — Phases 45-50 (in progress)
+- ✅ **v2.2 Polish & Power** — Phases 45-50 (shipped 2026-04-05)
 
 ## Completed Milestones
 
@@ -24,6 +24,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ [v1.4 Intelligence & Organization](milestones/v1.4-ROADMAP.md) (Phases 24-28) — SHIPPED 2026-04-04 (early close)
 - ✅ [v2.0 Vigil Platform](milestones/v2.0-ROADMAP.md) (Phases 29-36) — SHIPPED 2026-04-04
 - ✅ [v2.1 Server Deployment](milestones/v2.1-ROADMAP.md) (Phases 37-44) — SHIPPED 2026-04-05
+- ✅ [v2.2 Polish & Power](milestones/v2.2-ROADMAP.md) (Phases 45-50) — SHIPPED 2026-04-05
 
 <details>
 <summary>✅ v2.1 Server Deployment (Phases 37-44) — SHIPPED 2026-04-05</summary>
@@ -115,72 +116,17 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
-### 🚧 v2.2 Polish & Power (In Progress)
+<details>
+<summary>✅ v2.2 Polish & Power (Phases 45-50) — SHIPPED 2026-04-05</summary>
 
-**Milestone Goal:** Stabilize shipped features, add user customization, and introduce AI chat as a new interaction paradigm
+- [x] Phase 45: G2 Plugin UX Fixes (1/1 plan) — completed 2026-04-05
+- [x] Phase 46: Remove Dual Code Paths (4/4 plans) — completed 2026-04-05
+- [x] Phase 47: Brief History (3/3 plans) — completed 2026-04-05
+- [x] Phase 48: Export System (1/1 plan) — completed 2026-04-05
+- [x] Phase 49: Configurable PDF (2/2 plans) — completed 2026-04-05
+- [x] Phase 50: Dashboard AI Chat (2/2 plans) — completed 2026-04-05
 
-#### Phase 45: G2 Plugin UX Fixes
-
-**Goal**: Fix task expansion (full content visibility in work orders list) and swipe-back navigation
-**Depends on**: Previous milestone complete
-**Research**: Likely (Even Hub SDK gesture/navigation APIs)
-**Research topics**: Even Hub SDK swipe gesture support, navigation stack APIs, content overflow handling
-**Plans**: TBD
-
-Plans:
-- [ ] 45-01: TBD (run /gsd:plan-phase 45 to break down)
-
-#### Phase 46: Remove Dual Code Paths ✅
-
-**Goal**: Retire local-only GRDB mode, remove vigil.useAPI toggle and all local-only code paths
-**Depends on**: Phase 45
-**Completed**: 2026-04-05
-
-Plans:
-- [x] 46-01: Remove local storage layer (GRDB, CloudKit, folder watcher)
-- [x] 46-02: Remove local AI services + config toggle
-- [x] 46-03: Simplify AppDelegate to API-only
-- [x] 46-04: Migrate CLI to API backend
-
-#### Phase 47: Brief History ✅
-
-**Goal**: Browse and reprint past daily briefs from the dashboard
-**Depends on**: Phase 46
-**Completed**: 2026-04-05
-
-Plans:
-- [x] 47-01: Brief history backend (schema, migration, CRUD endpoints)
-- [x] 47-02: CLI integration (auto-save + history subcommand)
-- [x] 47-03: Dashboard UI (history list, detail view, reprint)
-
-#### Phase 48: Export System ✅
-
-**Goal**: Export thoughts as Markdown, JSON, or CSV
-**Depends on**: Phase 47
-**Completed**: 2026-04-05
-
-Plans:
-- [x] 48-01: API export endpoint + CLI export subcommand
-
-#### Phase 49: Configurable PDF ✅
-
-**Goal**: Paper size selection (A5, half-letter, full letter, custom) and layout customization (margins, section ordering, font sizes) in settings UI
-**Depends on**: Phase 48
-**Completed**: 2026-04-05
-
-Plans:
-- [x] 49-01: Config model + PDF layout system + renderer refactor
-- [x] 49-02: Settings UI for PDF configuration
-
-#### Phase 50: Dashboard AI Chat ✅
-
-**Goal**: Chat panel in dashboard with thought context for Claude interaction — ask for answers, ideas, task breakdowns
-**Depends on**: Phase 49
-**Completed**: 2026-04-05
-
-Plans:
-- [x] 50-01: Chat API endpoint with thought context injection
-- [x] 50-02: Dashboard chat panel and sidebar integration
+</details>
 
 ## Domain Expertise
 
@@ -234,7 +180,7 @@ None
 | 42. Mac App Server Migration | v2.1 | 1/1 | Complete | 2026-04-05 |
 | 43. HTTPS & Domain | v2.1 | 1/1 | Complete | 2026-04-05 |
 | 44. Integration Testing & Hardening | v2.1 | 2/2 | Complete | 2026-04-05 |
-| 45. G2 Plugin UX Fixes | v2.2 | 0/? | Not started | - |
+| 45. G2 Plugin UX Fixes | v2.2 | 1/1 | Complete | 2026-04-05 |
 | 46. Remove Dual Code Paths | v2.2 | 4/4 | Complete | 2026-04-05 |
 | 47. Brief History | v2.2 | 3/3 | Complete | 2026-04-05 |
 | 48. Export System | v2.2 | 1/1 | Complete | 2026-04-05 |
