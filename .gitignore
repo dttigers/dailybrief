@@ -8,3 +8,13 @@ DerivedData/
 .netrc
 .env
 *.env
+
+# IDE
+.idea/
+.vscode/
+
+# Build artifacts and archives — never commit
+*.xcarchive/
+DailyBriefMonitor */
+DailyBriefMonitor.dSYM/
+*.dSYM/
