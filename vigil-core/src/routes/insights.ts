@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { callClaude, getAIClient } from "../ai/client.js";
+import { callClaude, getAIClient, parseAIJson } from "../ai/client.js";
 import type { Insight } from "../ai/types.js";
 
 interface ThoughtInput {
@@ -73,7 +73,7 @@ Return ONLY the JSON array, no other text.`;
     }>;
 
     try {
-      parsed = JSON.parse(raw);
+      parsed = parseAIJson(raw);
     } catch {
       return c.json(
         { error: "Failed to parse AI response as JSON" },

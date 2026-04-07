@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { callClaude, getAIClient } from "../ai/client.js";
+import { callClaude, getAIClient, parseAIJson } from "../ai/client.js";
 import type { TriageResult } from "../ai/types.js";
 
 export const triage = new Hono();
@@ -44,7 +44,7 @@ triage.post("/triage", async (c) => {
 
     let result: TriageResult;
     try {
-      result = JSON.parse(raw) as TriageResult;
+      result = parseAIJson<TriageResult>(raw);
     } catch {
       return c.json({ error: "AI response parse error", raw }, 502);
     }

@@ -88,3 +88,22 @@ export async function callClaudeMultimodal(options: {
   }
   return block.text;
 }
+
+/**
+ * Parse JSON from an AI response, tolerating markdown code fences.
+ *
+ * Claude (and most LLMs) often wrap JSON in ```json ... ``` despite system
+ * prompts instructing "return ONLY the JSON". This helper strips the first
+ * fenced block if present, then parses. No-op for already-clean JSON.
+ *
+ * Throws if the cleaned text is not valid JSON.
+ */
+export function parseAIJson<T>(raw: string): T {
+  const trimmed = raw.trim();
+  // Match a ```lang? ... ``` block anywhere in the response and extract its body.
+  const fenceMatch = trimmed.match(
+    /```(?:[a-zA-Z0-9_-]+)?\s*\n?([\s\S]*?)\n?\s*```/
+  );
+  const cleaned = fenceMatch ? fenceMatch[1].trim() : trimmed;
+  return JSON.parse(cleaned) as T;
+}

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { callClaudeMultimodal, getAIClient } from "../ai/client.js";
+import { callClaudeMultimodal, getAIClient, parseAIJson } from "../ai/client.js";
 
 export const describeImage = new Hono();
 
@@ -71,10 +71,10 @@ If the image contains only one subject, return a single-element array. If it's n
     // Parse multi-subject JSON response into descriptions array
     let descriptions: string[];
     try {
-      const parsed = JSON.parse(rawText.trim()) as Array<{
+      const parsed = parseAIJson<Array<{
         subject?: string;
         content?: string;
-      }>;
+      }>>(rawText);
       descriptions = parsed
         .map((entry) => {
           const content = entry.content?.trim();

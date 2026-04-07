@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { callClaude, getAIClient } from "../ai/client.js";
+import { callClaude, getAIClient, parseAIJson } from "../ai/client.js";
 import type {
   TherapyClassificationResult,
   TherapyPattern,
@@ -62,7 +62,7 @@ therapy.post("/therapy/classify", async (c) => {
 
     let result: TherapyClassificationResult;
     try {
-      result = JSON.parse(raw) as TherapyClassificationResult;
+      result = parseAIJson<TherapyClassificationResult>(raw);
     } catch {
       return c.json({ error: "AI response parse error", raw }, 502);
     }
@@ -141,7 +141,7 @@ therapy.post("/therapy/patterns", async (c) => {
       confidence: number;
     }>;
     try {
-      parsed = JSON.parse(raw);
+      parsed = parseAIJson(raw);
     } catch {
       return c.json({ error: "AI response parse error", raw }, 502);
     }
@@ -246,7 +246,7 @@ therapy.post("/therapy/prep", async (c) => {
       suggested_focus: string;
     };
     try {
-      parsed = JSON.parse(raw);
+      parsed = parseAIJson(raw);
     } catch {
       return c.json({ error: "AI response parse error", raw }, 502);
     }

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { callClaude, getAIClient } from "../ai/client.js";
+import { callClaude, getAIClient, parseAIJson } from "../ai/client.js";
 import * as crypto from "crypto";
 import * as fs from "fs";
 import * as path from "path";
@@ -88,7 +88,7 @@ prioritize.post("/prioritize", async (c) => {
 
     let prioritized: string[];
     try {
-      prioritized = JSON.parse(raw) as string[];
+      prioritized = parseAIJson<string[]>(raw);
     } catch {
       return c.json({ error: "AI response parse error", raw }, 502);
     }
