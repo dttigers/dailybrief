@@ -147,6 +147,9 @@ enum PageThreeRenderer {
                     return a.createdAt > b.createdAt
                 }
 
+                let bodyFont = S.bodyFont(size: layout.bodySize)
+                let taskTextMaxWidth = rightEdge - (leftX + cbIndent)
+
                 for thought in sortedTasks.prefix(8) {
                     let cbY = PDFGenerator.cgY(y + layout.checkboxSize + 1, layout: layout)
                     let status = thought.taskStatus
@@ -172,15 +175,24 @@ enum PageThreeRenderer {
                         context.stroke(CGRect(x: leftX, y: cbY, width: layout.checkboxSize, height: layout.checkboxSize))
                     }
 
-                    // Task content — done tasks in lighter gray
+                    // Task content — done tasks in lighter gray, wrapped to fit width
                     let textColor = status == .done ? S.medGray : S.black
-                    let taskText = String(thought.content.prefix(45))
-                    PDFGenerator.drawText(
-                        taskText,
-                        at: CGPoint(x: leftX + cbIndent, y: cbY + 1),
-                        font: S.bodyFont(size: layout.bodySize), color: textColor, context: context
+                    let textHeight = measureWrapped(
+                        thought.content, maxWidth: taskTextMaxWidth, font: bodyFont
                     )
-                    y += layout.tableRowHeight
+                    _ = drawWrapped(
+                        thought.content,
+                        x: leftX + cbIndent,
+                        topDownY: y,
+                        maxWidth: taskTextMaxWidth,
+                        font: bodyFont,
+                        color: textColor,
+                        layout: layout,
+                        context: context
+                    )
+                    // Row height is at least tableRowHeight (preserves prior single-line
+                    // density) but expands when content wraps to multiple lines.
+                    y += max(CGFloat(layout.tableRowHeight), textHeight + 2)
                 }
             }
 
@@ -202,6 +214,10 @@ enum PageThreeRenderer {
                 )
                 y += layout.headerSize + 4
 
+                let recentBodyFont = S.bodyFont(size: layout.bodySize)
+                let recentContentX = leftX + 50
+                let recentContentMaxWidth = rightEdge - recentContentX
+
                 for thought in data.recentThoughts.prefix(5) {
                     let catLabel = thought.category?.rawValue ?? "misc"
                     let monoFont = CTFontCreateWithName("Menlo" as CFString, layout.smallSize, nil)
@@ -212,15 +228,22 @@ enum PageThreeRenderer {
                         font: monoFont, color: S.medGray, context: context
                     )
 
-                    // Content after category label (offset by ~50pt for label width)
-                    let contentX = leftX + 50
-                    let contentText = String(thought.content.prefix(35))
-                    PDFGenerator.drawText(
-                        contentText,
-                        at: CGPoint(x: contentX, y: PDFGenerator.cgY(y + layout.bodySize, layout: layout)),
-                        font: S.bodyFont(size: layout.bodySize), color: S.darkGray, context: context
+                    // Content wrapped to remaining width to the right of the label
+                    let contentHeight = measureWrapped(
+                        thought.content, maxWidth: recentContentMaxWidth, font: recentBodyFont
                     )
-                    y += layout.bodySize + 4
+                    _ = drawWrapped(
+                        thought.content,
+                        x: recentContentX,
+                        topDownY: y,
+                        maxWidth: recentContentMaxWidth,
+                        font: recentBodyFont,
+                        color: S.darkGray,
+                        layout: layout,
+                        context: context
+                    )
+                    // Row height = max of label line and wrapped content
+                    y += max(layout.bodySize, contentHeight) + 4
                 }
             }
         }
@@ -325,54 +348,85 @@ enum PageThreeRenderer {
 
                 // Prep items (up to 5)
                 let boldFont = CTFontCreateWithName("Helvetica-Bold" as CFString, layout.bodySize, nil)
+                let prepBodyFont = S.bodyFont(size: layout.bodySize)
+                let dotSize: CGFloat = 4
+                let topicIndent: CGFloat = dotSize + 4
+                let contextIndent: CGFloat = 8
+                let topicMaxWidth = rightEdge - (leftX + topicIndent)
+                let contextMaxWidth = rightEdge - (leftX + contextIndent)
+
                 for item in prep.items.prefix(5) {
-                    // Need space for topic line + context line
-                    let neededSpace = layout.bodySize + layout.bodySize + 8
+                    // Pre-measure wrapped topic + context
+                    let topicHeight = measureWrapped(
+                        item.topic, maxWidth: topicMaxWidth, font: boldFont
+                    )
+                    let contextHeight = measureWrapped(
+                        item.context, maxWidth: contextMaxWidth, font: prepBodyFont
+                    )
+                    let neededSpace = topicHeight + 2 + contextHeight + 4
                     if y + neededSpace > pageBottom { break }
 
-                    // Urgency indicator (filled circle)
+                    // Urgency indicator (filled circle, anchored to first topic line)
                     let urgencyColor: CGColor
                     switch item.urgency.lowercased() {
                     case "high": urgencyColor = S.black
                     case "medium": urgencyColor = S.darkGray
                     default: urgencyColor = S.medGray
                     }
-                    let dotSize: CGFloat = 4
                     let dotY = PDFGenerator.cgY(y + layout.bodySize, layout: layout) + (layout.bodySize - dotSize) / 2
                     context.setFillColor(urgencyColor)
                     context.fillEllipse(in: CGRect(x: leftX, y: dotY, width: dotSize, height: dotSize))
 
-                    // Topic in bold
-                    let topicText = String(item.topic.prefix(40))
-                    PDFGenerator.drawText(
-                        topicText,
-                        at: CGPoint(x: leftX + dotSize + 4, y: PDFGenerator.cgY(y + layout.bodySize, layout: layout)),
-                        font: boldFont, color: S.black, context: context
+                    // Topic in bold, wrapped
+                    _ = drawWrapped(
+                        item.topic,
+                        x: leftX + topicIndent,
+                        topDownY: y,
+                        maxWidth: topicMaxWidth,
+                        font: boldFont,
+                        color: S.black,
+                        layout: layout,
+                        context: context
                     )
-                    y += layout.bodySize + 2
+                    y += topicHeight + 2
 
-                    // Context indented, truncated
-                    if y + layout.bodySize <= pageBottom {
-                        let contextText = String(item.context.prefix(60))
-                        PDFGenerator.drawText(
-                            contextText,
-                            at: CGPoint(x: leftX + 8, y: PDFGenerator.cgY(y + layout.bodySize, layout: layout)),
-                            font: S.bodyFont(size: layout.bodySize), color: S.darkGray, context: context
+                    // Context indented, wrapped
+                    if y + contextHeight <= pageBottom {
+                        _ = drawWrapped(
+                            item.context,
+                            x: leftX + contextIndent,
+                            topDownY: y,
+                            maxWidth: contextMaxWidth,
+                            font: prepBodyFont,
+                            color: S.darkGray,
+                            layout: layout,
+                            context: context
                         )
-                        y += layout.bodySize + 4
+                        y += contextHeight + 4
                     }
                 }
 
-                // Suggested focus (if exists and space allows)
-                if !prep.suggestedFocus.isEmpty, y + layout.bodySize <= pageBottom {
+                // Suggested focus (if exists and space allows) — wrapped, italic
+                if !prep.suggestedFocus.isEmpty {
                     let italicFont = CTFontCreateWithName("Helvetica-Oblique" as CFString, layout.bodySize, nil)
                     let focusText = "Focus: \(prep.suggestedFocus)"
-                    PDFGenerator.drawText(
-                        String(focusText.prefix(70)),
-                        at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + layout.bodySize, layout: layout)),
-                        font: italicFont, color: S.darkGray, context: context
+                    let focusMaxWidth = rightEdge - leftX
+                    let focusHeight = measureWrapped(
+                        focusText, maxWidth: focusMaxWidth, font: italicFont
                     )
-                    y += layout.bodySize + 4
+                    if y + focusHeight <= pageBottom {
+                        _ = drawWrapped(
+                            focusText,
+                            x: leftX,
+                            topDownY: y,
+                            maxWidth: focusMaxWidth,
+                            font: italicFont,
+                            color: S.darkGray,
+                            layout: layout,
+                            context: context
+                        )
+                        y += focusHeight + 4
+                    }
                 }
             }
         }
@@ -583,7 +637,9 @@ enum PageThreeRenderer {
         return height
     }
 
-    /// Draw a thought item with bullet, truncated content, and source indicator.
+    /// Draw a thought item with bullet, fully-wrapped content, and source indicator.
+    /// Reserves space on the right for the source label so wrapped content does not
+    /// collide with it on the first line.
     private static func drawThoughtItem(
         content: String,
         sourceLabel: String,
@@ -594,57 +650,42 @@ enum PageThreeRenderer {
         layout: PDFLayout
     ) -> CGFloat {
         let S = PDFStyles.self
-        var currentY = y
+        let bodyFont = S.bodyFont(size: layout.bodySize)
         let bulletIndent: CGFloat = 10
+        // Reserve ~70pt on the right for the source label (e.g., "voice", "image", "text")
+        let sourceLabelReserve: CGFloat = 70
+        let contentMaxWidth = rightEdge - (leftX + bulletIndent) - sourceLabelReserve
 
-        // Bullet
+        // Bullet — anchored to first content line
         PDFGenerator.drawText(
             "\u{2022}",
-            at: CGPoint(x: leftX, y: PDFGenerator.cgY(currentY + layout.bodySize, layout: layout)),
-            font: S.bodyFont(size: layout.bodySize), color: S.darkGray, context: context
+            at: CGPoint(x: leftX, y: PDFGenerator.cgY(y + layout.bodySize, layout: layout)),
+            font: bodyFont, color: S.darkGray, context: context
         )
 
-        // Content (up to 2 lines, ~35 chars per line)
-        let maxCharsPerLine = 35
-        let text = String(content.prefix(maxCharsPerLine * 2))
+        // Wrapped content
+        let contentHeight = measureWrapped(content, maxWidth: contentMaxWidth, font: bodyFont)
+        _ = drawWrapped(
+            content,
+            x: leftX + bulletIndent,
+            topDownY: y,
+            maxWidth: contentMaxWidth,
+            font: bodyFont,
+            color: S.darkGray,
+            layout: layout,
+            context: context
+        )
 
-        if text.count <= maxCharsPerLine {
-            PDFGenerator.drawText(
-                text,
-                at: CGPoint(x: leftX + bulletIndent, y: PDFGenerator.cgY(currentY + layout.bodySize, layout: layout)),
-                font: S.bodyFont(size: layout.bodySize), color: S.darkGray, context: context
-            )
-            currentY += layout.bodySize + 1
-        } else {
-            let line1 = String(text.prefix(maxCharsPerLine))
-            let breakIdx = line1.lastIndex(of: " ") ?? line1.endIndex
-            let first = String(text[text.startIndex..<breakIdx])
-            let rest = String(text[breakIdx...].dropFirst()).prefix(maxCharsPerLine)
-
-            PDFGenerator.drawText(
-                first,
-                at: CGPoint(x: leftX + bulletIndent, y: PDFGenerator.cgY(currentY + layout.bodySize, layout: layout)),
-                font: S.bodyFont(size: layout.bodySize), color: S.darkGray, context: context
-            )
-            currentY += layout.bodySize + 1
-            PDFGenerator.drawText(
-                String(rest),
-                at: CGPoint(x: leftX + bulletIndent, y: PDFGenerator.cgY(currentY + layout.bodySize, layout: layout)),
-                font: S.bodyFont(size: layout.bodySize), color: S.darkGray, context: context
-            )
-            currentY += layout.bodySize + 1
-        }
-
-        // Source indicator (tiny mono)
+        // Source indicator (tiny mono) — right-aligned on the first line of the thought
         let tinyMono = CTFontCreateWithName("Menlo" as CFString, layout.tinySize, nil)
         PDFGenerator.drawTextRight(
             sourceLabel,
             rightX: rightEdge,
-            y: PDFGenerator.cgY(currentY + layout.tinySize - 1, layout: layout),
+            y: PDFGenerator.cgY(y + layout.bodySize, layout: layout),
             font: tinyMono, color: S.medGray, context: context
         )
-        currentY += layout.tinySize + 4
 
-        return currentY
+        // Advance y by max of (content height) and (single-line label height) + small gap
+        return y + max(contentHeight, layout.bodySize) + 4
     }
 }
