@@ -28,18 +28,37 @@ enum PDFGenerator {
         PageTwoRenderer.draw(context: context, data: data, layout: layout)
         context.endPage()
 
-        // Page 3: Captured Thoughts (only if there are any and relevant sections enabled)
+        // Page 3: Captured Thoughts (only if any section on this page has content)
         let hasThoughts = !data.unprocessedThoughts.isEmpty || !data.taskThoughts.isEmpty || !data.recentThoughts.isEmpty
-        let hasPageThreeSections = !layout.enabledSections.isDisjoint(with: ["thoughts", "insights", "therapyPrep"])
-        if hasThoughts && hasPageThreeSections {
-            context.beginPage(mediaBox: &mediaBox)
-            drawDashedBorder(context: context, layout: layout)
-            PageThreeRenderer.draw(context: context, data: data, layout: layout)
-            context.endPage()
+        let hasInsights = !data.insights.isEmpty && layout.enabledSections.contains("insights")
+        let hasTherapy = (data.therapyPrep?.items.isEmpty == false) && layout.enabledSections.contains("therapyPrep")
+        let needsPageThree = (hasThoughts && layout.enabledSections.contains("thoughts")) || hasInsights || hasTherapy
+
+        var pagesEmitted = 0
+        if needsPageThree {
+            var insightsStartIndex = 0
+            let maxPages = 10  // safety cap against pathological insights too tall to ever fit
+            repeat {
+                context.beginPage(mediaBox: &mediaBox)
+                drawDashedBorder(context: context, layout: layout)
+                let nextIndex = PageThreeRenderer.draw(
+                    context: context,
+                    data: data,
+                    layout: layout,
+                    insightsStartIndex: insightsStartIndex
+                )
+                context.endPage()
+                pagesEmitted += 1
+                if let next = nextIndex, next > insightsStartIndex {
+                    insightsStartIndex = next
+                } else {
+                    break
+                }
+            } while pagesEmitted < maxPages
         }
 
         context.closePDF()
-        Logger.log("PDF generated at \(outputPath)")
+        Logger.log("PDF generated at \(outputPath) (\(pagesEmitted) thoughts pages)")
     }
 
     private static func drawDashedBorder(context: CGContext, layout: PDFLayout) {
