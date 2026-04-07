@@ -80,6 +80,10 @@ final class SettingsViewModel {
     var claudeApiKey: String = ""
     var claudeModel: String = "claude-sonnet-4-20250514"
 
+    // MARK: - Vigil API (backend auth)
+    var apiBaseUrl: String = "https://vigil-core-production.up.railway.app/v1"
+    var vigilApiKey: String = ""
+
     // MARK: - PDF
     var pdfOutputDirectory: String = "~/Documents/DailyBrief"
     var pdfKeepDays: Int = 30
@@ -160,6 +164,9 @@ final class SettingsViewModel {
 
         claudeApiKey = config.ai.claudeApiKey
         claudeModel = config.ai.claudeModel
+
+        apiBaseUrl = config.apiBaseUrl
+        vigilApiKey = config.apiKey
 
         pdfOutputDirectory = config.pdf.outputDirectory
         pdfKeepDays = config.pdf.keepDays
@@ -292,7 +299,9 @@ final class SettingsViewModel {
             cloudSync: .init(
                 enabled: cloudSyncEnabled,
                 autoSyncIntervalMinutes: cloudSyncIntervalMinutes
-            )
+            ),
+            apiBaseUrl: apiBaseUrl,
+            apiKey: vigilApiKey
         )
 
         do {

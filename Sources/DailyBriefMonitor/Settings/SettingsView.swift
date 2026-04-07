@@ -82,8 +82,21 @@ struct SettingsView: View {
 
     private var aiTab: some View {
         Form {
-            SecureField("API Key", text: $viewModel.claudeApiKey)
-            TextField("Model", text: $viewModel.claudeModel)
+            Section("Vigil API") {
+                TextField("Base URL", text: $viewModel.apiBaseUrl)
+                SecureField("Bearer Token", text: $viewModel.vigilApiKey)
+                Text("vk_… token used to authenticate this client to vigil-core. Generate via vigil-core/scripts/generate-key.ts.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Anthropic (legacy)") {
+                SecureField("API Key", text: $viewModel.claudeApiKey)
+                TextField("Model", text: $viewModel.claudeModel)
+                Text("Read by local vigil-core LaunchAgent and dev process. Production vigil-core on Railway uses its own ANTHROPIC_API_KEY env var.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding()
     }
