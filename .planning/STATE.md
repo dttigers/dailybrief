@@ -62,7 +62,7 @@ None.
 
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
-| 260407-jem | Fix PDF insights cutoff (wrap text, spillover pages) | 2026-04-07 | fce4a69 | [260407-jem-fix-pdf-insights-section-cutoff-bug-prin](./quick/260407-jem-fix-pdf-insights-section-cutoff-bug-prin/) |
+| 260407-jem | Fix PDF rendering (wrap all sections, spillover) + vigil-core AI JSON fence tolerance (7 endpoints) | 2026-04-07 | 8cac42d | [260407-jem-fix-pdf-insights-section-cutoff-bug-prin](./quick/260407-jem-fix-pdf-insights-section-cutoff-bug-prin/) |
 
 ### Roadmap Evolution
 

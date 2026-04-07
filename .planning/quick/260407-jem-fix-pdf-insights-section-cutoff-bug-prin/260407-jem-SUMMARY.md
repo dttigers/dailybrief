@@ -117,3 +117,106 @@ Verified:
 - Commit `39de4e0` present in `git log`
 - Commit `fce4a69` present in `git log`
 - `swift build` succeeds cleanly
+
+---
+
+# Post-Scope Expansion — 2026-04-07
+
+Tasks 1 and 2 above addressed **only the insights section**, based on my initial
+misdiagnosis of the user's "PDF insights cutoff" report. When the user sent an
+actual screenshot of the printed brief, the real symptom was different: Tasks
+and Recent items were being clipped mid-word on the right margin, and the
+**Insights section was not appearing on the page at all** — which is the
+opposite of an "insights layout" problem.
+
+Root-cause investigation extended the scope across two codebases:
+
+## Bug A — PDF rendering: universal `.prefix(N)` truncation
+
+Every section on the Captured Thoughts page used `.prefix(N)` hard-truncation
+instead of CTFramesetter wrapping. The insights fix I already shipped had
+introduced `drawWrapped`/`measureWrapped` helpers for its own use; those
+helpers were extended to the remaining sections:
+
+| Section | Previous cap | Now |
+|---|---|---|
+| Tasks | `prefix(45)` (mid-word clip) | wrapped via `drawWrapped` |
+| Recent | `prefix(35)` | wrapped |
+| Therapy Prep topic | `prefix(40)` | wrapped (bold) |
+| Therapy Prep context | `prefix(60)` | wrapped (indented) |
+| Therapy Prep focus | `prefix(70)` | wrapped (italic) |
+| Unprocessed (`drawThoughtItem`) | manual 35×2 char word-break | wrapped; source label reserve ~70pt |
+
+Tasks rows floor at `tableRowHeight` to preserve density when content fits one
+line; expand vertically when wrapping occurs.
+
+**Commit:** `8cac42d` — `fix(260407-jem-03): wrap Tasks, Recent, Therapy Prep, and Unprocessed sections`
+
+## Bug B — vigil-core AI JSON parser: markdown fence intolerance
+
+The Insights section was empty because three vigil-core endpoints were returning
+HTTP 502 on every request. Log inspection at
+`~/Library/Logs/dailybrief/dailybrief.log` showed the AI was wrapping responses
+in ```json ... ``` markdown fences, and `JSON.parse(raw)` was calling parse on
+the fenced string literally. All three therapy + insights endpoints failed the
+same way, so three entire sections were silently disappearing from every daily
+brief: **AI Insights, Therapy Patterns, Therapy Prep**.
+
+Added `parseAIJson<T>()` helper in `vigil-core/src/ai/client.ts` that strips an
+optional `` ```lang? ... ``` `` block before parsing (no-op for clean JSON).
+Replaced **7 call sites** across the codebase:
+
+- `routes/insights.ts` — `/insights` generation
+- `routes/therapy.ts` — `/therapy/classify`, `/therapy/patterns`, `/therapy/prep` (3 sites)
+- `routes/triage.ts` — `/triage` thought categorization
+- `routes/prioritize.ts` — `/prioritize` work order ranking
+- `routes/describe-image.ts` — `/describe-image` multimodal notes
+
+**Commit:** `a638196` — `fix(260407-jem-02): tolerate markdown code fences in AI JSON responses`
+
+## Deployment journey (lessons learned)
+
+1. `git push origin main` did **not** auto-deploy vigil-core to Railway despite
+   the GitHub repo being connected at the service level. Root cause: the
+   service did not have a **Root Directory** set, so Railway tried to Railpack
+   the repo root (which is a Swift monorepo) and silently failed.
+2. Manual `railway up --detach` from inside `vigil-core/` *also* failed for
+   the same reason — Railway's CLI walks up to `.git` when present and uploads
+   the repo root, not the current working directory.
+3. `railway up --detach --path-as-root .` from inside `vigil-core/` is the
+   correct manual-fallback command — it uses the current path as the archive
+   root and skips `.git` walk-up.
+4. Long-term fix: set Root Directory to `vigil-core` in Railway dashboard
+   (Service Settings → Source → "Add Root Directory" link below the repo
+   display). This enables true git-push auto-deploy. Completed 2026-04-07.
+
+## Mac app deployment trap
+
+After writing the PageThreeRenderer fix and running `swift build --product
+DailyBriefMonitor`, I declared the Mac-app side done. **Wrong.** `PageThreeRenderer.swift`
+lives in the `DailyBrief` executable target (the CLI that actually generates
+the PDF), not the `DailyBriefMonitor` target (the ambient LaunchAgent watcher).
+Building Monitor didn't type-check or link my changes at all.
+
+Correct sequence:
+1. `swift build -c release --product DailyBrief`
+2. `cp .build/release/DailyBrief ~/.local/bin/DailyBrief`
+3. LaunchAgent picks up the new binary on next brief trigger (no restart of
+   `DailyBriefMonitor` needed — it shells out to `DailyBrief` CLI)
+
+## Final commit set
+
+| Commit | What | Codebase |
+|---|---|---|
+| `39de4e0` | Wrap insights + overflow-index plumbing | Mac (DailyBrief) |
+| `fce4a69` | Spillover page-3 sheets | Mac (DailyBrief) |
+| `a638196` | `parseAIJson` helper + 7 vigil-core call sites | Server (vigil-core) |
+| `8cac42d` | Wrap Tasks/Recent/TherapyPrep/Unprocessed | Mac (DailyBrief) |
+
+## Outcome
+
+User verified 2026-04-07:
+- **PDF looks good** (Tasks and Recent no longer clipped; insights appearing)
+- **Railway auto-deploy configured** (Root Directory set to `vigil-core` via dashboard)
+
+Task 3 (human-verify) satisfied. Quick task 260407-jem closed.
