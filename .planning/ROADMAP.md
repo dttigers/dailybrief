@@ -126,7 +126,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 ### Phases
 
-- [ ] **Phase 51: Menu Bar Update Action** - One-click rebuild/reinstall/reload of Vigil binaries from DailyBriefMonitor
+- [x] **Phase 51: Menu Bar Update Action** - One-click rebuild/reinstall/reload of Vigil binaries from DailyBriefMonitor (completed 2026-04-08)
 - [ ] **Phase 52: Projects Backend** - PostgreSQL schema, Drizzle migration, and full CRUD REST API for projects
 - [ ] **Phase 53: Projects Dashboard UI** - Per-project views, thought assignment/move/unassign, and status filtering in the Mac dashboard
 - [ ] **Phase 54: Smart Photo Upload** - Paper-type detection, verbatim split/single transcription, and user override in Mac app
@@ -145,9 +145,9 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   5. Clicking "Update Vigil" repeatedly when nothing has changed reports a no-op (idempotent — no unnecessary rebuilds)
 **Plans**: 3 plans
 Plans:
-- [ ] 51-01-PLAN.md — RepoLocation foundation + StatusChecker hardcoded path removal
-- [ ] 51-02-PLAN.md — UpdateService: install.sh wrap, mtime gate, handoff JSON, detached self-reload trampoline
-- [ ] 51-03-PLAN.md — MenuBarView Update Vigil button + AppDelegate handoff consumption + human verification
+- [x] 51-01-PLAN.md — RepoLocation foundation + StatusChecker hardcoded path removal
+- [x] 51-02-PLAN.md — UpdateService: install.sh wrap, mtime gate, handoff JSON, detached self-reload trampoline
+- [x] 51-03-PLAN.md — MenuBarView Update Vigil button + AppDelegate handoff consumption + human verification
 
 ### Phase 52: Projects Backend
 **Goal**: Named personal projects exist in the database with full CRUD API, and existing "project"-category thoughts remain accessible for retroactive assignment
@@ -242,7 +242,7 @@ None
 | 48. Export System | v2.2 | 1/1 | Complete | 2026-04-05 |
 | 49. Configurable PDF | v2.2 | 2/2 | Complete | 2026-04-05 |
 | 50. Dashboard AI Chat | v2.2 | 2/2 | Complete | 2026-04-05 |
-| 51. Menu Bar Update Action | v2.3 | 0/TBD | Not started | - |
+| 51. Menu Bar Update Action | v2.3 | 4/4 | Complete   | 2026-04-08 |
 | 52. Projects Backend | v2.3 | 0/TBD | Not started | - |
 | 53. Projects Dashboard UI | v2.3 | 0/TBD | Not started | - |
 | 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |

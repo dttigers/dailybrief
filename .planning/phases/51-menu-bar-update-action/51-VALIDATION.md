@@ -1,10 +1,11 @@
 ---
 phase: 51
 slug: menu-bar-update-action
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: green
+nyquist_compliant: true
+wave_0_complete: true
 created: 2026-04-07
+verified: 2026-04-08
 ---
 
 # Phase 51 — Validation Strategy
@@ -40,13 +41,13 @@ created: 2026-04-07
 
 | Task ID  | Plan | Wave | Requirement       | Threat Ref | Secure Behavior                                  | Test Type     | Automated Command                                                                                                  | File Exists | Status     |
 |----------|------|------|-------------------|------------|--------------------------------------------------|---------------|--------------------------------------------------------------------------------------------------------------------|-------------|------------|
-| 51-01-T1 | 01   | 1    | DEV-01, DEV-02    | T-51-01    | #filePath compile-time path bake-in              | compile+grep  | `grep -F "#filePath" Sources/DailyBriefMonitor/RepoLocation.swift && swift build -c release`                          | ✅          | ⬜ pending |
-| 51-01-T2 | 01   | 1    | DEV-01, DEV-02    | T-51-01    | Hardcoded path removed                           | compile+grep  | `! grep -F "Desktop/Local AI/dailybrief" Sources/DailyBriefMonitor/StatusChecker.swift && swift build -c release`     | ✅          | ⬜ pending |
-| 51-02-T1 | 02   | 2    | DEV-03            | —          | Status enum models all 5 UI states               | compile+grep  | `grep -F "case updated(sha: String)" Sources/DailyBriefMonitor/UpdateStatus.swift && swift build -c release`          | ✅          | ⬜ pending |
-| 51-02-T2 | 02   | 2    | DEV-01..04        | T-51-01,02,03 | install.sh wrap, mtime gate, detached reload  | compile+grep  | `grep -F "FileHandle.nullDevice" Sources/DailyBriefMonitor/UpdateService.swift && grep -F "launchctl kickstart -k gui/" Sources/DailyBriefMonitor/UpdateService.swift && swift build -c release` | ✅          | ⬜ pending |
-| 51-03-T1 | 03   | 3    | DEV-02, DEV-03    | —          | UpdateService instantiation + handoff once       | grep          | `grep -F "updater.consumeHandoff()" Sources/DailyBriefMonitor/DailyBriefMonitorApp.swift && grep -F "didConsumeHandoff" Sources/DailyBriefMonitor/DailyBriefMonitorApp.swift` | ✅          | ⬜ pending |
-| 51-03-T2 | 03   | 3    | DEV-01, DEV-03    | T-51-03    | Update Vigil button + failure tail + Open Log    | compile+grep  | `grep -F "Update Vigil" Sources/DailyBriefMonitor/MenuBarView.swift && grep -F "Open Full Log" Sources/DailyBriefMonitor/MenuBarView.swift && swift build -c release` | ✅          | ⬜ pending |
-| 51-03-T3 | 03   | 3    | DEV-01..04        | —          | End-to-end on real hardware                      | manual        | See Manual-Only Verifications table below                                                                           | n/a         | ⬜ pending |
+| 51-01-T1 | 01   | 1    | DEV-01, DEV-02    | T-51-01    | #filePath compile-time path bake-in              | compile+grep  | `grep -F "#filePath" Sources/DailyBriefMonitor/RepoLocation.swift && swift build -c release`                          | ✅          | ✅ green   |
+| 51-01-T2 | 01   | 1    | DEV-01, DEV-02    | T-51-01    | Hardcoded path removed                           | compile+grep  | `! grep -F "Desktop/Local AI/dailybrief" Sources/DailyBriefMonitor/StatusChecker.swift && swift build -c release`     | ✅          | ✅ green   |
+| 51-02-T1 | 02   | 2    | DEV-03            | —          | Status enum models all 5 UI states               | compile+grep  | `grep -F "case updated(sha: String)" Sources/DailyBriefMonitor/UpdateStatus.swift && swift build -c release`          | ✅          | ✅ green   |
+| 51-02-T2 | 02   | 2    | DEV-01..04        | T-51-01,02,03 | inline install, mtime gate, detached reload  | compile+grep  | `grep -F "FileHandle.nullDevice" Sources/DailyBriefMonitor/UpdateService.swift && grep -F "launchctl kickstart -k gui/" Sources/DailyBriefMonitor/UpdateService.swift && swift build -c release` | ✅          | ✅ green (install.sh subprocess replaced with inline FileManager.copyItem in Plan 51-04) |
+| 51-03-T1 | 03   | 3    | DEV-02, DEV-03    | —          | UpdateService instantiation + handoff once       | grep          | `grep -F "updater.consumeHandoff()" Sources/DailyBriefMonitor/DailyBriefMonitorApp.swift && grep -F "didConsumeHandoff" Sources/DailyBriefMonitor/DailyBriefMonitorApp.swift` | ✅          | ✅ green   |
+| 51-03-T2 | 03   | 3    | DEV-01, DEV-03    | T-51-03    | Update Vigil button + failure tail + Open Log    | compile+grep  | `grep -F "Update Vigil" Sources/DailyBriefMonitor/MenuBarView.swift && grep -F "Open Full Log" Sources/DailyBriefMonitor/MenuBarView.swift && swift build -c release` | ✅          | ✅ green (failure UI + Open Full Log confirmed live in 51-04 UAT Item 5) |
+| 51-03-T3 | 03   | 3    | DEV-01..04        | —          | End-to-end on real hardware                      | manual        | See Manual-Only Verifications table below                                                                           | n/a         | ✅ green (all UAT items passed 2026-04-08 after 51-04 gap closure) |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -54,8 +55,8 @@ created: 2026-04-07
 
 ## Wave 0 Requirements
 
-- [ ] Confirm `~/Library/Application Support/DailyBrief/` creation logic exists in plan (handoff dir does NOT pre-exist — verified by research A1)
-- [ ] Confirm `launchctl print gui/$(id -u)/com.jamesonmorrill.dailybriefmonitor` returns `state = running` before phase begins (baseline)
+- [x] Confirm `~/Library/Application Support/DailyBrief/` creation logic exists in plan (handoff dir does NOT pre-exist — verified by research A1)
+- [x] Confirm `launchctl print gui/$(id -u)/com.jamesonmorrill.dailybriefmonitor` returns `state = running` before phase begins (baseline)
 
 *No test framework to install. Existing `swift build` infrastructure covers all compile-level verification.*
 
@@ -77,11 +78,11 @@ created: 2026-04-07
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify (compile gate) or Wave 0 dependencies
-- [ ] Sampling continuity: every code-change task ends with `swift build -c release`
-- [ ] Wave 0 baseline check completed (handoff dir, LaunchAgent state)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 15s for incremental compile
-- [ ] `nyquist_compliant: true` set in frontmatter after planner fills task map
+- [x] All tasks have `<automated>` verify (compile gate) or Wave 0 dependencies
+- [x] Sampling continuity: every code-change task ends with `swift build -c release`
+- [x] Wave 0 baseline check completed (handoff dir, LaunchAgent state)
+- [x] No watch-mode flags
+- [x] Feedback latency < 15s for incremental compile
+- [x] `nyquist_compliant: true` set in frontmatter after planner fills task map
 
-**Approval:** pending
+**Approval:** green — verified live on hardware 2026-04-08 after Plan 51-04 gap closure. All 4 UAT items pass (idempotent no-op, end-to-end update + respawn + handoff consumption, build-failure surfacing, clean launchd exit). `install.sh` subprocess replaced with inline `FileManager.copyItem`; trampoline invariant (D-02/D-03) restored.
