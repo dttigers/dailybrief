@@ -14,7 +14,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.0 Vigil Platform** — Phases 29-36 (shipped 2026-04-04)
 - ✅ **v2.1 Server Deployment** — Phases 37-44 (shipped 2026-04-05)
 - ✅ **v2.2 Polish & Power** — Phases 45-50 (shipped 2026-04-05)
-- 🚧 **v2.3 Projects & Precision** — Phases 51-54 (in progress)
+- 🚧 **v2.3 Projects & Precision** — Phases 51-57 (in progress)
 
 ## Completed Milestones
 
@@ -192,6 +192,40 @@ Plans:
   5. When detection confidence is low, the system falls back to the user-configured default and the UI surfaces a warning that detection was uncertain
 **Plans**: TBD
 
+### Phase 55: Auto-run drizzle migrations on Railway deploy
+**Goal**: Schema changes to vigil-core land on Railway Postgres automatically when a commit is pushed — no manual `npx tsx src/db/migrate.ts` step required
+**Depends on**: None (vigil-core infra)
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Pushing a commit that introduces a new drizzle migration causes Railway to apply it before the new code starts serving traffic
+  2. A migration that fails on prod fails the deploy loud — no half-migrated database, no successful boot against an out-of-date schema
+  3. Re-deploys without new migrations are still safe (drizzle migrator is already idempotent)
+**Plans**: TBD
+**Context**: See `.planning/phases/55-auto-run-drizzle-migrations-on-railway-deploy/55-CONTEXT.md` for surfacing scenario (Phase 53-04 deploy foot-gun) and open questions
+
+### Phase 56: Push origin on phase-complete for backend phases
+**Goal**: Eliminate the silent split-brain where local main is dozens of commits ahead of origin/main and Railway is therefore running stale vigil-core code without anyone noticing
+**Depends on**: Phase 55 (sibling — together they make `git push` the single atomic action that lands code + schema on prod)
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Completing a phase that modifies `vigil-core/` triggers a push prompt (or auto-push) before the phase is marked complete in ROADMAP.md
+  2. Completing a Mac-only phase has no behavior change
+  3. The 53-04 scenario — verifying a feature against a stale deployed backend — becomes structurally impossible
+  4. Deploy targets are configurable per-subdirectory in `.planning/config.json` so the rule only fires for paths that actually deploy
+**Plans**: TBD
+**Context**: See `.planning/phases/56-push-origin-on-phase-complete-for-backend-phases/56-CONTEXT.md` for the 68-commits-stale incident from Phase 53-04 and open questions
+
+### Phase 57: Cross-machine bootstrap script
+**Goal**: Turn "switch machines and resume work on dailybrief" from an error-prone manual checklist into one command
+**Depends on**: None
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. A single command on a fresh machine produces a working Vigil dev environment: secrets restored, launchd loaded, vigil-core built, Mac apps built, `http://localhost:3001/v1/health` responding
+  2. Secrets travel through a known, secure transport (1Password CLI or equivalent) — no manual copy-paste of API keys
+  3. A companion drift check surfaces when an existing setup has diverged across the 4 places API keys live (config.json, .env, plist, Railway)
+**Plans**: TBD
+**Context**: See `.planning/phases/57-cross-machine-bootstrap-script/57-CONTEXT.md` for the cross-machine portability scenario and open questions
+
 ## Domain Expertise
 
 None
@@ -254,88 +288,12 @@ None
 | 52. Projects Backend | v2.3 | 2/2 | Complete    | 2026-04-08 |
 | 53. Projects Dashboard UI | v2.3 | 3/4 | In Progress|  |
 | 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |
+| 55. Auto-run drizzle migrations on Railway deploy | v2.3 | 0/TBD | Not started | - |
+| 56. Push origin on phase-complete for backend phases | v2.3 | 0/TBD | Not started | - |
+| 57. Cross-machine bootstrap script | v2.3 | 0/TBD | Not started | - |
 
 ## Backlog
 
 Unsequenced ideas captured for future planning. Promote with `/gsd-review-backlog`.
 
-### Phase 999.1: Cross-machine bootstrap script (BACKLOG)
-
-**Goal:** Turn "switch machines and resume work on dailybrief" from an error-prone manual checklist into one command.
-
-**Context:** Surfaced from Phase 52 retro (2026-04-08) discussion of cross-machine portability. Currently `git pull` only gives committed code — secrets, the launchd service, and build artifacts are all local-only and have to be set up by hand. Per the `project_secret_drift` memory, this is exactly the kind of thing that drifts and breaks silently.
-
-**What it would do:**
-- Copy `~/.config/dailybrief/config.json` from a known location (encrypted backup? 1Password CLI? iCloud Drive synced folder?) — contains `claude_api_key`, Vigil bearer token, gmail app password, IMAP/OAuth creds
-- Copy `~/Library/LaunchAgents/com.jamesonmorrill.vigilcore.plist` (contains `ANTHROPIC_API_KEY`)
-- `cd vigil-core && npm install && npm run build`
-- `swift build` for the Mac apps (or open the Xcode project)
-- `launchctl load ~/Library/LaunchAgents/com.jamesonmorrill.vigilcore.plist`
-- Prompt for `railway login`, `gh auth login`, `claude` CLI auth
-- Verify: hit `http://localhost:3001/v1/health`, confirm DailyBrief CLI binary built, confirm Monitor app launches
-
-**Open questions for /gsd-discuss-phase:**
-- Where do the secrets live in transit? (1Password vault is the obvious answer; iCloud Drive is easier but less secure for an API-key file)
-- Should it also clone the repo, or assume `git clone` already happened?
-- Do we want a `dailybrief-doctor` companion command that diagnoses an existing setup (drift detection across the 4 places API keys live)?
-
-**Requirements:** TBD
-**Plans:** 3/4 plans executed
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
-
-### Phase 999.2: Auto-run drizzle migrations on Railway deploy (BACKLOG)
-
-**Goal:** Schema changes to vigil-core land on Railway Postgres automatically when a commit is pushed — no manual `npx tsx src/db/migrate.ts` step required.
-
-**Context:** Surfaced from Phase 53-04 verification (2026-04-08). Currently Railway just runs `npm start` — there's no Procfile, no `railway.json` release hook, and no `start` wrapper. So a push that introduces a new migration deploys the new code but leaves the database schema behind, producing 500s on the first request that touches the new table. During Phase 53 this manifested as `POST /v1/projects` returning 404 (route not deployed) followed by 500 (table missing) once the deploy actually landed. Had to manually run `DATABASE_URL="$DATABASE_PUBLIC_URL" npx tsx vigil-core/src/db/migrate.ts` from local against the public proxy host. Memorialized in `project_railway_deploy.md` as a foot-gun.
-
-**What it would do:**
-- Add a pre-deploy / release hook to `vigil-core/railway.json` (or wrap `start` in `package.json`) that runs `node dist/db/migrate.js` before booting the Hono server
-- Drizzle migrator is already idempotent (skips applied migrations via `__drizzle_migrations` table) so re-runs on every deploy are safe
-- Verify the hook fails the deploy if the migration fails — better a failed deploy than a half-migrated DB
-
-**Acceptance:** Push a commit that adds a new migration → Railway deploys → the new table is queryable from the API on first request, with no manual intervention.
-
-**Open questions for /gsd-discuss-phase:**
-- `railway.json` release command vs. `start` wrapper — which one Railway actually honors with the current "Builder: Dockerfile" config (the `vigil-core/Dockerfile` may need a tweak too)
-- How to handle a migration that fails on prod — do we want auto-rollback, or just fail-loud and stop the deploy?
-- Should the migration also run in CI against an ephemeral Postgres before deploy? (separate concern, but related)
-
-**Requirements:** TBD
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
-
-### Phase 999.3: Push origin as part of phase-complete for backend phases (BACKLOG)
-
-**Goal:** Eliminate the silent split-brain where local main is dozens of commits ahead of origin/main and Railway is therefore running stale vigil-core code without anyone noticing.
-
-**Context:** Surfaced from Phase 53-04 verification (2026-04-08). Local main was **68 commits ahead of origin/main**, including the entire Phase 52 backend (projects table + CRUD route) and the Phase 53-01 thoughts route changes. Mac UI tested fine because the Mac binaries are built locally, but the moment the user clicked "+ New Project" in the dashboard, the API call hit api.vigilhub.io and got a 404 — because Railway was deploying from a 68-commits-stale origin/main that didn't have the projects route at all. Took ~10 minutes of investigation to root-cause (initially looked like a bug in the iOS client or the new sheet code from 53-04). The current GSD `phase complete` step commits locally but never pushes — fine for Mac-only phases, dangerous for any phase that touches `vigil-core/`.
-
-**What it would do:**
-- Detect at phase-complete time whether any commits in the phase touched `vigil-core/` (or any other deploy-targeted subdir registered in `.planning/config.json`)
-- If yes, either auto-push to origin or surface a blocking warning: "This phase modified vigil-core. Origin is N commits behind. Push before marking phase complete? [Y/n]"
-- Optionally extend to: "Push and wait for Railway deploy to succeed before marking complete" so verification cycles always test against deployed code, not local-only code
-- Configurable per-subdirectory in `.planning/config.json` (`deploy_targets: ["vigil-core"]`) so the rule only fires for paths that actually deploy
-
-**Acceptance:**
-- Completing a phase that modifies vigil-core triggers a push prompt (or auto-push) before the phase is marked complete in ROADMAP.md
-- Completing a Mac-only phase has no behavior change
-- The 53-04 scenario (verify a feature against a stale deployed backend) becomes structurally impossible
-
-**Open questions for /gsd-discuss-phase:**
-- Auto-push (faster, opinionated) vs. blocking prompt (safer, interrupts flow)
-- Should this also wait on Railway deploy success, or just push? (waiting requires polling Railway CLI, adds complexity)
-- Where does the `deploy_targets` config live — `.planning/config.json` workflow section, or a new top-level key?
-- Does this generalize to any future deploy target (e.g. a Cloudflare Worker, an Even G2 plugin manifest), or stay vigil-core-specific for now?
-
-**Related:** Phase 999.2 (auto-run migrations on deploy) is the natural sibling — together they would make "git push" the single atomic action that lands code + schema on prod.
-
-**Requirements:** TBD
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
+_Backlog is currently empty. Add new ideas with `/gsd-add-backlog`._
