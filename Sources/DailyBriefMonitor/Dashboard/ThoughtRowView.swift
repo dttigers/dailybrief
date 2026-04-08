@@ -78,6 +78,22 @@ struct ThoughtRowView: View {
     /// Whether this thought is currently being re-classified.
     var isReclassifying: Bool = false
 
+    // MARK: - Phase 53 Plan 04 — Project assignment
+
+    /// Projects available in the row menu's `Project` submenu. Ordered/filtered
+    /// by the caller (`DashboardViewModel.filteredProjects`).
+    var availableProjects: [Project] = []
+
+    /// Called when the user picks a project from the row menu.
+    var onAssignProject: ((Int64) -> Void)?
+
+    /// Called when the user picks `Unassign` (only shown when thought.projectId != nil).
+    var onUnassignProject: (() -> Void)?
+
+    /// Called when the user picks `+ New Project…` — opens the create sheet
+    /// and the caller handles the create-and-assign flow.
+    var onCreateAndAssignProject: (() -> Void)?
+
     @FocusState private var isEditorFocused: Bool
     @State private var showTagPopover = false
     @State private var newTagText = ""
@@ -374,6 +390,43 @@ struct ThoughtRowView: View {
                     onReClassify()
                 } label: {
                     Label("Re-classify therapy", systemImage: "arrow.triangle.2.circlepath")
+                }
+            }
+            // Phase 53 Plan 04 — nested Project submenu (RESEARCH Pattern 6).
+            if !availableProjects.isEmpty || onCreateAndAssignProject != nil {
+                Menu {
+                    // "Currently: …" disabled header (UI-SPEC)
+                    if let assignedId = thought.projectId,
+                       let current = availableProjects.first(where: { $0.id == assignedId }) {
+                        Section {
+                            Text("Currently: \(current.name)")
+                                .font(.caption)
+                        }
+                    }
+
+                    ForEach(availableProjects) { project in
+                        Button(project.name) {
+                            onAssignProject?(project.id)
+                        }
+                    }
+
+                    if thought.projectId != nil {
+                        Divider()
+                        Button {
+                            onUnassignProject?()
+                        } label: {
+                            Label("Unassign", systemImage: "xmark.circle")
+                        }
+                    }
+
+                    Divider()
+                    Button {
+                        onCreateAndAssignProject?()
+                    } label: {
+                        Label("+ New Project…", systemImage: "plus")
+                    }
+                } label: {
+                    Label("Project", systemImage: "folder")
                 }
             }
             Button {

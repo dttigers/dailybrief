@@ -317,6 +317,49 @@ final class DashboardViewModel {
         await loadThoughts()
     }
 
+    /// Optimistically assign (or unassign via `nil`) a thought to a project.
+    ///
+    /// - R-5: Does NOT reload the thought list on success — the optimistic
+    ///   mutation IS the success state. Avoids a network round-trip + flicker
+    ///   on every assign.
+    /// - Pitfall P-6: thought counts are derived from `thoughts` (not stored),
+    ///   so no separate bookkeeping dict needs to be kept in sync.
+    /// - On failure the row's projectId is reverted and `assignmentError` is
+    ///   populated with UI-SPEC copy so the banner above the thought list
+    ///   surfaces the failure.
+    func assignThoughtToProject(thoughtId: Int64, projectId: Int64?) async {
+        guard let index = thoughts.firstIndex(where: { $0.id == thoughtId }) else {
+            return
+        }
+        let oldProjectId = thoughts[index].projectId
+
+        // Optimistic update
+        thoughts[index].projectId = projectId
+
+        do {
+            try await store.updateProjectId(id: thoughtId, projectId: projectId)
+            // Success — keep optimistic state. DO NOT reload (R-5).
+        } catch {
+            // Revert
+            thoughts[index].projectId = oldProjectId
+
+            let message: String
+            if projectId == nil {
+                message = "Couldn't unassign. Try again."
+            } else {
+                // UI-SPEC copy: "Couldn't assign to \"{project.name}\". Try again."
+                let projectName = projects.first(where: { $0.id == projectId })?.name ?? "project"
+                message = "Couldn't assign to \"\(projectName)\". Try again."
+            }
+            self.assignmentError = AssignmentError(thoughtId: thoughtId, message: message)
+            NSLog(
+                "Dashboard: assignThoughtToProject failed for thought %lld — %@",
+                thoughtId,
+                error.localizedDescription
+            )
+        }
+    }
+
     /// Reload thoughts based on current search query, category, source, and date filters.
     ///
     /// Reentrancy-safe: cancels any in-flight loadThoughts before starting a new one.

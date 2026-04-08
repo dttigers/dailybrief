@@ -994,7 +994,31 @@ struct DashboardView: View {
                             viewModel.cancelEdit()
                         },
                         isRetriaging: viewModel.retriagingThoughtId == thought.id,
-                        isReclassifying: viewModel.reclassifyingThoughtId == thought.id
+                        isReclassifying: viewModel.reclassifyingThoughtId == thought.id,
+                        availableProjects: viewModel.filteredProjects,
+                        onAssignProject: { projectId in
+                            guard let id = thought.id else { return }
+                            Task {
+                                await viewModel.assignThoughtToProject(
+                                    thoughtId: id,
+                                    projectId: projectId
+                                )
+                            }
+                        },
+                        onUnassignProject: {
+                            guard let id = thought.id else { return }
+                            Task {
+                                await viewModel.assignThoughtToProject(
+                                    thoughtId: id,
+                                    projectId: nil
+                                )
+                            }
+                        },
+                        onCreateAndAssignProject: {
+                            guard let id = thought.id else { return }
+                            pendingAssignToThoughtId = id
+                            showingNewProjectSheet = true
+                        }
                     )
                 }
             }
@@ -1218,13 +1242,19 @@ private struct ProjectSheetsModifier: ViewModifier {
     }
 
     private func handleCreated(_ project: Project) {
-        // Sidebar "+ New Project" path — auto-select per UI-SPEC.
-        // The row-menu create-and-assign path is wired in Task 2 of plan 53-04,
-        // which also introduces `DashboardViewModel.assignThoughtToProject`.
-        if pendingAssignToThoughtId != nil {
-            // Task 2 will call viewModel.assignThoughtToProject here.
+        if let tid = pendingAssignToThoughtId {
+            // Row-menu create-and-assign path: create the project, then fire
+            // the optimistic assign against the pending thought.
+            Task {
+                await viewModel.assignThoughtToProject(
+                    thoughtId: tid,
+                    projectId: project.id
+                )
+            }
             pendingAssignToThoughtId = nil
+        } else {
+            // Sidebar "+ New Project" path — auto-select per UI-SPEC.
+            viewModel.selectedFilter = .project(id: project.id)
         }
-        viewModel.selectedFilter = .project(id: project.id)
     }
 }
