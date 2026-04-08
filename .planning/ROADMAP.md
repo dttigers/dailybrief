@@ -175,9 +175,9 @@ Plans:
 **Plans**: 4 plans
 **UI hint**: yes
 Plans:
-- [ ] 53-01-PLAN.md — Backend route extensions: GET projectId/unassigned filters, PUT projectId whitelist + FK check, toResponse round-trip, smoke test script
-- [ ] 53-02-PLAN.md — JarvisCore foundation: Project model, ProjectsRepository/ProjectsAPIStore, VigilAPIClient.patch, Thought.projectId, APIThoughtStore extensions, AppDelegate DI
-- [ ] 53-03-PLAN.md — DashboardViewModel CategoryFilter cases + projects state + CRUD methods; DashboardView Projects sidebar Section + status filter + delete Alert + assignmentError banner (human-verify)
+- [x] 53-01-PLAN.md — Backend route extensions: GET projectId/unassigned filters, PUT projectId whitelist + FK check, toResponse round-trip, smoke test script
+- [x] 53-02-PLAN.md — JarvisCore foundation: Project model, ProjectsRepository/ProjectsAPIStore, VigilAPIClient.patch, Thought.projectId, APIThoughtStore extensions, AppDelegate DI
+- [x] 53-03-PLAN.md — DashboardViewModel CategoryFilter cases + projects state + CRUD methods; DashboardView Projects sidebar Section + status filter + delete Alert + assignmentError banner (human-verify)
 - [ ] 53-04-PLAN.md — NewProjectSheet (create+edit) + ThoughtRowView nested Project menu + optimistic assignThoughtToProject with revert (human-verify)
 
 ### Phase 54: Smart Photo Upload
@@ -252,7 +252,7 @@ None
 | 50. Dashboard AI Chat | v2.2 | 2/2 | Complete | 2026-04-05 |
 | 51. Menu Bar Update Action | v2.3 | 4/4 | Complete   | 2026-04-08 |
 | 52. Projects Backend | v2.3 | 2/2 | Complete    | 2026-04-08 |
-| 53. Projects Dashboard UI | v2.3 | 0/4 | Planned | - |
+| 53. Projects Dashboard UI | v2.3 | 3/4 | In Progress|  |
 | 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |
 
 ## Backlog
@@ -280,7 +280,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-review-backlo
 - Do we want a `dailybrief-doctor` companion command that diagnoses an existing setup (drift detection across the 4 places API keys live)?
 
 **Requirements:** TBD
-**Plans:** 0 plans
+**Plans:** 3/4 plans executed
 
 Plans:
 - [ ] TBD (promote with /gsd-review-backlog when ready)
