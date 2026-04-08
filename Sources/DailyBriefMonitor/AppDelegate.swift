@@ -10,6 +10,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private var captureService: CaptureService?
     private var triageService: (any TriageProviding)?
     private var thoughtStore: (any ThoughtRepository)?
+    private var projectsStore: ProjectsAPIStore?
     private var vigilAPIClient: VigilAPIClient?
     private var globalHotKey: GlobalHotKey?
     private var dashboardWindow: NSWindow?
@@ -58,6 +59,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             let repository: any ThoughtRepository = APIThoughtStore(client: client)
             let thoughtStore = repository
             self.thoughtStore = thoughtStore
+
+            // Projects store — API-backed, reuses the same VigilAPIClient.
+            // Wave 3 (plan 53-03) will inject this into DashboardViewModel.
+            self.projectsStore = ProjectsAPIStore(client: client)
+
             let service = CaptureService(store: thoughtStore)
             captureService = service
 
