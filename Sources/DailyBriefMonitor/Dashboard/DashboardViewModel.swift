@@ -3,14 +3,22 @@ import Foundation
 import JarvisCore
 
 /// Sidebar filter: wraps optional ThoughtCategory so "All" is a concrete selectable value.
+///
+/// Phase 53 added project / unassigned filters. Both new cases return `nil` from
+/// `category` because they aren't category filters — `performLoadThoughts` switches
+/// directly on the filter for them and bypasses the category-driven branches.
 enum CategoryFilter: Hashable {
     case all
     case specific(ThoughtCategory)
+    case project(id: Int64)
+    case unassigned
 
     var category: ThoughtCategory? {
         switch self {
         case .all: return nil
         case .specific(let c): return c
+        case .project: return nil       // Phase 53 — project filter is not a category filter
+        case .unassigned: return nil    // Phase 53 — unassigned filter is not a category filter
         }
     }
 }
@@ -122,6 +130,25 @@ final class DashboardViewModel {
     var showingBriefHistory = false
     var showingChat = false
 
+    // Projects (Phase 53)
+    var projects: [Project] = []
+    var projectStatusFilter: ProjectStatusFilter = .all
+    var assignmentError: AssignmentError? = nil
+
+    /// Row-level error surface for thought→project assignment failures.
+    /// Modeled on the existing `importErrors` banner; Phase 53 invents a typed
+    /// version because assignment errors target a specific thought row.
+    struct AssignmentError: Identifiable, Equatable {
+        let id = UUID()
+        let thoughtId: Int64
+        let message: String
+    }
+
+    /// Sidebar segmented filter for the Projects section.
+    enum ProjectStatusFilter: Hashable {
+        case all, active, done, archived
+    }
+
     // Import state
     var isImporting = false
     var importProgress: ImportProgress?
@@ -137,6 +164,7 @@ final class DashboardViewModel {
     // MARK: - Private
 
     private let store: any ThoughtRepository
+    private let projectsStore: any ProjectsRepository
     private let captureService: CaptureService?
     private let transcriptionService: TranscriptionService?
     private let imageDescriptionService: (any ImageDescriptionProviding)?
@@ -157,6 +185,7 @@ final class DashboardViewModel {
 
     init(
         store: any ThoughtRepository,
+        projectsStore: any ProjectsRepository,
         captureService: CaptureService? = nil,
         transcriptionService: TranscriptionService? = nil,
         imageDescriptionService: (any ImageDescriptionProviding)? = nil,
@@ -167,6 +196,7 @@ final class DashboardViewModel {
         therapyPrepService: (any TherapyPrepProviding)? = nil
     ) {
         self.store = store
+        self.projectsStore = projectsStore
         self.captureService = captureService
         self.transcriptionService = transcriptionService
         self.imageDescriptionService = imageDescriptionService
@@ -179,14 +209,112 @@ final class DashboardViewModel {
 
     // MARK: - Public Methods
 
-    /// Full refresh: reload thoughts, sidebar counts, and calendar events.
+    /// Full refresh: reload thoughts, sidebar counts, calendar events, and projects.
     func refresh() async {
         isLoading = true
         await loadThoughts()
         await loadCounts()
+        await loadProjects()
         await loadCalendarEvents()
         await loadInsights()
         isLoading = false
+    }
+
+    // MARK: - Projects (Phase 53)
+
+    /// Counts of thoughts grouped by `projectId`. Computed (not stored) per Pitfall P-6 —
+    /// keeps the count in lock-step with the visible thought list and avoids dual-source
+    /// drift between sidebar badges and the detail pane.
+    var projectThoughtCounts: [Int64: Int] {
+        var counts: [Int64: Int] = [:]
+        for thought in thoughts {
+            if let pid = thought.projectId {
+                counts[pid, default: 0] += 1
+            }
+        }
+        return counts
+    }
+
+    /// Number of currently visible thoughts that have no project assignment.
+    var unassignedCount: Int {
+        thoughts.filter { $0.projectId == nil }.count
+    }
+
+    /// Projects filtered by the sidebar status segment, sorted by name (case-insensitive).
+    /// Treats nil status as `.active` so legacy rows still surface in the Active segment.
+    var filteredProjects: [Project] {
+        let sorted = projects.sorted {
+            $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending
+        }
+        switch projectStatusFilter {
+        case .all: return sorted
+        case .active: return sorted.filter { $0.status == .active || $0.status == nil }
+        case .done: return sorted.filter { $0.status == .done }
+        case .archived: return sorted.filter { $0.status == .archived }
+        }
+    }
+
+    /// Fetch the project list from the server. Failures are non-blocking — the
+    /// list stays as-is and the error is logged. Phase 53 keeps this NSLog-only;
+    /// a banner surface for project list failures was deferred per UI-SPEC.
+    func loadProjects() async {
+        do {
+            let list = try await projectsStore.listProjects()
+            self.projects = list
+        } catch {
+            NSLog("Dashboard: loadProjects failed — %@", error.localizedDescription)
+        }
+    }
+
+    /// Create a project, refresh the project list, and return the created row.
+    @discardableResult
+    func createProject(name: String, description: String?, status: ProjectStatus?) async throws -> Project {
+        let created = try await projectsStore.createProject(
+            name: name,
+            description: description,
+            status: status
+        )
+        await loadProjects()
+        return created
+    }
+
+    /// Update a project (rename, change description, change status), then refresh the list.
+    func updateProject(id: Int64, name: String?, description: String?, status: ProjectStatus?) async throws {
+        _ = try await projectsStore.updateProject(
+            id: id,
+            name: name,
+            description: description,
+            status: status
+        )
+        await loadProjects()
+    }
+
+    /// Convenience for the row context menu's `Set status →` submenu. Swallows
+    /// errors to NSLog so UI taps don't throw — UI-SPEC treats status flips as
+    /// non-critical (worst case the user re-clicks).
+    func setProjectStatus(_ project: Project, _ status: ProjectStatus) async {
+        do {
+            try await updateProject(id: project.id, name: nil, description: nil, status: status)
+        } catch {
+            NSLog("Dashboard: setProjectStatus failed — %@", error.localizedDescription)
+        }
+    }
+
+    /// Delete a project. After deletion:
+    /// - the project list is refetched (so the row disappears)
+    /// - the thought list is force-refetched (D-06 — any thoughts that were assigned
+    ///   to this project now have `projectId == nil` server-side via ON DELETE SET NULL)
+    /// - if the deleted project was the active sidebar filter, reset to `.all` so the
+    ///   detail pane doesn't keep showing a stale empty state for a now-gone filter
+    func deleteProject(id: Int64) async throws {
+        try await projectsStore.deleteProject(id: id)
+        await loadProjects()
+        // If the deleted project was the active filter, reset BEFORE reloading thoughts
+        // so the next loadThoughts picks the correct branch (.all instead of .project).
+        if case .project(let pid) = selectedFilter, pid == id {
+            selectedFilter = .all
+        }
+        await loadThoughts()
     }
 
     /// Reload thoughts based on current search query, category, source, and date filters.
@@ -218,6 +346,27 @@ final class DashboardViewModel {
             let category = selectedFilter.category
             let afterDate = dateRangeFilter.startDate
             let computed: [Thought]
+
+            // Phase 53 — project / unassigned filters bypass the existing
+            // category-driven branches. They ignore search/source/date/tag/favorites
+            // filters intentionally (UI-SPEC scope is "show me thoughts in project X");
+            // a future plan can layer those filters on top if needed.
+            switch selectedFilter {
+            case .project(let projectId):
+                let list = try await store.fetchByProject(id: projectId, limit: 200)
+                guard !Task.isCancelled else { return }
+                thoughts = list
+                await loadLinkCounts()
+                return
+            case .unassigned:
+                let list = try await store.fetchUnassigned(limit: 200)
+                guard !Task.isCancelled else { return }
+                thoughts = list
+                await loadLinkCounts()
+                return
+            case .all, .specific:
+                break
+            }
 
             if trimmed.isEmpty {
                 // When viewing tasks with a status sub-filter, use fetchTasks

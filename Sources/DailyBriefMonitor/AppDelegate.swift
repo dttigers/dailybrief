@@ -157,7 +157,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             return
         }
 
-        guard let store = thoughtStore else {
+        guard let store = thoughtStore, let projectsStore = projectsStore else {
             let alert = NSAlert()
             alert.messageText = "Dashboard Unavailable"
             alert.informativeText = "The database failed to initialize. Please check logs and restart."
@@ -168,6 +168,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
         let viewModel = DashboardViewModel(
             store: store,
+            projectsStore: projectsStore,
             captureService: captureService,
             transcriptionService: transcriptionService,
             imageDescriptionService: imageDescriptionService,
