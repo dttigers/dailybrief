@@ -72,19 +72,18 @@ final class UpdateService: @unchecked Sendable {
 
         // STEP 2: mtime gate (D-06) — installed >= build → no-op
         if installedBinariesAreFresh() {
-            appendToUpdateLog("=== mtime gate: installed binaries are fresh — skipping install.sh ===\n")
+            appendToUpdateLog("=== mtime gate: installed binaries are fresh — skipping inline install ===\n")
             return .upToDate
         }
 
-        // STEP 3: invoke install.sh (D-01)
-        let installResult = runProcess(
-            executable: "/bin/bash",
-            args: [RepoLocation.installScript],
-            cwd: RepoLocation.path
-        )
-        appendToUpdateLog("=== Scripts/install.sh ===\n\(installResult.output)\n")
-        if installResult.exitCode != 0 {
-            return .failed(tail: lastNLines(installResult.output, 20))
+        // STEP 3: inline binary install (supersedes Scripts/install_sh subprocess — see 51-04-PLAN.md DR-01)
+        // We MUST NOT call Scripts/install_sh from inside the managed launchd process — its
+        // `launchctl bootout` on line 95 SIGTERMs this very process. The trampoline
+        // (spawnDetachedReloadHelper) is the ONLY thing allowed to touch launchctl.
+        let copyResult = installBuiltBinaries()
+        appendToUpdateLog("=== inline install (cp .build/release → ~/.local/bin) ===\n\(copyResult.output)\n")
+        if !copyResult.success {
+            return .failed(tail: copyResult.output)
         }
 
         // STEP 4: capture git SHA (D-07) — display only, never used for no-op
@@ -92,6 +91,7 @@ final class UpdateService: @unchecked Sendable {
         self.lastSHA = sha
 
         // STEP 5: write handoff JSON (D-04)
+        appendToUpdateLog("=== writeHandoff ===\nsha=\(sha) outcome=updated\n")
         writeHandoff(sha: sha, outcome: "updated")
 
         // STEP 6: spawn detached reload helper + exit (D-02/D-03)
@@ -124,6 +124,53 @@ final class UpdateService: @unchecked Sendable {
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         let output = String(data: data, encoding: .utf8) ?? ""
         return (process.terminationStatus, output)
+    }
+
+    /// Inline replacement for the cp steps formerly delegated to a shell installer.
+    /// Safe to call from inside the managed launchd process because it does NOT touch launchctl.
+    /// The trampoline (spawnDetachedReloadHelper) handles respawn via `launchctl kickstart -k`.
+    private func installBuiltBinaries() -> (success: Bool, output: String) {
+        let releaseDir = RepoLocation.releaseBuildDir
+        let installDir = NSString("~/.local/bin").expandingTildeInPath
+        var log = ""
+
+        // Ensure ~/.local/bin exists (parity with `mkdir -p`)
+        do {
+            try FileManager.default.createDirectory(
+                atPath: installDir,
+                withIntermediateDirectories: true,
+                attributes: nil
+            )
+        } catch {
+            return (false, "Failed to create \(installDir): \(error.localizedDescription)")
+        }
+
+        for binary in ["DailyBrief", "DailyBriefMonitor"] {
+            let src = (releaseDir as NSString).appendingPathComponent(binary)
+            let dst = (installDir as NSString).appendingPathComponent(binary)
+
+            guard FileManager.default.fileExists(atPath: src) else {
+                return (false, log + "\nMissing source binary: \(src)")
+            }
+
+            // FileManager.copyItem fails if dst exists — remove first (parity with `cp -f`)
+            if FileManager.default.fileExists(atPath: dst) {
+                do {
+                    try FileManager.default.removeItem(atPath: dst)
+                } catch {
+                    return (false, log + "\nFailed to remove existing \(dst): \(error.localizedDescription)")
+                }
+            }
+
+            do {
+                try FileManager.default.copyItem(atPath: src, toPath: dst)
+                log += "Installed \(binary): \(src) → \(dst)\n"
+            } catch {
+                return (false, log + "\nFailed to copy \(binary): \(error.localizedDescription)")
+            }
+        }
+
+        return (true, log)
     }
 
     private func installedBinariesAreFresh() -> Bool {
