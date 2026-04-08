@@ -19,6 +19,7 @@ private struct APIThoughtResponse: Decodable, Sendable {
     let therapyClassification: String?
     let tags: [String]?
     let isFavorited: Bool
+    let projectId: Int64?
 }
 
 /// Response wrapper for the /tags endpoint.
@@ -59,6 +60,19 @@ private struct UpdateThoughtBody: Encodable {
     let therapyClassification: String?
     let tags: [String]?
     let isFavorited: Bool?
+}
+
+/// Dedicated body for project assignment / unassignment.
+///
+/// **Do NOT fold `projectId` into `UpdateThoughtBody`.** Swift's default
+/// `JSONEncoder` encodes `Optional.none` as JSON `null`, and the vigil-core
+/// PUT /thoughts/:id route correctly interprets a null `projectId` as
+/// "unassign". If the shared body carried `projectId`, every call path that
+/// constructs it with `projectId = nil` (cycleTaskStatus, reTriageThought,
+/// toggleFavorite, addTag, etc.) would silently clear the project assignment
+/// on the touched thought. See Phase 53 RESEARCH Pitfall P-1.
+private struct AssignProjectBody: Encodable {
+    let projectId: Int64?
 }
 
 private struct AddTagBody: Encodable {
@@ -132,7 +146,8 @@ public actor APIThoughtStore: ThoughtRepository {
             taskStatus: r.taskStatus.flatMap { TaskStatus(rawValue: $0) },
             therapyClassification: r.therapyClassification.flatMap { TherapyClassification(rawValue: $0) },
             tags: (r.tags ?? []).isEmpty ? nil : r.tags,
-            isFavorited: r.isFavorited
+            isFavorited: r.isFavorited,
+            projectId: r.projectId
         )
     }
 
@@ -233,6 +248,30 @@ public actor APIThoughtStore: ThoughtRepository {
         if favoritesOnly { query["favoritesOnly"] = "true" }
 
         let response: PaginatedResponse<APIThoughtResponse> = try await client.get(path: "/thoughts", query: query)
+        return response.data.map { toThought($0) }
+    }
+
+    public func fetchByProject(id: Int64, limit: Int = 200) async throws -> [Thought] {
+        let query: [String: String] = [
+            "projectId": "\(id)",
+            "limit": "\(limit)"
+        ]
+        let response: PaginatedResponse<APIThoughtResponse> = try await client.get(
+            path: "/thoughts",
+            query: query
+        )
+        return response.data.map { toThought($0) }
+    }
+
+    public func fetchUnassigned(limit: Int = 200) async throws -> [Thought] {
+        let query: [String: String] = [
+            "unassigned": "true",
+            "limit": "\(limit)"
+        ]
+        let response: PaginatedResponse<APIThoughtResponse> = try await client.get(
+            path: "/thoughts",
+            query: query
+        )
         return response.data.map { toThought($0) }
     }
 
@@ -415,6 +454,22 @@ public actor APIThoughtStore: ThoughtRepository {
         )
         let response: APIThoughtResponse = try await client.put(path: "/thoughts/\(id)", body: body)
         return toThought(response)
+    }
+
+    // MARK: - Project Assignment
+
+    /// Assign (`projectId != nil`) or unassign (`projectId == nil`) a thought's
+    /// project. Uses a dedicated `AssignProjectBody` — see the struct's doc for
+    /// why `projectId` MUST NOT be added to the shared `UpdateThoughtBody`.
+    ///
+    /// Routing: PUT /thoughts/:id (the thoughts route uses PUT, not PATCH — the
+    /// projects route is the one that uses PATCH; see Phase 53 Plan 01).
+    public func updateProjectId(id: Int64, projectId: Int64?) async throws {
+        let body = AssignProjectBody(projectId: projectId)
+        let _: APIThoughtResponse = try await client.put(
+            path: "/thoughts/\(id)",
+            body: body
+        )
     }
 
     // MARK: - Tag Operations

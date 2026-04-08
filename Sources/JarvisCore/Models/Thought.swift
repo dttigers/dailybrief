@@ -73,6 +73,10 @@ public struct Thought: Codable, Sendable, Identifiable {
     /// Whether the user has marked this thought as a favorite.
     public var isFavorited: Bool
 
+    /// Foreign key into the `projects` table. Nil means unassigned.
+    /// Round-trips through the `/v1/thoughts` response (Phase 53 Plan 01).
+    public var projectId: Int64?
+
     // MARK: Initialization
 
     public init(
@@ -86,7 +90,8 @@ public struct Thought: Codable, Sendable, Identifiable {
         taskStatus: TaskStatus? = nil,
         therapyClassification: TherapyClassification? = nil,
         tags: [String]? = nil,
-        isFavorited: Bool = false
+        isFavorited: Bool = false,
+        projectId: Int64? = nil
     ) {
         self.id = id
         self.content = content
@@ -99,5 +104,6 @@ public struct Thought: Codable, Sendable, Identifiable {
         self.therapyClassification = therapyClassification
         self.tags = tags
         self.isFavorited = isFavorited
+        self.projectId = projectId
     }
 }

@@ -43,6 +43,18 @@ public protocol ThoughtRepository: Actor {
         offset: Int
     ) async throws -> [Thought]
 
+    /// Fetch thoughts assigned to a specific project.
+    func fetchByProject(id: Int64, limit: Int) async throws -> [Thought]
+
+    /// Fetch thoughts with no project assignment (project_id IS NULL).
+    func fetchUnassigned(limit: Int) async throws -> [Thought]
+
+    /// Assign (non-nil) or unassign (nil) a thought's project.
+    /// Implementations MUST send this via a dedicated request body — NOT the
+    /// shared update body — so nil stays an explicit unassign and never leaks
+    /// into other update paths. See APIThoughtStore.AssignProjectBody.
+    func updateProjectId(id: Int64, projectId: Int64?) async throws
+
     /// Count thoughts with combined filters.
     func countFiltered(
         category: ThoughtCategory?,
@@ -235,6 +247,14 @@ public extension ThoughtRepository {
 
     func fetchByTag(tag: String, limit: Int = 100, offset: Int = 0) async throws -> [Thought] {
         try await fetchByTag(tag: tag, limit: limit, offset: offset)
+    }
+
+    func fetchByProject(id: Int64, limit: Int = 200) async throws -> [Thought] {
+        try await fetchByProject(id: id, limit: limit)
+    }
+
+    func fetchUnassigned(limit: Int = 200) async throws -> [Thought] {
+        try await fetchUnassigned(limit: limit)
     }
 
     func fetchFavorites(limit: Int = 100, offset: Int = 0) async throws -> [Thought] {
