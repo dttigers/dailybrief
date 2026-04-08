@@ -172,8 +172,13 @@ Plans:
   2. User can assign any unassigned thought to a project from the thought's row or detail view
   3. User can move a thought from one project to another, or unassign it, from the dashboard
   4. Each project shows its optional status (active / archived / done) and the dashboard can filter by status
-**Plans**: TBD
+**Plans**: 4 plans
 **UI hint**: yes
+Plans:
+- [ ] 53-01-PLAN.md — Backend route extensions: GET projectId/unassigned filters, PUT projectId whitelist + FK check, toResponse round-trip, smoke test script
+- [ ] 53-02-PLAN.md — JarvisCore foundation: Project model, ProjectsRepository/ProjectsAPIStore, VigilAPIClient.patch, Thought.projectId, APIThoughtStore extensions, AppDelegate DI
+- [ ] 53-03-PLAN.md — DashboardViewModel CategoryFilter cases + projects state + CRUD methods; DashboardView Projects sidebar Section + status filter + delete Alert + assignmentError banner (human-verify)
+- [ ] 53-04-PLAN.md — NewProjectSheet (create+edit) + ThoughtRowView nested Project menu + optimistic assignThoughtToProject with revert (human-verify)
 
 ### Phase 54: Smart Photo Upload
 **Goal**: Uploading a photo of handwritten notes produces verbatim, correctly-split thoughts based on the paper type, with user control over the detection
@@ -247,7 +252,7 @@ None
 | 50. Dashboard AI Chat | v2.2 | 2/2 | Complete | 2026-04-05 |
 | 51. Menu Bar Update Action | v2.3 | 4/4 | Complete   | 2026-04-08 |
 | 52. Projects Backend | v2.3 | 2/2 | Complete    | 2026-04-08 |
-| 53. Projects Dashboard UI | v2.3 | 0/TBD | Not started | - |
+| 53. Projects Dashboard UI | v2.3 | 0/4 | Planned | - |
 | 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |
 
 ## Backlog
