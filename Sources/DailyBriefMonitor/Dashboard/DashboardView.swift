@@ -17,6 +17,10 @@ struct DashboardView: View {
     @State private var showingNewProjectSheet = false
     @State private var editingProject: Project? = nil
     @State private var pendingProjectDelete: Project? = nil
+    // Phase 53 Plan 04 — when set, the next successful create from NewProjectSheet
+    // (opened via the row-menu "+ New Project…" action) assigns the thought to the
+    // newly-created project instead of auto-selecting the sidebar row.
+    @State private var pendingAssignToThoughtId: Int64? = nil
     @Environment(\.undoManager) private var undoManager
 
     var body: some View {
@@ -71,34 +75,15 @@ struct DashboardView: View {
         )) {
             LinkedThoughtsSheet(viewModel: viewModel)
         }
-        // Phase 53 — placeholder New Project sheet (replaced by NewProjectSheet in plan 53-04)
-        .sheet(isPresented: $showingNewProjectSheet) {
-            VStack(spacing: 12) {
-                Text("New Project")
-                    .font(.headline)
-                Text("Sheet UI ships in plan 53-04.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Button("Close") { showingNewProjectSheet = false }
-            }
-            .padding()
-            .frame(width: 300, height: 150)
-        }
-        // Phase 53 — placeholder Edit Project sheet (replaced by NewProjectSheet in plan 53-04)
-        .sheet(item: $editingProject) { project in
-            VStack(spacing: 12) {
-                Text("Edit Project")
-                    .font(.headline)
-                Text(project.name)
-                    .font(.subheadline)
-                Text("Sheet UI ships in plan 53-04.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Button("Close") { editingProject = nil }
-            }
-            .padding()
-            .frame(width: 300, height: 180)
-        }
+        // Phase 53 Plan 04 — NewProjectSheet (create + edit) + row-menu "+ New Project…"
+        // routing. Extracted into a dedicated modifier so the giant `body`
+        // expression stays within the Swift type-checker budget.
+        .modifier(ProjectSheetsModifier(
+            viewModel: viewModel,
+            showingNewProjectSheet: $showingNewProjectSheet,
+            editingProject: $editingProject,
+            pendingAssignToThoughtId: $pendingAssignToThoughtId
+        ))
         // Phase 53 — Delete project confirmation Alert (UI-SPEC copy verbatim)
         .alert(
             "Delete \"\(pendingProjectDelete?.name ?? "")\"?",
@@ -1196,5 +1181,50 @@ struct DashboardView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Project Sheets Modifier (Phase 53 Plan 04)
+
+/// Attaches the NewProjectSheet in both create and edit modes, plus the
+/// row-menu `+ New Project…` routing via `pendingAssignToThoughtId`.
+///
+/// Extracted out of `DashboardView.body` so the giant body expression stays
+/// within the Swift compiler's type-check budget.
+private struct ProjectSheetsModifier: ViewModifier {
+    let viewModel: DashboardViewModel
+    @Binding var showingNewProjectSheet: Bool
+    @Binding var editingProject: Project?
+    @Binding var pendingAssignToThoughtId: Int64?
+
+    func body(content: Content) -> some View {
+        content
+            .sheet(isPresented: $showingNewProjectSheet) {
+                NewProjectSheet(
+                    mode: .create,
+                    viewModel: viewModel,
+                    onCreated: handleCreated
+                )
+            }
+            .onChange(of: showingNewProjectSheet) { _, newValue in
+                if !newValue { pendingAssignToThoughtId = nil }
+            }
+            .sheet(item: $editingProject) { project in
+                NewProjectSheet(
+                    mode: .edit(project),
+                    viewModel: viewModel
+                )
+            }
+    }
+
+    private func handleCreated(_ project: Project) {
+        // Sidebar "+ New Project" path — auto-select per UI-SPEC.
+        // The row-menu create-and-assign path is wired in Task 2 of plan 53-04,
+        // which also introduces `DashboardViewModel.assignThoughtToProject`.
+        if pendingAssignToThoughtId != nil {
+            // Task 2 will call viewModel.assignThoughtToProject here.
+            pendingAssignToThoughtId = nil
+        }
+        viewModel.selectedFilter = .project(id: project.id)
     }
 }
