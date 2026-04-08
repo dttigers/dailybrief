@@ -143,7 +143,11 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   3. The menu bar item shows in-progress, success, or error-with-reason feedback inline during and after the update
   4. After a successful update, the DailyBriefMonitor LaunchAgent is reloaded so the new binary is active immediately
   5. Clicking "Update Vigil" repeatedly when nothing has changed reports a no-op (idempotent — no unnecessary rebuilds)
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 51-01-PLAN.md — RepoLocation foundation + StatusChecker hardcoded path removal
+- [ ] 51-02-PLAN.md — UpdateService: install.sh wrap, mtime gate, handoff JSON, detached self-reload trampoline
+- [ ] 51-03-PLAN.md — MenuBarView Update Vigil button + AppDelegate handoff consumption + human verification
 
 ### Phase 52: Projects Backend
 **Goal**: Named personal projects exist in the database with full CRUD API, and existing "project"-category thoughts remain accessible for retroactive assignment

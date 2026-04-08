@@ -38,9 +38,15 @@ created: 2026-04-07
 
 > Filled in by planner. Each task with code changes must have either an `<automated>` block (compile/grep/file-exists) or a manual checklist entry below.
 
-| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD     | TBD  | TBD  | DEV-01..04  | —          | N/A             | compile   | `swift build -c release` | ✅ | ⬜ pending |
+| Task ID  | Plan | Wave | Requirement       | Threat Ref | Secure Behavior                                  | Test Type     | Automated Command                                                                                                  | File Exists | Status     |
+|----------|------|------|-------------------|------------|--------------------------------------------------|---------------|--------------------------------------------------------------------------------------------------------------------|-------------|------------|
+| 51-01-T1 | 01   | 1    | DEV-01, DEV-02    | T-51-01    | #filePath compile-time path bake-in              | compile+grep  | `grep -F "#filePath" Sources/DailyBriefMonitor/RepoLocation.swift && swift build -c release`                          | ✅          | ⬜ pending |
+| 51-01-T2 | 01   | 1    | DEV-01, DEV-02    | T-51-01    | Hardcoded path removed                           | compile+grep  | `! grep -F "Desktop/Local AI/dailybrief" Sources/DailyBriefMonitor/StatusChecker.swift && swift build -c release`     | ✅          | ⬜ pending |
+| 51-02-T1 | 02   | 2    | DEV-03            | —          | Status enum models all 5 UI states               | compile+grep  | `grep -F "case updated(sha: String)" Sources/DailyBriefMonitor/UpdateStatus.swift && swift build -c release`          | ✅          | ⬜ pending |
+| 51-02-T2 | 02   | 2    | DEV-01..04        | T-51-01,02,03 | install.sh wrap, mtime gate, detached reload  | compile+grep  | `grep -F "FileHandle.nullDevice" Sources/DailyBriefMonitor/UpdateService.swift && grep -F "launchctl kickstart -k gui/" Sources/DailyBriefMonitor/UpdateService.swift && swift build -c release` | ✅          | ⬜ pending |
+| 51-03-T1 | 03   | 3    | DEV-02, DEV-03    | —          | UpdateService instantiation + handoff once       | grep          | `grep -F "updater.consumeHandoff()" Sources/DailyBriefMonitor/DailyBriefMonitorApp.swift && grep -F "didConsumeHandoff" Sources/DailyBriefMonitor/DailyBriefMonitorApp.swift` | ✅          | ⬜ pending |
+| 51-03-T2 | 03   | 3    | DEV-01, DEV-03    | T-51-03    | Update Vigil button + failure tail + Open Log    | compile+grep  | `grep -F "Update Vigil" Sources/DailyBriefMonitor/MenuBarView.swift && grep -F "Open Full Log" Sources/DailyBriefMonitor/MenuBarView.swift && swift build -c release` | ✅          | ⬜ pending |
+| 51-03-T3 | 03   | 3    | DEV-01..04        | —          | End-to-end on real hardware                      | manual        | See Manual-Only Verifications table below                                                                           | n/a         | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
