@@ -25,7 +25,7 @@ public struct AppConfig: Codable, Sendable {
         folderWatching: FolderWatchingConfig = .init(),
         insights: InsightsConfig = .init(),
         cloudSync: CloudSyncConfig = .init(),
-        apiBaseUrl: String = "https://vigil-core-production.up.railway.app/v1",
+        apiBaseUrl: String = "https://api.vigilhub.io/v1",
         apiKey: String = ""
     ) {
         self.email = email
@@ -66,7 +66,7 @@ public struct AppConfig: Codable, Sendable {
             apiBaseUrl = vigilObj.apiBaseUrl
             apiKey = vigilObj.apiKey
         } else {
-            apiBaseUrl = try container.decodeIfPresent(String.self, forKey: .apiBaseUrl) ?? "https://vigil-core-production.up.railway.app/v1"
+            apiBaseUrl = try container.decodeIfPresent(String.self, forKey: .apiBaseUrl) ?? "https://api.vigilhub.io/v1"
             apiKey = try container.decodeIfPresent(String.self, forKey: .apiKey) ?? ""
         }
     }

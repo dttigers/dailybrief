@@ -81,7 +81,7 @@ final class SettingsViewModel {
     var claudeModel: String = "claude-sonnet-4-20250514"
 
     // MARK: - Vigil API (backend auth)
-    var apiBaseUrl: String = "https://vigil-core-production.up.railway.app/v1"
+    var apiBaseUrl: String = "https://api.vigilhub.io/v1"
     var vigilApiKey: String = ""
 
     // MARK: - PDF

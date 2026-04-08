@@ -11,7 +11,7 @@
     {
       "name": "network",
       "desc": "Fetches work orders, reminders, and affirmation data from the Vigil Core API.",
-      "whitelist": ["https://vigil-core-production.up.railway.app"]
+      "whitelist": ["https://api.vigilhub.io"]
     }
   ]
 }

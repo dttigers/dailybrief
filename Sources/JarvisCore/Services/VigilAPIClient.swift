@@ -80,7 +80,7 @@ public actor VigilAPIClient {
 
     /// Creates a VigilAPIClient targeting the given base URL.
     /// - Parameters:
-    ///   - baseURL: The Vigil Core API base URL (e.g., `https://vigil-core-production.up.railway.app/v1`).
+    ///   - baseURL: The Vigil Core API base URL (e.g., `https://api.vigilhub.io/v1`).
     ///   - apiKey: Optional API key for Bearer authentication. When non-nil and non-empty, an Authorization header is sent.
     ///   - session: URLSession to use for requests. Defaults to `.shared`.
     public init(baseURL: URL, apiKey: String? = nil, session: URLSession = .shared) {

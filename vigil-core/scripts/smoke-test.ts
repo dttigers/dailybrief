@@ -10,7 +10,7 @@
 
 const API_URL =
   process.env.API_URL?.replace(/\/$/, "") ||
-  "https://vigil-core-production.up.railway.app";
+  "https://api.vigilhub.io";
 const API_KEY = process.env.API_KEY || "";
 
 if (!API_KEY) {
