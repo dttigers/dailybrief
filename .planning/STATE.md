@@ -5,14 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-04-07)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v2.3 Projects & Precision — defining requirements
+**Current focus:** v2.3 Projects & Precision — Phase 51: Menu Bar Update Action
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-07 — Milestone v2.3 Projects & Precision started
+Phase: 51 of 54 (Menu Bar Update Action)
+Plan: 0 of TBD in current phase
+Status: Ready to plan
+Last activity: 2026-04-07 — v2.3 roadmap created, 4 phases (51-54) covering 17 requirements
+
+Progress: [██████████████████████████░░░░] 50/54 phases complete (prior milestones)
 
 ## Performance Metrics
 
@@ -39,14 +41,13 @@ Last activity: 2026-04-07 — Milestone v2.3 Projects & Precision started
 ### Decisions
 
 All decisions logged in PROJECT.md Key Decisions table.
-Full decision history available in milestone archives:
-- .planning/milestones/v1.0-ROADMAP.md
-- .planning/milestones/v1.1-ROADMAP.md
-- .planning/milestones/v1.2-ROADMAP.md
-- .planning/milestones/v1.4-ROADMAP.md
-- .planning/milestones/v2.0-ROADMAP.md
-- .planning/milestones/v2.1-ROADMAP.md
-- .planning/milestones/v2.2-ROADMAP.md
+Full decision history available in milestone archives under .planning/milestones/.
+
+Recent decisions affecting v2.3:
+- Manual assignment only for projects this milestone (no auto-routing from photo content)
+- Personal projects only — no work order linkage
+- G2 hardware testing deferred (glasses arriving ~1 week from 2026-04-07)
+- .app packaging remains out of scope
 
 ### Pending Todos
 
@@ -65,17 +66,11 @@ None.
 
 ### Roadmap Evolution
 
-- v1.0 MVP shipped: 7 phases (1-7), 17 plans
-- v1.1 Always On shipped: 6 phases (8-13), 16 plans
-- v1.2 Daily Driver shipped: 5 phases (14-18), 14 plans
-- v1.3 Stability & Smarts shipped: 5 phases (19-23), 7 plans
-- v1.4 Intelligence & Organization shipped (early close): 5 phases (24-28), 11 plans
-- v2.0 Vigil Platform shipped: 8 phases (29-36), 22 plans — Core API, Even G2 plugin, Mac app migration
-- v2.1 Server Deployment shipped: 8 phases (37-44), 13 plans — PostgreSQL, auth, Railway deploy, client migration, hardening
-- v2.2 Polish & Power shipped: 6 phases (45-50), 12 plans — G2 UX, code cleanup, brief history, export, PDF config, AI chat
+- v1.0–v2.2: 50 phases, 112+ plans shipped across 8 milestones
+- v2.3 Projects & Precision: Phases 51-54, 17 requirements across DEV / PROJ / PHOTO
 
 ## Session Continuity
 
-Last session: 2026-04-05
-Stopped at: v2.2 milestone complete — all 50 phases shipped
+Last session: 2026-04-07
+Stopped at: v2.3 roadmap created — ready to plan Phase 51
 Resume file: None

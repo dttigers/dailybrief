@@ -141,12 +141,29 @@ Which phases cover which requirements. Updated by create-roadmap.
 | BRIEF-01 | Phase 6 | Complete |
 | BRIEF-02 | Phase 6 | Complete |
 | INTEG-01 | Phase 7 | Complete |
+| DEV-01 | Phase 51 | Pending |
+| DEV-02 | Phase 51 | Pending |
+| DEV-03 | Phase 51 | Pending |
+| DEV-04 | Phase 51 | Pending |
+| PROJ-01 | Phase 52 | Pending |
+| PROJ-06 | Phase 52 | Pending |
+| PROJ-07 | Phase 52 | Pending |
+| PROJ-02 | Phase 53 | Pending |
+| PROJ-03 | Phase 53 | Pending |
+| PROJ-04 | Phase 53 | Pending |
+| PROJ-05 | Phase 53 | Pending |
+| PHOTO-01 | Phase 54 | Pending |
+| PHOTO-02 | Phase 54 | Pending |
+| PHOTO-03 | Phase 54 | Pending |
+| PHOTO-04 | Phase 54 | Pending |
+| PHOTO-05 | Phase 54 | Pending |
+| PHOTO-06 | Phase 54 | Pending |
 
 **Coverage:**
-- v1 requirements: 15 total
-- Mapped to phases: 15
+- v1 requirements: 15 total — mapped to phases 1-7, all Complete
+- v2.3 requirements: 17 total — mapped to phases 51-54, all Pending
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-31*
-*Last updated: 2026-04-03 — all v1 requirements complete*
+*Last updated: 2026-04-07 — v2.3 requirements mapped to phases 51-54*

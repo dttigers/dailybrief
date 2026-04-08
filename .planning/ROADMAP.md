@@ -14,31 +14,9 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.0 Vigil Platform** — Phases 29-36 (shipped 2026-04-04)
 - ✅ **v2.1 Server Deployment** — Phases 37-44 (shipped 2026-04-05)
 - ✅ **v2.2 Polish & Power** — Phases 45-50 (shipped 2026-04-05)
+- 🚧 **v2.3 Projects & Precision** — Phases 51-54 (in progress)
 
 ## Completed Milestones
-
-- ✅ [v1.0 MVP](milestones/v1.0-ROADMAP.md) (Phases 1-7) — SHIPPED 2026-04-02
-- ✅ [v1.1 Always On](milestones/v1.1-ROADMAP.md) (Phases 8-13) — SHIPPED 2026-04-03
-- ✅ [v1.2 Daily Driver](milestones/v1.2-ROADMAP.md) (Phases 14-18) — SHIPPED 2026-04-03
-- ✅ [v1.3 Stability & Smarts](milestones/v1.3-ROADMAP.md) (Phases 19-23) — SHIPPED 2026-04-04
-- ✅ [v1.4 Intelligence & Organization](milestones/v1.4-ROADMAP.md) (Phases 24-28) — SHIPPED 2026-04-04 (early close)
-- ✅ [v2.0 Vigil Platform](milestones/v2.0-ROADMAP.md) (Phases 29-36) — SHIPPED 2026-04-04
-- ✅ [v2.1 Server Deployment](milestones/v2.1-ROADMAP.md) (Phases 37-44) — SHIPPED 2026-04-05
-- ✅ [v2.2 Polish & Power](milestones/v2.2-ROADMAP.md) (Phases 45-50) — SHIPPED 2026-04-05
-
-<details>
-<summary>✅ v2.1 Server Deployment (Phases 37-44) — SHIPPED 2026-04-05</summary>
-
-- [x] Phase 37: PostgreSQL Migration (4/4 plans) — completed 2026-04-05
-- [x] Phase 38: API Key Authentication (1/1 plan) — completed 2026-04-05
-- [x] Phase 39: Railway Deployment (2/2 plans) — completed 2026-04-05
-- [x] Phase 40: Data Migration (1/1 plan) — completed 2026-04-05
-- [x] Phase 41: G2 Plugin Production URL (1/1 plan) — completed 2026-04-05
-- [x] Phase 42: Mac App Server Migration (1/1 plan) — completed 2026-04-05
-- [x] Phase 43: HTTPS & Domain (1/1 plan) — completed 2026-04-05
-- [x] Phase 44: Integration Testing & Hardening (2/2 plans) — completed 2026-04-05
-
-</details>
 
 <details>
 <summary>✅ v1.0 MVP (Phases 1-7) — SHIPPED 2026-04-02</summary>
@@ -117,6 +95,20 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 </details>
 
 <details>
+<summary>✅ v2.1 Server Deployment (Phases 37-44) — SHIPPED 2026-04-05</summary>
+
+- [x] Phase 37: PostgreSQL Migration (4/4 plans) — completed 2026-04-05
+- [x] Phase 38: API Key Authentication (1/1 plan) — completed 2026-04-05
+- [x] Phase 39: Railway Deployment (2/2 plans) — completed 2026-04-05
+- [x] Phase 40: Data Migration (1/1 plan) — completed 2026-04-05
+- [x] Phase 41: G2 Plugin Production URL (1/1 plan) — completed 2026-04-05
+- [x] Phase 42: Mac App Server Migration (1/1 plan) — completed 2026-04-05
+- [x] Phase 43: HTTPS & Domain (1/1 plan) — completed 2026-04-05
+- [x] Phase 44: Integration Testing & Hardening (2/2 plans) — completed 2026-04-05
+
+</details>
+
+<details>
 <summary>✅ v2.2 Polish & Power (Phases 45-50) — SHIPPED 2026-04-05</summary>
 
 - [x] Phase 45: G2 Plugin UX Fixes (1/1 plan) — completed 2026-04-05
@@ -127,6 +119,66 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] Phase 50: Dashboard AI Chat (2/2 plans) — completed 2026-04-05
 
 </details>
+
+## 🚧 v2.3 Projects & Precision (In Progress)
+
+**Milestone Goal:** Organize Vigil around real-world projects, make photo ingest smart enough to tell individual thoughts apart from project work, and replace the install.sh dev loop with a one-click update from the menu bar.
+
+### Phases
+
+- [ ] **Phase 51: Menu Bar Update Action** - One-click rebuild/reinstall/reload of Vigil binaries from DailyBriefMonitor
+- [ ] **Phase 52: Projects Backend** - PostgreSQL schema, Drizzle migration, and full CRUD REST API for projects
+- [ ] **Phase 53: Projects Dashboard UI** - Per-project views, thought assignment/move/unassign, and status filtering in the Mac dashboard
+- [ ] **Phase 54: Smart Photo Upload** - Paper-type detection, verbatim split/single transcription, and user override in Mac app
+
+## Phase Details
+
+### Phase 51: Menu Bar Update Action
+**Goal**: User can rebuild and reinstall the Vigil binaries without opening a terminal, with live status feedback in the menu bar
+**Depends on**: Phase 50 (v2.2 complete)
+**Requirements**: DEV-01, DEV-02, DEV-03, DEV-04
+**Success Criteria** (what must be TRUE):
+  1. A "Update Vigil" menu item appears in the DailyBriefMonitor menu bar menu
+  2. Clicking the menu item triggers a build and install of DailyBrief CLI and DailyBriefMonitor binaries with no terminal required
+  3. The menu bar item shows in-progress, success, or error-with-reason feedback inline during and after the update
+  4. After a successful update, the DailyBriefMonitor LaunchAgent is reloaded so the new binary is active immediately
+  5. Clicking "Update Vigil" repeatedly when nothing has changed reports a no-op (idempotent — no unnecessary rebuilds)
+**Plans**: TBD
+
+### Phase 52: Projects Backend
+**Goal**: Named personal projects exist in the database with full CRUD API, and existing "project"-category thoughts remain accessible for retroactive assignment
+**Depends on**: Phase 51
+**Requirements**: PROJ-01, PROJ-06, PROJ-07
+**Success Criteria** (what must be TRUE):
+  1. A `projects` table exists in PostgreSQL (via Drizzle migration) with name, optional status, and timestamps
+  2. All five CRUD operations (create, read list, read one, update, delete) are available under `/projects` REST endpoints and return correct responses
+  3. The `thoughts` table has a nullable `project_id` foreign key column (via migration) with no data loss on existing thoughts
+  4. Thoughts currently categorized as "project" are returned by the API with their category intact and can be fetched without a project assignment
+**Plans**: TBD
+
+### Phase 53: Projects Dashboard UI
+**Goal**: User can manage projects and assign thoughts to them entirely from the Mac dashboard
+**Depends on**: Phase 52
+**Requirements**: PROJ-02, PROJ-03, PROJ-04, PROJ-05
+**Success Criteria** (what must be TRUE):
+  1. The dashboard shows a Projects section/sidebar listing all named projects; clicking one shows only the thoughts assigned to it
+  2. User can assign any unassigned thought to a project from the thought's row or detail view
+  3. User can move a thought from one project to another, or unassign it, from the dashboard
+  4. Each project shows its optional status (active / archived / done) and the dashboard can filter by status
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 54: Smart Photo Upload
+**Goal**: Uploading a photo of handwritten notes produces verbatim, correctly-split thoughts based on the paper type, with user control over the detection
+**Depends on**: Phase 52
+**Requirements**: PHOTO-01, PHOTO-02, PHOTO-03, PHOTO-04, PHOTO-05, PHOTO-06
+**Success Criteria** (what must be TRUE):
+  1. Uploading a photo automatically detects whether the paper is lined or gridded before creating any thoughts
+  2. A lined-paper photo produces multiple separate thoughts — one per distinct line, bullet, or paragraph — with verbatim handwriting transcription
+  3. A gridded-paper photo produces a single thought with verbatim handwriting transcription
+  4. The Mac app upload UI offers a paper-type override (force "lined" or "gridded") that takes precedence over the auto-detection
+  5. When detection confidence is low, the system falls back to the user-configured default and the UI surfaces a warning that detection was uncertain
+**Plans**: TBD
 
 ## Domain Expertise
 
@@ -186,3 +238,7 @@ None
 | 48. Export System | v2.2 | 1/1 | Complete | 2026-04-05 |
 | 49. Configurable PDF | v2.2 | 2/2 | Complete | 2026-04-05 |
 | 50. Dashboard AI Chat | v2.2 | 2/2 | Complete | 2026-04-05 |
+| 51. Menu Bar Update Action | v2.3 | 0/TBD | Not started | - |
+| 52. Projects Backend | v2.3 | 0/TBD | Not started | - |
+| 53. Projects Dashboard UI | v2.3 | 0/TBD | Not started | - |
+| 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |
