@@ -13,6 +13,27 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
+// ── projects table ──────────────────────────────────────────────────────────
+
+export const projects = pgTable(
+  "projects",
+  {
+    id: serial("id").primaryKey(),
+    name: text("name").notNull(),
+    description: text("description"),
+    status: text("status"), // free text; app validates: active | archived | done
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    index("idx_projects_created_at").on(table.createdAt),
+  ],
+);
+
 // ── thoughts table ──────────────────────────────────────────────────────────
 
 export const thoughts = pgTable(
@@ -36,12 +57,15 @@ export const thoughts = pgTable(
     therapyClassification: text("therapy_classification"),
     tags: jsonb("tags").$type<string[]>(),
     isFavorited: boolean("is_favorited").notNull().default(false),
+    projectId: integer("project_id")
+      .references(() => projects.id, { onDelete: "set null" }),
     // search_vector column is added via migration SQL (tsvector generated column)
   },
   (table) => [
     index("idx_thoughts_created_at").on(table.createdAt),
     index("idx_thoughts_category").on(table.category),
     index("idx_thoughts_sync_status").on(table.syncStatus),
+    index("idx_thoughts_project_id").on(table.projectId),
   ],
 );
 

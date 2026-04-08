@@ -1,6 +1,6 @@
 // TypeScript types for Vigil — Drizzle schema inference + legacy SQLite types
 
-import { thoughts, thoughtLinks, briefs } from "./schema.js";
+import { thoughts, thoughtLinks, briefs, projects } from "./schema.js";
 
 // ── Drizzle-inferred types (for PostgreSQL routes, Plans 37-02+) ────────────
 
@@ -12,6 +12,9 @@ export type NewThoughtLink = typeof thoughtLinks.$inferInsert;
 
 export type DrizzleBrief = typeof briefs.$inferSelect;
 export type NewBrief = typeof briefs.$inferInsert;
+
+export type DrizzleProject = typeof projects.$inferSelect;
+export type NewProject = typeof projects.$inferInsert;
 
 // ── Validation unions (used for runtime checks) ────────────────────────────
 
