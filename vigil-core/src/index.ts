@@ -8,6 +8,7 @@ import { rateLimiter } from "./middleware/rate-limit.js";
 import { health } from "./routes/health.js";
 import { summary } from "./routes/summary.js";
 import { thoughts } from "./routes/thoughts.js";
+import { projects } from "./routes/projects.js";
 import { tags } from "./routes/tags.js";
 import { links } from "./routes/links.js";
 import { brief } from "./routes/brief.js";
@@ -63,6 +64,7 @@ app.use("/v1/*", async (c, next) => {
 // Protected routes
 app.route("/v1", summary);
 app.route("/v1", thoughts);
+app.route("/v1", projects);
 app.route("/v1", tags);
 app.route("/v1", links);
 app.route("/v1", brief);
