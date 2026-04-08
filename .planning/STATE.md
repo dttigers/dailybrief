@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 Phase: 50 of 50 — all milestones through v2.2 complete
 Plan: N/A
 Status: Ready to plan next milestone
-Last activity: 2026-04-07 — Quick task 260407-jem: PDF insights cutoff fixed (Task 3 awaits human verify)
+Last activity: 2026-04-08 — Completed quick task 260407-q7d: Disable misleading folder watching UI in Settings
 
 Progress: ██████████ 100% (v1.0 through v2.2)
 
@@ -63,6 +63,7 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260407-jem | Fix PDF rendering (wrap all sections, spillover) + vigil-core AI JSON fence tolerance (7 endpoints) | 2026-04-07 | 8cac42d | [260407-jem-fix-pdf-insights-section-cutoff-bug-prin](./quick/260407-jem-fix-pdf-insights-section-cutoff-bug-prin/) |
+| 260407-q7d | Disable misleading folder watching UI in Settings (feature deleted in phase 46, UI remained) | 2026-04-08 | bda9943 | [260407-q7d-disable-misleading-folder-watching-ui-in](./quick/260407-q7d-disable-misleading-folder-watching-ui-in/) |
 
 ### Roadmap Evolution
 
