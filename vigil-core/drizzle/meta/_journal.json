@@ -22,6 +22,13 @@
       "when": 1775428828069,
       "tag": "0002_fixed_runaways",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1775623424633,
+      "tag": "0003_serious_wonder_man",
+      "breakpoints": true
     }
   ]
 }

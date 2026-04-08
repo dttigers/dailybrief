@@ -1,0 +1,13 @@
+CREATE TABLE "projects" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"status" text,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+ALTER TABLE "thoughts" ADD COLUMN "project_id" integer;--> statement-breakpoint
+CREATE INDEX "idx_projects_created_at" ON "projects" USING btree ("created_at");--> statement-breakpoint
+ALTER TABLE "thoughts" ADD CONSTRAINT "thoughts_project_id_projects_id_fk" FOREIGN KEY ("project_id") REFERENCES "public"."projects"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+CREATE INDEX "idx_thoughts_project_id" ON "thoughts" USING btree ("project_id");
