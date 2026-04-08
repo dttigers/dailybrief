@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v2.3
 milestone_name: Projects & Precision
 status: executing
-stopped_at: Completed 56-01-PLAN.md
-last_updated: "2026-04-08T21:26:35.390Z"
+stopped_at: Completed 57-cross-machine-bootstrap-script-01-PLAN.md
+last_updated: "2026-04-08T21:33:25.237Z"
 last_activity: 2026-04-08 -- Phase 57 planning complete
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 14
-  completed_plans: 12
-  percent: 86
+  completed_plans: 13
+  percent: 93
 ---
 
 # Project State
@@ -54,6 +54,7 @@ Progress: [███████████████████████
 | v2.2 Polish & Power | 45-50 | 12 | 1 day |
 | Phase 55 P01 | 5 | 3 tasks | 2 files |
 | Phase 56 P01 | 25 | 5 tasks | 6 files |
+| Phase 57-cross-machine-bootstrap-script P01 | 30 | 3 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,8 @@ Recent decisions affecting v2.3:
 - [Phase 55]: Phase 55 closed as NO-OP — Dockerfile CMD chain already runs migrations on every Railway deploy since Phase 39-01 (2026-04-05); D-04 preDeployCommand and D-05 CI check deferred
 - [Phase 56]: loadConfig surfaces deploy_targets as flattened top-level field — cfg.deploy_targets not cfg.workflow.deploy_targets
 - [Phase 56]: git log ERE grep with non-digit boundary prevents false-match on 3-digit phase numbers
+- [Phase 57-cross-machine-bootstrap-script]: D-13 honored: health check is HTTP 200 ONLY — status:degraded accepted as steady state since Mac apps talk to Railway not localhost
+- [Phase 57-cross-machine-bootstrap-script]: restore_op_document() helper function used over inline op calls for DRY fail-loud error messages
 
 ### Pending Todos
 
@@ -94,6 +97,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-08T20:41:31.028Z
-Stopped at: Completed 56-01-PLAN.md
+Last session: 2026-04-08T21:33:25.232Z
+Stopped at: Completed 57-cross-machine-bootstrap-script-01-PLAN.md
 Resume file: None
