@@ -810,13 +810,19 @@ func assignThoughtToProject(thoughtId: Int64, projectId: Int64?) async {
 
 **Assumptions A2 and A4 are the load-bearing ones.** Both should be validated with a 5-minute spike at the start of Wave 2.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should `Project` be `Identifiable` by `Int64` or wrap an optional?** — Server `serial` is non-null, so `id: Int64` (non-optional) is correct. Different from `Thought` which has `Int64?` because client creates Thoughts before insert. The planner should verify this distinction is preserved.
 
+   **RESOLVED:** `Project.id` is non-optional `Int64` (server serial is non-null). `Thought.id` remains `Int64?` for the unsaved-client-side case. Implemented in 53-02 Task 1 (`Sources/JarvisCore/Models/Project.swift`).
+
 2. **Should the `+ New Project…` menu item in `ProjectPickerMenu` open the same `NewProjectSheet` and auto-assign on success?** — UI-SPEC implies yes. The flow: user clicks "+ New Project…" from a thought row → `NewProjectSheet` opens with a `pendingAssignToThoughtId` flag → on Create success, the new project is created AND immediately assigned to the originating thought via the assign code path. Plan should make this single-shot atomic from the user's POV (one sheet, one click, both project and assignment happen).
 
+   **RESOLVED:** Yes — `+ New Project…` opens `NewProjectSheet` and auto-assigns on success via a single-shot `pendingAssignToThoughtId` state. Implemented in 53-04 Task 2 Edit 3.
+
 3. **Where does the `assignmentError` banner render?** — Above the entire thought list? Or above the specific row? Above the row is more contextual but harder (requires per-row state). Above the list is simpler. **Recommend: above the list, with the offending thought's content snippet in the message.** Auto-dismiss after 4 seconds.
+
+   **RESOLVED:** Above the thought list, with 4-second auto-dismiss. Implemented in 53-03 Task 2 Edit 6.
 
 ## Metadata
 
