@@ -88,6 +88,22 @@ cat > "$MONITOR_PLIST" <<PLIST
 </plist>
 PLIST
 
+# ============================================================================
+# WARNING: do not invoke this script from inside the managed DailyBriefMonitor
+# process. The `launchctl bootout` call below targets
+# com.jamesonmorrill.dailybriefmonitor — which IS the menu bar process when
+# running under launchd. bootout sends SIGTERM to the caller, killing
+# UpdateService mid-lifecycle before writeHandoff() / trampoline / exit(0)
+# can run. See .planning/phases/51-menu-bar-update-action/51-VERIFICATION.md
+# (Gap 1) and 51-04-PLAN.md for the full root cause.
+#
+# In-process updates use UpdateService.installBuiltBinaries() (inline Swift cp)
+# and the /tmp/vigil-reload.sh trampoline, which calls
+# `launchctl kickstart -k` AFTER the menu bar has called exit(0).
+#
+# This script remains the correct path for first-install / terminal bootstrap.
+# ============================================================================
+
 # 7. Load/reload the monitor LaunchAgent
 echo "Loading LaunchAgent..."
 GUI_DOMAIN="gui/$(id -u)"
