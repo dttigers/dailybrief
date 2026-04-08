@@ -230,7 +230,7 @@ Plans:
   3. A companion drift check surfaces when an existing setup has diverged across the 4 places API keys live (config.json, .env, plist, Railway)
 **Plans**: 2 plans
 - [x] 57-01-PLAN.md — bootstrap.sh orchestrator (D-08 10-step: pre-flight, 1P restore, vigil-core build, launchctl load, install.sh delegation, HTTP 200 health check, --check shim)
-- [ ] 57-02-PLAN.md — dailybrief-doctor.sh (READ-ONLY drift doctor: ANTHROPIC 4-places, VIGIL bearer single-source, informational health row)
+- [x] 57-02-PLAN.md — dailybrief-doctor.sh (READ-ONLY drift doctor: ANTHROPIC 4-places, VIGIL bearer single-source, informational health row)
 **Context**: See `.planning/phases/57-cross-machine-bootstrap-script/57-CONTEXT.md` for the cross-machine portability scenario and open questions
 
 ## Domain Expertise
@@ -297,7 +297,7 @@ None
 | 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |
 | 55. Auto-run drizzle migrations on Railway deploy | v2.3 | 1/1 | Complete   | 2026-04-08 |
 | 56. Push origin on phase-complete for backend phases | v2.3 | 1/1 | Complete    | 2026-04-08 |
-| 57. Cross-machine bootstrap script | v2.3 | 1/2 | In Progress|  |
+| 57. Cross-machine bootstrap script | v2.3 | 2/2 | Complete   | 2026-04-08 |
 
 ## Backlog
 
