@@ -160,7 +160,7 @@ Plans:
   4. Thoughts currently categorized as "project" are returned by the API with their category intact and can be fetched without a project assignment
 **Plans**: 2 plans
 Plans:
-- [ ] 52-01-PLAN.md — Schema + migrations (projects table, nullable project_id FK on thoughts, ON DELETE SET NULL, apply locally + verify)
+- [x] 52-01-PLAN.md — Schema + migrations (projects table, nullable project_id FK on thoughts, ON DELETE SET NULL, apply locally + verify)
 - [ ] 52-02-PLAN.md — Routes + mount (Hono CRUD router, validation, bearer auth, smoke-test)
 
 ### Phase 53: Projects Dashboard UI
@@ -246,6 +246,6 @@ None
 | 49. Configurable PDF | v2.2 | 2/2 | Complete | 2026-04-05 |
 | 50. Dashboard AI Chat | v2.2 | 2/2 | Complete | 2026-04-05 |
 | 51. Menu Bar Update Action | v2.3 | 4/4 | Complete   | 2026-04-08 |
-| 52. Projects Backend | v2.3 | 0/2 | Not started | - |
+| 52. Projects Backend | v2.3 | 1/2 | In Progress|  |
 | 53. Projects Dashboard UI | v2.3 | 0/TBD | Not started | - |
 | 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |
