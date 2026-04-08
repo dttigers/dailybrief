@@ -127,7 +127,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 ### Phases
 
 - [x] **Phase 51: Menu Bar Update Action** - One-click rebuild/reinstall/reload of Vigil binaries from DailyBriefMonitor (completed 2026-04-08)
-- [ ] **Phase 52: Projects Backend** - PostgreSQL schema, Drizzle migration, and full CRUD REST API for projects
+- [x] **Phase 52: Projects Backend** - PostgreSQL schema, Drizzle migration, and full CRUD REST API for projects (completed 2026-04-08)
 - [ ] **Phase 53: Projects Dashboard UI** - Per-project views, thought assignment/move/unassign, and status filtering in the Mac dashboard
 - [ ] **Phase 54: Smart Photo Upload** - Paper-type detection, verbatim split/single transcription, and user override in Mac app
 
@@ -161,7 +161,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 52-01-PLAN.md — Schema + migrations (projects table, nullable project_id FK on thoughts, ON DELETE SET NULL, apply locally + verify)
-- [ ] 52-02-PLAN.md — Routes + mount (Hono CRUD router, validation, bearer auth, smoke-test)
+- [x] 52-02-PLAN.md — Routes + mount (Hono CRUD router, validation, bearer auth, smoke-test)
 
 ### Phase 53: Projects Dashboard UI
 **Goal**: User can manage projects and assign thoughts to them entirely from the Mac dashboard
@@ -246,6 +246,6 @@ None
 | 49. Configurable PDF | v2.2 | 2/2 | Complete | 2026-04-05 |
 | 50. Dashboard AI Chat | v2.2 | 2/2 | Complete | 2026-04-05 |
 | 51. Menu Bar Update Action | v2.3 | 4/4 | Complete   | 2026-04-08 |
-| 52. Projects Backend | v2.3 | 1/2 | In Progress|  |
+| 52. Projects Backend | v2.3 | 2/2 | Complete   | 2026-04-08 |
 | 53. Projects Dashboard UI | v2.3 | 0/TBD | Not started | - |
 | 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |
