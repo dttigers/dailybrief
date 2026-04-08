@@ -130,4 +130,101 @@ done
 echo "  pre-flight OK (op signed in, node/npm/swift present)"
 echo ""
 
-# --- Task 2 appends here ---
+# ----------------------------------------------------------------------------
+# Step 3: Restore secrets from 1Password (D-08 step 3, D-02)
+# ----------------------------------------------------------------------------
+echo "=== Vigil Bootstrap: Secrets Restore ==="
+mkdir -p "$CONFIG_DIR"
+mkdir -p "$LAUNCH_AGENTS_DIR"
+
+restore_op_document() {
+    local item="$1"
+    local out_path="$2"
+    echo "  restoring $item → $out_path"
+    # Verify the item exists before attempting restore (cleaner error message)
+    if ! op item get "$item" >/dev/null 2>&1; then
+        echo "error: 1Password item '$item' not found in your vault." >&2
+        echo "" >&2
+        echo "Create it with:" >&2
+        echo "  op document create $out_path --title '$item'" >&2
+        echo "" >&2
+        echo "(You must have the original file on a machine that already has it." >&2
+        echo " See the header comment in this script for the full vault contract.)" >&2
+        exit 1
+    fi
+    # --out writes the document content to the specified file, overwriting if present.
+    # Ref: https://developer.1password.com/docs/cli/reference/commands/document/get/
+    op document get "$item" --out "$out_path" --force 2>/dev/null \
+        || op document get "$item" --out "$out_path"
+}
+
+restore_op_document "$OP_ITEM_CONFIG" "$CONFIG_JSON"
+restore_op_document "$OP_ITEM_GCAL"   "$GCAL_TOKENS"
+restore_op_document "$OP_ITEM_PLIST"  "$VIGILCORE_PLIST"
+
+# Sanity: config.json must parse as JSON after restore
+if ! /usr/bin/python3 -c "import json; json.load(open('$CONFIG_JSON'))" 2>/dev/null; then
+    echo "error: restored $CONFIG_JSON is not valid JSON. Check the 1P document contents." >&2
+    exit 1
+fi
+echo "  secrets restored"
+echo ""
+
+# ----------------------------------------------------------------------------
+# Step 5: Build vigil-core (D-08 step 5)
+# ----------------------------------------------------------------------------
+echo "=== Vigil Bootstrap: vigil-core build ==="
+if [[ ! -d "$VIGIL_CORE_DIR" ]]; then
+    echo "error: vigil-core directory not found at $VIGIL_CORE_DIR" >&2
+    echo "Are you running this from inside the dailybrief repo?" >&2
+    exit 1
+fi
+(
+    cd "$VIGIL_CORE_DIR"
+    echo "  npm install..."
+    npm install
+    echo "  npm run build..."
+    npm run build
+)
+echo "  vigil-core built"
+echo ""
+
+# ----------------------------------------------------------------------------
+# Step 6: Ensure .env exists, then sync ANTHROPIC_API_KEY (D-08 step 6)
+# ----------------------------------------------------------------------------
+echo "=== Vigil Bootstrap: .env + key sync ==="
+
+# Seed .env from template only if missing (idempotent: never overwrite existing .env)
+if [[ ! -f "$ENV_FILE" ]]; then
+    if [[ -f "$VIGIL_CORE_DIR/.env.example" ]]; then
+        cp "$VIGIL_CORE_DIR/.env.example" "$ENV_FILE"
+        echo "  seeded $ENV_FILE from vigil-core/.env.example"
+    else
+        touch "$ENV_FILE"
+        echo "  created empty $ENV_FILE (no .env.example template found)"
+    fi
+else
+    echo "  $ENV_FILE already exists — leaving in place"
+fi
+
+# Run sync-anthropic-key.sh to propagate ai.claude_api_key → .env + plist + Railway.
+# This script is already idempotent and uses replace-or-append patterns.
+# It also reloads the vigil-core LaunchAgent as a side effect; we reload again
+# explicitly in step 7 for clarity, but the unload-then-load pattern is safe.
+"$SCRIPT_DIR/sync-anthropic-key.sh"
+echo ""
+
+# ----------------------------------------------------------------------------
+# Step 7: Load vigil-core LaunchAgent (D-08 step 7)
+# ----------------------------------------------------------------------------
+echo "=== Vigil Bootstrap: vigil-core LaunchAgent ==="
+GUI_DOMAIN="gui/$(id -u)"
+
+# Idempotent load: bootout first (ignore errors if not loaded), then bootstrap.
+# Matches install.sh pattern for the Monitor plist.
+launchctl bootout "$GUI_DOMAIN/$VIGILCORE_LABEL" 2>/dev/null || true
+launchctl bootstrap "$GUI_DOMAIN" "$VIGILCORE_PLIST"
+echo "  $VIGILCORE_LABEL bootstrapped"
+echo ""
+
+# --- Task 3 appends here ---
