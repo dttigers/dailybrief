@@ -428,21 +428,21 @@ private func lastNLines(_ output: String, _ n: Int) -> String {
 | A4 | The handoff file should live at `~/Library/Application Support/DailyBrief/last-update.json` — the directory does NOT currently exist | Pattern 5 | Already noted as a pitfall (#5). Verified absent. [VERIFIED: shell probe] |
 | A5 | macOS 14+ `#filePath` literal is preserved through SwiftPM release builds (not stripped) | D-08, Pattern 2 | If stripped, `RepoLocation.path` becomes empty/garbage and the whole phase falls over. Mitigation: trivial unit test — print `RepoLocation.path` from a release build. [ASSUMED — `#filePath` is documented as a literal expansion at parse time, which means the string is baked into the binary. Standard Swift behavior, but unverified for this codebase's exact build flags] |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the no-op gate run `swift build` first, or check mtimes first?**
    - Argument for `swift build` first: D-05 explicitly says SwiftPM is the source of truth. Always running it ensures no stale bytecode survives.
    - Argument for mtime first: If installed binaries are newer than build dir (because the user just ran `Scripts/install.sh` from the terminal), we can skip `swift build` entirely and report no-op in <100ms.
-   - **Recommendation:** Run `swift build` always (D-05 wins), then mtime-gate the install. The 1-2s build is the worst case and is fine.
+   - **RESOLVED — Recommendation:** Run `swift build` always (D-05 wins), then mtime-gate the install. The 1-2s build is the worst case and is fine.
 
 2. **If `swift build` itself fails (compilation error), what status string?**
-   - Recommendation: `.failed("Build error")` with the last 20 lines of stderr exactly as D-12 describes for install failures. Treat build failure as the same UX as install failure.
+   - **RESOLVED — Recommendation:** `.failed("Build error")` with the last 20 lines of stderr exactly as D-12 describes for install failures. Treat build failure as the same UX as install failure.
 
 3. **Does `launchctl kickstart -k` race the KeepAlive respawn?**
-   - Both lead to "fresh process running new binary", so even a race is benign. But it's worth documenting that the test for "did this work" is "is the new binary running 2 seconds after I clicked", not "did kickstart specifically fire".
+   - **RESOLVED — Recommendation:** Both lead to "fresh process running new binary", so even a race is benign. The test for "did this work" is "is the new binary running 2 seconds after I clicked", not "did kickstart specifically fire".
 
 4. **Should `Scripts/install.sh` itself be modified to detect "called from monitor" mode?**
-   - Recommendation: **No.** D-01 says install.sh stays the single source of truth. Adding mode flags creates exactly the drift the decision was meant to prevent. The "no-op" UX lives entirely in Swift, not in the script.
+   - **RESOLVED — Recommendation:** **No.** D-01 says install.sh stays the single source of truth. Adding mode flags creates exactly the drift the decision was meant to prevent. The "no-op" UX lives entirely in Swift, not in the script.
 
 ## Environment Availability
 
