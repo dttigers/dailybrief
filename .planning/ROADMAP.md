@@ -194,6 +194,7 @@ Plans:
 
 ### Phase 55: Auto-run drizzle migrations on Railway deploy
 **Goal**: Schema changes to vigil-core land on Railway Postgres automatically when a commit is pushed — no manual `npx tsx src/db/migrate.ts` step required
+**Status**: NO-OP (verified 2026-04-08) — already implemented in Phase 39-01 via Dockerfile CMD chain. See 55-CONTEXT.md D-01.
 **Depends on**: None (vigil-core infra)
 **Requirements**: TBD
 **Success Criteria** (what must be TRUE):
