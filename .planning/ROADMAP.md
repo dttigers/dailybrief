@@ -128,7 +128,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 - [x] **Phase 51: Menu Bar Update Action** - One-click rebuild/reinstall/reload of Vigil binaries from DailyBriefMonitor (completed 2026-04-08)
 - [x] **Phase 52: Projects Backend** - PostgreSQL schema, Drizzle migration, and full CRUD REST API for projects (completed 2026-04-08)
-- [ ] **Phase 53: Projects Dashboard UI** - Per-project views, thought assignment/move/unassign, and status filtering in the Mac dashboard
+- [x] **Phase 53: Projects Dashboard UI** - Per-project views, thought assignment/move/unassign, and status filtering in the Mac dashboard (completed 2026-04-08)
 - [ ] **Phase 54: Smart Photo Upload** - Paper-type detection, verbatim split/single transcription, and user override in Mac app
 
 ## Phase Details
@@ -178,7 +178,7 @@ Plans:
 - [x] 53-01-PLAN.md — Backend route extensions: GET projectId/unassigned filters, PUT projectId whitelist + FK check, toResponse round-trip, smoke test script
 - [x] 53-02-PLAN.md — JarvisCore foundation: Project model, ProjectsRepository/ProjectsAPIStore, VigilAPIClient.patch, Thought.projectId, APIThoughtStore extensions, AppDelegate DI
 - [x] 53-03-PLAN.md — DashboardViewModel CategoryFilter cases + projects state + CRUD methods; DashboardView Projects sidebar Section + status filter + delete Alert + assignmentError banner (human-verify)
-- [ ] 53-04-PLAN.md — NewProjectSheet (create+edit) + ThoughtRowView nested Project menu + optimistic assignThoughtToProject with revert (human-verify)
+- [x] 53-04-PLAN.md — NewProjectSheet (create+edit) + ThoughtRowView nested Project menu + optimistic assignThoughtToProject with revert (human-verify)
 
 ### Phase 54: Smart Photo Upload
 **Goal**: Uploading a photo of handwritten notes produces verbatim, correctly-split thoughts based on the paper type, with user control over the detection
@@ -215,7 +215,7 @@ Plans:
   2. Completing a Mac-only phase has no behavior change
   3. The 53-04 scenario — verifying a feature against a stale deployed backend — becomes structurally impossible
   4. Deploy targets are configurable per-subdirectory in `.planning/config.json` so the rule only fires for paths that actually deploy
-**Plans:** 1/1 plans complete
+**Plans:** 4/4 plans complete
 Plans:
 - [x] 56-01-PLAN.md — Register workflow.deploy_targets, implement maybePushPhaseCommits in phase.cjs, opt dailybrief into ["vigil-core"], add zero-behavior-change harness, clean stale ROADMAP dependency
 **Context**: See `.planning/phases/56-push-origin-on-phase-complete-for-backend-phases/56-CONTEXT.md` for the 68-commits-stale incident from Phase 53-04 and open questions
@@ -293,7 +293,7 @@ None
 | 50. Dashboard AI Chat | v2.2 | 2/2 | Complete | 2026-04-05 |
 | 51. Menu Bar Update Action | v2.3 | 4/4 | Complete   | 2026-04-08 |
 | 52. Projects Backend | v2.3 | 2/2 | Complete    | 2026-04-08 |
-| 53. Projects Dashboard UI | v2.3 | 3/4 | In Progress|  |
+| 53. Projects Dashboard UI | v2.3 | 4/4 | Complete    | 2026-04-08 |
 | 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |
 | 55. Auto-run drizzle migrations on Railway deploy | v2.3 | 1/1 | Complete   | 2026-04-08 |
 | 56. Push origin on phase-complete for backend phases | v2.3 | 1/1 | Complete    | 2026-04-08 |
