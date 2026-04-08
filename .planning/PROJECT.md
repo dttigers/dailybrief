@@ -1,15 +1,16 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current Milestone: v2.3 Projects & Precision
+## Current State: v2.3 Projects & Precision SHIPPED (2026-04-08)
 
-**Goal:** Organize Vigil around real-world projects, make photo ingest smart enough to tell individual thoughts apart from project work, and replace the install.sh dev loop with a one-click update from the menu bar.
+**Delivered:** Menu-bar one-click update, projects as first-class entities with optimistic UI assign/move/unassign, and three promoted-from-backlog infrastructure wins (Phase 55 NO-OP verification, Phase 56 push-on-complete hook, Phase 57 cross-machine bootstrap + drift doctor). 6 phases shipped, 14 plans, 11/17 requirements complete, PHOTO-01..06 deferred to v2.4.
 
-**Target features:**
-- Menu bar update action (rebuild/reinstall/reload from DailyBriefMonitor, no terminal)
-- Projects as first-class entities (own page view, manual assignment, optional status, personal only)
-- Smart photo upload with paper-type detection (lined → split thoughts, gridded → single thought; verbatim transcription; user override)
+**Notable outcome:** Phase 56's push hook fired for real during Phase 53 complete, pushing 22 backlogged commits to origin — the exact 53-04 bug it was built to prevent would have recurred otherwise.
 
-**Deferred:** G2 physical hardware validation (glasses arriving ~1 week from milestone start)
+## Next Milestone: v2.4 (TBD)
+
+Run `/gsd-new-milestone v2.4` to define. Carry forward: Phase 54 Smart Photo Upload + 6 PHOTO-XX requirements (see `.planning/deferred-to-v2.4.md`).
+
+**Deferred:** G2 physical hardware validation (glasses awaited)
 
 ## What This Is
 
@@ -73,13 +74,15 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Export system — thoughts as JSON, CSV, or Markdown via API and CLI — v2.2
 - ✓ Configurable PDF — paper size, margins, font scale, section toggles — v2.2
 - ✓ Dashboard AI chat — multi-turn Claude conversation with thought context injection — v2.2
+- ✓ Menu bar update action — one-click rebuild/reinstall/reload from DailyBriefMonitor, replaces install.sh dev loop — v2.3
+- ✓ Projects as first-class entities — named projects with per-project dashboard views, optimistic assign/move/unassign, NewProjectSheet with create+edit modes, status filter — v2.3
+- ✓ Push-on-phase-complete structural fix — `gsd phase complete` auto-pushes deploy-target commits; first real fire during Phase 53 UAT pushed 22 backlogged commits — v2.3
+- ✓ Cross-machine bootstrap + drift doctor — `scripts/bootstrap.sh` (1Password CLI + 10-step orchestration) and `scripts/dailybrief-doctor.sh` (read-only ANTHROPIC + VIGIL bearer drift detection) — v2.3
 
-### Active (v2.3 Projects & Precision)
+### Active (v2.4 — TBD)
 
-- [ ] Menu bar update action — one-click rebuild/reinstall/reload from DailyBriefMonitor (replaces install.sh dev loop)
-- [ ] Projects as first-class entities — individual named projects with own dashboard view, manual assignment, optional status (personal only, no work order linkage)
-- [ ] Smart photo upload — paper-type detection (lined = split to thoughts, gridded = single project thought), verbatim transcription, user override
-- [ ] G2 hardware testing — deferred until physical Even G2 glasses arrive (~1 week from 2026-04-07)
+- [ ] Smart photo upload — paper-type detection (lined = split to thoughts, gridded = single project thought), verbatim transcription, user override — *deferred from v2.3*
+- [ ] G2 hardware testing — deferred until physical Even G2 glasses arrive
 
 ### Out of Scope
 
@@ -95,14 +98,14 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
-Started v2.3 Projects & Precision (2026-04-07) — focus on project organization, smarter photo ingest, and tighter dev loop.
+Shipped v2.3 Projects & Precision (2026-04-08) — projects as first-class entities, menu-bar update action, and 3 promoted-from-backlog infrastructure wins (auto-migrate verification, push-on-complete hook, bootstrap + drift doctor). Phase 54 Smart Photo Upload deferred to v2.4.
 Shipped v2.2 Polish & Power — platform is fully API-only, all local code paths retired.
 Tech stack: Swift 6.2/SwiftUI/SPM (Mac app, ~12,900 LOC), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API, ~5,000 LOC), Vite/TypeScript/Even Hub SDK (G2 plugin).
 3 client surfaces all connected to production: Mac app (dashboard + capture + PDF brief + AI chat), Vigil Core API (Railway, 20+ REST endpoints), Even G2 plugin (3 screens + task detail).
 Features added in v2.2: brief history browsing, thought export (JSON/CSV/MD), configurable PDF layout, dashboard AI chat with thought context.
 API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s timeouts, security headers, and CORS.
 G2 plugin configured for production but awaiting physical hardware for validation.
-50 phases and 111+ plans completed across 8 milestones in ~11 days.
+56 phases and 125+ plans completed across 9 milestones in ~12 days.
 
 ## Constraints
 
@@ -155,4 +158,4 @@ G2 plugin configured for production but awaiting physical hardware for validatio
 | Retire local GRDB/CloudKit/AI in v2.2 | API backend proven stable in v2.1; dual code paths were maintenance burden | ✓ Good |
 
 ---
-*Last updated: 2026-04-07 — started v2.3 Projects & Precision milestone*
+*Last updated: 2026-04-08 — shipped v2.3 Projects & Precision milestone*

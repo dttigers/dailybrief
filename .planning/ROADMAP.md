@@ -14,7 +14,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.0 Vigil Platform** — Phases 29-36 (shipped 2026-04-04)
 - ✅ **v2.1 Server Deployment** — Phases 37-44 (shipped 2026-04-05)
 - ✅ **v2.2 Polish & Power** — Phases 45-50 (shipped 2026-04-05)
-- 🚧 **v2.3 Projects & Precision** — Phases 51-57 (in progress)
+- ✅ **v2.3 Projects & Precision** — Phases 51-53, 55-57 (shipped 2026-04-08; Phase 54 deferred to v2.4)
 
 ## Completed Milestones
 
@@ -120,19 +120,35 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
-## 🚧 v2.3 Projects & Precision (In Progress)
+<details>
+<summary>✅ v2.3 Projects & Precision (Phases 51-53, 55-57) — SHIPPED 2026-04-08</summary>
 
-**Milestone Goal:** Organize Vigil around real-world projects, make photo ingest smart enough to tell individual thoughts apart from project work, and replace the install.sh dev loop with a one-click update from the menu bar.
+- [x] Phase 51: Menu Bar Update Action (4/4 plans) — completed 2026-04-08
+- [x] Phase 52: Projects Backend (2/2 plans) — completed 2026-04-08
+- [x] Phase 53: Projects Dashboard UI (4/4 plans) — completed 2026-04-08
+- [→] Phase 54: Smart Photo Upload — deferred to v2.4 (see `.planning/deferred-to-v2.4.md`)
+- [x] Phase 55: Auto-run drizzle migrations on Railway deploy (1/1 plan, NO-OP verified) — completed 2026-04-08
+- [x] Phase 56: Push origin on phase-complete for backend phases (1/1 plan — first real fire during Phase 53 complete) — completed 2026-04-08
+- [x] Phase 57: Cross-machine bootstrap script (2/2 plans — bootstrap.sh + dailybrief-doctor.sh) — completed 2026-04-08
 
-### Phases
+**Archive:** [.planning/milestones/v2.3-ROADMAP.md](milestones/v2.3-ROADMAP.md) · [.planning/milestones/v2.3-REQUIREMENTS.md](milestones/v2.3-REQUIREMENTS.md)
 
-- [x] **Phase 51: Menu Bar Update Action** - One-click rebuild/reinstall/reload of Vigil binaries from DailyBriefMonitor (completed 2026-04-08)
-- [x] **Phase 52: Projects Backend** - PostgreSQL schema, Drizzle migration, and full CRUD REST API for projects (completed 2026-04-08)
-- [x] **Phase 53: Projects Dashboard UI** - Per-project views, thought assignment/move/unassign, and status filtering in the Mac dashboard (completed 2026-04-08)
-- [ ] **Phase 54: Smart Photo Upload** - Paper-type detection, verbatim split/single transcription, and user override in Mac app
+</details>
+
+## Next Milestone (v2.4 — TBD)
+
+Run `/gsd-new-milestone v2.4` to define requirements and phases.
+
+**Carry forward:** Phase 54 "Smart Photo Upload" + 6 PHOTO-XX requirements — see [.planning/deferred-to-v2.4.md](deferred-to-v2.4.md)
 
 ## Phase Details
 
+_Shipped phase details archived to `.planning/milestones/v[X.Y]-ROADMAP.md`. Active phases only below._
+
+### (None — run `/gsd-new-milestone v2.4` to begin the next milestone)
+
+<!-- ARCHIVED_V2_3_PHASE_DETAILS_REMOVED_ON_2026-04-08 -->
+<!--
 ### Phase 51: Menu Bar Update Action
 **Goal**: User can rebuild and reinstall the Vigil binaries without opening a terminal, with live status feedback in the menu bar
 **Depends on**: Phase 50 (v2.2 complete)
@@ -180,18 +196,6 @@ Plans:
 - [x] 53-03-PLAN.md — DashboardViewModel CategoryFilter cases + projects state + CRUD methods; DashboardView Projects sidebar Section + status filter + delete Alert + assignmentError banner (human-verify)
 - [x] 53-04-PLAN.md — NewProjectSheet (create+edit) + ThoughtRowView nested Project menu + optimistic assignThoughtToProject with revert (human-verify)
 
-### Phase 54: Smart Photo Upload
-**Goal**: Uploading a photo of handwritten notes produces verbatim, correctly-split thoughts based on the paper type, with user control over the detection
-**Depends on**: Phase 52
-**Requirements**: PHOTO-01, PHOTO-02, PHOTO-03, PHOTO-04, PHOTO-05, PHOTO-06
-**Success Criteria** (what must be TRUE):
-  1. Uploading a photo automatically detects whether the paper is lined or gridded before creating any thoughts
-  2. A lined-paper photo produces multiple separate thoughts — one per distinct line, bullet, or paragraph — with verbatim handwriting transcription
-  3. A gridded-paper photo produces a single thought with verbatim handwriting transcription
-  4. The Mac app upload UI offers a paper-type override (force "lined" or "gridded") that takes precedence over the auto-detection
-  5. When detection confidence is low, the system falls back to the user-configured default and the UI surfaces a warning that detection was uncertain
-**Plans**: TBD
-
 ### Phase 55: Auto-run drizzle migrations on Railway deploy
 **Goal**: Schema changes to vigil-core land on Railway Postgres automatically when a commit is pushed — no manual `npx tsx src/db/migrate.ts` step required
 **Status**: NO-OP (verified 2026-04-08) — already implemented in Phase 39-01 via Dockerfile CMD chain. See 55-CONTEXT.md D-01.
@@ -232,6 +236,7 @@ Plans:
 - [x] 57-01-PLAN.md — bootstrap.sh orchestrator (D-08 10-step: pre-flight, 1P restore, vigil-core build, launchctl load, install.sh delegation, HTTP 200 health check, --check shim)
 - [x] 57-02-PLAN.md — dailybrief-doctor.sh (READ-ONLY drift doctor: ANTHROPIC 4-places, VIGIL bearer single-source, informational health row)
 **Context**: See `.planning/phases/57-cross-machine-bootstrap-script/57-CONTEXT.md` for the cross-machine portability scenario and open questions
+-->
 
 ## Domain Expertise
 
@@ -294,7 +299,7 @@ None
 | 51. Menu Bar Update Action | v2.3 | 4/4 | Complete   | 2026-04-08 |
 | 52. Projects Backend | v2.3 | 2/2 | Complete    | 2026-04-08 |
 | 53. Projects Dashboard UI | v2.3 | 4/4 | Complete    | 2026-04-08 |
-| 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |
+| 54. Smart Photo Upload | v2.4 | 0/TBD | Deferred → v2.4 | - |
 | 55. Auto-run drizzle migrations on Railway deploy | v2.3 | 1/1 | Complete   | 2026-04-08 |
 | 56. Push origin on phase-complete for backend phases | v2.3 | 1/1 | Complete    | 2026-04-08 |
 | 57. Cross-machine bootstrap script | v2.3 | 2/2 | Complete    | 2026-04-08 |
