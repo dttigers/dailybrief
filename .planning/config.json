@@ -25,6 +25,7 @@
   "granularity": "fine",
   "workflow": {
     "_auto_chain_active": false,
-    "use_worktrees": true
+    "use_worktrees": true,
+    "deploy_targets": ["vigil-core"]
   }
 }
