@@ -3,6 +3,7 @@ import AppKit
 
 struct MenuBarView: View {
     @Bindable var checker: StatusChecker
+    @Bindable var updater: UpdateService
     var scheduler: BriefScheduler?
     var onDashboard: () -> Void
     var onCapture: () -> Void
@@ -14,6 +15,18 @@ struct MenuBarView: View {
                 .font(.headline)
 
             Divider()
+
+            // Update status row (D-10: status row at top of dropdown)
+            HStack {
+                updateStatusIcon
+                VStack(alignment: .leading) {
+                    Text("Update")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(updateStatusText)
+                        .font(.caption)
+                }
+            }
 
             // Status
             HStack {
@@ -80,6 +93,30 @@ struct MenuBarView: View {
             }
             .disabled(checker.isRunning)
 
+            // Update Vigil button (D-10 — mirrors Run Now exactly)
+            Button {
+                updater.updateNow()
+            } label: {
+                Label(updateButtonLabel, systemImage: updateButtonIcon)
+            }
+            .disabled(updater.isRunning)
+
+            // Failure tail + Open Full Log (D-12)
+            if case .failed(let tail) = updater.status {
+                Text(tail)
+                    .font(.system(.caption2, design: .monospaced))
+                    .foregroundStyle(.red)
+                    .lineLimit(20)
+                    .textSelection(.enabled)
+                    .padding(4)
+                    .background(Color.red.opacity(0.08))
+                Button {
+                    NSWorkspace.shared.open(URL(fileURLWithPath: updater.logFilePath))
+                } label: {
+                    Label("Open Full Log", systemImage: "doc.text.magnifyingglass")
+                }
+            }
+
             Button {
                 NSWorkspace.shared.open(URL(fileURLWithPath: checker.logFilePath))
             } label: {
@@ -100,6 +137,46 @@ struct MenuBarView: View {
             .keyboardShortcut("q")
         }
         .padding(8)
+    }
+
+    // Update button label cycling (D-10)
+    private var updateButtonLabel: String {
+        switch updater.status {
+        case .idle: return "Update Vigil"
+        case .running: return "Updating…"
+        case .upToDate: return "✓ Up to date"
+        case .updated(let sha): return "✓ Updated to \(sha)"
+        case .failed: return "✗ Build failed"
+        }
+    }
+
+    private var updateButtonIcon: String {
+        updater.isRunning ? "arrow.triangle.2.circlepath" : "arrow.down.circle"
+    }
+
+    // Update status row text + icon
+    private var updateStatusText: String {
+        switch updater.status {
+        case .idle: return "Idle"
+        case .running: return "Updating…"
+        case .upToDate: return "Up to date"
+        case .updated(let sha): return "Installed: \(sha)"
+        case .failed: return "Last attempt failed"
+        }
+    }
+
+    @ViewBuilder
+    private var updateStatusIcon: some View {
+        switch updater.status {
+        case .running:
+            Image(systemName: "arrow.triangle.2.circlepath").foregroundStyle(.blue)
+        case .upToDate, .updated:
+            Image(systemName: "checkmark.circle.fill").foregroundStyle(.green)
+        case .failed:
+            Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.red)
+        case .idle:
+            Image(systemName: "arrow.down.circle").foregroundStyle(.secondary)
+        }
     }
 
     private func formatNextRunTime(_ date: Date) -> String {
