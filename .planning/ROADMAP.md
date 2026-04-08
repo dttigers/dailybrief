@@ -228,7 +228,9 @@ Plans:
   1. A single command on a fresh machine produces a working Vigil dev environment: secrets restored, launchd loaded, vigil-core built, Mac apps built, `http://localhost:3001/v1/health` responding
   2. Secrets travel through a known, secure transport (1Password CLI or equivalent) — no manual copy-paste of API keys
   3. A companion drift check surfaces when an existing setup has diverged across the 4 places API keys live (config.json, .env, plist, Railway)
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 57-01-PLAN.md — bootstrap.sh orchestrator (D-08 10-step: pre-flight, 1P restore, vigil-core build, launchctl load, install.sh delegation, HTTP 200 health check, --check shim)
+- [ ] 57-02-PLAN.md — dailybrief-doctor.sh (READ-ONLY drift doctor: ANTHROPIC 4-places, VIGIL bearer single-source, informational health row)
 **Context**: See `.planning/phases/57-cross-machine-bootstrap-script/57-CONTEXT.md` for the cross-machine portability scenario and open questions
 
 ## Domain Expertise
