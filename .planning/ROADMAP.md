@@ -215,9 +215,9 @@ Plans:
   2. Completing a Mac-only phase has no behavior change
   3. The 53-04 scenario — verifying a feature against a stale deployed backend — becomes structurally impossible
   4. Deploy targets are configurable per-subdirectory in `.planning/config.json` so the rule only fires for paths that actually deploy
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 56-01-PLAN.md — Register workflow.deploy_targets, implement maybePushPhaseCommits in phase.cjs, opt dailybrief into ["vigil-core"], add zero-behavior-change harness, clean stale ROADMAP dependency
+- [x] 56-01-PLAN.md — Register workflow.deploy_targets, implement maybePushPhaseCommits in phase.cjs, opt dailybrief into ["vigil-core"], add zero-behavior-change harness, clean stale ROADMAP dependency
 **Context**: See `.planning/phases/56-push-origin-on-phase-complete-for-backend-phases/56-CONTEXT.md` for the 68-commits-stale incident from Phase 53-04 and open questions
 
 ### Phase 57: Cross-machine bootstrap script
@@ -294,7 +294,7 @@ None
 | 53. Projects Dashboard UI | v2.3 | 3/4 | In Progress|  |
 | 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |
 | 55. Auto-run drizzle migrations on Railway deploy | v2.3 | 1/1 | Complete   | 2026-04-08 |
-| 56. Push origin on phase-complete for backend phases | v2.3 | 0/TBD | Not started | - |
+| 56. Push origin on phase-complete for backend phases | v2.3 | 1/1 | Complete   | 2026-04-08 |
 | 57. Cross-machine bootstrap script | v2.3 | 0/TBD | Not started | - |
 
 ## Backlog
