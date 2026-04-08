@@ -227,4 +227,77 @@ launchctl bootstrap "$GUI_DOMAIN" "$VIGILCORE_PLIST"
 echo "  $VIGILCORE_LABEL bootstrapped"
 echo ""
 
-# --- Task 3 appends here ---
+# ----------------------------------------------------------------------------
+# Step 8: Delegate Mac-side install to install.sh (D-08 step 8, D-03)
+# ----------------------------------------------------------------------------
+echo "=== Vigil Bootstrap: DailyBrief CLI + Monitor ==="
+# install.sh is idempotent (declared in its own header), builds both swift
+# targets in release mode, installs to ~/.local/bin, and bootstraps the
+# DailyBriefMonitor LaunchAgent. It does NOT touch config.json or vigil-core.
+bash "$SCRIPT_DIR/install.sh"
+echo ""
+
+# ----------------------------------------------------------------------------
+# Step 9: Health check — HTTP 200 ONLY (D-08 step 9, D-12, D-13)
+# ----------------------------------------------------------------------------
+echo "=== Vigil Bootstrap: Health check ==="
+echo "  polling $HEALTH_URL for HTTP 200 (timeout ${HEALTH_TIMEOUT_SECS}s)..."
+
+# D-13: HTTP 200 ONLY. Do NOT parse JSON body. Local vigil-core runs
+# status: "degraded" as accepted steady state because Mac apps talk to
+# Railway. JSON parsing here would fail on a healthy-enough environment.
+
+health_ok=0
+for ((i=0; i<HEALTH_TIMEOUT_SECS; i+=HEALTH_POLL_INTERVAL)); do
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 2 "$HEALTH_URL" 2>/dev/null || echo "000")
+    if [[ "$HTTP_CODE" == "200" ]]; then
+        health_ok=1
+        break
+    fi
+    sleep "$HEALTH_POLL_INTERVAL"
+done
+
+if [[ "$health_ok" -eq 0 ]]; then
+    echo "error: vigil-core health endpoint did not return HTTP 200 within ${HEALTH_TIMEOUT_SECS}s" >&2
+    echo "" >&2
+    # Extract log path dynamically from the plist (do NOT hardcode — the 1P
+    # restored plist may point elsewhere)
+    STDERR_LOG=$(/usr/libexec/PlistBuddy -c "Print :StandardErrorPath" "$VIGILCORE_PLIST" 2>/dev/null || echo "$HOME/Library/Logs/DailyBrief/vigilcore-stderr.log")
+    STDOUT_LOG=$(/usr/libexec/PlistBuddy -c "Print :StandardOutPath" "$VIGILCORE_PLIST" 2>/dev/null || echo "$HOME/Library/Logs/DailyBrief/vigilcore-stdout.log")
+    echo "--- last 50 lines of $STDERR_LOG ---" >&2
+    tail -n 50 "$STDERR_LOG" 2>/dev/null >&2 || echo "(log not readable)" >&2
+    echo "--- last 20 lines of $STDOUT_LOG ---" >&2
+    tail -n 20 "$STDOUT_LOG" 2>/dev/null >&2 || echo "(log not readable)" >&2
+    echo "" >&2
+    echo "Debug: check 'launchctl print $GUI_DOMAIN/$VIGILCORE_LABEL'" >&2
+    exit 1
+fi
+
+echo "  $HEALTH_URL -> HTTP 200"
+echo ""
+
+# ----------------------------------------------------------------------------
+# Step 10: Summary (D-08 step 10)
+# ----------------------------------------------------------------------------
+echo "=== Vigil Bootstrap: Complete ==="
+echo ""
+echo "  Secrets restored from 1Password:"
+echo "    - $CONFIG_JSON"
+echo "    - $GCAL_TOKENS"
+echo "    - $VIGILCORE_PLIST"
+echo ""
+echo "  vigil-core:"
+echo "    - built at $VIGIL_CORE_DIR/dist"
+echo "    - LaunchAgent: $VIGILCORE_LABEL (loaded)"
+echo "    - health: $HEALTH_URL -> HTTP 200"
+echo ""
+echo "  Mac apps (via install.sh):"
+echo "    - $HOME/.local/bin/DailyBrief"
+echo "    - $HOME/.local/bin/DailyBriefMonitor"
+echo "    - LaunchAgent: com.jamesonmorrill.dailybriefmonitor (loaded)"
+echo ""
+echo "  Next steps:"
+echo "    - Run ./scripts/bootstrap.sh --check to scan for secret drift"
+echo "    - Run ./scripts/dailybrief-doctor.sh directly for the same"
+echo ""
+echo "  Done."
