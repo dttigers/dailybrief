@@ -208,7 +208,7 @@ Plans:
 
 ### Phase 56: Push origin on phase-complete for backend phases
 **Goal**: Eliminate the silent split-brain where local main is dozens of commits ahead of origin/main and Railway is therefore running stale vigil-core code without anyone noticing
-**Depends on**: Phase 55 (sibling — together they make `git push` the single atomic action that lands code + schema on prod)
+**Depends on**: None
 **Requirements**: TBD
 **Success Criteria** (what must be TRUE):
   1. Completing a phase that modifies `vigil-core/` triggers a push prompt (or auto-push) before the phase is marked complete in ROADMAP.md
