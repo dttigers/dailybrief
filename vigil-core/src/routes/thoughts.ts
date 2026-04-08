@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import crypto from "crypto";
 import { db } from "../db/connection.js";
 import { thoughts as thoughtsTable } from "../db/schema.js";
-import { eq, and, ne, gte, lte, desc, count, sql } from "drizzle-orm";
+import { eq, and, ne, gte, lte, desc, count, sql, isNull } from "drizzle-orm";
 import type { DrizzleThought, PaginatedResponse } from "../db/types.js";
 
 const VALID_SOURCES = ["text", "voice", "image"] as const;
@@ -67,8 +67,27 @@ thoughts.get("/thoughts", async (c) => {
     const q = c.req.query("q");
     const after = c.req.query("after");
     const before = c.req.query("before");
+    const projectIdParam = c.req.query("projectId");
+    const unassignedParam = c.req.query("unassigned");
     const limit = Math.min(Math.max(Number(c.req.query("limit")) || 50, 1), 200);
     const offset = Math.max(Number(c.req.query("offset")) || 0, 0);
+
+    // D-01: projectId and unassigned are mutually exclusive
+    if (projectIdParam !== undefined && unassignedParam === "true") {
+      return c.json(
+        { error: "projectId and unassigned are mutually exclusive" },
+        400,
+      );
+    }
+
+    // Validate projectId
+    let projectIdNum: number | undefined;
+    if (projectIdParam !== undefined) {
+      projectIdNum = Number(projectIdParam);
+      if (!Number.isInteger(projectIdNum) || projectIdNum <= 0) {
+        return c.json({ error: "projectId must be a positive integer" }, 400);
+      }
+    }
 
     // Validate date params
     if (after && isNaN(Date.parse(after))) {
@@ -105,6 +124,12 @@ thoughts.get("/thoughts", async (c) => {
     }
     if (favoritesOnly === "true") {
       conditions.push(eq(thoughtsTable.isFavorited, true));
+    }
+    if (projectIdNum !== undefined) {
+      conditions.push(eq(thoughtsTable.projectId, projectIdNum));
+    }
+    if (unassignedParam === "true") {
+      conditions.push(isNull(thoughtsTable.projectId));
     }
     if (after) {
       conditions.push(gte(thoughtsTable.createdAt, new Date(after)));
