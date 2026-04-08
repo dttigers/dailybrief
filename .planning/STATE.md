@@ -2,19 +2,17 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-05)
+See: .planning/PROJECT.md (updated 2026-04-07)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Planning next milestone
+**Current focus:** v2.3 Projects & Precision — defining requirements
 
 ## Current Position
 
-Phase: 50 of 50 — all milestones through v2.2 complete
-Plan: N/A
-Status: Ready to plan next milestone
-Last activity: 2026-04-08 — Resolved dashboard-list-blank-after-mutation bug (v2.1 Railway migration exposed concurrent mutation race; fix in c231566)
-
-Progress: ██████████ 100% (v1.0 through v2.2)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-07 — Milestone v2.3 Projects & Precision started
 
 ## Performance Metrics
 

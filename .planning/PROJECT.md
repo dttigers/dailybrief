@@ -1,5 +1,16 @@
 # Vigil — Ambient AI Life Assistant
 
+## Current Milestone: v2.3 Projects & Precision
+
+**Goal:** Organize Vigil around real-world projects, make photo ingest smart enough to tell individual thoughts apart from project work, and replace the install.sh dev loop with a one-click update from the menu bar.
+
+**Target features:**
+- Menu bar update action (rebuild/reinstall/reload from DailyBriefMonitor, no terminal)
+- Projects as first-class entities (own page view, manual assignment, optional status, personal only)
+- Smart photo upload with paper-type detection (lined → split thoughts, gridded → single thought; verbatim transcription; user override)
+
+**Deferred:** G2 physical hardware validation (glasses arriving ~1 week from milestone start)
+
 ## What This Is
 
 An ambient AI life assistant built for ADHD brains. A native macOS app (formerly Jarvis) with frictionless text/voice/image capture, Claude AI auto-triage, therapy intelligence, tags/favorites/linking, a SwiftUI dashboard, and a daily printed PDF brief. Now a multi-client platform deployed to production: Vigil Core API (Node.js/Hono/Drizzle/PostgreSQL) runs on Railway, the Mac app connects to the production server with bearer token auth, and Even G2 smart glasses provide ambient glanceable display of work orders, reminders, and affirmations.
@@ -63,9 +74,12 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Configurable PDF — paper size, margins, font scale, section toggles — v2.2
 - ✓ Dashboard AI chat — multi-turn Claude conversation with thought context injection — v2.2
 
-### Active
+### Active (v2.3 Projects & Precision)
 
-- [ ] G2 hardware testing — validate plugin on physical Even G2 glasses
+- [ ] Menu bar update action — one-click rebuild/reinstall/reload from DailyBriefMonitor (replaces install.sh dev loop)
+- [ ] Projects as first-class entities — individual named projects with own dashboard view, manual assignment, optional status (personal only, no work order linkage)
+- [ ] Smart photo upload — paper-type detection (lined = split to thoughts, gridded = single project thought), verbatim transcription, user override
+- [ ] G2 hardware testing — deferred until physical Even G2 glasses arrive (~1 week from 2026-04-07)
 
 ### Out of Scope
 
@@ -75,9 +89,13 @@ Capture every thought with zero friction and have the system organize it for you
 - Multi-user support — build after Vigil Core is proven on a server
 - Android XR — wait for SDK maturity, build after Even G2 shows traction
 - CKSubscription push notifications — CloudKit sync removed in v2.2; no longer relevant
+- `.app` bundle packaging for the Mac app — desired eventually but deferred until Vigil has traction; shell-script install is sufficient while user is the only developer+user
+- Auto-detection of project assignment from photo content — v2.3 ships manual assignment; auto-routing is a future enhancement
+- Work order → project linkage — v2.3 projects are personal only; work orders stay separate
 
 ## Context
 
+Started v2.3 Projects & Precision (2026-04-07) — focus on project organization, smarter photo ingest, and tighter dev loop.
 Shipped v2.2 Polish & Power — platform is fully API-only, all local code paths retired.
 Tech stack: Swift 6.2/SwiftUI/SPM (Mac app, ~12,900 LOC), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API, ~5,000 LOC), Vite/TypeScript/Even Hub SDK (G2 plugin).
 3 client surfaces all connected to production: Mac app (dashboard + capture + PDF brief + AI chat), Vigil Core API (Railway, 20+ REST endpoints), Even G2 plugin (3 screens + task detail).
@@ -137,4 +155,4 @@ G2 plugin configured for production but awaiting physical hardware for validatio
 | Retire local GRDB/CloudKit/AI in v2.2 | API backend proven stable in v2.1; dual code paths were maintenance burden | ✓ Good |
 
 ---
-*Last updated: 2026-04-05 after v2.2 milestone*
+*Last updated: 2026-04-07 — started v2.3 Projects & Precision milestone*
