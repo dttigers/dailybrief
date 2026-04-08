@@ -147,6 +147,24 @@ public actor VigilAPIClient {
         return try await perform(request)
     }
 
+    /// Perform a PATCH request with a JSON body and decode the response.
+    ///
+    /// Mirrors `put` — only the HTTP method differs. Used by routes that
+    /// expose partial-update semantics (e.g. `/v1/projects/:id`).
+    /// - Parameters:
+    ///   - path: API path relative to baseURL.
+    ///   - body: Encodable request body.
+    /// - Returns: Decoded response of type `T`.
+    public func patch<T: Decodable, B: Encodable>(path: String, body: B) async throws -> T {
+        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        request.httpMethod = "PATCH"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        applyHeaders(&request)
+        request.httpBody = try encodeBody(body)
+
+        return try await perform(request)
+    }
+
     /// Perform a DELETE request.
     /// - Parameter path: API path relative to baseURL.
     public func delete(path: String) async throws {
