@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-04-05)
 Phase: 50 of 50 — all milestones through v2.2 complete
 Plan: N/A
 Status: Ready to plan next milestone
-Last activity: 2026-04-08 — Completed quick task 260407-q7d: Disable misleading folder watching UI in Settings
+Last activity: 2026-04-08 — Resolved dashboard-list-blank-after-mutation bug (v2.1 Railway migration exposed concurrent mutation race; fix in c231566)
 
 Progress: ██████████ 100% (v1.0 through v2.2)
 
