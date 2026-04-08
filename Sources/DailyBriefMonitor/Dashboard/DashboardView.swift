@@ -13,6 +13,10 @@ struct DashboardView: View {
     @State private var bulkTagText = ""
     @State private var showBulkTagPopover = false
     @State private var linkedThoughtsCache: [Int64: [Thought]] = [:]
+    // Projects (Phase 53)
+    @State private var showingNewProjectSheet = false
+    @State private var editingProject: Project? = nil
+    @State private var pendingProjectDelete: Project? = nil
     @Environment(\.undoManager) private var undoManager
 
     var body: some View {
@@ -66,6 +70,59 @@ struct DashboardView: View {
             }}
         )) {
             LinkedThoughtsSheet(viewModel: viewModel)
+        }
+        // Phase 53 — placeholder New Project sheet (replaced by NewProjectSheet in plan 53-04)
+        .sheet(isPresented: $showingNewProjectSheet) {
+            VStack(spacing: 12) {
+                Text("New Project")
+                    .font(.headline)
+                Text("Sheet UI ships in plan 53-04.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button("Close") { showingNewProjectSheet = false }
+            }
+            .padding()
+            .frame(width: 300, height: 150)
+        }
+        // Phase 53 — placeholder Edit Project sheet (replaced by NewProjectSheet in plan 53-04)
+        .sheet(item: $editingProject) { project in
+            VStack(spacing: 12) {
+                Text("Edit Project")
+                    .font(.headline)
+                Text(project.name)
+                    .font(.subheadline)
+                Text("Sheet UI ships in plan 53-04.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button("Close") { editingProject = nil }
+            }
+            .padding()
+            .frame(width: 300, height: 180)
+        }
+        // Phase 53 — Delete project confirmation Alert (UI-SPEC copy verbatim)
+        .alert(
+            "Delete \"\(pendingProjectDelete?.name ?? "")\"?",
+            isPresented: Binding(
+                get: { pendingProjectDelete != nil },
+                set: { if !$0 { pendingProjectDelete = nil } }
+            ),
+            presenting: pendingProjectDelete
+        ) { project in
+            Button("Cancel", role: .cancel) {
+                pendingProjectDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                Task {
+                    do {
+                        try await viewModel.deleteProject(id: project.id)
+                    } catch {
+                        NSLog("Dashboard: deleteProject failed — %@", error.localizedDescription)
+                    }
+                    pendingProjectDelete = nil
+                }
+            }
+        } message: { _ in
+            Text("Thoughts assigned to this project will be unassigned. They won't be deleted.")
         }
         .task {
             await viewModel.refresh()
@@ -290,6 +347,114 @@ struct DashboardView: View {
                 }
             }
 
+            // Projects section (Phase 53)
+            Section("Projects") {
+                // Primary CTA — opens NewProjectSheet (placeholder until plan 53-04)
+                Button {
+                    showingNewProjectSheet = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.caption)
+                            .foregroundStyle(.tint)
+                        Text("New Project")
+                            .font(.subheadline)
+                        Spacer()
+                    }
+                }
+                .buttonStyle(.plain)
+                .padding(.vertical, 2)
+
+                // Status filter — segmented Picker, not a List row, so no .tag
+                Picker("Status", selection: $viewModel.projectStatusFilter) {
+                    Text("All").tag(DashboardViewModel.ProjectStatusFilter.all)
+                    Text("Active").tag(DashboardViewModel.ProjectStatusFilter.active)
+                    Text("Done").tag(DashboardViewModel.ProjectStatusFilter.done)
+                    Text("Archived").tag(DashboardViewModel.ProjectStatusFilter.archived)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .padding(.vertical, 2)
+
+                // Unassigned row — D-05, always visible regardless of status filter
+                Label {
+                    HStack {
+                        Text("Unassigned")
+                        Spacer()
+                        Text("\(viewModel.unassignedCount)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(nsColor: .quaternaryLabelColor))
+                            .clipShape(Capsule())
+                    }
+                } icon: {
+                    Image(systemName: "tray")
+                        .foregroundStyle(.secondary)
+                }
+                .tag(CategoryFilter.unassigned)
+                .padding(.vertical, 2)
+
+                // Project rows (or empty hint)
+                if viewModel.filteredProjects.isEmpty {
+                    Text("No projects yet")
+                        .font(.caption)
+                        .italic()
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(viewModel.filteredProjects) { project in
+                        Label {
+                            HStack {
+                                Text(project.name)
+                                    .lineLimit(1)
+                                    .font(.subheadline)
+                                Spacer()
+                                Text("\(viewModel.projectThoughtCounts[project.id] ?? 0)")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color(nsColor: .quaternaryLabelColor))
+                                    .clipShape(Capsule())
+                            }
+                        } icon: {
+                            Image(systemName: symbolForStatus(project.status))
+                                .foregroundStyle(colorForStatus(project.status))
+                                .font(.caption)
+                        }
+                        .tag(CategoryFilter.project(id: project.id))
+                        .opacity(project.status == .archived ? 0.6 : 1.0)
+                        .padding(.vertical, 2)
+                        .contextMenu {
+                            Button {
+                                editingProject = project
+                            } label: { Label("Edit…", systemImage: "pencil") }
+
+                            Menu {
+                                Button("Active") {
+                                    Task { await viewModel.setProjectStatus(project, .active) }
+                                }
+                                Button("Done") {
+                                    Task { await viewModel.setProjectStatus(project, .done) }
+                                }
+                                Button("Archived") {
+                                    Task { await viewModel.setProjectStatus(project, .archived) }
+                                }
+                            } label: {
+                                Label("Set status", systemImage: "circle")
+                            }
+
+                            Divider()
+
+                            Button(role: .destructive) {
+                                pendingProjectDelete = project
+                            } label: { Label("Delete…", systemImage: "trash") }
+                        }
+                    }
+                }
+            }
+
             // Brief History section
             Section {
                 Button {
@@ -489,6 +654,31 @@ struct DashboardView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 8)
                 .background(Color(nsColor: .controlBackgroundColor))
+            }
+
+            // Phase 53 — project assignment error banner (wired by plan 53-04)
+            if let error = viewModel.assignmentError {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.yellow)
+                    Text(error.message)
+                        .font(.subheadline)
+                    Spacer()
+                    Button("Dismiss") {
+                        viewModel.assignmentError = nil
+                    }
+                    .controlSize(.small)
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color(nsColor: .controlBackgroundColor))
+                .task(id: error.id) {
+                    // Auto-dismiss after 4 seconds (matches importErrors UX feel)
+                    try? await Task.sleep(nanoseconds: 4_000_000_000)
+                    if viewModel.assignmentError?.id == error.id {
+                        viewModel.assignmentError = nil
+                    }
+                }
             }
 
             // Batch import error summary
@@ -740,7 +930,13 @@ struct DashboardView: View {
                 Spacer()
             } else if viewModel.thoughts.isEmpty {
                 Spacer()
-                emptyState
+                // Phase 53 — project / unassigned filters get a tailored empty state
+                switch viewModel.selectedFilter {
+                case .project, .unassigned:
+                    projectEmptyState
+                default:
+                    emptyState
+                }
                 Spacer()
             } else {
                 List(viewModel.thoughts) { thought in
@@ -865,12 +1061,59 @@ struct DashboardView: View {
         }
     }
 
+    // MARK: - Project status mapping (Phase 53, UI-SPEC verbatim)
+
+    private func symbolForStatus(_ status: ProjectStatus?) -> String {
+        switch status {
+        case .active: return "circle"
+        case .done: return "checkmark.circle.fill"
+        case .archived: return "archivebox"
+        case .none: return "circle.dotted"
+        }
+    }
+
+    private func colorForStatus(_ status: ProjectStatus?) -> Color {
+        switch status {
+        case .done: return .green
+        case .active, .archived: return .secondary
+        case .none: return Color.secondary.opacity(0.6)
+        }
+    }
+
     private var hasActiveFilters: Bool {
         viewModel.sourceFilter != nil || viewModel.dateRangeFilter != .all ||
         viewModel.tagFilter != nil || viewModel.showFavoritesOnly
     }
 
     // MARK: - Empty State
+
+    /// Phase 53 — project / unassigned filter empty state. Resolves the project name
+    /// from the active filter so the message is specific.
+    @ViewBuilder
+    private var projectEmptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "folder")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text("No thoughts yet")
+                .font(.headline)
+                .foregroundStyle(.secondary)
+            if case .project(let pid) = viewModel.selectedFilter,
+               let project = viewModel.projects.first(where: { $0.id == pid }) {
+                Text("Assign thoughts to \"\(project.name)\" from any thought row.")
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            } else if case .unassigned = viewModel.selectedFilter {
+                Text("All thoughts currently belong to a project.")
+                    .font(.subheadline)
+                    .foregroundStyle(.tertiary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+            }
+        }
+    }
 
     @ViewBuilder
     private var emptyState: some View {
