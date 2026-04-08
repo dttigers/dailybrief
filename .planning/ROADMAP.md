@@ -294,7 +294,7 @@ None
 | 53. Projects Dashboard UI | v2.3 | 3/4 | In Progress|  |
 | 54. Smart Photo Upload | v2.3 | 0/TBD | Not started | - |
 | 55. Auto-run drizzle migrations on Railway deploy | v2.3 | 1/1 | Complete   | 2026-04-08 |
-| 56. Push origin on phase-complete for backend phases | v2.3 | 1/1 | Complete   | 2026-04-08 |
+| 56. Push origin on phase-complete for backend phases | v2.3 | 1/1 | Complete    | 2026-04-08 |
 | 57. Cross-machine bootstrap script | v2.3 | 0/TBD | Not started | - |
 
 ## Backlog
