@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import crypto from "crypto";
 import { db } from "../db/connection.js";
-import { thoughts as thoughtsTable } from "../db/schema.js";
+import { thoughts as thoughtsTable, projects as projectsTable } from "../db/schema.js";
 import { eq, and, ne, gte, lte, desc, count, sql, isNull } from "drizzle-orm";
 import type { DrizzleThought, PaginatedResponse } from "../db/types.js";
 
@@ -30,6 +30,7 @@ interface ThoughtApiResponse {
   therapyClassification: string | null;
   tags: string[];
   isFavorited: boolean;
+  projectId: number | null;
 }
 
 function toResponse(row: DrizzleThought): ThoughtApiResponse {
@@ -48,6 +49,7 @@ function toResponse(row: DrizzleThought): ThoughtApiResponse {
     therapyClassification: row.therapyClassification,
     tags: row.tags ?? [],
     isFavorited: row.isFavorited,
+    projectId: row.projectId ?? null,
   };
 }
 
@@ -278,6 +280,41 @@ thoughts.put("/thoughts/:id", async (c) => {
       }
     }
 
+    // D-02: project_id whitelist with FK existence check.
+    // Strict `!== undefined` gate (Pitfall P-1) — JSON null means "unassign",
+    // absent key means "leave alone". Accept both projectId and project_id.
+    let projectIdUpdate: number | null | undefined = undefined;
+    const rawProjectId =
+      body.projectId !== undefined ? body.projectId :
+      body.project_id !== undefined ? body.project_id :
+      undefined;
+
+    if (rawProjectId !== undefined) {
+      if (rawProjectId === null) {
+        projectIdUpdate = null; // explicit unassign
+      } else if (
+        typeof rawProjectId === "number" &&
+        Number.isInteger(rawProjectId) &&
+        rawProjectId > 0
+      ) {
+        // FK existence check (mirrors projects.ts:137-145 pattern)
+        const projectExists = await db
+          .select({ id: projectsTable.id })
+          .from(projectsTable)
+          .where(eq(projectsTable.id, rawProjectId))
+          .limit(1);
+        if (projectExists.length === 0) {
+          return c.json({ error: "project not found" }, 400);
+        }
+        projectIdUpdate = rawProjectId;
+      } else {
+        return c.json(
+          { error: "projectId must be a positive integer or null" },
+          400,
+        );
+      }
+    }
+
     // Build dynamic update object
     const updates: Partial<typeof thoughtsTable.$inferInsert> = {};
     if (body.content !== undefined) updates.content = body.content.trim();
@@ -288,6 +325,7 @@ thoughts.put("/thoughts/:id", async (c) => {
     if (body.tags !== undefined)
       updates.tags = Array.isArray(body.tags) ? body.tags : null;
     if (body.isFavorited !== undefined) updates.isFavorited = body.isFavorited;
+    if (projectIdUpdate !== undefined) updates.projectId = projectIdUpdate;
 
     // Always update modifiedAt and syncStatus
     updates.modifiedAt = new Date();
