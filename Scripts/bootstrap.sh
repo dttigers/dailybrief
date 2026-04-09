@@ -120,6 +120,28 @@ for tool in node npm swift; do
     fi
 done
 
+# 3b. Developer ID Application cert must be present (Phase 58 — SIGN-04, D-02)
+# Matches install.sh cert guard so bootstrap fails fast on missing cert
+# instead of running 2–5 minutes of vigil-core build + launchctl + install.sh
+# before install.sh itself hits the same check.
+DEVID_CERT=$(security find-identity -v -p codesigning \
+             | grep "Developer ID Application" \
+             | head -1 \
+             | grep -o '"Developer ID Application: [^"]*"' \
+             | tr -d '"')
+if [[ -z "$DEVID_CERT" ]]; then
+    echo "error: No Developer ID Application certificate found in login keychain." >&2
+    echo "" >&2
+    echo "Import your signing cert with:" >&2
+    echo "  security import /path/to/cert.p12 -k ~/Library/Keychains/login.keychain-db" >&2
+    echo "" >&2
+    echo "Then re-run: ./scripts/bootstrap.sh" >&2
+    echo "" >&2
+    echo "(Phase 58 — without this cert, install.sh cannot sign binaries," >&2
+    echo " and macOS TCC permissions reset on every rebuild.)" >&2
+    exit 1
+fi
+
 # 4. Optional tools — warn only
 for tool in railway gh; do
     if ! command -v "$tool" >/dev/null 2>&1; then
@@ -127,7 +149,7 @@ for tool in railway gh; do
     fi
 done
 
-echo "  pre-flight OK (op signed in, node/npm/swift present)"
+echo "  pre-flight OK (op signed in, node/npm/swift present, Dev ID cert: $DEVID_CERT)"
 echo ""
 
 # ----------------------------------------------------------------------------

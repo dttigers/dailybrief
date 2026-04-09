@@ -208,6 +208,21 @@ except Exception as e:
     printf "%-38s | %s\n" "local vigil-core /v1/health" "$HEALTH_INFO"
 fi
 
+# Developer ID Application cert — informational only (Phase 58, D-02 discretion)
+# Reports cert presence so `dailybrief-doctor.sh` surfaces the same failure
+# condition that install.sh + bootstrap.sh hard-fail on. Does NOT affect
+# exit code — doctor is read-only and advisory for this row.
+DEVID_DOCTOR=$(security find-identity -v -p codesigning 2>/dev/null \
+               | grep "Developer ID Application" \
+               | head -1 \
+               | grep -o '"Developer ID Application: [^"]*"' \
+               | tr -d '"' || true)
+if [[ -n "$DEVID_DOCTOR" ]]; then
+    printf "%-38s | %s\n" "Developer ID Application cert" "present: $DEVID_DOCTOR"
+else
+    printf "%-38s | %s\n" "Developer ID Application cert" "MISSING — run: security import /path/cert.p12 -k ~/Library/Keychains/login.keychain-db"
+fi
+
 echo ""
 
 # ----------------------------------------------------------------------------
