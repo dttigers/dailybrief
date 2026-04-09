@@ -142,7 +142,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 **Phases:**
 
-- [ ] **Phase 58: Persistent Code Signing** — Developer ID sign DailyBrief + Monitor binaries so TCC permissions survive rebuilds
+- [x] **Phase 58: Persistent Code Signing** — Developer ID sign DailyBrief + Monitor binaries so TCC permissions survive rebuilds (completed 2026-04-09)
 - [ ] **Phase 59: Smart Photo Upload Backend** — Vigil Core vision pipeline for paper-type detection + verbatim transcription
 - [ ] **Phase 60: Smart Photo Upload Dashboard UX** — User override + uncertainty surfacing in dashboard upload flow
 - [ ] **Phase 61: Folder Watch Feeder** — DispatchSource watcher in DailyBriefMonitor feeding images + audio to Vigil Core
@@ -162,10 +162,10 @@ _Shipped phase details archived to `.planning/milestones/v[X.Y]-ROADMAP.md`. Act
   3. After granting Full Disk Access / Automation / Accessibility once, a subsequent `install.sh` rebuild does not prompt the user to re-grant any TCC permission
   4. On a fresh machine, `bootstrap.sh` verifies the signing cert is present in the login keychain as a pre-flight step and hard-fails with a remediation message (`security import ...`) if missing — cert import remains a one-time manual step per D-01
   5. If the signing cert is missing or expired, `install.sh` fails loud with a remediation message and refuses to produce unsigned or ad-hoc-signed output
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 58-01-PLAN.md — Strip CloudKit entitlements from DailyBriefMonitor.entitlements + add Developer ID cert guard, sign, and verify to install.sh (+ human-verify TCC persistence)
-- [ ] 58-02-PLAN.md — bootstrap.sh pre-flight cert check + build.sh ad-hoc codesign removal (D-05) + dailybrief-doctor.sh informational Dev ID cert row
+- [x] 58-01-PLAN.md — Strip CloudKit entitlements from DailyBriefMonitor.entitlements + add Developer ID cert guard, sign, and verify to install.sh (+ human-verify TCC persistence)
+- [x] 58-02-PLAN.md — bootstrap.sh pre-flight cert check + build.sh ad-hoc codesign removal (D-05) + dailybrief-doctor.sh informational Dev ID cert row
 
 ### Phase 59: Smart Photo Upload Backend
 **Goal**: Vigil Core can take a handwritten-notes photo, detect paper type (lined vs gridded), return a verbatim transcription, and split or keep whole per paper type — all via the same upload endpoint the dashboard already uses.
@@ -370,7 +370,7 @@ None
 | 55. Auto-run drizzle migrations on Railway deploy | v2.3 | 1/1 | Complete   | 2026-04-08 |
 | 56. Push origin on phase-complete for backend phases | v2.3 | 1/1 | Complete    | 2026-04-08 |
 | 57. Cross-machine bootstrap script | v2.3 | 2/2 | Complete    | 2026-04-08 |
-| 58. Persistent Code Signing | v2.4 | 0/TBD | Not started | - |
+| 58. Persistent Code Signing | v2.4 | 2/2 | Complete   | 2026-04-09 |
 | 59. Smart Photo Upload Backend | v2.4 | 0/TBD | Not started | - |
 | 60. Smart Photo Upload Dashboard UX | v2.4 | 0/TBD | Not started | - |
 | 61. Folder Watch Feeder | v2.4 | 0/TBD | Not started | - |

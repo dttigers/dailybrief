@@ -26,6 +26,8 @@
   "workflow": {
     "_auto_chain_active": false,
     "use_worktrees": true,
-    "deploy_targets": ["vigil-core"]
+    "deploy_targets": [
+      "vigil-core"
+    ]
   }
 }
