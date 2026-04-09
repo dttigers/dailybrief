@@ -223,10 +223,10 @@ async function testProcessPhoto() {
       },
       body: JSON.stringify({ image: TINY_PNG, mediaType: "image/png" }),
     });
-    if (res.status !== 201 && res.status !== 200) {
+    if (res.status !== 201) {
       fail(
         "process-photo: happy path",
-        `expected 200/201, got ${res.status}`,
+        `expected 201, got ${res.status}`,
       );
     } else {
       const json = (await res.json()) as {
@@ -311,6 +311,43 @@ async function testProcessPhoto() {
   } catch (err) {
     fail(
       "process-photo: 400 on invalid mediaType",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  // Preview mode (Phase 60 D-01) — must NOT persist. The TINY_PNG is 1×1
+  // transparent so real Claude may reject it with a 502, or may return
+  // something parseable with a 200. The critical invariant: 201 is a bug
+  // because it means the route committed despite ?preview=true. Real-photo
+  // preview→commit coverage lives in Plan 60-02's human-verify checkpoint.
+  try {
+    const res = await fetch(`${API_URL}/v1/process-photo?preview=true`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({ image: TINY_PNG, mediaType: "image/png" }),
+    });
+    if (res.status === 201) {
+      fail(
+        "process-photo: preview did not commit",
+        "got 201 — preview mode must never return commit status",
+      );
+    } else if (res.status !== 200 && res.status !== 502) {
+      fail(
+        "process-photo: preview mode",
+        `unexpected status ${res.status}`,
+      );
+    } else {
+      pass(
+        "process-photo: preview mode no-commit",
+        `status=${res.status}`,
+      );
+    }
+  } catch (err) {
+    fail(
+      "process-photo: preview mode",
       err instanceof Error ? err.message : String(err),
     );
   }

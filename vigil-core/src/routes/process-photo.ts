@@ -157,6 +157,64 @@ export function processClaudeResponse(rawText: string): ProcessedPhotoResult {
   return { paperType, confidence, thoughts };
 }
 
+/**
+ * Apply a user-supplied `forcePaperType` override to a ProcessedPhotoResult.
+ * Pure post-processing step run after processClaudeResponse. Per 60-CONTEXT.md
+ * D-06 + 60-RESEARCH.md Option 2 — "client-side split, server-side collapse".
+ *
+ * Cases:
+ *  A. force="gridded" and Claude returned multiple thoughts → collapse to 1 via \n\n join
+ *  B. force="lined"   and Claude returned exactly 1 blob    → split via splitGriddedBlobToLined
+ *  C. force matches current shape / shape already compatible → just restamp paperType
+ *  D. force undefined → return result unchanged (Phase 59 D-04 passthrough)
+ */
+export function applyForcePaperType(
+  result: ProcessedPhotoResult,
+  force: "lined" | "gridded" | undefined,
+): ProcessedPhotoResult {
+  if (!force) return result;
+
+  // Case A: user forces gridded, Claude said lined (or unknown) with multiple thoughts
+  if (force === "gridded" && result.thoughts.length > 1) {
+    return {
+      paperType: "gridded",
+      confidence: result.confidence,
+      thoughts: [result.thoughts.join("\n\n")],
+    };
+  }
+
+  // Case B: user forces lined, Claude said gridded with exactly one blob
+  if (force === "lined" && result.thoughts.length === 1) {
+    return {
+      paperType: "lined",
+      confidence: result.confidence,
+      thoughts: splitGriddedBlobToLined(result.thoughts[0]),
+    };
+  }
+
+  // Case C: force matches current shape, or shape already compatible →
+  // restamp paperType and return unchanged thoughts.
+  return { ...result, paperType: force };
+}
+
+/**
+ * Split a gridded-mode transcription into lined-mode thoughts.
+ * Uses Claude's natural \n\n paragraph convention observed in gridded output
+ * (verified against the Phase 59 real-photo brainstorm page, 2026-04-09).
+ * Degenerate input (0 or 1 paragraphs after trim) → return the original trimmed
+ * blob as a single entry so callers never get an empty thoughts array.
+ *
+ * See: .planning/phases/60-smart-photo-upload-dashboard-ux/60-RESEARCH.md
+ */
+export function splitGriddedBlobToLined(blob: string): string[] {
+  const parts = blob
+    .split(/\n{2,}/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (parts.length < 2) return [blob.trim()];
+  return parts;
+}
+
 // ── Dependency injection surface (Plan 02 Task 1.2) ─────────────────────────
 
 /**
@@ -194,8 +252,13 @@ export function createProcessPhotoRouter(
 
   // POST /process-photo — Smart photo upload: detect paper type + verbatim transcribe.
   router.post("/process-photo", async (c) => {
+    // 0. Preview mode flag (Plan 60-01 D-01). Strict equality — only the exact
+    //    string "true" triggers preview mode. `?preview=yes`, `?preview=1`,
+    //    `?preview=TRUE` all fall through to commit mode by design (T-60-02).
+    const isPreview = c.req.query("preview") === "true";
+
     // 1. Parse JSON body. 400 on malformed.
-    let body: { image?: string; mediaType?: string };
+    let body: { image?: string; mediaType?: string; forcePaperType?: unknown };
     try {
       body = await c.req.json();
     } catch {
@@ -207,6 +270,21 @@ export function createProcessPhotoRouter(
       return c.json(
         { error: "image is required and must be a base64 string" },
         400,
+      );
+    }
+
+    // 2b. Payload-size guard (Plan 60-01 / Phase 59 REVIEW WR-02).
+    //     Anthropic rejects base64 > ~5 MB raw (~6.7 MB encoded). Cap at 7 MB
+    //     of base64 chars and reject with 413 BEFORE the Claude call so a
+    //     malicious/buggy client can't burn vendor tokens or hold MBs in
+    //     memory for the 30s request window. 60-CONTEXT.md D-08 maps this
+    //     to status 413 (the 59-REVIEW snippet used 400; D-08 is the
+    //     current source of truth).
+    const MAX_IMAGE_B64_CHARS = 7 * 1024 * 1024;
+    if (body.image.length > MAX_IMAGE_B64_CHARS) {
+      return c.json(
+        { error: "image exceeds maximum size (5 MB)" },
+        413,
       );
     }
 
@@ -223,6 +301,20 @@ export function createProcessPhotoRouter(
       );
     }
     const mediaType = body.mediaType as MediaType;
+
+    // 3b. Validate forcePaperType (Plan 60-01 D-06). Optional; if provided
+    //     must be exactly "lined" or "gridded". T-60-01 mitigation.
+    const rawForce = body.forcePaperType;
+    let forcePaperType: "lined" | "gridded" | undefined;
+    if (rawForce !== undefined) {
+      if (rawForce !== "lined" && rawForce !== "gridded") {
+        return c.json(
+          { error: "forcePaperType must be 'lined' or 'gridded' if provided" },
+          400,
+        );
+      }
+      forcePaperType = rawForce;
+    }
 
     // 4. AI client availability gate.
     if (!deps.getAIClientFn()) {
@@ -252,25 +344,49 @@ export function createProcessPhotoRouter(
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown AI error";
       // T-59-04: log err.message only — NEVER body.image (base64 payload).
+      // WR-01 (59-REVIEW / T-60-04): do NOT leak raw SDK error text to the
+      // client. Anthropic errors frequently contain request IDs, model names,
+      // and upstream URLs. Log detail server-side, return generic body.
       console.error(
         "[vigil-core] /process-photo Claude call failed:",
         message,
       );
-      return c.json({ error: message }, 502);
+      return c.json({ error: "AI processing failed" }, 502);
     }
 
-    // 6. Apply D-04/D-08 coercions via the Plan 01 pure helper.
+    // 6. Apply D-04/D-08 coercions via the Plan 01 pure helper, then the
+    //    Plan 60-01 forcePaperType override transform.
     const result = processClaudeResponse(rawText);
+    const transformed = applyForcePaperType(result, forcePaperType);
 
-    // 7. Build insert rows — every row gets its OWN randomUUID (P-7).
-    const insertRows = result.thoughts.map((content) => ({
+    // 7. Preview mode — skip the DB insert and return unsaved thought shapes
+    //    so the dashboard can show a "before commit" preview (D-01).
+    if (isPreview) {
+      return c.json(
+        {
+          paperType: transformed.paperType,
+          confidence: transformed.confidence,
+          thoughts: transformed.thoughts.map((content) => ({
+            id: null,
+            content,
+            source: "image" as const,
+            confidence: transformed.confidence,
+            projectId: null,
+          })),
+        },
+        200,
+      );
+    }
+
+    // 8. Commit mode — build insert rows, every row gets its OWN randomUUID (P-7).
+    const insertRows = transformed.thoughts.map((content) => ({
       content,
       source: "image" as const,
-      confidence: result.confidence,
+      confidence: transformed.confidence,
       cloudKitRecordID: crypto.randomUUID(),
     }));
 
-    // 8. ONE batched insert (P-12 / T-59-03).
+    // 9. ONE batched insert (P-12 / T-59-03).
     let insertedRows: DrizzleThought[];
     try {
       insertedRows = await deps.dbInsertFn(insertRows);
@@ -280,12 +396,12 @@ export function createProcessPhotoRouter(
       return c.json({ error: "Create failed" }, 500);
     }
 
-    // 9. Success: 201 with serialized thoughts via toResponse.
+    // 10. Success: 201 with serialized thoughts via toResponse.
     const thoughtsResponse: ThoughtApiResponse[] = insertedRows.map(toResponse);
     return c.json(
       {
-        paperType: result.paperType,
-        confidence: result.confidence,
+        paperType: transformed.paperType,
+        confidence: transformed.confidence,
         thoughts: thoughtsResponse,
       },
       201,
