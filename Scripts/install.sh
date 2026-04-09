@@ -16,6 +16,37 @@ OLD_CLI_PLIST="$LAUNCH_AGENTS_DIR/$OLD_CLI_LABEL.plist"
 echo "=== DailyBrief Installer ==="
 echo ""
 
+# ========================================================================
+# Developer ID signing guard (Phase 58 — SIGN-01/SIGN-05, D-03/D-04)
+# ------------------------------------------------------------------------
+# Resolve the login-keychain Developer ID Application identity BEFORE we
+# spend time on swift build. -v filters expired certs. If none found, hard
+# fail with a remediation message — NEVER fall back to ad-hoc signing
+# (which would silently reset TCC permissions on every rebuild, the exact
+# failure Phase 58 is fixing).
+# ========================================================================
+IDENTITY=$(security find-identity -v -p codesigning \
+           | grep "Developer ID Application" \
+           | head -1 \
+           | grep -o '"Developer ID Application: [^"]*"' \
+           | tr -d '"')
+
+if [[ -z "$IDENTITY" ]]; then
+    echo "ERROR: No Developer ID Application certificate found in login keychain." >&2
+    echo "" >&2
+    echo "Import your signing cert with:" >&2
+    echo "  security import /path/to/cert.p12 -k ~/Library/Keychains/login.keychain-db" >&2
+    echo "" >&2
+    echo "Then re-run: ./scripts/install.sh" >&2
+    echo "" >&2
+    echo "(This is a hard fail — install.sh refuses to produce unsigned or" >&2
+    echo " ad-hoc-signed output because that resets macOS TCC permissions" >&2
+    echo " silently on every rebuild. See .planning/phases/58-* for why.)" >&2
+    exit 1
+fi
+echo "  Signing identity: $IDENTITY"
+echo ""
+
 # 0. Clean up old CLI LaunchAgent (scheduling now built into monitor)
 if [ -f "$OLD_CLI_PLIST" ]; then
     echo "Removing old CLI LaunchAgent..."
@@ -43,10 +74,31 @@ mkdir -p "$INSTALL_DIR"
 # 3. Copy CLI binary
 echo "Installing DailyBrief CLI to $INSTALL_DIR/DailyBrief..."
 cp -f "$REPO_DIR/.build/release/DailyBrief" "$INSTALL_DIR/DailyBrief"
+# Sign CLI in the install destination (NOT .build/release — cp would strip
+# the signature). Phase 58 D-05: install.sh is the canonical signing point.
+codesign --force \
+         --sign "$IDENTITY" \
+         --identifier "com.jamesonmorrill.dailybrief" \
+         --entitlements "$REPO_DIR/Entitlements/DailyBrief.entitlements" \
+         "$INSTALL_DIR/DailyBrief"
+codesign --verify --verbose "$INSTALL_DIR/DailyBrief" 2>&1 \
+    || { echo "ERROR: DailyBrief signature verification failed." >&2; exit 1; }
+echo "  DailyBrief signed + verified."
 
 # 4. Copy Monitor binary
 echo "Installing DailyBriefMonitor to $INSTALL_DIR/DailyBriefMonitor..."
 cp -f "$REPO_DIR/.build/release/DailyBriefMonitor" "$INSTALL_DIR/DailyBriefMonitor"
+# Sign Monitor in the install destination. The entitlements file is the
+# post-Phase-58 empty-dict version (CloudKit keys removed — they were
+# incompatible with Developer ID signing; see 58-RESEARCH.md blocker).
+codesign --force \
+         --sign "$IDENTITY" \
+         --identifier "com.jamesonmorrill.dailybriefmonitor" \
+         --entitlements "$REPO_DIR/Entitlements/DailyBriefMonitor.entitlements" \
+         "$INSTALL_DIR/DailyBriefMonitor"
+codesign --verify --verbose "$INSTALL_DIR/DailyBriefMonitor" 2>&1 \
+    || { echo "ERROR: DailyBriefMonitor signature verification failed." >&2; exit 1; }
+echo "  DailyBriefMonitor signed + verified."
 
 # 5. Create log directory
 mkdir -p "$LOG_DIR"
@@ -125,4 +177,5 @@ echo "  Plist:    $MONITOR_PLIST"
 echo "  Logs:     $LOG_DIR/"
 echo ""
 echo "The DailyBriefMonitor LaunchAgent is now loaded and will start at login."
+echo "  Inspect signature: codesign -dvv $INSTALL_DIR/DailyBrief"
 echo "To check status: launchctl list | grep dailybriefmonitor"
