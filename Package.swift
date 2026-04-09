@@ -37,5 +37,13 @@ let package = Package(
                 .linkedFramework("AppKit"),
             ]
         ),
+        .testTarget(
+            name: "DailyBriefMonitorTests",
+            dependencies: [
+                "DailyBriefMonitor",
+                "JarvisCore",
+            ],
+            path: "Tests/DailyBriefMonitorTests"
+        ),
     ]
 )
