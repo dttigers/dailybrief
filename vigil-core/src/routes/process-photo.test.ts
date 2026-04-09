@@ -337,18 +337,26 @@ test("RT-7: 503 when AI client unavailable", async () => {
   assert.match(json.error, /AI service unavailable/);
 });
 
-test("RT-8: 502 when Claude throws (error message echoed)", async () => {
+test("RT-8: 502 when Claude throws returns GENERIC body (WR-01 fix)", async () => {
+  // 60-01 T-60-04 / Phase 59 REVIEW WR-01: raw SDK error text must NOT leak
+  // to the client. Server-side log still captures detail; response body is
+  // a generic "AI processing failed".
   const router = createProcessPhotoRouter(
     makeDeps({
       callClaudeFn: async () => {
-        throw new Error("anthropic 529");
+        throw new Error("anthropic 529 request_id=abc-internal-url");
       },
     }),
   );
   const res = await post(router, VALID_BODY);
   assert.equal(res.status, 502);
   const json = (await res.json()) as { error: string };
-  assert.match(json.error, /anthropic 529/);
+  assert.match(json.error, /AI processing failed/);
+  // And the raw SDK text must not appear in the response body.
+  assert.ok(
+    !json.error.includes("anthropic 529"),
+    "raw SDK error text leaked to client",
+  );
 });
 
 test("RT-9: D-08 parse failure creates ONE thought with raw text content", async () => {
@@ -423,4 +431,248 @@ test("RT-11: cloudKitRecordID uniqueness — lined path produces N distinct UUID
   for (const id of capturedUuids) {
     assert.match(id, /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
   }
+});
+
+// ── Plan 60-01 route tests (preview mode, forcePaperType, 413 guard) ────────
+
+interface PreviewResponseShape {
+  paperType: string;
+  confidence: number;
+  thoughts: Array<{
+    id: number | null;
+    content: string;
+    source: string;
+    confidence: number | null;
+    projectId: number | null;
+  }>;
+}
+
+test("RT-12: preview=true returns 200 + unsaved shapes and does NOT call dbInsertFn", async () => {
+  let dbCalled = false;
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      dbInsertFn: async (rows) => {
+        dbCalled = true;
+        return rows.map((r, i) =>
+          mockDrizzleThought({
+            id: i + 1,
+            content: r.content as string,
+          }),
+        );
+      },
+    }),
+  );
+  const res = await router.request("/process-photo?preview=true", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(VALID_BODY),
+  });
+  assert.equal(res.status, 200);
+  const json = (await res.json()) as PreviewResponseShape;
+  assert.equal(json.paperType, "lined");
+  assert.equal(json.confidence, 0.92);
+  assert.equal(json.thoughts.length, 3);
+  for (const t of json.thoughts) {
+    assert.equal(t.id, null);
+    assert.equal(t.source, "image");
+    assert.equal(t.confidence, 0.92);
+    assert.equal(t.projectId, null);
+  }
+  assert.equal(dbCalled, false, "dbInsertFn must not be called in preview mode");
+});
+
+test("RT-13: preview=true on gridded response → 200, 1 thought, no DB insert", async () => {
+  let dbCalled = false;
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      callClaudeFn: async () =>
+        JSON.stringify({
+          paperType: "gridded",
+          confidence: 0.88,
+          thoughts: ["Long design note about the auth flow"],
+        }),
+      dbInsertFn: async (rows) => {
+        dbCalled = true;
+        return rows.map((r, i) =>
+          mockDrizzleThought({ id: i + 1, content: r.content as string }),
+        );
+      },
+    }),
+  );
+  const res = await router.request("/process-photo?preview=true", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(VALID_BODY),
+  });
+  assert.equal(res.status, 200);
+  const json = (await res.json()) as PreviewResponseShape;
+  assert.equal(json.paperType, "gridded");
+  assert.equal(json.thoughts.length, 1);
+  assert.equal(dbCalled, false);
+});
+
+test("RT-14: preview=yes is NOT preview mode — strict equality only", async () => {
+  let dbCalled = false;
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      dbInsertFn: async (rows) => {
+        dbCalled = true;
+        return rows.map((r, i) =>
+          mockDrizzleThought({ id: i + 1, content: r.content as string }),
+        );
+      },
+    }),
+  );
+  const res = await router.request("/process-photo?preview=yes", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(VALID_BODY),
+  });
+  assert.equal(res.status, 201, "non-'true' preview value must fall through to commit mode");
+  assert.equal(dbCalled, true);
+});
+
+test("RT-15: forcePaperType=gridded on lined response collapses to 1 inserted row", async () => {
+  let insertedRows: Array<{ content: string }> = [];
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      dbInsertFn: async (rows) => {
+        insertedRows = rows.map((r) => ({ content: r.content as string }));
+        return rows.map((r, i) =>
+          mockDrizzleThought({ id: i + 1, content: r.content as string }),
+        );
+      },
+    }),
+  );
+  const res = await post(router, { ...VALID_BODY, forcePaperType: "gridded" });
+  assert.equal(res.status, 201);
+  assert.equal(insertedRows.length, 1);
+  assert.equal(
+    insertedRows[0].content,
+    "- call mom\n\n- pay rent\n\n- email dave",
+  );
+  const json = (await res.json()) as ProcessPhotoResponseShape;
+  assert.equal(json.paperType, "gridded");
+  assert.equal(json.thoughts.length, 1);
+});
+
+test("RT-16: forcePaperType=lined on gridded blob splits into N rows via helper", async () => {
+  let insertedRows: Array<{ content: string }> = [];
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      callClaudeFn: async () =>
+        JSON.stringify({
+          paperType: "gridded",
+          confidence: 0.9,
+          thoughts: ["line1\n\nline2\n\nline3"],
+        }),
+      dbInsertFn: async (rows) => {
+        insertedRows = rows.map((r) => ({ content: r.content as string }));
+        return rows.map((r, i) =>
+          mockDrizzleThought({ id: i + 1, content: r.content as string }),
+        );
+      },
+    }),
+  );
+  const res = await post(router, { ...VALID_BODY, forcePaperType: "lined" });
+  assert.equal(res.status, 201);
+  assert.equal(insertedRows.length, 3);
+  assert.deepEqual(
+    insertedRows.map((r) => r.content),
+    ["line1", "line2", "line3"],
+  );
+  const json = (await res.json()) as ProcessPhotoResponseShape;
+  assert.equal(json.paperType, "lined");
+});
+
+test("RT-17: forcePaperType=lined on degenerate gridded blob (no \\n\\n) → 1 row passthrough", async () => {
+  let insertedRows: Array<{ content: string }> = [];
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      callClaudeFn: async () =>
+        JSON.stringify({
+          paperType: "gridded",
+          confidence: 0.9,
+          thoughts: ["single paragraph"],
+        }),
+      dbInsertFn: async (rows) => {
+        insertedRows = rows.map((r) => ({ content: r.content as string }));
+        return rows.map((r, i) =>
+          mockDrizzleThought({ id: i + 1, content: r.content as string }),
+        );
+      },
+    }),
+  );
+  const res = await post(router, { ...VALID_BODY, forcePaperType: "lined" });
+  assert.equal(res.status, 201);
+  assert.equal(insertedRows.length, 1);
+  assert.equal(insertedRows[0].content, "single paragraph");
+  const json = (await res.json()) as ProcessPhotoResponseShape;
+  assert.equal(json.paperType, "lined");
+});
+
+test("RT-18: forcePaperType=banana returns 400 validation error", async () => {
+  const router = createProcessPhotoRouter(makeDeps());
+  const res = await post(router, { ...VALID_BODY, forcePaperType: "banana" });
+  assert.equal(res.status, 400);
+  const json = (await res.json()) as { error: string };
+  assert.match(json.error, /forcePaperType/);
+});
+
+test("RT-19: preview=true + forcePaperType=gridded applies transform without DB insert", async () => {
+  let dbCalled = false;
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      dbInsertFn: async (rows) => {
+        dbCalled = true;
+        return rows.map((r, i) =>
+          mockDrizzleThought({ id: i + 1, content: r.content as string }),
+        );
+      },
+    }),
+  );
+  const res = await router.request("/process-photo?preview=true", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ...VALID_BODY, forcePaperType: "gridded" }),
+  });
+  assert.equal(res.status, 200);
+  const json = (await res.json()) as PreviewResponseShape;
+  assert.equal(json.paperType, "gridded");
+  assert.equal(json.thoughts.length, 1);
+  assert.equal(
+    json.thoughts[0].content,
+    "- call mom\n\n- pay rent\n\n- email dave",
+  );
+  assert.equal(dbCalled, false);
+});
+
+test("RT-20: oversized image (>7 MB base64) returns 413 before Claude call", async () => {
+  let claudeCalled = false;
+  let dbCalled = false;
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      callClaudeFn: async () => {
+        claudeCalled = true;
+        return JSON.stringify({
+          paperType: "lined",
+          confidence: 0.9,
+          thoughts: ["should never reach here"],
+        });
+      },
+      dbInsertFn: async (rows) => {
+        dbCalled = true;
+        return rows.map((r, i) =>
+          mockDrizzleThought({ id: i + 1, content: r.content as string }),
+        );
+      },
+    }),
+  );
+  const huge = "A".repeat(7 * 1024 * 1024 + 1);
+  const res = await post(router, { image: huge, mediaType: "image/jpeg" });
+  assert.equal(res.status, 413);
+  const json = (await res.json()) as { error: string };
+  assert.match(json.error, /image exceeds maximum size/);
+  assert.equal(claudeCalled, false, "Claude must not be called on oversized payload");
+  assert.equal(dbCalled, false);
 });
