@@ -160,9 +160,12 @@ _Shipped phase details archived to `.planning/milestones/v[X.Y]-ROADMAP.md`. Act
   1. Running `install.sh` produces DailyBrief and DailyBriefMonitor binaries signed with the user's Apple Developer ID Application certificate (verifiable via `codesign -dvv`)
   2. The designated requirement of each binary is stable across rebuilds — two back-to-back `install.sh` runs produce binaries with the same designated requirement hash
   3. After granting Full Disk Access / Automation / Accessibility once, a subsequent `install.sh` rebuild does not prompt the user to re-grant any TCC permission
-  4. On a fresh machine, `bootstrap.sh` retrieves the signing cert via 1Password CLI and imports it into the login keychain as a pre-flight step, and the first `install.sh` run produces signed binaries with no manual keychain intervention
+  4. On a fresh machine, `bootstrap.sh` verifies the signing cert is present in the login keychain as a pre-flight step and hard-fails with a remediation message (`security import ...`) if missing — cert import remains a one-time manual step per D-01
   5. If the signing cert is missing or expired, `install.sh` fails loud with a remediation message and refuses to produce unsigned or ad-hoc-signed output
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 58-01-PLAN.md — Strip CloudKit entitlements from DailyBriefMonitor.entitlements + add Developer ID cert guard, sign, and verify to install.sh (+ human-verify TCC persistence)
+- [ ] 58-02-PLAN.md — bootstrap.sh pre-flight cert check + build.sh ad-hoc codesign removal (D-05) + dailybrief-doctor.sh informational Dev ID cert row
 
 ### Phase 59: Smart Photo Upload Backend
 **Goal**: Vigil Core can take a handwritten-notes photo, detect paper type (lined vs gridded), return a verbatim transcription, and split or keep whole per paper type — all via the same upload endpoint the dashboard already uses.
