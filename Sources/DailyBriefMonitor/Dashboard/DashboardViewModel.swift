@@ -1476,7 +1476,7 @@ final class DashboardViewModel {
                 case 500: return "Couldn't save thoughts — try again in a moment"
                 case 502: return "Claude couldn't read that photo — try a sharper shot"
                 case 503: return "Vigil Core AI not configured — check Settings → AI tab"
-                default:  return "Couldn't process photo — see logs"
+                default:  return "[DEBUG httpStatus/\(code)] unexpected backend status"
                 }
             case .transport(let underlying):
                 if let urlErr = underlying as? URLError {
