@@ -1,0 +1,34 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-09T22:35:48.436Z",
+  "phase": "60",
+  "phase_name": "smart-photo-upload-dashboard-ux",
+  "phase_dir": ".planning/phases/60-smart-photo-upload-dashboard-ux",
+  "plan": null,
+  "task": null,
+  "total_tasks": null,
+  "status": "phase_complete",
+  "completed_tasks": [
+    {"id": "60-01", "name": "Backend preview mode + forcePaperType + 59-REVIEW fixes", "status": "done", "commits": ["e9c7798", "06bd70c", "d74cb5a", "9499af6"]},
+    {"id": "60-02", "name": "Dashboard preview sheet + Settings + ViewModel rewrite", "status": "done", "commits": ["9de440e", "1d29086", "a751abb", "f8baa7a", "04887c7", "947aa7f", "c48113e", "8f39f7e", "b2fde48", "7cd4009", "aa4ef99", "54bb696", "b1132c0"]}
+  ],
+  "remaining_tasks": [],
+  "blockers": [],
+  "human_actions_pending": [
+    {"action": "Reload com.jamesonmorrill.vigilcore launchd daemon on iMac", "context": "Was booted out for Phase 60 local testing; now needs to come back so the always-on local service is running again", "blocking": false, "command": "launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.jamesonmorrill.vigilcore.plist"},
+    {"action": "Reset dashboard Settings → AI → Vigil API Base URL back to production", "context": "During testing Base URL was temporarily set to http://localhost:3001/v1. For normal operation should be https://api.vigilhub.io/v1.", "blocking": false},
+    {"action": "Check prod DB for doubled thoughts from Phase 60 early test runs", "context": "Before the /v1 prefix was fixed and before we realized prod didn't have 60-01 yet, some test imports against prod may have resulted in both a preview call AND a committed call (prod ignored the preview query param). Worth running a SELECT count(*) FROM thoughts WHERE source='image' AND created_at BETWEEN '2026-04-09 17:00' AND '2026-04-09 22:00' to audit.", "blocking": false},
+    {"action": "Consider running /gsd-code-review-fix 60 before Phase 61", "context": "60-REVIEW has 3 warnings (picker snap-back, 413 off-by-one, defensive nil-photoAPI guards) that would be small and self-contained to fix", "blocking": false}
+  ],
+  "decisions": [
+    {"decision": "Preview semantics via ?preview=true query param + forcePaperType body field (not separate endpoints)", "rationale": "Minimal backend surface, preserves Phase 59 commit atomicity, clean dashboard contract", "phase": "60"},
+    {"decision": "splitGriddedBlobToLined heuristic using \\n\\n paragraph split instead of re-calling Claude", "rationale": "Validated on real gridded photos during human-verify; no ESCAPE HATCH to Option 1 (text-only re-call) needed", "phase": "60"},
+    {"decision": "Narrow closure injection for userDefaultPaperType (not full SettingsViewModel)", "rationale": "Test-friendly, zero AppDelegate rewiring", "phase": "60"},
+    {"decision": "Cancel button is unconditional, never disabled during refetch", "rationale": "User must always be able to bail from preview sheet; T-60-16 toggle-DoS mitigation only applies to picker + Commit", "phase": "60"},
+    {"decision": "Auto-delete only fires on committed photos; cancelled/errored preserves source file", "rationale": "Data-loss guard — clicking Cancel must never destroy the user's photo", "phase": "60"},
+    {"decision": "Photo triage loop removed from import path", "rationale": "Phase 59 /process-photo doesn't triage, and the old per-description loop didn't survive the rewrite. Photos land with category: null; existing re-triage UI still works post-commit. Documented as a known regression.", "phase": "60"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Start Phase 61 (folder-watch-feeder) via /gsd-discuss-phase 61, OR run /gsd-code-review-fix 60 first to knock out the 3 warnings from 60-REVIEW (small polish, self-contained).",
+  "context_notes": "Phase 60 landed end-to-end with 4 mid-checkpoint fixes discovered during human-verify. The 2-hour debug session that chased the missing /v1 prefix taught us to add 401/404/429 HTTP status cases to mapPhotoError — permanent improvement. Phase 61 can reuse APIImageDescriptionService.processPhoto for headless folder-watcher autoimport (preview: false). Both phases 59 and 60 are now pushed to origin/main — Railway will redeploy."
+}
