@@ -1486,11 +1486,14 @@ final class DashboardViewModel {
             case .httpStatus(let code):
                 switch code {
                 case 400: return "Image format not supported"
+                case 401: return "Not authorized — check API key in Settings → AI tab"
+                case 404: return "Endpoint not found — Base URL may be missing /v1 suffix"
                 case 413: return "Photo too large — try a smaller file (5 MB max)"
+                case 429: return "Rate limit hit — wait a few seconds and retry"
                 case 500: return "Couldn't save thoughts — try again in a moment"
                 case 502: return "Claude couldn't read that photo — try a sharper shot"
                 case 503: return "Vigil Core AI not configured — check Settings → AI tab"
-                default:  return "[DEBUG httpStatus/\(code)] unexpected backend status"
+                default:  return "Couldn't process photo — see logs"
                 }
             case .transport(let underlying):
                 if let urlErr = underlying as? URLError {
@@ -1498,9 +1501,8 @@ final class DashboardViewModel {
                     if urlErr.code == .cannotConnectToHost || urlErr.code == .notConnectedToInternet {
                         return "Request timed out"
                     }
-                    return "[DEBUG transport/URLError] code=\(urlErr.code.rawValue) \(urlErr.localizedDescription)"
                 }
-                return "[DEBUG transport/\(type(of: underlying))] \(underlying.localizedDescription)"
+                return "Couldn't process photo — see logs"
             }
         }
         if let urlErr = error as? URLError, urlErr.code == .timedOut {
@@ -1519,7 +1521,7 @@ final class DashboardViewModel {
                 return "Couldn't read image data — try a different file"
             }
         }
-        return "[DEBUG catchall/\(type(of: error))] \(error.localizedDescription)"
+        return "Couldn't process photo — see logs"
     }
 
     /// String → PaperType (nil if the backend returned "unknown" or anything else).
