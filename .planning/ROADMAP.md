@@ -143,7 +143,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 **Phases:**
 
 - [x] **Phase 58: Persistent Code Signing** — Developer ID sign DailyBrief + Monitor binaries so TCC permissions survive rebuilds (completed 2026-04-09)
-- [ ] **Phase 59: Smart Photo Upload Backend** — Vigil Core vision pipeline for paper-type detection + verbatim transcription
+- [x] **Phase 59: Smart Photo Upload Backend** — Vigil Core vision pipeline for paper-type detection + verbatim transcription (completed 2026-04-09)
 - [ ] **Phase 60: Smart Photo Upload Dashboard UX** — User override + uncertainty surfacing in dashboard upload flow
 - [ ] **Phase 61: Folder Watch Feeder** — DispatchSource watcher in DailyBriefMonitor feeding images + audio to Vigil Core
 - [ ] **Phase 62: Folder Watch Settings UI** — Re-enable hidden Settings UI and wire to the real folder watch feature
@@ -177,10 +177,10 @@ Plans:
   3. In both modes the returned thought text is a verbatim transcription of the actual handwriting — no paraphrase, no third-person rewording, no editorial summary
   4. The response includes a detected paper type and a confidence value that the dashboard UI can later consume
   5. A smoke-test suite covering at least one lined sample, one gridded sample, and one ambiguous sample passes against the running Vigil Core instance
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 59-01-PLAN.md — Foundation: export toResponse/ThoughtApiResponse, install node:test, scaffold /process-photo with pure processClaudeResponse helper + unit suite, mount route
-- [ ] 59-02-PLAN.md — Claude integration: verbatim OCR prompt, batched Drizzle insert, route-level tests with fake Claude injection, smoke-test extension, human-verify real lined + gridded photos
+- [x] 59-01-PLAN.md — Foundation: export toResponse/ThoughtApiResponse, install node:test, scaffold /process-photo with pure processClaudeResponse helper + unit suite, mount route
+- [x] 59-02-PLAN.md — Claude integration: verbatim OCR prompt, batched Drizzle insert, route-level tests with fake Claude injection, smoke-test extension, human-verify real lined + gridded photos
 
 ### Phase 60: Smart Photo Upload Dashboard UX
 **Goal**: When uploading a photo from the Mac dashboard, the user sees the detected paper type, can override it before committing, and is visibly told when detection was uncertain so the fallback default is not silent.
@@ -374,7 +374,7 @@ None
 | 56. Push origin on phase-complete for backend phases | v2.3 | 1/1 | Complete    | 2026-04-08 |
 | 57. Cross-machine bootstrap script | v2.3 | 2/2 | Complete    | 2026-04-08 |
 | 58. Persistent Code Signing | v2.4 | 2/2 | Complete   | 2026-04-09 |
-| 59. Smart Photo Upload Backend | v2.4 | 0/TBD | Not started | - |
+| 59. Smart Photo Upload Backend | v2.4 | 2/2 | Complete    | 2026-04-09 |
 | 60. Smart Photo Upload Dashboard UX | v2.4 | 0/TBD | Not started | - |
 | 61. Folder Watch Feeder | v2.4 | 0/TBD | Not started | - |
 | 62. Folder Watch Settings UI | v2.4 | 0/TBD | Not started | - |
