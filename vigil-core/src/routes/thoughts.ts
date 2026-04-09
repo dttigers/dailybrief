@@ -15,7 +15,7 @@ const VALID_CATEGORIES = [
 ] as const;
 
 /** API response shape — dates as ISO strings, tags as string[] */
-interface ThoughtApiResponse {
+export interface ThoughtApiResponse {
   id: number;
   content: string;
   category: string | null;
@@ -33,7 +33,7 @@ interface ThoughtApiResponse {
   projectId: number | null;
 }
 
-function toResponse(row: DrizzleThought): ThoughtApiResponse {
+export function toResponse(row: DrizzleThought): ThoughtApiResponse {
   return {
     id: row.id,
     content: row.content,
