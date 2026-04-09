@@ -1491,6 +1491,19 @@ final class DashboardViewModel {
         if let urlErr = error as? URLError, urlErr.code == .timedOut {
             return "Request timed out"
         }
+        // ImageDescriptionError is thrown by prepareImage/compress before the HTTP
+        // call — surfacing it properly avoids the generic catchall so users know
+        // the failure is client-side image prep, not a network/server issue.
+        if let imageErr = error as? ImageDescriptionError {
+            switch imageErr {
+            case .imageTooLarge:
+                return "Photo couldn't be prepared — try a smaller image or a different format"
+            case .apiError(let detail):
+                return "Image API error: \(detail)"
+            case .parseError:
+                return "Couldn't read image data — try a different file"
+            }
+        }
         return "Couldn't process photo — see logs"
     }
 
