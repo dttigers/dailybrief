@@ -90,6 +90,19 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
 
+            // Phase 60 Plan 02 — D-04 new Photo Upload subsection.
+            Section("Photo Upload") {
+                Picker("Default paper type when detection is uncertain",
+                       selection: $viewModel.photoUploadDefaultPaperType) {
+                    Text("Lined").tag(PaperType.lined)
+                    Text("Gridded").tag(PaperType.gridded)
+                }
+                .pickerStyle(.segmented)
+                Text("Used when the backend confidence is below 0.5 on an imported photo. Preview sheet pre-selects this value and shows an uncertainty banner.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Anthropic (legacy)") {
                 SecureField("API Key", text: $viewModel.claudeApiKey)
                 TextField("Model", text: $viewModel.claudeModel)
