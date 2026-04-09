@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # build.sh — Compile DailyBrief in release mode (compile-only).
 #
