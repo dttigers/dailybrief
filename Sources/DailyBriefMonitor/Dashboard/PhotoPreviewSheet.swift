@@ -195,7 +195,6 @@ struct PhotoPreviewSheet: View {
             Spacer()
             Button("Cancel", role: .cancel) { onCancel() }
                 .keyboardShortcut(.cancelAction)
-                .disabled(payload.isBusy)
 
             Button("Commit") { onCommit() }
                 .keyboardShortcut(.defaultAction)
