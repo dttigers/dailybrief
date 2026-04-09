@@ -191,8 +191,11 @@ Plans:
   2. The user can force the paper type to "lined" or "gridded" from that confirmation step, and the resulting thoughts match the forced mode (split vs single)
   3. When Vigil Core reports low confidence, the dashboard visibly surfaces the uncertainty (e.g., banner or badge) and pre-selects the user-configured default paper type
   4. The user-configured default paper type is persisted in Settings and is what drives the low-confidence fallback
-**Plans**: TBD
+**Plans:** 2 plans
 **UI hint**: yes
+Plans:
+- [ ] 60-01-PLAN.md — Backend preview mode + forcePaperType transform + splitGriddedBlobToLined helper + WR-01/WR-02/IN-02 fixes
+- [ ] 60-02-PLAN.md — Dashboard PhotoPreviewSheet + Settings default paper type + DashboardViewModel preview state machine + human-verify against real photos
 
 ### Phase 61: Folder Watch Feeder
 **Goal**: DailyBriefMonitor watches configured local directories and feeds new image and audio files to Vigil Core through the same endpoints the dashboard uses — images flow through the Smart Photo Upload pipeline, audio through the voice transcription path — with safe error handling so nothing is lost on failure.
