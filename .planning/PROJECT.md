@@ -88,7 +88,7 @@ Capture every thought with zero friction and have the system organize it for you
 
 ### Active (v2.4 — TBD)
 
-- [ ] Smart photo upload — paper-type detection (lined = split to thoughts, gridded = single project thought), verbatim transcription, user override — *deferred from v2.3*
+- [~] Smart photo upload — backend shipped Phase 59 (2026-04-09): `/v1/process-photo` verbatim-OCR endpoint with Claude vision, lined→N split / gridded→1 blob, batched Drizzle insert. Dashboard UX (Phase 60) still active.
 - [ ] G2 hardware testing — deferred until physical Even G2 glasses arrive
 
 ### Out of Scope
@@ -165,4 +165,4 @@ G2 plugin configured for production but awaiting physical hardware for validatio
 | Retire local GRDB/CloudKit/AI in v2.2 | API backend proven stable in v2.1; dual code paths were maintenance burden | ✓ Good |
 
 ---
-*Last updated: 2026-04-08 — shipped v2.3 Projects & Precision milestone*
+*Last updated: 2026-04-09 — Phase 59 smart-photo-upload backend shipped (v2.4 in progress)*
