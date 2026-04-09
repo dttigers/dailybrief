@@ -789,7 +789,14 @@ final class DashboardViewModel {
                     if photoAPI == nil {
                         importErrors.append("\(filename): Photo processing service unavailable")
                     } else {
-                        await processPhotoFile(url: url, index: index, total: total)
+                        let committed = await processPhotoFile(url: url, index: index, total: total)
+                        // D-03 data-loss guard: only auto-delete source files
+                        // when the user actually committed the preview. A
+                        // cancelled or errored photo must leave its source
+                        // file intact so the user can retry or recover it.
+                        if !committed {
+                            continue
+                        }
                     }
                 }
 
@@ -1252,8 +1259,12 @@ final class DashboardViewModel {
     ///   5. On commit: call /process-photo (no preview), append results, refresh
     ///      On cancel: skip
     ///      On override: refetch preview with the new forcePaperType, re-present
-    private func processPhotoFile(url: URL, index: Int, total: Int) async {
-        guard let photoAPI else { return }
+    /// Returns `true` if the user committed the preview, `false` if cancelled
+    /// or errored. The return value drives the outer loop's auto-delete guard
+    /// (D-03 data-loss protection — cancelled photos must leave their source
+    /// file intact so the user can retry).
+    private func processPhotoFile(url: URL, index: Int, total: Int) async -> Bool {
+        guard let photoAPI else { return false }
         let filename = url.lastPathComponent
         let fileNumber = index + 1
 
@@ -1270,7 +1281,7 @@ final class DashboardViewModel {
             }
         } catch {
             importErrors.append("\(filename): Couldn't read file")
-            return
+            return false
         }
 
         importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Analyzing")
@@ -1286,7 +1297,7 @@ final class DashboardViewModel {
             )
         } catch {
             importErrors.append("\(filename): \(Self.mapPhotoError(error))")
-            return
+            return false
         }
 
         // 2. Build payload (possibly with low-confidence refetch).
@@ -1306,7 +1317,7 @@ final class DashboardViewModel {
                 )
             } catch {
                 importErrors.append("\(filename): \(Self.mapPhotoError(error))")
-                return
+                return false
             }
             payload = PhotoPreviewPayload(
                 fileURL: url,
@@ -1336,9 +1347,12 @@ final class DashboardViewModel {
         }
 
         // 3. Present sheet and await the user's decision.
-        _ = await presentPreviewAndWait(payload: payload)
+        let decision = await presentPreviewAndWait(payload: payload)
         // 4. Regardless of outcome, the per-photo error/commit paths have
         //    already updated importErrors / main thoughts list as needed.
+        //    Return true only on commit so the outer loop's auto-delete guard
+        //    can preserve the source file on cancel/error.
+        return decision == .committed
     }
 
     /// Present the preview sheet and suspend until commit/cancel/override-error
