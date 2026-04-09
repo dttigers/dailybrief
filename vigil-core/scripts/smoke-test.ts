@@ -205,6 +205,117 @@ async function testTriage() {
   }
 }
 
+async function testProcessPhoto() {
+  console.log("\n── POST /process-photo ────────────────────────────────────");
+
+  // Tiny 1x1 transparent PNG base64 — enough to pass body validation.
+  // Claude will return something ambiguous for a 1x1; we only assert shape/status.
+  const TINY_PNG =
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgAAIAAAUAAen63NgAAAAASUVORK5CYII=";
+
+  // Happy path — shape check (Claude returns something; we validate parse + row shape)
+  try {
+    const res = await fetch(`${API_URL}/v1/process-photo`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({ image: TINY_PNG, mediaType: "image/png" }),
+    });
+    if (res.status !== 201 && res.status !== 200) {
+      fail(
+        "process-photo: happy path",
+        `expected 200/201, got ${res.status}`,
+      );
+    } else {
+      const json = (await res.json()) as {
+        paperType?: string;
+        confidence?: number;
+        thoughts?: Array<{ id: number; content: string; source: string }>;
+      };
+      if (typeof json.paperType !== "string") {
+        fail("process-photo: response shape", "paperType missing or wrong type");
+      } else if (typeof json.confidence !== "number") {
+        fail(
+          "process-photo: response shape",
+          "confidence missing or wrong type",
+        );
+      } else if (!Array.isArray(json.thoughts) || json.thoughts.length === 0) {
+        fail(
+          "process-photo: response shape",
+          "thoughts must be a non-empty array",
+        );
+      } else if (json.thoughts[0].source !== "image") {
+        fail(
+          "process-photo: thought source",
+          `expected "image", got ${json.thoughts[0].source}`,
+        );
+      } else {
+        pass(
+          "process-photo: happy path",
+          `paperType=${json.paperType} confidence=${json.confidence.toFixed(2)} thoughts=${json.thoughts.length}`,
+        );
+      }
+    }
+  } catch (err) {
+    fail(
+      "process-photo: happy path",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  // 400 — missing image
+  try {
+    const res = await fetch(`${API_URL}/v1/process-photo`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({ mediaType: "image/png" }),
+    });
+    if (res.status !== 400) {
+      fail(
+        "process-photo: 400 on missing image",
+        `expected 400, got ${res.status}`,
+      );
+    } else {
+      pass("process-photo: 400 on missing image");
+    }
+  } catch (err) {
+    fail(
+      "process-photo: 400 on missing image",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+
+  // 400 — invalid mediaType
+  try {
+    const res = await fetch(`${API_URL}/v1/process-photo`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({ image: TINY_PNG, mediaType: "application/pdf" }),
+    });
+    if (res.status !== 400) {
+      fail(
+        "process-photo: 400 on invalid mediaType",
+        `expected 400, got ${res.status}`,
+      );
+    } else {
+      pass("process-photo: 400 on invalid mediaType");
+    }
+  } catch (err) {
+    fail(
+      "process-photo: 400 on invalid mediaType",
+      err instanceof Error ? err.message : String(err),
+    );
+  }
+}
+
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -218,6 +329,7 @@ async function main() {
   await testSummaryAndBrief();
   await testTags();
   await testTriage();
+  await testProcessPhoto();
 
   // Summary
   const passed = results.filter((r) => r.passed).length;
