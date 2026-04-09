@@ -50,6 +50,30 @@ enum DateRangeFilter: String, CaseIterable {
     }
 }
 
+// MARK: - Photo Processing Injection (Phase 60 Plan 02)
+
+/// Abstraction over `APIImageDescriptionService.processPhoto` so
+/// DashboardViewModelPhotoPreviewTests can swap a scripted fake in without
+/// touching the network or the singleton VigilAPIClient.
+protocol PhotoProcessingAPI: Sendable {
+    func processPhoto(
+        imageData: Data,
+        mediaType: ImageMediaType,
+        preview: Bool,
+        forcePaperType: PaperType?
+    ) async throws -> ProcessedPhotoResponse
+}
+
+extension APIImageDescriptionService: PhotoProcessingAPI {}
+
+/// Terminal outcomes for the per-photo preview flow. Used to resume the
+/// CheckedContinuation that `processPhotoFile` awaits while the sheet is up.
+private enum PhotoPreviewDecision {
+    case committed   // user clicked Commit and the commit call succeeded
+    case cancelled   // user clicked Cancel (or override refetch errored out)
+    case errored     // commit call threw (error already recorded on importErrors)
+}
+
 /// View model for the central dashboard — fetches, filters, searches thoughts, and handles file imports.
 @MainActor @Observable
 final class DashboardViewModel {
@@ -154,6 +178,16 @@ final class DashboardViewModel {
     var importProgress: ImportProgress?
     var importErrors: [String] = []
 
+    // Phase 60 Plan 02 — photo preview flow state. `nil` means the sheet is
+    // NOT presented; the sheet only appears while `.awaitingUserDecision`.
+    var photoPreviewState: PhotoPreviewState? = nil
+
+    /// Continuation that the photo-batch loop awaits while the preview sheet
+    /// is up. commitPhotoPreview/cancelPhotoPreview resume it so the loop
+    /// advances to the next file. Stored as an IUO-free optional so a late
+    /// resume after re-entry is impossible (guard + nil out before resume).
+    private var photoPreviewContinuation: CheckedContinuation<PhotoPreviewDecision, Never>? = nil
+
     struct ImportProgress {
         var current: Int
         var total: Int
@@ -173,6 +207,20 @@ final class DashboardViewModel {
     private let therapyClassificationService: (any TherapyClassifyProviding)?
     private let therapyPatternService: (any TherapyPatternProviding)?
     private let therapyPrepService: (any TherapyPrepProviding)?
+
+    // Phase 60 Plan 02 — photo preview injection points.
+    // `photoAPI` is optional: when nil, image imports surface a
+    // "Photo processing service unavailable" error. In production
+    // (AppDelegate), the same APIImageDescriptionService instance that
+    // satisfies ImageDescriptionProviding ALSO conforms to
+    // PhotoProcessingAPI (via the extension above), so AppDelegate passes it
+    // for both.
+    private let photoAPI: (any PhotoProcessingAPI)?
+    /// Reads the user's "default paper type when detection is uncertain" at
+    /// photo-upload time. Closure rather than a direct SettingsViewModel
+    /// reference so tests can inject a stub without building full Settings.
+    private let userDefaultPaperTypeProvider: @MainActor () -> PaperType
+
     private var searchTask: Task<Void, Never>?
     /// In-flight loadThoughts task. Cancelled and replaced on every new invocation
     /// so concurrent mutations don't race and clobber the visible list.
@@ -193,7 +241,9 @@ final class DashboardViewModel {
         insightService: (any InsightProviding)? = nil,
         therapyClassificationService: (any TherapyClassifyProviding)? = nil,
         therapyPatternService: (any TherapyPatternProviding)? = nil,
-        therapyPrepService: (any TherapyPrepProviding)? = nil
+        therapyPrepService: (any TherapyPrepProviding)? = nil,
+        photoAPI: (any PhotoProcessingAPI)? = nil,
+        userDefaultPaperTypeProvider: @escaping @MainActor () -> PaperType = { .lined }
     ) {
         self.store = store
         self.projectsStore = projectsStore
@@ -205,6 +255,20 @@ final class DashboardViewModel {
         self.therapyClassificationService = therapyClassificationService
         self.therapyPatternService = therapyPatternService
         self.therapyPrepService = therapyPrepService
+        // If no explicit photoAPI was passed but the legacy imageDescriptionService
+        // happens to be an APIImageDescriptionService, reuse it — it already
+        // conforms to PhotoProcessingAPI via the extension above. This makes
+        // AppDelegate a no-op update for Phase 60 Plan 02 (Task 6 can wire an
+        // explicit photoAPI: later, but for now auto-promotion keeps the
+        // single injection point from AppDelegate working unchanged).
+        if let photoAPI {
+            self.photoAPI = photoAPI
+        } else if let apiService = imageDescriptionService as? APIImageDescriptionService {
+            self.photoAPI = apiService
+        } else {
+            self.photoAPI = nil
+        }
+        self.userDefaultPaperTypeProvider = userDefaultPaperTypeProvider
     }
 
     // MARK: - Public Methods
@@ -717,45 +781,15 @@ final class DashboardViewModel {
                     }
 
                 case .image:
-                    let descriptions: [String]
-
-                    if let descService = imageDescriptionService {
-                        importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Analyzing")
-
-                        if ImageConversion.needsConversion(url) {
-                            let jpegData = try ImageConversion.convertToJPEG(from: url)
-                            descriptions = try await descService.describeSubjects(imageData: jpegData, mediaType: .jpeg)
-                        } else {
-                            descriptions = try await descService.describeSubjects(imageURL: url)
-                        }
+                    // Phase 60 Plan 02 — preview-first photo flow via
+                    // /v1/process-photo. The legacy /describe-image path is
+                    // no longer called from the dashboard (D-07); the helper
+                    // method still exists on APIImageDescriptionService for
+                    // any future non-dashboard caller (e.g. folder watcher).
+                    if photoAPI == nil {
+                        importErrors.append("\(filename): Photo processing service unavailable")
                     } else {
-                        descriptions = ["Image: \(filename)"]
-                    }
-
-                    importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Saving")
-                    for description in descriptions {
-                        let thought = try await captureService.capture(description, source: .image)
-
-                        if let triageService {
-                            importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Categorizing")
-                            do {
-                                let result = try await triageService.triage(description)
-                                if var t = try await store.fetch(id: thought.id!) {
-                                    t.category = result.category
-                                    t.confidence = result.confidence
-                                    if result.category == .task && t.taskStatus == nil {
-                                        t.taskStatus = .open
-                                    }
-                                    try await store.update(t)
-                                    // Auto-classify therapy thoughts after import triage
-                                    if result.category == .therapy {
-                                        await classifyTherapyIfNeeded(t)
-                                    }
-                                }
-                            } catch {
-                                NSLog("Batch triage failed for %@: %@", filename, error.localizedDescription)
-                            }
-                        }
+                        await processPhotoFile(url: url, index: index, total: total)
                     }
                 }
 
@@ -1201,6 +1235,278 @@ final class DashboardViewModel {
             await loadCounts()
         } catch {
             NSLog("Dashboard: failed to delete thought %lld — %@", id, error.localizedDescription)
+        }
+    }
+
+    // MARK: - Photo Preview Flow (Phase 60 Plan 02)
+
+    /// Process one photo through the preview-then-commit pipeline. Sequential
+    /// per-photo loop — the caller (`processFiles`) awaits us for each URL.
+    ///
+    /// Flow:
+    ///   1. Read bytes + detect mediaType
+    ///   2. Call /process-photo?preview=true — get initial paperType/confidence/thoughts
+    ///   3. If confidence < 0.5, issue a SECOND preview call with forcePaperType = userDefault
+    ///      and build the payload with the uncertainty banner flag set
+    ///   4. Present the sheet by setting photoPreviewState and awaiting a continuation
+    ///   5. On commit: call /process-photo (no preview), append results, refresh
+    ///      On cancel: skip
+    ///      On override: refetch preview with the new forcePaperType, re-present
+    private func processPhotoFile(url: URL, index: Int, total: Int) async {
+        guard let photoAPI else { return }
+        let filename = url.lastPathComponent
+        let fileNumber = index + 1
+
+        // Read bytes (and do any PNG/HEIC → JPEG conversion already needed by
+        // the legacy path so 1MB compression in processPhoto starts from JPEG).
+        let (imageData, mediaType): (Data, ImageMediaType)
+        do {
+            if ImageConversion.needsConversion(url) {
+                imageData = try ImageConversion.convertToJPEG(from: url)
+                mediaType = .jpeg
+            } else {
+                imageData = try Data(contentsOf: url)
+                mediaType = Self.inferMediaType(for: url)
+            }
+        } catch {
+            importErrors.append("\(filename): Couldn't read file")
+            return
+        }
+
+        importProgress = ImportProgress(current: fileNumber, total: total, currentFile: filename, phase: "Analyzing")
+
+        // 1. Initial preview call.
+        let initial: ProcessedPhotoResponse
+        do {
+            initial = try await photoAPI.processPhoto(
+                imageData: imageData,
+                mediaType: mediaType,
+                preview: true,
+                forcePaperType: nil
+            )
+        } catch {
+            importErrors.append("\(filename): \(Self.mapPhotoError(error))")
+            return
+        }
+
+        // 2. Build payload (possibly with low-confidence refetch).
+        let detectedType = Self.parsePaperType(initial.paperType) ?? .lined
+        let payload: PhotoPreviewPayload
+        if initial.confidence < 0.5 {
+            // D-05 — low confidence: refetch with the user's Settings default,
+            // pre-select that value, show uncertainty banner.
+            let userDefault = userDefaultPaperTypeProvider()
+            let refetched: ProcessedPhotoResponse
+            do {
+                refetched = try await photoAPI.processPhoto(
+                    imageData: imageData,
+                    mediaType: mediaType,
+                    preview: true,
+                    forcePaperType: userDefault
+                )
+            } catch {
+                importErrors.append("\(filename): \(Self.mapPhotoError(error))")
+                return
+            }
+            payload = PhotoPreviewPayload(
+                fileURL: url,
+                indexInBatch: index,
+                totalInBatch: total,
+                detectedPaperType: detectedType,
+                confidence: initial.confidence,
+                thoughts: refetched.thoughts.map(\.content),
+                currentForcePaperType: userDefault,
+                showUncertaintyBanner: true,
+                userDefaultPaperType: userDefault,
+                isBusy: false
+            )
+        } else {
+            payload = PhotoPreviewPayload(
+                fileURL: url,
+                indexInBatch: index,
+                totalInBatch: total,
+                detectedPaperType: detectedType,
+                confidence: initial.confidence,
+                thoughts: initial.thoughts.map(\.content),
+                currentForcePaperType: detectedType,
+                showUncertaintyBanner: false,
+                userDefaultPaperType: userDefaultPaperTypeProvider(),
+                isBusy: false
+            )
+        }
+
+        // 3. Present sheet and await the user's decision.
+        _ = await presentPreviewAndWait(payload: payload)
+        // 4. Regardless of outcome, the per-photo error/commit paths have
+        //    already updated importErrors / main thoughts list as needed.
+    }
+
+    /// Present the preview sheet and suspend until commit/cancel/override-error
+    /// resumes the continuation. Returns the terminal decision.
+    private func presentPreviewAndWait(payload: PhotoPreviewPayload) async -> PhotoPreviewDecision {
+        photoPreviewState = .awaitingUserDecision(payload)
+        return await withCheckedContinuation { (cont: CheckedContinuation<PhotoPreviewDecision, Never>) in
+            self.photoPreviewContinuation = cont
+        }
+    }
+
+    // MARK: Preview Decision Handlers
+
+    /// User clicked Commit on the preview sheet. Issues the non-preview
+    /// /process-photo call with the current forcePaperType (omitted when it
+    /// matches the detected type, to keep the log byte-identical to a
+    /// no-override call). On success, refreshes the thought list; on failure,
+    /// records an importErrors entry. Either way, advances the batch.
+    func commitPhotoPreview() async {
+        guard case .awaitingUserDecision(var payload) = photoPreviewState,
+              let photoAPI else { return }
+
+        payload.isBusy = true
+        photoPreviewState = .awaitingUserDecision(payload)
+
+        let filename = payload.fileURL.lastPathComponent
+        let forced: PaperType? = payload.currentForcePaperType == payload.detectedPaperType
+            ? nil
+            : payload.currentForcePaperType
+
+        do {
+            let imageData: Data
+            let mediaType: ImageMediaType
+            if ImageConversion.needsConversion(payload.fileURL) {
+                imageData = try ImageConversion.convertToJPEG(from: payload.fileURL)
+                mediaType = .jpeg
+            } else {
+                imageData = try Data(contentsOf: payload.fileURL)
+                mediaType = Self.inferMediaType(for: payload.fileURL)
+            }
+
+            _ = try await photoAPI.processPhoto(
+                imageData: imageData,
+                mediaType: mediaType,
+                preview: false,
+                forcePaperType: forced
+            )
+
+            // Commit success — backend persisted the rows. Refresh the list
+            // so the new thoughts appear. (Refresh is cheap + matches the
+            // existing end-of-batch refresh in processFiles.)
+            await refresh()
+            photoPreviewState = nil
+            resumePreviewWaiter(with: .committed)
+        } catch {
+            importErrors.append("\(filename): \(Self.mapPhotoError(error))")
+            photoPreviewState = nil
+            resumePreviewWaiter(with: .errored)
+        }
+    }
+
+    /// User clicked Cancel. Skip this photo; advance the batch.
+    func cancelPhotoPreview() {
+        guard case .awaitingUserDecision = photoPreviewState else { return }
+        photoPreviewState = nil
+        resumePreviewWaiter(with: .cancelled)
+    }
+
+    /// User flipped the segmented picker to a new paper type. Refetch the
+    /// preview with `forcePaperType = newType` and update the payload in
+    /// place (state stays `.awaitingUserDecision`). On refetch error, record
+    /// the error and advance the batch (cancels the waiter).
+    func overridePhotoPreview(to newType: PaperType) async {
+        guard case .awaitingUserDecision(var payload) = photoPreviewState,
+              payload.currentForcePaperType != newType,
+              let photoAPI else { return }
+
+        // Mark busy — disables the picker + buttons in the sheet.
+        payload.isBusy = true
+        photoPreviewState = .awaitingUserDecision(payload)
+
+        let filename = payload.fileURL.lastPathComponent
+        do {
+            let imageData: Data
+            let mediaType: ImageMediaType
+            if ImageConversion.needsConversion(payload.fileURL) {
+                imageData = try ImageConversion.convertToJPEG(from: payload.fileURL)
+                mediaType = .jpeg
+            } else {
+                imageData = try Data(contentsOf: payload.fileURL)
+                mediaType = Self.inferMediaType(for: payload.fileURL)
+            }
+
+            let refetched = try await photoAPI.processPhoto(
+                imageData: imageData,
+                mediaType: mediaType,
+                preview: true,
+                forcePaperType: newType
+            )
+
+            payload.thoughts = refetched.thoughts.map(\.content)
+            payload.currentForcePaperType = newType
+            payload.isBusy = false
+            photoPreviewState = .awaitingUserDecision(payload)
+            // Do NOT resume the continuation — we stay in awaitingUserDecision.
+        } catch {
+            importErrors.append("\(filename): \(Self.mapPhotoError(error))")
+            photoPreviewState = nil
+            resumePreviewWaiter(with: .cancelled)
+        }
+    }
+
+    /// Resume and nil-out the waiter in one atomic step so re-entry is safe.
+    private func resumePreviewWaiter(with decision: PhotoPreviewDecision) {
+        let cont = photoPreviewContinuation
+        photoPreviewContinuation = nil
+        cont?.resume(returning: decision)
+    }
+
+    // MARK: Photo Preview Helpers
+
+    /// Map an arbitrary error thrown by the photo API (or file I/O) to the
+    /// D-08 friendly banner string. NEVER surfaces raw error text to the UI —
+    /// Plan 60-01 already strips raw Anthropic/SDK text from the backend 502
+    /// body, but we do our own fixed mapping as defense-in-depth (T-60-12).
+    static func mapPhotoError(_ error: Error) -> String {
+        if let photoError = error as? ProcessPhotoError {
+            switch photoError {
+            case .unsupportedMediaType:
+                return "Image format not supported"
+            case .httpStatus(let code):
+                switch code {
+                case 400: return "Image format not supported"
+                case 413: return "Photo too large — try a smaller file (5 MB max)"
+                case 500: return "Couldn't save thoughts — try again in a moment"
+                case 502: return "Claude couldn't read that photo — try a sharper shot"
+                case 503: return "Vigil Core AI not configured — check Settings → AI tab"
+                default:  return "Couldn't process photo — see logs"
+                }
+            case .transport(let underlying):
+                if let urlErr = underlying as? URLError {
+                    if urlErr.code == .timedOut { return "Request timed out" }
+                    if urlErr.code == .cannotConnectToHost || urlErr.code == .notConnectedToInternet {
+                        return "Request timed out"
+                    }
+                }
+                return "Couldn't process photo — see logs"
+            }
+        }
+        if let urlErr = error as? URLError, urlErr.code == .timedOut {
+            return "Request timed out"
+        }
+        return "Couldn't process photo — see logs"
+    }
+
+    /// String → PaperType (nil if the backend returned "unknown" or anything else).
+    static func parsePaperType(_ raw: String) -> PaperType? {
+        PaperType(rawValue: raw)
+    }
+
+    /// File URL → ImageMediaType using the extension.
+    static func inferMediaType(for url: URL) -> ImageMediaType {
+        switch url.pathExtension.lowercased() {
+        case "jpg", "jpeg": return .jpeg
+        case "png": return .png
+        case "gif": return .gif
+        case "webp": return .webp
+        default: return .jpeg
         }
     }
 
