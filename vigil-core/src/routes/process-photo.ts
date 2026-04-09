@@ -157,6 +157,24 @@ export function processClaudeResponse(rawText: string): ProcessedPhotoResult {
   return { paperType, confidence, thoughts };
 }
 
+/**
+ * Split a gridded-mode transcription into lined-mode thoughts.
+ * Uses Claude's natural \n\n paragraph convention observed in gridded output
+ * (verified against the Phase 59 real-photo brainstorm page, 2026-04-09).
+ * Degenerate input (0 or 1 paragraphs after trim) → return the original trimmed
+ * blob as a single entry so callers never get an empty thoughts array.
+ *
+ * See: .planning/phases/60-smart-photo-upload-dashboard-ux/60-RESEARCH.md
+ */
+export function splitGriddedBlobToLined(blob: string): string[] {
+  const parts = blob
+    .split(/\n{2,}/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  if (parts.length < 2) return [blob.trim()];
+  return parts;
+}
+
 // ── Dependency injection surface (Plan 02 Task 1.2) ─────────────────────────
 
 /**

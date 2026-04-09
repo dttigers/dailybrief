@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import type { Hono } from "hono";
 import {
   processClaudeResponse,
+  splitGriddedBlobToLined,
   createProcessPhotoRouter,
   type ProcessPhotoDeps,
 } from "./process-photo.js";
@@ -119,6 +120,51 @@ test("thought strings are trimmed; empty-after-trim entries are dropped", () => 
   });
   const result = processClaudeResponse(raw);
   assert.deepEqual(result.thoughts, ["item 1", "- item 2"]);
+});
+
+// ── splitGriddedBlobToLined helper tests (Plan 60-01 Task 1) ────────────────
+// Heuristic \n\n split per 60-RESEARCH.md Option 2. Degenerate passthrough
+// (0 or 1 paragraphs after trim) → return single-entry array so callers never
+// see an empty thoughts array.
+
+test("T-60-a: multi-paragraph input splits on \\n\\n", () => {
+  const result = splitGriddedBlobToLined("A\n\nB\n\nC");
+  assert.deepEqual(result, ["A", "B", "C"]);
+});
+
+test("T-60-b: single paragraph (no \\n\\n) returns single-entry array", () => {
+  const result = splitGriddedBlobToLined("just one line");
+  assert.equal(result.length, 1);
+  assert.equal(result[0], "just one line");
+});
+
+test("T-60-c: empty string returns single-entry array with empty string", () => {
+  const result = splitGriddedBlobToLined("");
+  assert.equal(result.length, 1);
+  assert.equal(result[0], "");
+});
+
+test("T-60-d: whitespace-only paragraphs are filtered", () => {
+  const result = splitGriddedBlobToLined("A\n\n   \n\nB");
+  assert.deepEqual(result, ["A", "B"]);
+});
+
+test("T-60-e: 3+ consecutive newlines also count as separator", () => {
+  const result = splitGriddedBlobToLined("A\n\n\n\nB");
+  assert.deepEqual(result, ["A", "B"]);
+});
+
+test("T-60-f: entries are trimmed", () => {
+  const result = splitGriddedBlobToLined("  A  \n\n  B  ");
+  assert.deepEqual(result, ["A", "B"]);
+});
+
+test("T-60-g: live gridded verification blob splits cleanly", () => {
+  const blob =
+    "Brick ReBuilder\n\nAI API cost\n\nLet me choose Set Manually/\n\nUI Interface";
+  const result = splitGriddedBlobToLined(blob);
+  assert.ok(result.length >= 3, `expected >=3 parts, got ${result.length}`);
+  assert.equal(result[0], "Brick ReBuilder");
 });
 
 // ── Route-level tests (Plan 02 Task 2) ──────────────────────────────────────
