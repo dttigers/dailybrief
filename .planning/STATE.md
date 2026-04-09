@@ -1,36 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.3
-milestone_name: Projects & Precision
-status: executing
-stopped_at: Completed 57-02-PLAN.md (dailybrief-doctor.sh)
-last_updated: "2026-04-08T22:02:28.112Z"
-last_activity: 2026-04-08
+milestone: v2.4
+milestone_name: Capture Without Friction
+status: roadmap_defined
+stopped_at: v2.4 roadmap created — Phases 58-62 defined, ready for /gsd-plan-phase 58
+last_updated: "2026-04-09T14:00:00.000Z"
+last_activity: 2026-04-09
 progress:
-  total_phases: 7
-  completed_phases: 6
-  total_plans: 14
-  completed_plans: 14
-  percent: 100
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-07)
+See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 51 — menu-bar-update-action
+**Current focus:** Phase 58 — persistent-code-signing
 
 ## Current Position
 
-Phase: 55
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-04-08
+Phase: 58 (Not started)
+Plan: —
+Status: Roadmap defined, awaiting `/gsd-plan-phase 58`
+Last activity: 2026-04-09 — v2.4 ROADMAP.md written, Phases 58-62 mapped to 17 requirements
 
-Progress: [██████████████████████████░░░░] 50/54 phases complete (prior milestones)
+Progress: [██████████████████████████████] 57/57 phases complete (through v2.3); v2.4 0/5
 
 ## Performance Metrics
 
@@ -52,10 +52,8 @@ Progress: [███████████████████████
 | v2.0 Vigil Platform | 29-36 | 22 | 1 day |
 | v2.1 Server Deployment | 37-44 | 13 | 1 day |
 | v2.2 Polish & Power | 45-50 | 12 | 1 day |
-| Phase 55 P01 | 5 | 3 tasks | 2 files |
-| Phase 56 P01 | 25 | 5 tasks | 6 files |
-| Phase 57-cross-machine-bootstrap-script P01 | 30 | 3 tasks | 1 files |
-| Phase 57 P02 | 18m | 2 tasks | 1 files |
+| v2.3 Projects & Precision | 51-57 | 14 | ~19h |
+| v2.4 Capture Without Friction | 58-62 | TBD | - |
 
 ## Accumulated Context
 
@@ -64,17 +62,21 @@ Progress: [███████████████████████
 All decisions logged in PROJECT.md Key Decisions table.
 Full decision history available in milestone archives under .planning/milestones/.
 
+Recent decisions affecting v2.4:
+
+- Theme order is locked: SIGN → PHOTO → WATCH. Signing first because every rebuild on later phases currently costs a round of re-granting TCC permissions; PHOTO second because it's the anchor feature with the most unknowns (Claude vision prompt, confidence thresholds); WATCH last because it wires SIGN and PHOTO together
+- Scope discipline rule baked in at milestone kickoff: if something urgent fires mid-milestone, it goes to backlog → v2.5, NOT promoted into v2.4. PHOTO-01..06 has been deferred once already (v2.3 → v2.4) and does not get deferred twice
+- Work Order dashboard section (WO-01..03) explicitly deferred to v2.5+ pending ServiceNow API token
+- `.app` bundle packaging and notarization remain out of scope — Developer ID signing works on bare binaries
+- Folder watch is strictly a local Swift feeder; Vigil Core does not get a server-side watcher (it cannot see the local filesystem)
+
 Recent decisions affecting v2.3:
 
-- Manual assignment only for projects this milestone (no auto-routing from photo content)
-- Personal projects only — no work order linkage
-- G2 hardware testing deferred (glasses arriving ~1 week from 2026-04-07)
-- .app packaging remains out of scope
 - [Phase 55]: Phase 55 closed as NO-OP — Dockerfile CMD chain already runs migrations on every Railway deploy since Phase 39-01 (2026-04-05); D-04 preDeployCommand and D-05 CI check deferred
 - [Phase 56]: loadConfig surfaces deploy_targets as flattened top-level field — cfg.deploy_targets not cfg.workflow.deploy_targets
 - [Phase 56]: git log ERE grep with non-digit boundary prevents false-match on 3-digit phase numbers
-- [Phase 57-cross-machine-bootstrap-script]: D-13 honored: health check is HTTP 200 ONLY — status:degraded accepted as steady state since Mac apps talk to Railway not localhost
-- [Phase 57-cross-machine-bootstrap-script]: restore_op_document() helper function used over inline op calls for DRY fail-loud error messages
+- [Phase 57]: D-13 honored: health check is HTTP 200 ONLY — status:degraded accepted as steady state since Mac apps talk to Railway not localhost
+- [Phase 57]: restore_op_document() helper function used over inline op calls for DRY fail-loud error messages
 - [Phase 57]: railway v4.36.1 uses 'railway variable --kv' (singular), not 'railway variables --kv' — confirmed live before implementation
 
 ### Pending Todos
@@ -84,6 +86,7 @@ None.
 ### Blockers/Concerns
 
 - G2 hardware testing — plugin validated in simulator only, awaiting physical Even G2 glasses
+- ServiceNow API token — blocks WO-01..03 work order dashboard section (deferred to v2.5+)
 
 ### Quick Tasks Completed
 
@@ -95,10 +98,11 @@ None.
 ### Roadmap Evolution
 
 - v1.0–v2.2: 50 phases, 112+ plans shipped across 8 milestones
-- v2.3 Projects & Precision: Phases 51-54, 17 requirements across DEV / PROJ / PHOTO
+- v2.3 Projects & Precision: 6 phases, 14 plans, 11/17 requirements (PHOTO-01..06 deferred to v2.4)
+- v2.4 Capture Without Friction: Phases 58-62, 17 requirements across SIGN / PHOTO / WATCH
 
 ## Session Continuity
 
-Last session: 2026-04-08T21:34:13.005Z
-Stopped at: Completed 57-02-PLAN.md (dailybrief-doctor.sh)
+Last session: 2026-04-09T14:00:00.000Z
+Stopped at: v2.4 roadmap written (Phases 58-62), requirements traceability filled, ready for `/gsd-plan-phase 58`
 Resume file: None

@@ -1,0 +1,92 @@
+# Requirements: Vigil — v2.4 Capture Without Friction
+
+**Milestone:** v2.4 Capture Without Friction
+**Started:** 2026-04-09
+**Goal:** Close the capture loop so that a photo of handwritten notes — or any file dropped into a watched folder — becomes correctly-structured thoughts with no manual dashboard step, and stop losing macOS TCC permissions on every rebuild.
+
+---
+
+## v2.4 Requirements
+
+### Signing & Permissions (SIGN)
+
+- [ ] **SIGN-01**: `DailyBrief` CLI and `DailyBriefMonitor` menu-bar binaries are signed with the user's Apple Developer ID Application certificate during every `install.sh` build
+- [ ] **SIGN-02**: The signing identity is resolved consistently across rebuilds so the binaries' code-signature designated requirement does not change, allowing macOS TCC to preserve granted permissions (Full Disk Access, Automation, Accessibility, and any future grants)
+- [ ] **SIGN-03**: macOS TCC permissions granted once survive subsequent `install.sh` rebuilds — the user does not re-grant Full Disk Access, Automation, or Accessibility after updating to a newly-built binary
+- [ ] **SIGN-04**: `bootstrap.sh` on a fresh machine handles the signing cert setup as a pre-flight step (retrieved via 1Password CLI, imported into the login keychain) so a new machine builds signed binaries on first run with no manual keychain fiddling
+- [ ] **SIGN-05**: If the signing cert is missing or expired at build time, `install.sh` fails loud with a remediation message — no silent fallback to unsigned or ad-hoc binaries (which would reset TCC permissions without explanation)
+
+### Smart Photo Upload (PHOTO — carried from v2.3)
+
+- [ ] **PHOTO-01**: System detects whether an uploaded photo is lined paper or gridded paper before extracting content
+- [ ] **PHOTO-02**: Lined-paper photos are split into multiple separate thoughts, one per distinct line/bullet/paragraph
+- [ ] **PHOTO-03**: Gridded-paper photos are kept as a single thought, eligible for assignment to a project
+- [ ] **PHOTO-04**: Both modes produce verbatim transcriptions of the actual handwriting — no third-person paraphrase, no editorial summary
+- [ ] **PHOTO-05**: User can override the detected paper type before the thoughts are committed (force "lined" or "gridded")
+- [ ] **PHOTO-06**: If paper type can't be confidently detected, system falls back to a user-configurable default and surfaces the uncertainty in the UI
+
+### Folder Watch — API Era (WATCH)
+
+- [ ] **WATCH-01**: DailyBriefMonitor watches one or more user-configured directories for new image and audio files using a local DispatchSource file-system watcher (no polling)
+- [ ] **WATCH-02**: When a new image file appears in a watched directory, it is uploaded to Vigil Core through the same endpoints the dashboard upload UI uses, and is processed by the Smart Photo Upload pipeline (paper-type detection, split/no-split, verbatim transcription)
+- [ ] **WATCH-03**: When a new audio file appears in a watched directory, it is uploaded to Vigil Core and processed through the existing voice-capture transcription path
+- [ ] **WATCH-04**: Processed files are moved to a configurable "done" subdirectory (or deleted, per user preference) so the watched directory does not re-trigger on the same file
+- [ ] **WATCH-05**: Watched directories, the post-processing action (move / delete), and the default paper-type override are configurable from the existing Settings UI — and the previously-disabled folder-watching UI (quick task 260407-q7d) is re-enabled to wire to the real feature
+- [ ] **WATCH-06**: Upload failures (network, auth, API error) surface a visible error state in DailyBriefMonitor and do NOT delete or move the source file — the user can retry by moving the file out and back in
+
+---
+
+## Future Requirements (Deferred to v2.5+)
+
+### Work Order Dashboard Section (deferred 2026-04-09 during v2.4 scoping)
+
+- [ ] **WO-01** (v2.5+): Dashboard has a dedicated "Open Work Orders" section listing all work orders Vigil knows about, regardless of source
+- [ ] **WO-02** (v2.5+): Each work order row supports cycling status through the same states as thought tasks (open → in-progress → done), with Vigil-local state persistence (no write-back to source system)
+- [ ] **WO-03** (v2.5+): Section is source-agnostic — it displays work orders whether they arrived via Gmail/IMAP scrape or direct ServiceNow API
+
+**Why deferred:** The work-order source is actively pivoting. IT is blocking Gmail forwarding and IMAP access, and the target end-state is direct ServiceNow API as the single source. The ServiceNow API token is currently parked on the same waiting list as the Even G2 v0.2.0 plan. Building a dashboard UI around Gmail-sourced data now would mean rebuilding it against ServiceNow later, or shipping against a data source that's actively degrading. Revisit when the ServiceNow token lands.
+
+**Unblocks it:** ServiceNow API token provisioning (currently blocked by the same gatekeeper as Even G2 v0.2.0).
+
+---
+
+## Out of Scope (v2.4)
+
+- **`.app` bundle packaging** — still deferred per v2.3 decision. Shell-script install is sufficient while user is the only developer+user. Developer ID signing works on bare binaries without a bundle.
+- **Notarization** — signing ≠ notarizing. Notarization only matters for distribution to other users; single-user installs don't need it.
+- **Auto-tagging photos by content** — Smart Photo Upload does paper-type detection and verbatim transcription only. AI-driven tagging or project auto-assignment stays out.
+- **Server-side folder watching** — Vigil Core cannot see the user's local filesystem. Folder watch is strictly a local Swift feeder for the API.
+- **Mobile / iOS capture path** — still out, still waiting on mobile investment decision.
+- **G2 hardware validation** — parked separately in `.planning/vigil-v0.2.0-g2-plan.md`, not part of v2.4.
+- **Auto-routing of photos to projects** — v2.3 shipped manual assignment only; auto-routing from photo content stays out (v2.3 Decision, still valid).
+- **OCR fallback for printed text** — Smart Photo Upload is explicitly about *handwritten* notes. Printed-text OCR is a separate future capability.
+
+---
+
+## Scope Discipline (v2.4 baked-in rule)
+
+**If something urgent fires mid-milestone, it goes to backlog → v2.5, NOT promoted into v2.4 unless it is a deploy-blocking bug.** PHOTO-01..06 has been deferred once already (v2.3 → v2.4) because infrastructure phases (55/56/57) were promoted from the backlog and stole the oxygen. It does not get deferred twice. This rule was agreed at milestone kickoff on 2026-04-09.
+
+---
+
+## Traceability
+
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| SIGN-01 | Phase 58 | Not started |
+| SIGN-02 | Phase 58 | Not started |
+| SIGN-03 | Phase 58 | Not started |
+| SIGN-04 | Phase 58 | Not started |
+| SIGN-05 | Phase 58 | Not started |
+| PHOTO-01 | Phase 59 | Not started |
+| PHOTO-02 | Phase 59 | Not started |
+| PHOTO-03 | Phase 59 | Not started |
+| PHOTO-04 | Phase 59 | Not started |
+| PHOTO-05 | Phase 60 | Not started |
+| PHOTO-06 | Phase 60 | Not started |
+| WATCH-01 | Phase 61 | Not started |
+| WATCH-02 | Phase 61 | Not started |
+| WATCH-03 | Phase 61 | Not started |
+| WATCH-04 | Phase 61 | Not started |
+| WATCH-05 | Phase 62 | Not started |
+| WATCH-06 | Phase 61 | Not started |

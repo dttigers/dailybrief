@@ -6,11 +6,18 @@
 
 **Notable outcome:** Phase 56's push hook fired for real during Phase 53 complete, pushing 22 backlogged commits to origin — the exact 53-04 bug it was built to prevent would have recurred otherwise.
 
-## Next Milestone: v2.4 (TBD)
+## Current Milestone: v2.4 Capture Without Friction
 
-Run `/gsd-new-milestone v2.4` to define. Carry forward: Phase 54 Smart Photo Upload + 6 PHOTO-XX requirements (see `.planning/deferred-to-v2.4.md`).
+**Goal:** Close the capture loop so that a photo of handwritten notes — or any file dropped into a watched folder — becomes correctly-structured thoughts with no manual dashboard step, and stop losing macOS TCC permissions on every rebuild.
 
-**Deferred:** G2 physical hardware validation (glasses awaited)
+**Target features (sequenced):**
+1. **Persistent macOS permissions** — Developer ID signing for DailyBrief + DailyBriefMonitor binaries; TCC permissions (FDA, Automation, Accessibility) survive every rebuild because the designated requirement stops changing. Signing cert handling folded into bootstrap.sh step 0 via 1Password CLI.
+2. **Smart Photo Upload** — Paper-type detection (lined → split into thoughts, gridded → single thought), verbatim transcription, user override, uncertainty fallback. Runs through Vigil Core AI endpoints. (PHOTO-01..06 carried from v2.3.)
+3. **Folder Watch — API Era** — Local Swift DispatchSource watcher in DailyBriefMonitor feeds images + audio to Vigil Core via existing endpoints. Images flow through the Smart Photo Upload pipeline above. Settings UI un-hidden and wired to the real feature.
+
+**Key decision — scope discipline:** If something urgent fires mid-milestone it goes to backlog → v2.5, NOT promoted into v2.4. PHOTO-01..06 has been deferred once already and doesn't get deferred twice. (This rule was baked in at milestone kickoff 2026-04-09 after v2.3's infrastructure scope-slip displaced Phase 54.)
+
+**Deferred:** G2 physical hardware validation (still awaiting glasses + Even Hub + ServiceNow token per `.planning/vigil-v0.2.0-g2-plan.md`), `.app` bundle packaging (still out of scope), notarization (not needed — single-user distribution).
 
 ## What This Is
 

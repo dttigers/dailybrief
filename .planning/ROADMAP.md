@@ -15,6 +15,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.1 Server Deployment** — Phases 37-44 (shipped 2026-04-05)
 - ✅ **v2.2 Polish & Power** — Phases 45-50 (shipped 2026-04-05)
 - ✅ **v2.3 Projects & Precision** — Phases 51-53, 55-57 (shipped 2026-04-08; Phase 54 deferred to v2.4)
+- 🚧 **v2.4 Capture Without Friction** — Phases 58-62 (in progress, started 2026-04-09)
 
 ## Completed Milestones
 
@@ -135,17 +136,81 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
-## Next Milestone (v2.4 — TBD)
+## Active Milestone: v2.4 Capture Without Friction
 
-Run `/gsd-new-milestone v2.4` to define requirements and phases.
+**Goal:** Close the capture loop so that a photo of handwritten notes — or any file dropped into a watched folder — becomes correctly-structured thoughts with no manual dashboard step, and stop losing macOS TCC permissions on every rebuild.
 
-**Carry forward:** Phase 54 "Smart Photo Upload" + 6 PHOTO-XX requirements — see [.planning/deferred-to-v2.4.md](deferred-to-v2.4.md)
+**Phases:**
+
+- [ ] **Phase 58: Persistent Code Signing** — Developer ID sign DailyBrief + Monitor binaries so TCC permissions survive rebuilds
+- [ ] **Phase 59: Smart Photo Upload Backend** — Vigil Core vision pipeline for paper-type detection + verbatim transcription
+- [ ] **Phase 60: Smart Photo Upload Dashboard UX** — User override + uncertainty surfacing in dashboard upload flow
+- [ ] **Phase 61: Folder Watch Feeder** — DispatchSource watcher in DailyBriefMonitor feeding images + audio to Vigil Core
+- [ ] **Phase 62: Folder Watch Settings UI** — Re-enable hidden Settings UI and wire to the real folder watch feature
 
 ## Phase Details
 
 _Shipped phase details archived to `.planning/milestones/v[X.Y]-ROADMAP.md`. Active phases only below._
 
-### (None — run `/gsd-new-milestone v2.4` to begin the next milestone)
+### Phase 58: Persistent Code Signing
+**Goal**: DailyBrief CLI and DailyBriefMonitor are signed with the user's Apple Developer ID on every build, so granted macOS TCC permissions survive rebuilds instead of being reset each time.
+**Depends on**: Phase 57
+**Requirements**: SIGN-01, SIGN-02, SIGN-03, SIGN-04, SIGN-05
+**Success Criteria** (what must be TRUE):
+  1. Running `install.sh` produces DailyBrief and DailyBriefMonitor binaries signed with the user's Apple Developer ID Application certificate (verifiable via `codesign -dvv`)
+  2. The designated requirement of each binary is stable across rebuilds — two back-to-back `install.sh` runs produce binaries with the same designated requirement hash
+  3. After granting Full Disk Access / Automation / Accessibility once, a subsequent `install.sh` rebuild does not prompt the user to re-grant any TCC permission
+  4. On a fresh machine, `bootstrap.sh` retrieves the signing cert via 1Password CLI and imports it into the login keychain as a pre-flight step, and the first `install.sh` run produces signed binaries with no manual keychain intervention
+  5. If the signing cert is missing or expired, `install.sh` fails loud with a remediation message and refuses to produce unsigned or ad-hoc-signed output
+**Plans**: TBD
+
+### Phase 59: Smart Photo Upload Backend
+**Goal**: Vigil Core can take a handwritten-notes photo, detect paper type (lined vs gridded), return a verbatim transcription, and split or keep whole per paper type — all via the same upload endpoint the dashboard already uses.
+**Depends on**: Phase 58
+**Requirements**: PHOTO-01, PHOTO-02, PHOTO-03, PHOTO-04
+**Success Criteria** (what must be TRUE):
+  1. Uploading a lined-paper photo through the existing image endpoint returns multiple thoughts, one per distinct line/bullet/paragraph in the handwriting
+  2. Uploading a gridded-paper photo through the same endpoint returns exactly one thought, eligible for project assignment
+  3. In both modes the returned thought text is a verbatim transcription of the actual handwriting — no paraphrase, no third-person rewording, no editorial summary
+  4. The response includes a detected paper type and a confidence value that the dashboard UI can later consume
+  5. A smoke-test suite covering at least one lined sample, one gridded sample, and one ambiguous sample passes against the running Vigil Core instance
+**Plans**: TBD
+
+### Phase 60: Smart Photo Upload Dashboard UX
+**Goal**: When uploading a photo from the Mac dashboard, the user sees the detected paper type, can override it before committing, and is visibly told when detection was uncertain so the fallback default is not silent.
+**Depends on**: Phase 59
+**Requirements**: PHOTO-05, PHOTO-06
+**Success Criteria** (what must be TRUE):
+  1. After uploading a photo from the dashboard, the user sees the detected paper type before the thoughts are committed to the database
+  2. The user can force the paper type to "lined" or "gridded" from that confirmation step, and the resulting thoughts match the forced mode (split vs single)
+  3. When Vigil Core reports low confidence, the dashboard visibly surfaces the uncertainty (e.g., banner or badge) and pre-selects the user-configured default paper type
+  4. The user-configured default paper type is persisted in Settings and is what drives the low-confidence fallback
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 61: Folder Watch Feeder
+**Goal**: DailyBriefMonitor watches configured local directories and feeds new image and audio files to Vigil Core through the same endpoints the dashboard uses — images flow through the Smart Photo Upload pipeline, audio through the voice transcription path — with safe error handling so nothing is lost on failure.
+**Depends on**: Phase 60
+**Requirements**: WATCH-01, WATCH-02, WATCH-03, WATCH-04, WATCH-06
+**Success Criteria** (what must be TRUE):
+  1. Dropping a new image file into a watched directory causes it to be uploaded to Vigil Core and processed by the Smart Photo Upload pipeline (paper-type detection, verbatim transcription, split or single) — no polling, detection is immediate via DispatchSource
+  2. Dropping a new audio file into a watched directory causes it to be uploaded and transcribed through the existing voice-capture path
+  3. After a successful upload the source file is moved to a "done" subdirectory (or deleted, per user preference) so it is not re-processed
+  4. On upload failure (network, auth, API error) the source file is left exactly where it is — not moved, not deleted — and DailyBriefMonitor surfaces a visible error state the user can see
+  5. Moving a previously-failed file out of and back into the watched directory re-triggers the upload cleanly
+**Plans**: TBD
+
+### Phase 62: Folder Watch Settings UI
+**Goal**: The Settings UI exposes watched directories, post-processing behavior, and the default paper type, and the previously-hidden folder-watching UI is re-enabled and wired to the real feature.
+**Depends on**: Phase 61
+**Requirements**: WATCH-05
+**Success Criteria** (what must be TRUE):
+  1. The Settings UI has a folder-watching section where the user can add, remove, and edit watched directory paths
+  2. The user can choose the post-processing action (move to "done" / delete) from Settings, and changes take effect without restarting the app
+  3. The user can set the default paper-type override (lined / gridded) from Settings, and Phase 60's low-confidence fallback respects that setting
+  4. The previously-disabled folder-watching UI (quick task 260407-q7d) is re-enabled and every control in it is wired to the Phase 61 watcher — no dead controls
+**Plans**: TBD
+**UI hint**: yes
 
 <!-- ARCHIVED_V2_3_PHASE_DETAILS_REMOVED_ON_2026-04-08 -->
 <!--
@@ -235,7 +300,6 @@ Plans:
 **Plans**: 2 plans
 - [x] 57-01-PLAN.md — bootstrap.sh orchestrator (D-08 10-step: pre-flight, 1P restore, vigil-core build, launchctl load, install.sh delegation, HTTP 200 health check, --check shim)
 - [x] 57-02-PLAN.md — dailybrief-doctor.sh (READ-ONLY drift doctor: ANTHROPIC 4-places, VIGIL bearer single-source, informational health row)
-**Context**: See `.planning/phases/57-cross-machine-bootstrap-script/57-CONTEXT.md` for the cross-machine portability scenario and open questions
 -->
 
 ## Domain Expertise
@@ -303,9 +367,14 @@ None
 | 55. Auto-run drizzle migrations on Railway deploy | v2.3 | 1/1 | Complete   | 2026-04-08 |
 | 56. Push origin on phase-complete for backend phases | v2.3 | 1/1 | Complete    | 2026-04-08 |
 | 57. Cross-machine bootstrap script | v2.3 | 2/2 | Complete    | 2026-04-08 |
+| 58. Persistent Code Signing | v2.4 | 0/TBD | Not started | - |
+| 59. Smart Photo Upload Backend | v2.4 | 0/TBD | Not started | - |
+| 60. Smart Photo Upload Dashboard UX | v2.4 | 0/TBD | Not started | - |
+| 61. Folder Watch Feeder | v2.4 | 0/TBD | Not started | - |
+| 62. Folder Watch Settings UI | v2.4 | 0/TBD | Not started | - |
 
 ## Backlog
 
-Unsequenced ideas captured for future planning. Promote with `/gsd-review-backlog`.
+Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 _Backlog is currently empty. Add new ideas with `/gsd-add-backlog`._
