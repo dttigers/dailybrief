@@ -1239,6 +1239,29 @@ private struct ProjectSheetsModifier: ViewModifier {
                     viewModel: viewModel
                 )
             }
+            // Phase 60 Plan 02 — smart photo upload preview sheet.
+            // Driven by DashboardViewModel.photoPreviewState which is set
+            // by processPhotoFile() and cleared by commit/cancel handlers.
+            .sheet(item: Binding(
+                get: { viewModel.photoPreviewState },
+                set: { newValue in
+                    // Setter fires when the sheet is dismissed by the OS
+                    // (swipe down, ESC, etc). Treat that as cancel so the
+                    // batch loop advances.
+                    if newValue == nil, viewModel.photoPreviewState != nil {
+                        viewModel.cancelPhotoPreview()
+                    }
+                }
+            )) { state in
+                PhotoPreviewSheet(
+                    payload: state.payload,
+                    onCommit: { Task { await viewModel.commitPhotoPreview() } },
+                    onCancel: { viewModel.cancelPhotoPreview() },
+                    onOverride: { newType in
+                        Task { await viewModel.overridePhotoPreview(to: newType) }
+                    }
+                )
+            }
     }
 
     private func handleCreated(_ project: Project) {

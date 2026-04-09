@@ -120,6 +120,78 @@ public actor APIInsightService: InsightProviding {
     }
 }
 
+// MARK: - Photo Processing Types (Phase 60 Plan 02)
+
+/// Paper type classification sent to / returned from `/v1/process-photo`.
+/// The client-side enum only expresses the two values the user can force
+/// (the backend may ALSO return "unknown" as a raw string, which we keep in
+/// `ProcessedPhotoResponse.paperType: String` without forcing a third case).
+public enum PaperType: String, Codable, Sendable {
+    case lined
+    case gridded
+
+    /// Human-readable label for UI display.
+    public var displayName: String {
+        switch self {
+        case .lined: return "Lined"
+        case .gridded: return "Gridded"
+        }
+    }
+}
+
+/// A single thought in a `/v1/process-photo` response. In preview mode, `id` is
+/// nil and the commit-only fields are absent. In commit mode, the backend returns
+/// a full `ThoughtApiResponse` shape — all "extra" fields are optional so the same
+/// struct decodes both.
+public struct PreviewThought: Codable, Sendable {
+    public let id: Int64?
+    public let content: String
+    public let source: String
+    public let confidence: Double?
+    public let projectId: Int64?
+
+    public init(id: Int64?, content: String, source: String, confidence: Double?, projectId: Int64?) {
+        self.id = id
+        self.content = content
+        self.source = source
+        self.confidence = confidence
+        self.projectId = projectId
+    }
+}
+
+/// Response shape from `/v1/process-photo` in both preview and commit modes.
+public struct ProcessedPhotoResponse: Codable, Sendable {
+    public let paperType: String       // "lined" | "gridded" | "unknown"
+    public let confidence: Double
+    public let thoughts: [PreviewThought]
+
+    public init(paperType: String, confidence: Double, thoughts: [PreviewThought]) {
+        self.paperType = paperType
+        self.confidence = confidence
+        self.thoughts = thoughts
+    }
+}
+
+/// Typed error surface for the photo-processing path. Kept separate from
+/// `ImageDescriptionError` so the dashboard can pattern-match on HTTP status
+/// codes and map each one to its Phase 60 D-08 friendly banner text.
+public enum ProcessPhotoError: Error, LocalizedError {
+    /// File extension could not be mapped to a supported media type.
+    case unsupportedMediaType
+    /// Backend returned a non-2xx HTTP status. Status code preserved for D-08 mapping.
+    case httpStatus(Int)
+    /// Underlying network / URLSession / decoding error.
+    case transport(Error)
+
+    public var errorDescription: String? {
+        switch self {
+        case .unsupportedMediaType: return "Image format not supported"
+        case .httpStatus(let code): return "HTTP \(code)"
+        case .transport(let err): return err.localizedDescription
+        }
+    }
+}
+
 // MARK: - APIImageDescriptionService
 
 /// Vigil Core API-backed image description service.
@@ -215,6 +287,112 @@ public actor APIImageDescriptionService: ImageDescriptionProviding {
         let data = try Data(contentsOf: imageURL)
         let mediaType = Self.mediaType(for: imageURL)
         return try await describeSubjects(imageData: data, mediaType: mediaType)
+    }
+
+    // MARK: - Smart Photo Upload (Phase 60 Plan 02)
+
+    /// Request body for `POST /v1/process-photo`.
+    /// `forcePaperType` is omitted from the encoded body when nil (conditional
+    /// encoding via `encodeIfPresent`) so the backend cannot see a spurious
+    /// `"forcePaperType": null` field.
+    private struct ProcessPhotoRequest: Encodable {
+        let image: String
+        let mediaType: String
+        let forcePaperType: String?
+
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(image, forKey: .image)
+            try c.encode(mediaType, forKey: .mediaType)
+            try c.encodeIfPresent(forcePaperType, forKey: .forcePaperType)
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case image, mediaType, forcePaperType
+        }
+    }
+
+    /// Calls `POST /v1/process-photo` with optional preview + forcePaperType override.
+    ///
+    /// - Parameters:
+    ///   - imageData: Raw image bytes. Will be compressed via `prepareImage` if
+    ///     larger than the 1MB soft cap (same compression path as describeSubjects).
+    ///   - mediaType: Source media type (jpeg/png/gif/webp). If compression runs,
+    ///     the final media type will be .jpeg regardless.
+    ///   - preview: When true, appends `?preview=true` and the backend skips the
+    ///     DB insert. PreviewThought.id will be nil in the returned array.
+    ///   - forcePaperType: Optional override. When nil, the field is omitted from
+    ///     the body entirely (NOT sent as null).
+    /// - Returns: The decoded `ProcessedPhotoResponse` on 2xx.
+    /// - Throws: `ProcessPhotoError.httpStatus(code)` on non-2xx; the caller maps
+    ///   each code to its D-08 banner string. Other failures bubble up as
+    ///   `ProcessPhotoError.transport(_)`.
+    public func processPhoto(
+        imageData: Data,
+        mediaType: ImageMediaType,
+        preview: Bool,
+        forcePaperType: PaperType?
+    ) async throws -> ProcessedPhotoResponse {
+        let (finalData, finalMediaType) = try prepareImage(imageData, mediaType: mediaType)
+        let base64String = finalData.base64EncodedString()
+
+        let requestBody = ProcessPhotoRequest(
+            image: base64String,
+            mediaType: finalMediaType.mimeType,
+            forcePaperType: forcePaperType?.rawValue
+        )
+
+        do {
+            if preview {
+                let response: ProcessedPhotoResponse = try await client.post(
+                    path: "/process-photo",
+                    query: ["preview": "true"],
+                    body: requestBody
+                )
+                return response
+            } else {
+                let response: ProcessedPhotoResponse = try await client.post(
+                    path: "/process-photo",
+                    body: requestBody
+                )
+                return response
+            }
+        } catch let error as VigilAPIError {
+            // Map HTTP failures to the typed dashboard error so the view-model
+            // can switch on the status code for D-08 banner mapping. Raw server
+            // bodies are NOT surfaced to the caller (Phase 60 T-60-12).
+            switch error {
+            case .httpError(let statusCode, _):
+                throw ProcessPhotoError.httpStatus(statusCode)
+            case .networkError(let underlying):
+                throw ProcessPhotoError.transport(underlying)
+            case .decodingError(let underlying):
+                throw ProcessPhotoError.transport(underlying)
+            case .serverUnavailable:
+                throw ProcessPhotoError.transport(error)
+            }
+        }
+    }
+
+    /// Convenience overload that reads bytes from a file URL.
+    public func processPhoto(
+        imageURL: URL,
+        preview: Bool,
+        forcePaperType: PaperType?
+    ) async throws -> ProcessedPhotoResponse {
+        let data: Data
+        do {
+            data = try Data(contentsOf: imageURL)
+        } catch {
+            throw ProcessPhotoError.transport(error)
+        }
+        let mediaType = Self.mediaType(for: imageURL)
+        return try await processPhoto(
+            imageData: data,
+            mediaType: mediaType,
+            preview: preview,
+            forcePaperType: forcePaperType
+        )
     }
 
     // MARK: - Compression
