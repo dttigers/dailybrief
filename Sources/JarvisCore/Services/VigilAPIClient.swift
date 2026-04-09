@@ -132,6 +132,29 @@ public actor VigilAPIClient {
         return try await perform(request)
     }
 
+    /// Perform a POST request with query parameters and a JSON body, decoding the response.
+    ///
+    /// Added in Phase 60 Plan 02 so the dashboard's photo-preview flow can hit
+    /// `POST /v1/process-photo?preview=true` without string-concat on the path.
+    /// - Parameters:
+    ///   - path: API path relative to baseURL.
+    ///   - query: Query parameters to append to the URL.
+    ///   - body: Encodable request body.
+    /// - Returns: Decoded response of type `T`.
+    public func post<T: Decodable, B: Encodable>(path: String, query: [String: String], body: B) async throws -> T {
+        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        if !query.isEmpty {
+            components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
+        }
+        var request = URLRequest(url: components.url!)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        applyHeaders(&request)
+        request.httpBody = try encodeBody(body)
+
+        return try await perform(request)
+    }
+
     /// Perform a PUT request with a JSON body and decode the response.
     /// - Parameters:
     ///   - path: API path relative to baseURL.
