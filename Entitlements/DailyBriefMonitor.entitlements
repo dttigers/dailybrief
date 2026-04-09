@@ -2,13 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>com.apple.developer.icloud-services</key>
-	<array>
-		<string>CloudKit</string>
-	</array>
-	<key>com.apple.developer.icloud-container-identifiers</key>
-	<array>
-		<string>iCloud.com.jamesonmorrill.jarvis</string>
-	</array>
+    <!-- CloudKit entitlements removed 2026-04-09 (Phase 58): dead code, -->
+    <!-- incompatible with Developer ID signing. See 58-RESEARCH.md      -->
+    <!-- CRITICAL BLOCKER section for full rationale.                    -->
 </dict>
 </plist>
