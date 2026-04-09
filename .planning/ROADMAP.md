@@ -144,7 +144,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 - [x] **Phase 58: Persistent Code Signing** — Developer ID sign DailyBrief + Monitor binaries so TCC permissions survive rebuilds (completed 2026-04-09)
 - [x] **Phase 59: Smart Photo Upload Backend** — Vigil Core vision pipeline for paper-type detection + verbatim transcription (completed 2026-04-09)
-- [ ] **Phase 60: Smart Photo Upload Dashboard UX** — User override + uncertainty surfacing in dashboard upload flow
+- [x] **Phase 60: Smart Photo Upload Dashboard UX** — User override + uncertainty surfacing in dashboard upload flow (completed 2026-04-09)
 - [ ] **Phase 61: Folder Watch Feeder** — DispatchSource watcher in DailyBriefMonitor feeding images + audio to Vigil Core
 - [ ] **Phase 62: Folder Watch Settings UI** — Re-enable hidden Settings UI and wire to the real folder watch feature
 
@@ -191,11 +191,11 @@ Plans:
   2. The user can force the paper type to "lined" or "gridded" from that confirmation step, and the resulting thoughts match the forced mode (split vs single)
   3. When Vigil Core reports low confidence, the dashboard visibly surfaces the uncertainty (e.g., banner or badge) and pre-selects the user-configured default paper type
   4. The user-configured default paper type is persisted in Settings and is what drives the low-confidence fallback
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 **UI hint**: yes
 Plans:
-- [ ] 60-01-PLAN.md — Backend preview mode + forcePaperType transform + splitGriddedBlobToLined helper + WR-01/WR-02/IN-02 fixes
-- [ ] 60-02-PLAN.md — Dashboard PhotoPreviewSheet + Settings default paper type + DashboardViewModel preview state machine + human-verify against real photos
+- [x] 60-01-PLAN.md — Backend preview mode + forcePaperType transform + splitGriddedBlobToLined helper + WR-01/WR-02/IN-02 fixes
+- [x] 60-02-PLAN.md — Dashboard PhotoPreviewSheet + Settings default paper type + DashboardViewModel preview state machine + human-verify against real photos
 
 ### Phase 61: Folder Watch Feeder
 **Goal**: DailyBriefMonitor watches configured local directories and feeds new image and audio files to Vigil Core through the same endpoints the dashboard uses — images flow through the Smart Photo Upload pipeline, audio through the voice transcription path — with safe error handling so nothing is lost on failure.
@@ -378,7 +378,7 @@ None
 | 57. Cross-machine bootstrap script | v2.3 | 2/2 | Complete    | 2026-04-08 |
 | 58. Persistent Code Signing | v2.4 | 2/2 | Complete   | 2026-04-09 |
 | 59. Smart Photo Upload Backend | v2.4 | 2/2 | Complete    | 2026-04-09 |
-| 60. Smart Photo Upload Dashboard UX | v2.4 | 0/TBD | Not started | - |
+| 60. Smart Photo Upload Dashboard UX | v2.4 | 2/2 | Complete    | 2026-04-09 |
 | 61. Folder Watch Feeder | v2.4 | 0/TBD | Not started | - |
 | 62. Folder Watch Settings UI | v2.4 | 0/TBD | Not started | - |
 
