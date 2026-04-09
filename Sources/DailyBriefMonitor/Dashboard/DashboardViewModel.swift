@@ -1484,8 +1484,9 @@ final class DashboardViewModel {
                     if urlErr.code == .cannotConnectToHost || urlErr.code == .notConnectedToInternet {
                         return "Request timed out"
                     }
+                    return "[DEBUG transport/URLError] code=\(urlErr.code.rawValue) \(urlErr.localizedDescription)"
                 }
-                return "Couldn't process photo — see logs"
+                return "[DEBUG transport/\(type(of: underlying))] \(underlying.localizedDescription)"
             }
         }
         if let urlErr = error as? URLError, urlErr.code == .timedOut {
@@ -1504,7 +1505,7 @@ final class DashboardViewModel {
                 return "Couldn't read image data — try a different file"
             }
         }
-        return "Couldn't process photo — see logs"
+        return "[DEBUG catchall/\(type(of: error))] \(error.localizedDescription)"
     }
 
     /// String → PaperType (nil if the backend returned "unknown" or anything else).
