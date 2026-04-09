@@ -177,7 +177,10 @@ Plans:
   3. In both modes the returned thought text is a verbatim transcription of the actual handwriting — no paraphrase, no third-person rewording, no editorial summary
   4. The response includes a detected paper type and a confidence value that the dashboard UI can later consume
   5. A smoke-test suite covering at least one lined sample, one gridded sample, and one ambiguous sample passes against the running Vigil Core instance
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 59-01-PLAN.md — Foundation: export toResponse/ThoughtApiResponse, install node:test, scaffold /process-photo with pure processClaudeResponse helper + unit suite, mount route
+- [ ] 59-02-PLAN.md — Claude integration: verbatim OCR prompt, batched Drizzle insert, route-level tests with fake Claude injection, smoke-test extension, human-verify real lined + gridded photos
 
 ### Phase 60: Smart Photo Upload Dashboard UX
 **Goal**: When uploading a photo from the Mac dashboard, the user sees the detected paper type, can override it before committing, and is visibly told when detection was uncertain so the fallback default is not silent.
