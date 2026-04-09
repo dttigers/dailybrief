@@ -84,6 +84,27 @@ final class SettingsViewModel {
     var apiBaseUrl: String = "https://api.vigilhub.io/v1"
     var vigilApiKey: String = ""
 
+    // MARK: - Photo Upload (Phase 60 Plan 02, D-04)
+    //
+    // User-configurable default paper type used when the backend reports
+    // confidence < 0.5 on a photo. Persisted via UserDefaults (NOT the main
+    // config.json) because this is dashboard-local UX preference — no device
+    // sync story and no vigil-core settings endpoint (CloudKit retired v2.2).
+    //
+    // Key choice locked in 60-CONTEXT.md D-04. UserDefaults round-trip is
+    // via didSet so the value survives across Settings opens — same lesson
+    // learned in project_settings_wipes_apikey.md, except here the round-trip
+    // bypasses ConfigLoader entirely.
+    static let photoUploadDefaultPaperTypeKey = "vigil.photoUpload.defaultPaperType"
+    var photoUploadDefaultPaperType: PaperType = .lined {
+        didSet {
+            UserDefaults.standard.set(
+                photoUploadDefaultPaperType.rawValue,
+                forKey: Self.photoUploadDefaultPaperTypeKey
+            )
+        }
+    }
+
     // MARK: - PDF
     var pdfOutputDirectory: String = "~/Documents/DailyBrief"
     var pdfKeepDays: Int = 30
@@ -132,6 +153,14 @@ final class SettingsViewModel {
     var showSaveSuccess: Bool = false
 
     init() {
+        // Load the UserDefaults-backed Photo Upload default BEFORE loadConfig so
+        // a failed ConfigLoader call doesn't leave this unset. If the key is
+        // missing or corrupted, keep the .lined default (matches Phase 59 D-04
+        // backend safety net).
+        if let raw = UserDefaults.standard.string(forKey: Self.photoUploadDefaultPaperTypeKey),
+           let parsed = PaperType(rawValue: raw) {
+            self.photoUploadDefaultPaperType = parsed
+        }
         loadConfig()
     }
 
