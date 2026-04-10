@@ -145,7 +145,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 58: Persistent Code Signing** — Developer ID sign DailyBrief + Monitor binaries so TCC permissions survive rebuilds (completed 2026-04-09)
 - [x] **Phase 59: Smart Photo Upload Backend** — Vigil Core vision pipeline for paper-type detection + verbatim transcription (completed 2026-04-09)
 - [x] **Phase 60: Smart Photo Upload Dashboard UX** — User override + uncertainty surfacing in dashboard upload flow (completed 2026-04-09)
-- [ ] **Phase 61: Folder Watch Feeder** — DispatchSource watcher in DailyBriefMonitor feeding images + audio to Vigil Core
+- [x] **Phase 61: Folder Watch Feeder** — DispatchSource watcher in DailyBriefMonitor feeding images + audio to Vigil Core (completed 2026-04-10)
 - [ ] **Phase 62: Folder Watch Settings UI** — Re-enable hidden Settings UI and wire to the real folder watch feature
 
 ## Phase Details
@@ -207,10 +207,10 @@ Plans:
   3. After a successful upload the source file is moved to a "done" subdirectory (or deleted, per user preference) so it is not re-processed
   4. On upload failure (network, auth, API error) the source file is left exactly where it is — not moved, not deleted — and DailyBriefMonitor surfaces a visible error state the user can see
   5. Moving a previously-failed file out of and back into the watched directory re-triggers the upload cleanly
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 Plans:
-- [ ] 61-01-PLAN.md — FolderWatcherService actor with DispatchSource watching, image/audio processing, post-processing, error tracking + unit tests
-- [ ] 61-02-PLAN.md — AppDelegate lifecycle wiring + menu bar error state icon and dropdown failure list + human-verify end-to-end
+- [x] 61-01-PLAN.md — FolderWatcherService actor with DispatchSource watching, image/audio processing, post-processing, error tracking + unit tests
+- [x] 61-02-PLAN.md — AppDelegate lifecycle wiring + menu bar error state icon and dropdown failure list + human-verify end-to-end
 
 ### Phase 62: Folder Watch Settings UI
 **Goal**: The Settings UI exposes watched directories, post-processing behavior, and the default paper type, and the previously-hidden folder-watching UI is re-enabled and wired to the real feature.
@@ -223,8 +223,8 @@ Plans:
   4. The previously-disabled folder-watching UI (quick task 260407-q7d) is re-enabled and every control in it is wired to the Phase 61 watcher — no dead controls
 **Plans:** 2 plans
 Plans:
-- [ ] 61-01-PLAN.md — FolderWatcherService actor with DispatchSource watching, image/audio processing, post-processing, error tracking + unit tests
-- [ ] 61-02-PLAN.md — AppDelegate lifecycle wiring + menu bar error state icon and dropdown failure list + human-verify end-to-end
+- [x] 61-01-PLAN.md — FolderWatcherService actor with DispatchSource watching, image/audio processing, post-processing, error tracking + unit tests
+- [x] 61-02-PLAN.md — AppDelegate lifecycle wiring + menu bar error state icon and dropdown failure list + human-verify end-to-end
 **UI hint**: yes
 
 <!-- ARCHIVED_V2_3_PHASE_DETAILS_REMOVED_ON_2026-04-08 -->
@@ -385,7 +385,7 @@ None
 | 58. Persistent Code Signing | v2.4 | 2/2 | Complete   | 2026-04-09 |
 | 59. Smart Photo Upload Backend | v2.4 | 2/2 | Complete    | 2026-04-09 |
 | 60. Smart Photo Upload Dashboard UX | v2.4 | 2/2 | Complete    | 2026-04-09 |
-| 61. Folder Watch Feeder | v2.4 | 0/2 | In progress | - |
+| 61. Folder Watch Feeder | v2.4 | 2/2 | Complete    | 2026-04-10 |
 | 62. Folder Watch Settings UI | v2.4 | 0/TBD | Not started | - |
 
 ## Backlog
