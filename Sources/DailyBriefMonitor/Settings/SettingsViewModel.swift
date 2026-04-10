@@ -132,7 +132,7 @@ final class SettingsViewModel {
     var folderWatchDefaultPaperType: String = "auto"
 
     /// Called by AppDelegate after a successful save to restart the folder watcher.
-    var onConfigSaved: (() -> Void)?
+    @ObservationIgnored var onConfigSaved: (() -> Void)?
 
     // MARK: - Insights
     var insightsEnabled: Bool = true
