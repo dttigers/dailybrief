@@ -1431,7 +1431,11 @@ final class DashboardViewModel {
               let photoAPI else { return }
 
         // Mark busy — disables the picker + buttons in the sheet.
+        // Update the picker position up front so the segmented control stays
+        // visually on the new segment while the refetch runs (WR-01 fix).
+        let previousType = payload.currentForcePaperType
         payload.isBusy = true
+        payload.currentForcePaperType = newType
         photoPreviewState = .awaitingUserDecision(payload)
 
         let filename = payload.fileURL.lastPathComponent
@@ -1454,11 +1458,13 @@ final class DashboardViewModel {
             )
 
             payload.thoughts = refetched.thoughts.map(\.content)
-            payload.currentForcePaperType = newType
+            // currentForcePaperType already set to newType above (WR-01).
             payload.isBusy = false
             photoPreviewState = .awaitingUserDecision(payload)
             // Do NOT resume the continuation — we stay in awaitingUserDecision.
         } catch {
+            // Revert the picker position on failure (WR-01).
+            payload.currentForcePaperType = previousType
             importErrors.append("\(filename): \(Self.mapPhotoError(error))")
             photoPreviewState = nil
             resumePreviewWaiter(with: .cancelled)
