@@ -401,17 +401,37 @@ public struct AppConfig: Codable, Sendable {
         public var audioFolderPath: String
         public var imageFolderPath: String
         public var autoDeleteAfterProcessing: Bool
+        /// nil = auto (backend decides), "lined" = force lined, "gridded" = force gridded.
+        /// Maps to `default_paper_type` in JSON via .convertFromSnakeCase decoding.
+        public var defaultPaperType: String?
 
         public init(
             enabled: Bool = false,
             audioFolderPath: String = "~/Jarvis/Audio",
             imageFolderPath: String = "~/Jarvis/Images",
-            autoDeleteAfterProcessing: Bool = false
+            autoDeleteAfterProcessing: Bool = false,
+            defaultPaperType: String? = nil
         ) {
             self.enabled = enabled
             self.audioFolderPath = audioFolderPath
             self.imageFolderPath = imageFolderPath
             self.autoDeleteAfterProcessing = autoDeleteAfterProcessing
+            self.defaultPaperType = defaultPaperType
+        }
+
+        // Custom Decodable for backward compatibility — existing configs lack
+        // default_paper_type, so decodeIfPresent with nil fallback is required.
+        public init(from decoder: Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            enabled = try container.decodeIfPresent(Bool.self, forKey: .enabled) ?? false
+            audioFolderPath = try container.decodeIfPresent(String.self, forKey: .audioFolderPath) ?? "~/Jarvis/Audio"
+            imageFolderPath = try container.decodeIfPresent(String.self, forKey: .imageFolderPath) ?? "~/Jarvis/Images"
+            autoDeleteAfterProcessing = try container.decodeIfPresent(Bool.self, forKey: .autoDeleteAfterProcessing) ?? false
+            defaultPaperType = try container.decodeIfPresent(String.self, forKey: .defaultPaperType)
+        }
+
+        private enum CodingKeys: String, CodingKey {
+            case enabled, audioFolderPath, imageFolderPath, autoDeleteAfterProcessing, defaultPaperType
         }
     }
 

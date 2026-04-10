@@ -460,7 +460,7 @@ struct SettingsView: View {
                         }
                     }
                 }
-                Text("Drop audio files here (.wav, .mp3, .m4a, .aiff) for auto-transcription")
+                Text("Drop audio files here (.wav, .mp3, .m4a, .caf) for voice transcription via Vigil Core")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -476,7 +476,19 @@ struct SettingsView: View {
                         }
                     }
                 }
-                Text("Drop images here (.jpg, .png, .gif, .webp) for AI description")
+                Text("Drop images here (.jpg, .png, .heic, .tiff, .bmp) for Smart Photo Upload via Vigil Core")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Default Paper Type") {
+                Picker("Paper type for watched folder photos", selection: $viewModel.folderWatchDefaultPaperType) {
+                    Text("Auto").tag("auto")
+                    Text("Lined").tag("lined")
+                    Text("Gridded").tag("gridded")
+                }
+                .pickerStyle(.segmented)
+                Text("Auto lets AI detect paper type. Lined splits into multiple thoughts. Gridded keeps as one thought.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

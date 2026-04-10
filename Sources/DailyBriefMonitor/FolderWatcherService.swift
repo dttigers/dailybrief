@@ -310,11 +310,12 @@ public actor FolderWatcherService {
                 // Use the URL-based convenience overload — it handles Data reading,
                 // mediaType detection, and prepareImage compression internally.
                 // preview: false → headless commit (D-09)
-                // forcePaperType: nil → backend auto-coerces low-confidence (D-10)
+                // forcePaperType: read from config (nil = auto, backend decides)
+                let forcePaperType: PaperType? = config.defaultPaperType.flatMap { PaperType(rawValue: $0) }
                 let response = try await imageService.processPhoto(
                     imageURL: url,
                     preview: false,
-                    forcePaperType: nil
+                    forcePaperType: forcePaperType
                 )
 
                 // Auto-triage each created thought so it gets categorized immediately

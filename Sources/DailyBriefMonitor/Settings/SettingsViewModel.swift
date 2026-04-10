@@ -128,6 +128,11 @@ final class SettingsViewModel {
     var audioFolderPath: String = "~/Jarvis/Audio"
     var imageFolderPath: String = "~/Jarvis/Images"
     var autoDeleteAfterProcessing: Bool = false
+    /// "auto" (nil in config), "lined", or "gridded".
+    var folderWatchDefaultPaperType: String = "auto"
+
+    /// Called by AppDelegate after a successful save to restart the folder watcher.
+    var onConfigSaved: (() -> Void)?
 
     // MARK: - Insights
     var insightsEnabled: Bool = true
@@ -216,6 +221,7 @@ final class SettingsViewModel {
         audioFolderPath = config.folderWatching.audioFolderPath
         imageFolderPath = config.folderWatching.imageFolderPath
         autoDeleteAfterProcessing = config.folderWatching.autoDeleteAfterProcessing
+        folderWatchDefaultPaperType = config.folderWatching.defaultPaperType ?? "auto"
 
         insightsEnabled = config.insights.enabled
         insightsLookbackDays = config.insights.lookbackDays
@@ -319,7 +325,8 @@ final class SettingsViewModel {
                 enabled: folderWatchingEnabled,
                 audioFolderPath: audioFolderPath,
                 imageFolderPath: imageFolderPath,
-                autoDeleteAfterProcessing: autoDeleteAfterProcessing
+                autoDeleteAfterProcessing: autoDeleteAfterProcessing,
+                defaultPaperType: folderWatchDefaultPaperType == "auto" ? nil : folderWatchDefaultPaperType
             ),
             insights: .init(
                 enabled: insightsEnabled,
@@ -336,6 +343,7 @@ final class SettingsViewModel {
         do {
             try ConfigLoader.save(config)
             showSaveSuccess = true
+            onConfigSaved?()
         } catch {
             saveError = error.localizedDescription
         }

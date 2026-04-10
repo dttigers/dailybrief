@@ -231,6 +231,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         dashboardWindow = window
     }
 
+    /// Stops the current folder watcher (if any) and creates a new one with
+    /// freshly-loaded config. Called by SettingsViewModel after a successful save
+    /// that may have changed folder-watching configuration.
+    @MainActor
+    func restartFolderWatcher() {
+        // Stop existing watcher on its actor before discarding.
+        if let watcher = folderWatcher {
+            Task { await watcher.stop() }
+        }
+        folderWatcher = nil
+
+        guard let imgService = self.imageDescriptionService as? APIImageDescriptionService,
+              let transcription = self.transcriptionService,
+              let capture = self.captureService,
+              let config = try? ConfigLoader.load() else {
+            NSLog("DailyBriefMonitor: restartFolderWatcher — dependencies unavailable, skipping")
+            return
+        }
+
+        let watcher = FolderWatcherService(
+            imageService: imgService,
+            transcriptionService: transcription,
+            captureService: capture,
+            triageService: self.triageService,
+            thoughtStore: self.thoughtStore,
+            config: config.folderWatching
+        )
+        self.folderWatcher = watcher
+        Task { await watcher.start() }
+        NSLog("DailyBriefMonitor: folder watcher restarted with updated config")
+    }
+
     /// Opens (or brings to front) the settings window.
     @MainActor
     func openSettings() {
@@ -241,6 +273,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         }
 
         let viewModel = SettingsViewModel()
+        viewModel.onConfigSaved = { [weak self] in
+            self?.restartFolderWatcher()
+        }
         let settingsView = SettingsView(viewModel: viewModel)
         let hostingView = NSHostingView(rootView: settingsView)
 
