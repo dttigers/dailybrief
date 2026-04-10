@@ -31,6 +31,8 @@ public actor FolderWatcherService {
     private let imageService: APIImageDescriptionService
     private let transcriptionService: TranscriptionService
     private let captureService: CaptureService
+    private let triageService: (any TriageProviding)?
+    private let thoughtStore: (any ThoughtRepository)?
     private let config: AppConfig.FolderWatchingConfig
 
     // MARK: - DispatchSource state
@@ -60,11 +62,15 @@ public actor FolderWatcherService {
         imageService: APIImageDescriptionService,
         transcriptionService: TranscriptionService,
         captureService: CaptureService,
+        triageService: (any TriageProviding)? = nil,
+        thoughtStore: (any ThoughtRepository)? = nil,
         config: AppConfig.FolderWatchingConfig
     ) {
         self.imageService = imageService
         self.transcriptionService = transcriptionService
         self.captureService = captureService
+        self.triageService = triageService
+        self.thoughtStore = thoughtStore
         self.config = config
     }
 
@@ -300,15 +306,21 @@ public actor FolderWatcherService {
                 // mediaType detection, and prepareImage compression internally.
                 // preview: false → headless commit (D-09)
                 // forcePaperType: nil → backend auto-coerces low-confidence (D-10)
-                _ = try await imageService.processPhoto(
+                let response = try await imageService.processPhoto(
                     imageURL: url,
                     preview: false,
                     forcePaperType: nil
                 )
 
+                // Auto-triage each created thought so it gets categorized immediately
+                await triageThoughts(response.thoughts)
+
             case .audio:
                 let text = try await transcriptionService.transcribe(audioURL: url)
-                _ = try await captureService.capture(text, source: .voice)
+                let thought = try await captureService.capture(text, source: .voice)
+
+                // Auto-triage the captured thought
+                await triageThought(id: thought.id!, content: text)
             }
 
             // Success path: move to done/ or delete per config.
@@ -373,6 +385,36 @@ public actor FolderWatcherService {
 
     private func postProcess(_ url: URL) throws {
         try moveToProcessed(url, autoDelete: config.autoDeleteAfterProcessing)
+    }
+
+    // MARK: - Auto-triage
+
+    /// Triages a list of photo-created thoughts (from ProcessedPhotoResponse).
+    private func triageThoughts(_ thoughts: [PreviewThought]) async {
+        guard let triageService, let thoughtStore else { return }
+        for thought in thoughts {
+            guard let id = thought.id else { continue }
+            await triageThought(id: id, content: thought.content)
+        }
+    }
+
+    /// Triages a single thought by ID and content, updating its category in the store.
+    private func triageThought(id: Int64, content: String) async {
+        guard let triageService, let thoughtStore else { return }
+        do {
+            let result = try await triageService.triage(content)
+            if var t = try await thoughtStore.fetch(id: id) {
+                t.category = result.category
+                t.confidence = result.confidence
+                if result.category == .task {
+                    t.taskStatus = .open
+                }
+                _ = try await thoughtStore.update(t)
+            }
+        } catch {
+            // Triage failure is non-fatal — thought was already saved uncategorized
+            NSLog("FolderWatcherService: triage failed for thought %lld: %@", id, error.localizedDescription)
+        }
     }
 
     // MARK: - Error reason mapping

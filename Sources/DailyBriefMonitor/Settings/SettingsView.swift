@@ -440,13 +440,6 @@ struct SettingsView: View {
 
     private var foldersTab: some View {
         Form {
-            Section {
-                Text("Temporarily unavailable — auto-import is being rebuilt for the API backend. Use Dashboard → Import Files in the meantime.")
-                    .font(.callout)
-                    .foregroundStyle(.orange)
-                    .padding(.vertical, 4)
-            }
-
             Toggle("Enable Folder Watching", isOn: $viewModel.folderWatchingEnabled)
 
             if viewModel.folderWatchingEnabled {
@@ -488,7 +481,6 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .disabled(true)
         .padding()
     }
 

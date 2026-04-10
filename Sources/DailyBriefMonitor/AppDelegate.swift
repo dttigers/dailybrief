@@ -76,6 +76,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
                     imageService: imgService,
                     transcriptionService: transcription,
                     captureService: service,
+                    triageService: self.triageService,
+                    thoughtStore: thoughtStore,
                     config: config.folderWatching
                 )
                 self.folderWatcher = watcher
