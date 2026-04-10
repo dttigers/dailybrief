@@ -207,7 +207,10 @@ Plans:
   3. After a successful upload the source file is moved to a "done" subdirectory (or deleted, per user preference) so it is not re-processed
   4. On upload failure (network, auth, API error) the source file is left exactly where it is — not moved, not deleted — and DailyBriefMonitor surfaces a visible error state the user can see
   5. Moving a previously-failed file out of and back into the watched directory re-triggers the upload cleanly
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 61-01-PLAN.md — FolderWatcherService actor with DispatchSource watching, image/audio processing, post-processing, error tracking + unit tests
+- [ ] 61-02-PLAN.md — AppDelegate lifecycle wiring + menu bar error state icon and dropdown failure list + human-verify end-to-end
 
 ### Phase 62: Folder Watch Settings UI
 **Goal**: The Settings UI exposes watched directories, post-processing behavior, and the default paper type, and the previously-hidden folder-watching UI is re-enabled and wired to the real feature.
@@ -218,7 +221,10 @@ Plans:
   2. The user can choose the post-processing action (move to "done" / delete) from Settings, and changes take effect without restarting the app
   3. The user can set the default paper-type override (lined / gridded) from Settings, and Phase 60's low-confidence fallback respects that setting
   4. The previously-disabled folder-watching UI (quick task 260407-q7d) is re-enabled and every control in it is wired to the Phase 61 watcher — no dead controls
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 61-01-PLAN.md — FolderWatcherService actor with DispatchSource watching, image/audio processing, post-processing, error tracking + unit tests
+- [ ] 61-02-PLAN.md — AppDelegate lifecycle wiring + menu bar error state icon and dropdown failure list + human-verify end-to-end
 **UI hint**: yes
 
 <!-- ARCHIVED_V2_3_PHASE_DETAILS_REMOVED_ON_2026-04-08 -->
@@ -379,7 +385,7 @@ None
 | 58. Persistent Code Signing | v2.4 | 2/2 | Complete   | 2026-04-09 |
 | 59. Smart Photo Upload Backend | v2.4 | 2/2 | Complete    | 2026-04-09 |
 | 60. Smart Photo Upload Dashboard UX | v2.4 | 2/2 | Complete    | 2026-04-09 |
-| 61. Folder Watch Feeder | v2.4 | 0/TBD | Not started | - |
+| 61. Folder Watch Feeder | v2.4 | 0/2 | In progress | - |
 | 62. Folder Watch Settings UI | v2.4 | 0/TBD | Not started | - |
 
 ## Backlog
