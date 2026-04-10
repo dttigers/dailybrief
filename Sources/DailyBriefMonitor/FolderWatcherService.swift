@@ -347,6 +347,8 @@ public actor FolderWatcherService {
             )
             // Track failure for menu bar surfacing (WATCH-06).
             _failedFiles.append((url: url, reason: reason))
+            // Remove from knownFiles so retry-by-move-out-and-back-in works.
+            knownFiles.remove(url.lastPathComponent)
         }
     }
 
