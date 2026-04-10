@@ -241,7 +241,12 @@ public actor FolderWatcherService {
                 let url = self.pendingQueue.removeFirst()
                 await self.processFile(url)
             }
-            self.processingTask = nil
+            // Re-check after draining — items may have arrived during processFile
+            if !self.pendingQueue.isEmpty {
+                self.startProcessingLoop()
+            } else {
+                self.processingTask = nil
+            }
         }
     }
 
@@ -320,7 +325,9 @@ public actor FolderWatcherService {
                 let thought = try await captureService.capture(text, source: .voice)
 
                 // Auto-triage the captured thought
-                await triageThought(id: thought.id!, content: text)
+                if let thoughtId = thought.id {
+                    await triageThought(id: thoughtId, content: text)
+                }
             }
 
             // Success path: move to done/ or delete per config.
