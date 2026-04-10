@@ -20,6 +20,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private var transcriptionService: TranscriptionService?
     private var imageDescriptionService: (any ImageDescriptionProviding)?
 
+    // Folder watcher (Phase 61)
+    private(set) var folderWatcher: FolderWatcherService?
+
     // Insights
     private var insightService: (any InsightProviding)?
 
@@ -66,6 +69,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
             let service = CaptureService(store: thoughtStore)
             captureService = service
+
+            // Folder watcher — headless file feeder (Phase 61)
+            if let imgService = self.imageDescriptionService as? APIImageDescriptionService {
+                let watcher = FolderWatcherService(
+                    imageService: imgService,
+                    transcriptionService: transcription,
+                    captureService: service,
+                    config: config.folderWatching
+                )
+                self.folderWatcher = watcher
+                Task { await watcher.start() }
+            } else {
+                NSLog("DailyBriefMonitor: folder watcher skipped — image service not available")
+            }
 
             NSLog("DailyBriefMonitor: creating capture panel...")
             let panel = CapturePanel()
@@ -138,6 +155,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
+        if let watcher = folderWatcher {
+            let semaphore = DispatchSemaphore(value: 0)
+            Task {
+                await watcher.stop()
+                semaphore.signal()
+            }
+            semaphore.wait(timeout: .now() + 2)
+        }
         globalHotKey?.unregister()
     }
 

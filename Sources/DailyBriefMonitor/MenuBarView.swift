@@ -5,6 +5,7 @@ struct MenuBarView: View {
     @Bindable var checker: StatusChecker
     @Bindable var updater: UpdateService
     var scheduler: BriefScheduler?
+    var watcherFailedFiles: [(url: URL, reason: String)] = []
     var onDashboard: () -> Void
     var onCapture: () -> Void
     var onSettings: () -> Void
@@ -53,6 +54,31 @@ struct MenuBarView: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
+                }
+            }
+
+            // Folder watcher failures (D-02)
+            if !watcherFailedFiles.isEmpty {
+                Divider()
+                HStack {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                    Text("Watcher: \(watcherFailedFiles.count) failed")
+                        .font(.caption)
+                        .foregroundStyle(.orange)
+                }
+                ForEach(Array(watcherFailedFiles.prefix(5).enumerated()), id: \.offset) { _, failure in
+                    Text("\(failure.url.lastPathComponent): \(failure.reason)")
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(.red)
+                        .lineLimit(2)
+                        .padding(.leading, 20)
+                }
+                if watcherFailedFiles.count > 5 {
+                    Text("... and \(watcherFailedFiles.count - 5) more")
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 20)
                 }
             }
 

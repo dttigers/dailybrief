@@ -7,6 +7,8 @@ struct DailyBriefMonitorApp: App {
     @State private var updater = UpdateService()
     @State private var scheduler: BriefScheduler?
     @State private var didConsumeHandoff = false
+    @State private var watcherHasFailures = false
+    @State private var watcherFailedFiles: [(url: URL, reason: String)] = []
     private let timer = Timer.publish(every: 60, on: .main, in: .common).autoconnect()
 
     var body: some Scene {
@@ -15,6 +17,7 @@ struct DailyBriefMonitorApp: App {
                 checker: checker,
                 updater: updater,
                 scheduler: scheduler,
+                watcherFailedFiles: watcherFailedFiles,
                 onDashboard: { appDelegate.openDashboard() },
                 onCapture: { appDelegate.toggleCapture() },
                 onSettings: { appDelegate.openSettings() }
@@ -28,9 +31,31 @@ struct DailyBriefMonitorApp: App {
                         didConsumeHandoff = true
                         updater.consumeHandoff()
                     }
+                    // Poll watcher state on menu open
+                    Task {
+                        if let watcher = appDelegate.folderWatcher {
+                            let failures = await watcher.failedFiles
+                            let hasF = await watcher.hasFailures
+                            await MainActor.run {
+                                watcherFailedFiles = failures
+                                watcherHasFailures = hasF
+                            }
+                        }
+                    }
                 }
                 .onReceive(timer) { _ in
                     checker.refresh()
+                    // Poll watcher failure state (actor isolation requires async bridge)
+                    Task {
+                        if let watcher = appDelegate.folderWatcher {
+                            let failures = await watcher.failedFiles
+                            let hasF = await watcher.hasFailures
+                            await MainActor.run {
+                                watcherFailedFiles = failures
+                                watcherHasFailures = hasF
+                            }
+                        }
+                    }
                 }
         } label: {
             HStack(spacing: 2) {
@@ -42,6 +67,9 @@ struct DailyBriefMonitorApp: App {
                     Image(systemName: "arrow.triangle.2.circlepath")
                 } else if let success = checker.lastRunSuccess {
                     Image(systemName: success ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                } else if watcherHasFailures {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
                 }
             }
         }
