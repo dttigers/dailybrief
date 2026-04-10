@@ -1,5 +1,32 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v2.4 Capture Without Friction (Shipped: 2026-04-10)
+
+**Phases completed:** 11 phases, 23 plans, 46 tasks
+
+**Key accomplishments:**
+
+- 1. [Rule 1 - Bug] NSString string-literal initializer required `string:` label
+- Replaced the install.sh subprocess inside `UpdateService.runUpdateLifecycle()` with an inline `installBuiltBinaries()` Swift helper using `FileManager.copyItem`, restoring the trampoline invariant (only `/tmp/vigil-reload.sh` touches launchctl) and making the Update Vigil button actually surface the "✓ Updated to {sha}" feedback end-to-end.
+- One-liner:
+- `Sources/JarvisCore/Models/Project.swift` (new):
+- `Sources/DailyBriefMonitor/Dashboard/DashboardViewModel.swift`:
+- `Sources/DailyBriefMonitor/Dashboard/NewProjectSheet.swift`
+- One-liner:
+- One-liner:
+- One-liner:
+- Found during:
+- Developer ID Application signing wired into install.sh with cert guard, codesign --force after cp, and codesign --verify — eliminates the TCC permission reset on every rebuild
+- Added block
+- Verbatim-OCR photo endpoint live — Claude vision + batched Postgres insert + real lined/gridded handwriting verified with a writer's typo preserved through the pipeline
+- `/v1/process-photo` gains preview mode, `forcePaperType` override, 413 guard, and generic 502 — backend enablement for dashboard before-commit preview UX
+- Mac dashboard preview-first photo upload shipped — SwiftUI sheet with paper-type override, confidence badge, uncertainty banner, Settings default paper type, and the existing batch loop rewritten to pipe every photo through /v1/process-photo?preview=true before committing
+- One-liner:
+- One-liner:
+- Task 1: defaultPaperType config + Settings UI (commit e5bcf36)
+
+---
+
 ## v2.2 Polish & Power (Shipped: 2026-04-05)
 
 **Delivered:** Stabilized the platform with local code path removal, added brief history browsing, thought export, configurable PDF layout, and dashboard AI chat with thought context — completing the transition from local tool to polished multi-client platform.
