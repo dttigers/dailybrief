@@ -1372,8 +1372,13 @@ final class DashboardViewModel {
     /// no-override call). On success, refreshes the thought list; on failure,
     /// records an importErrors entry. Either way, advances the batch.
     func commitPhotoPreview() async {
-        guard case .awaitingUserDecision(var payload) = photoPreviewState,
-              let photoAPI else { return }
+        guard case .awaitingUserDecision(var payload) = photoPreviewState else { return }
+        // Split guard so nil photoAPI resumes the waiter instead of hanging (WR-03).
+        guard let photoAPI else {
+            photoPreviewState = nil
+            resumePreviewWaiter(with: .cancelled)
+            return
+        }
 
         payload.isBusy = true
         photoPreviewState = .awaitingUserDecision(payload)
@@ -1427,8 +1432,13 @@ final class DashboardViewModel {
     /// the error and advance the batch (cancels the waiter).
     func overridePhotoPreview(to newType: PaperType) async {
         guard case .awaitingUserDecision(var payload) = photoPreviewState,
-              payload.currentForcePaperType != newType,
-              let photoAPI else { return }
+              payload.currentForcePaperType != newType else { return }
+        // Split guard so nil photoAPI resumes the waiter instead of hanging (WR-03).
+        guard let photoAPI else {
+            photoPreviewState = nil
+            resumePreviewWaiter(with: .cancelled)
+            return
+        }
 
         // Mark busy — disables the picker + buttons in the sheet.
         // Update the picker position up front so the segmented control stays
