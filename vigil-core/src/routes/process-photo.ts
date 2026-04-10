@@ -274,13 +274,12 @@ export function createProcessPhotoRouter(
     }
 
     // 2b. Payload-size guard (Plan 60-01 / Phase 59 REVIEW WR-02).
-    //     Anthropic rejects base64 > ~5 MB raw (~6.7 MB encoded). Cap at 7 MB
-    //     of base64 chars and reject with 413 BEFORE the Claude call so a
-    //     malicious/buggy client can't burn vendor tokens or hold MBs in
-    //     memory for the 30s request window. 60-CONTEXT.md D-08 maps this
-    //     to status 413 (the 59-REVIEW snippet used 400; D-08 is the
-    //     current source of truth).
-    const MAX_IMAGE_B64_CHARS = 7 * 1024 * 1024;
+    //     Anthropic rejects base64 > ~5 MB raw (~6.7 MB encoded). Cap at
+    //     5 MB raw (ceil(5*1024*1024*4/3) base64 chars) and reject with 413
+    //     BEFORE the Claude call so a malicious/buggy client can't burn
+    //     vendor tokens or hold MBs in memory for the 30s request window.
+    //     60-CONTEXT.md D-08 maps this to status 413.
+    const MAX_IMAGE_B64_CHARS = Math.ceil((5 * 1024 * 1024) * 4 / 3);
     if (body.image.length > MAX_IMAGE_B64_CHARS) {
       return c.json(
         { error: "image exceeds maximum size (5 MB)" },

@@ -668,7 +668,7 @@ test("RT-20: oversized image (>7 MB base64) returns 413 before Claude call", asy
       },
     }),
   );
-  const huge = "A".repeat(7 * 1024 * 1024 + 1);
+  const huge = "A".repeat(Math.ceil((5 * 1024 * 1024) * 4 / 3) + 1);
   const res = await post(router, { image: huge, mediaType: "image/jpeg" });
   assert.equal(res.status, 413);
   const json = (await res.json()) as { error: string };
