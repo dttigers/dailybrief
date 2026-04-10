@@ -221,10 +221,9 @@ Plans:
   2. The user can choose the post-processing action (move to "done" / delete) from Settings, and changes take effect without restarting the app
   3. The user can set the default paper-type override (lined / gridded) from Settings, and Phase 60's low-confidence fallback respects that setting
   4. The previously-disabled folder-watching UI (quick task 260407-q7d) is re-enabled and every control in it is wired to the Phase 61 watcher — no dead controls
-**Plans:** 2 plans
+**Plans:** 1 plan
 Plans:
-- [x] 61-01-PLAN.md — FolderWatcherService actor with DispatchSource watching, image/audio processing, post-processing, error tracking + unit tests
-- [x] 61-02-PLAN.md — AppDelegate lifecycle wiring + menu bar error state icon and dropdown failure list + human-verify end-to-end
+- [ ] 62-01-PLAN.md — Config defaultPaperType + Settings UI paper-type picker + corrected help text + AppDelegate watcher restart on save
 **UI hint**: yes
 
 <!-- ARCHIVED_V2_3_PHASE_DETAILS_REMOVED_ON_2026-04-08 -->
@@ -386,7 +385,7 @@ None
 | 59. Smart Photo Upload Backend | v2.4 | 2/2 | Complete    | 2026-04-09 |
 | 60. Smart Photo Upload Dashboard UX | v2.4 | 2/2 | Complete    | 2026-04-09 |
 | 61. Folder Watch Feeder | v2.4 | 2/2 | Complete    | 2026-04-10 |
-| 62. Folder Watch Settings UI | v2.4 | 0/TBD | Not started | - |
+| 62. Folder Watch Settings UI | v2.4 | 0/1 | Not started | - |
 
 ## Backlog
 
