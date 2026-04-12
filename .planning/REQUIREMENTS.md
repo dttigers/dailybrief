@@ -30,6 +30,29 @@
 - [ ] **PROJ-01**: User can view all projects and see thoughts assigned to each
 - [ ] **PROJ-02**: User can assign or unassign a thought to a project from the PWA
 
+### Bulk Actions & Filters
+
+- [ ] **BULK-01**: User can select multiple thoughts and bulk delete or recategorize them
+- [ ] **BULK-02**: User can filter thoughts by source type (text, voice, image)
+- [ ] **BULK-03**: User can filter thoughts by date range
+- [ ] **BULK-04**: User can toggle favorites on thoughts and filter to show only favorites
+
+### AI Chat
+
+- [ ] **CHAT-01**: User can have a multi-turn conversation with Claude from the PWA
+- [ ] **CHAT-02**: Claude's responses are informed by the user's recent captured thoughts
+
+### Insights & Therapy
+
+- [ ] **INSIGHT-01**: User can view AI-generated insights (patterns, connections, action prompts, trends) in the PWA
+- [ ] **THERAPY-01**: User can see therapy classification on relevant thoughts (self-learnable vs bring-to-therapist)
+- [ ] **THERAPY-02**: User can view therapy session prep and pattern analysis in the PWA
+
+### Brief History & Photo Upload
+
+- [ ] **BRIEF-01**: User can browse past daily briefs by date and view their content in the PWA
+- [ ] **PHOTO-PWA-01**: User can upload a photo from the PWA and it processes through the smart photo pipeline
+
 ### Documentation
 
 - [ ] **DOC-01**: A README.md exists at the repo root with project description, architecture overview, setup instructions, and feature summary
@@ -39,7 +62,6 @@
 ### PWA Enhancements
 
 - **PWA-F01**: Voice capture via Web Speech API
-- **PWA-F02**: Photo upload with smart photo pipeline
 - **PWA-F03**: Push notifications for new work orders
 - **PWA-F04**: Offline read access with service worker caching
 
@@ -58,36 +80,45 @@
 | Feature | Reason |
 |---------|--------|
 | Native iOS/Android app | PWA covers cross-platform; native only if PWA proves insufficient |
-| Replace Mac SwiftUI dashboard | PWA runs alongside it; deprecation is gradual, not v2.5 |
 | ServiceNow API integration | Blocked on IT for API token; work orders stay IMAP-sourced |
 | Multi-user auth | Single-user system; API key auth sufficient |
 | Real-time sync / WebSocket | Polling on refresh sufficient for single user |
-| Photo upload from PWA | Requires backend changes for multipart upload; defer to PWA-F02 |
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PWA-01 | Phase 63 | Not started |
-| PWA-02 | Phase 63 | Not started |
-| PWA-03 | Phase 63 | Not started |
-| PWA-04 | Phase 63 | Not started |
-| THOUGHT-01 | Phase 64 | Not started |
-| THOUGHT-02 | Phase 64 | Not started |
-| THOUGHT-03 | Phase 64 | Not started |
-| THOUGHT-04 | Phase 64 | Not started |
+| PWA-01 | Phase 63 | Complete |
+| PWA-02 | Phase 63 | Complete |
+| PWA-03 | Phase 63 | Complete |
+| PWA-04 | Phase 63 | Complete |
+| THOUGHT-01 | Phase 64 | Complete |
+| THOUGHT-02 | Phase 64 | Complete |
+| THOUGHT-03 | Phase 64 | Complete |
+| THOUGHT-04 | Phase 64 | Complete |
 | WO-02 | Phase 65 | Not started |
 | WO-03 | Phase 65 | Not started |
 | WO-01 | Phase 66 | Not started |
 | PROJ-01 | Phase 67 | Not started |
 | PROJ-02 | Phase 67 | Not started |
-| DOC-01 | Phase 68 | Not started |
+| BULK-01 | Phase 68 | Not started |
+| BULK-02 | Phase 68 | Not started |
+| BULK-03 | Phase 68 | Not started |
+| BULK-04 | Phase 68 | Not started |
+| CHAT-01 | Phase 69 | Not started |
+| CHAT-02 | Phase 69 | Not started |
+| INSIGHT-01 | Phase 70 | Not started |
+| THERAPY-01 | Phase 70 | Not started |
+| THERAPY-02 | Phase 70 | Not started |
+| BRIEF-01 | Phase 71 | Not started |
+| PHOTO-PWA-01 | Phase 71 | Not started |
+| DOC-01 | Phase 72 | Not started |
 
 **Coverage:**
-- v2.5 requirements: 14 total
-- Mapped to phases: 14
+- v2.5 requirements: 25 total
+- Mapped to phases: 25
 - Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-12*
-*Last updated: 2026-04-12 — traceability filled after roadmap creation*
+*Last updated: 2026-04-12 — expanded to full dashboard parity*

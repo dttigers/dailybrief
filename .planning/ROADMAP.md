@@ -16,7 +16,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.2 Polish & Power** — Phases 45-50 (shipped 2026-04-05)
 - ✅ **v2.3 Projects & Precision** — Phases 51-53, 55-57 (shipped 2026-04-08; Phase 54 deferred to v2.4)
 - ✅ **v2.4 Capture Without Friction** — Phases 58-62 (shipped 2026-04-10)
-- 🚧 **v2.5 Dashboard Everywhere** — Phases 63-68 (in progress)
+- 🚧 **v2.5 Dashboard Everywhere** — Phases 63-72 (in progress)
 
 ## Completed Milestones
 
@@ -150,9 +150,9 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
-## v2.5 Dashboard Everywhere (Phases 63-68)
+## v2.5 Dashboard Everywhere (Phases 63-74)
 
-**Milestone Goal:** Replace the Mac-only SwiftUI dashboard with a PWA at app.vigilhub.io that any device can access, and add work order management as the first new feature.
+**Milestone Goal:** Full dashboard parity — replace the Mac-only SwiftUI dashboard with a PWA at app.vigilhub.io that covers every feature the Mac dashboard has, accessible from any device.
 
 ### Phases
 
@@ -161,7 +161,11 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [ ] **Phase 65: Work Order Status API** — New backend route for status changes and CLI/PDF pipeline reads status from API
 - [ ] **Phase 66: Work Orders Dashboard** — View, prioritize, and update work order status from the PWA
 - [ ] **Phase 67: Projects UI** — View projects and assign/unassign thoughts from the PWA
-- [ ] **Phase 68: README** — GitHub project documentation
+- [ ] **Phase 68: Bulk Actions & Filters** — Multi-select delete/recategorize, source/date filters, tags/favorites
+- [ ] **Phase 69: AI Chat** — Multi-turn Claude conversation with thought context injection
+- [ ] **Phase 70: Insights & Therapy** — AI insights, therapy classification, patterns, session prep
+- [ ] **Phase 71: Brief History & Photo Upload** — Browse past briefs, upload photos with smart preview
+- [ ] **Phase 72: README** — GitHub project documentation
 
 ## Phase Details
 
@@ -227,14 +231,57 @@ Plans:
 **Plans**: TBD
 **UI hint**: yes
 
-### Phase 68: README
+### Phase 68: Bulk Actions & Filters
+**Goal**: Users can multi-select thoughts for bulk operations and filter by source type, date range, tags, and favorites
+**Depends on**: Phase 64
+**Requirements**: BULK-01, BULK-02, BULK-03, BULK-04
+**Success Criteria** (what must be TRUE):
+  1. User can select multiple thoughts and bulk delete or recategorize them
+  2. User can filter thoughts by source type (text, voice, image)
+  3. User can filter thoughts by date range
+  4. User can toggle favorites on thoughts and filter to show only favorites
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 69: AI Chat
+**Goal**: Users can have a multi-turn conversation with Claude that has context from their captured thoughts
+**Depends on**: Phase 64
+**Requirements**: CHAT-01, CHAT-02
+**Success Criteria** (what must be TRUE):
+  1. User can open a chat view and send messages to Claude, receiving streaming responses
+  2. Claude's responses are informed by the user's recent thoughts — the system injects thought context into the conversation
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 70: Insights & Therapy
+**Goal**: Users can view AI-generated insights and therapy intelligence from the PWA
+**Depends on**: Phase 64
+**Requirements**: INSIGHT-01, THERAPY-01, THERAPY-02
+**Success Criteria** (what must be TRUE):
+  1. User can view AI-generated insights (patterns, connections, action prompts, trends) in a dedicated section
+  2. User can see therapy classification on relevant thoughts (self-learnable vs bring-to-therapist)
+  3. User can view therapy session prep and pattern analysis
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 71: Brief History & Photo Upload
+**Goal**: Users can browse past daily briefs and upload photos through the PWA
+**Depends on**: Phase 64
+**Requirements**: BRIEF-01, PHOTO-PWA-01
+**Success Criteria** (what must be TRUE):
+  1. User can browse a list of past daily briefs by date and view their content
+  2. User can upload a photo from the PWA and it processes through the smart photo pipeline (paper-type detection, transcription)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 72: README
 **Goal**: The GitHub repository has documentation that explains what Vigil is, how it is architected, and how to set it up
-**Depends on**: Phase 67
+**Depends on**: Phase 71
 **Requirements**: DOC-01
 **Success Criteria** (what must be TRUE):
   1. A README.md exists at the repository root and renders correctly on GitHub
   2. README describes what Vigil is and what problem it solves in plain language
-  3. README contains an architecture overview covering the three client surfaces (Mac app, PWA, G2 plugin) and Vigil Core API
+  3. README contains an architecture overview covering the four client surfaces (Mac app, PWA, G2 plugin, CLI) and Vigil Core API
   4. README contains setup instructions sufficient for a developer to clone and run the project locally
 **Plans**: TBD
 
