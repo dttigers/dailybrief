@@ -73,26 +73,50 @@ processAudio.post("/process-audio", async (c) => {
     return c.json({ error: "AI service unavailable. ANTHROPIC_API_KEY not configured." }, 503);
   }
 
-  // 5. Claude transcription call
+  // 5. Upload file to Anthropic beta.files, then reference in message
+  const ai = getAIClient()!;
   let transcription: string;
   try {
-    transcription = await callClaudeMultimodal({
-      content: [
+    // Upload audio as a file via beta API
+    const audioBuffer = Buffer.from(body.audio, "base64");
+    const blob = new Blob([audioBuffer], { type: mediaType });
+    const file = new File([blob], `recording.${mediaType.split("/")[1] ?? "wav"}`, { type: mediaType });
+
+    const uploaded = await ai.beta.files.upload({ file });
+
+    const model = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
+    const response = await ai.beta.messages.create({
+      model,
+      max_tokens: 4096,
+      betas: ["files-api-2025-04-14"],
+      messages: [
         {
-          type: "text",
-          text: AUDIO_PROMPT,
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: AUDIO_PROMPT,
+            },
+            {
+              type: "file",
+              source: {
+                type: "file",
+                file_id: uploaded.id,
+              },
+            } as never,
+          ],
         },
-        {
-          type: "document",
-          source: {
-            type: "base64",
-            media_type: mediaType as "application/pdf",
-            data: body.audio,
-          },
-        } as never,
       ],
-      maxTokens: 4096,
     });
+
+    const block = response.content[0];
+    if (block.type !== "text") {
+      throw new Error(`Unexpected response type: ${block.type}`);
+    }
+    transcription = block.text;
+
+    // Clean up uploaded file (fire-and-forget)
+    ai.beta.files.delete(uploaded.id).catch(() => {});
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown AI error";
     console.error("[vigil-core] /process-audio Claude call failed:", message);
