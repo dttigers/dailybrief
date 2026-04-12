@@ -174,7 +174,10 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   2. After authenticating, the PWA shell loads and is usable on phone, tablet, and desktop without horizontal scrolling or broken layout
   3. User can tap "Add to Home Screen" on iOS/Android and the PWA launches as a standalone app without browser chrome
   4. When the device goes offline, the PWA shows a visible offline indicator instead of a broken blank screen
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 63-01-PLAN.md — Scaffold vigil-pwa with Vite, React, Tailwind, PWA manifest, auth, layout, offline indicator
+- [ ] 63-02-PLAN.md — Deploy to Vercel at app.vigilhub.io and verify all requirements
 **UI hint**: yes
 
 ### Phase 64: Thoughts Dashboard
@@ -298,7 +301,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 | 60. Smart Photo Upload Dashboard UX | v2.4 | 2/2 | Complete    | 2026-04-09 |
 | 61. Folder Watch Feeder | v2.4 | 2/2 | Complete    | 2026-04-10 |
 | 62. Folder Watch Settings UI | v2.4 | 1/1 | Complete    | 2026-04-10 |
-| 63. PWA Foundation | v2.5 | 0/TBD | Not started | - |
+| 63. PWA Foundation | v2.5 | 0/2 | Planned | - |
 | 64. Thoughts Dashboard | v2.5 | 0/TBD | Not started | - |
 | 65. Work Order Status API | v2.5 | 0/TBD | Not started | - |
 | 66. Work Orders Dashboard | v2.5 | 0/TBD | Not started | - |
