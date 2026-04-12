@@ -172,6 +172,20 @@ extension DailyBrief {
 
             // Pass all work orders with their statuses for status-aware rendering
             let allWorkOrders = await (workOrdersResult ?? [])
+
+            // Sync work orders to Vigil Core so PWA can display them
+            if !allWorkOrders.isEmpty {
+                do {
+                    let _: SyncResponse = try await apiClient.post(
+                        path: "/work-orders/sync",
+                        body: SyncRequest(workOrders: allWorkOrders)
+                    )
+                    Logger.log("Synced \(allWorkOrders.count) work orders to API")
+                } catch {
+                    Logger.error("Work order sync failed (non-fatal): \(error.localizedDescription)")
+                }
+            }
+
             var woStatuses: [String: String] = [:]
             do {
                 woStatuses = try await apiClient.get(path: "/work-orders/statuses")
@@ -257,6 +271,13 @@ extension DailyBrief {
             cleanupOldPDFs(directory: outputDir, keepDays: config.pdf.keepDays)
 
             Logger.log("DailyBrief complete")
+        }
+
+        private struct SyncRequest: Encodable {
+            let workOrders: [WorkOrder]
+        }
+        private struct SyncResponse: Decodable {
+            let synced: Int
         }
 
         private func tryFetch<T>(_ label: String, _ block: () async throws -> T) async -> T? {
