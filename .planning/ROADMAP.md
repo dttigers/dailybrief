@@ -287,7 +287,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. User can browse a list of past daily briefs by date and view their content
   2. User can upload a photo from the PWA and it processes through the smart photo pipeline (paper-type detection, transcription)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 71-01-PLAN.md — Brief history API, hook, page with list/detail view, nav wiring
+- [ ] 71-02-PLAN.md — Photo upload hook, page with preview/commit flow, nav wiring
 **UI hint**: yes
 
 ### Phase 72: README
