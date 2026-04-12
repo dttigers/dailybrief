@@ -5,7 +5,7 @@ import FilterBar from '../components/FilterBar'
 import SearchBar from '../components/SearchBar'
 import ThoughtList from '../components/ThoughtList'
 import BulkActionBar from '../components/BulkActionBar'
-import { updateThought, bulkDeleteThoughts, bulkRecategorizeThoughts, triageThought } from '../api/client'
+import { updateThought, bulkDeleteThoughts, bulkRecategorizeThoughts, triageThought, vigilFetch } from '../api/client'
 import { useThoughts, type ThoughtFilters } from '../hooks/useThoughts'
 
 export default function ThoughtsPage() {
@@ -62,6 +62,21 @@ export default function ThoughtsPage() {
     const result = await triageThought(thought.content)
     await updateThought(id, { category: result.category })
     updateLocal(id, { category: result.category, confidence: result.confidence })
+
+    // If categorized as therapy, also run therapy classification
+    if (result.category === 'therapy') {
+      try {
+        const res = await vigilFetch('/v1/therapy/classify', {
+          method: 'POST',
+          body: JSON.stringify({ content: thought.content }),
+        })
+        if (res.ok) {
+          const classification = await res.json() as { classification: string }
+          await updateThought(id, { therapyClassification: classification.classification })
+          updateLocal(id, { therapyClassification: classification.classification })
+        }
+      } catch { /* therapy classification is non-fatal */ }
+    }
   }
 
   function handleToggleSelect(id: number) {

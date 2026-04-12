@@ -115,7 +115,7 @@ export async function triageThought(content: string): Promise<{ category: string
 
 export async function updateThought(
   id: number,
-  patch: { content?: string; category?: string; isFavorited?: boolean; taskStatus?: string; projectId?: number | null },
+  patch: { content?: string; category?: string; isFavorited?: boolean; taskStatus?: string; projectId?: number | null; therapyClassification?: string },
 ): Promise<ThoughtApiResponse> {
   // Only include defined (non-undefined) fields — sending category: null causes a 400
   const body: Record<string, unknown> = {}
@@ -124,6 +124,7 @@ export async function updateThought(
   if (patch.isFavorited !== undefined) body.isFavorited = patch.isFavorited
   if (patch.taskStatus !== undefined) body.taskStatus = patch.taskStatus
   if (patch.projectId !== undefined) body.projectId = patch.projectId
+  if (patch.therapyClassification !== undefined) body.therapyClassification = patch.therapyClassification
 
   const res = await vigilFetch(`/v1/thoughts/${id}`, {
     method: 'PUT',
