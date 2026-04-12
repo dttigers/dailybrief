@@ -80,7 +80,7 @@ export default function AudioUploadSection() {
             ref={fileInputRef}
             id="audio-input"
             type="file"
-            accept="audio/wav,audio/mpeg,audio/mp3,audio/mp4,audio/m4a,audio/x-m4a,audio/webm,audio/ogg,.wav,.mp3,.m4a,.webm,.ogg"
+            accept="audio/*,.wav,.mp3,.m4a,.webm,.ogg,.mp4,.caf"
             className="sr-only"
             onChange={handleFileChange}
           />
