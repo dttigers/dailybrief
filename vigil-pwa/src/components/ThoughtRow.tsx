@@ -22,6 +22,11 @@ const TASK_STATUS_STYLES: Record<string, string> = {
   done: 'bg-green-500/20 text-green-400 hover:bg-green-500/30',
 }
 
+const THERAPY_STYLES: Record<string, { label: string; style: string }> = {
+  selfLearnable: { label: 'Self-work', style: 'bg-teal-500/20 text-teal-400' },
+  bringToTherapist: { label: 'For therapy', style: 'bg-rose-500/20 text-rose-400' },
+}
+
 const CATEGORY_STYLES: Record<string, string> = {
   task: 'bg-blue-500/20 text-blue-400',
   therapy: 'bg-purple-500/20 text-purple-400',
@@ -137,6 +142,11 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, isSele
             >
               {TASK_STATUS_LABELS[thought.taskStatus ?? 'open'] ?? 'To Do'}
             </button>
+          )}
+          {thought.therapyClassification && THERAPY_STYLES[thought.therapyClassification] && (
+            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${THERAPY_STYLES[thought.therapyClassification].style}`}>
+              {THERAPY_STYLES[thought.therapyClassification].label}
+            </span>
           )}
         </span>
         <span className="text-xs text-slate-500 shrink-0 flex items-center gap-2">

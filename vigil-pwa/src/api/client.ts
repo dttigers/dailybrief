@@ -54,6 +54,7 @@ export interface ThoughtApiResponse {
   createdAt: string
   modifiedAt: string
   taskStatus: string | null
+  therapyClassification: string | null
   tags: string[]
   isFavorited: boolean
   projectId: number | null
@@ -239,5 +240,85 @@ export async function sendChatMessage(
     body: JSON.stringify({ messages, includeContext }),
   })
   if (!res.ok) throw new Error(`Chat failed: ${res.status}`)
+  return res.json()
+}
+
+// ---------------------------------------------------------------------------
+// Insights API
+// ---------------------------------------------------------------------------
+
+export interface Insight {
+  type: 'pattern' | 'connection' | 'actionPrompt' | 'trend'
+  title: string
+  message: string
+  confidence: number
+  relatedThoughtIds: number[]
+}
+
+export async function generateInsights(
+  thoughts: { id: number; content: string; category: string; createdAt: string }[],
+  days = 7,
+): Promise<{ insights: Insight[] }> {
+  const res = await vigilFetch('/v1/insights', {
+    method: 'POST',
+    body: JSON.stringify({ thoughts, days }),
+  })
+  if (!res.ok) throw new Error(`Insights failed: ${res.status}`)
+  return res.json()
+}
+
+// ---------------------------------------------------------------------------
+// Therapy API
+// ---------------------------------------------------------------------------
+
+export interface TherapyClassificationResult {
+  classification: 'selfLearnable' | 'bringToTherapist'
+  confidence: number
+  reasoning: string
+}
+
+export interface TherapyPattern {
+  theme: string
+  description: string
+  frequency: number
+  trend: 'increasing' | 'stable' | 'decreasing'
+  relatedThoughtIds: number[]
+  confidence: number
+}
+
+export interface TherapyPrepItem {
+  topic: string
+  context: string
+  urgency: 'high' | 'medium' | 'low'
+  relatedThoughtIds: number[]
+}
+
+export interface TherapyPrep {
+  items: TherapyPrepItem[]
+  overallThemes: string[]
+  suggestedFocus: string
+}
+
+export async function getTherapyPatterns(
+  thoughts: { id: number; content: string; therapyClassification: string; createdAt: string }[],
+  days = 30,
+): Promise<{ patterns: TherapyPattern[] }> {
+  const res = await vigilFetch('/v1/therapy/patterns', {
+    method: 'POST',
+    body: JSON.stringify({ thoughts, days }),
+  })
+  if (!res.ok) throw new Error(`Therapy patterns failed: ${res.status}`)
+  return res.json()
+}
+
+export async function generateTherapyPrep(
+  thoughts: { id: number; content: string; createdAt: string }[],
+  patterns?: { theme: string; trend: string; confidence: number; description: string }[],
+): Promise<TherapyPrep> {
+  const res = await vigilFetch('/v1/therapy/prep', {
+    method: 'POST',
+    body: JSON.stringify({ thoughts, patterns }),
+  })
+  if (!res.ok) throw new Error(`Therapy prep failed: ${res.status}`)
   return res.json()
 }
