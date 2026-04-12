@@ -122,6 +122,8 @@ cat > "$MONITOR_APP/Contents/Info.plist" <<INFOPLIST
     <string>13.0</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Vigil transcribes voice notes you drop into the watched folder so they can be captured as thoughts.</string>
 </dict>
 </plist>
 INFOPLIST
