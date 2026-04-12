@@ -173,13 +173,18 @@ extension DailyBrief {
             // Pass all work orders with their statuses for status-aware rendering
             let allWorkOrders = await (workOrdersResult ?? [])
             var woStatuses: [String: String] = [:]
-            for wo in allWorkOrders {
-                woStatuses[wo.caseNumber] = CompletionStore.status(for: wo.caseNumber).rawValue
+            do {
+                woStatuses = try await apiClient.get(path: "/work-orders/statuses")
+            } catch {
+                Logger.error("WO status fetch failed, falling back to local store: \(error.localizedDescription)")
+                for wo in allWorkOrders {
+                    woStatuses[wo.caseNumber] = CompletionStore.status(for: wo.caseNumber).rawValue
+                }
             }
 
             // AI-prioritize open (non-done) work orders
             let openWorkOrders = allWorkOrders.filter {
-                CompletionStore.status(for: $0.caseNumber) != .done
+                (woStatuses[$0.caseNumber] ?? "open") != "done"
             }
             let woPriorityOrder = await tryFetch("WO Priority") {
                 try await prioritizer.prioritize(workOrders: openWorkOrders)
@@ -655,7 +660,7 @@ extension DailyBrief {
 // MARK: - Complete
 
 extension DailyBrief {
-    struct Complete: ParsableCommand {
+    struct Complete: AsyncParsableCommand {
         static let configuration = CommandConfiguration(abstract: "Mark a work order as complete (or set a specific status).")
 
         @Argument(help: "Case number(s) to update (e.g. CS0353598)")
@@ -664,14 +669,40 @@ extension DailyBrief {
         @Option(help: "Set status: open, inProgress, or done (default: done)")
         var status: String = "done"
 
-        func run() {
-            guard let parsed = CompletionStore.WorkOrderStatus(rawValue: status) else {
+        @Option(help: "Path to config file")
+        var configPath: String?
+
+        func run() async throws {
+            let validStatuses = ["open", "inProgress", "done"]
+            guard validStatuses.contains(status) else {
                 print("Invalid status '\(status)'. Use: open, inProgress, or done")
                 return
             }
+
+            let config = try ConfigLoader.load(from: configPath)
+            let apiClient = VigilAPIClient(
+                baseURL: URL(string: config.apiBaseUrl)!,
+                apiKey: config.apiKey
+            )
+
+            struct StatusBody: Encodable { let status: String }
+            struct StatusResponse: Decodable { let caseNumber: String; let status: String }
+
             for cn in caseNumbers {
-                CompletionStore.setStatus(cn, parsed)
-                print("Work order \(cn) → \(parsed.rawValue)")
+                do {
+                    let _: StatusResponse = try await apiClient.put(
+                        path: "/work-orders/\(cn)/status",
+                        body: StatusBody(status: status)
+                    )
+                    print("Work order \(cn) -> \(status)")
+                } catch {
+                    print("API error for \(cn): \(error.localizedDescription)")
+                    // Fallback to local store
+                    if let parsed = CompletionStore.WorkOrderStatus(rawValue: status) {
+                        CompletionStore.setStatus(cn, parsed)
+                        print("  (saved locally as fallback)")
+                    }
+                }
             }
         }
     }
@@ -680,16 +711,37 @@ extension DailyBrief {
 // MARK: - Uncomplete
 
 extension DailyBrief {
-    struct Uncomplete: ParsableCommand {
+    struct Uncomplete: AsyncParsableCommand {
         static let configuration = CommandConfiguration(abstract: "Unmark a work order so it appears again (sets status to open).")
 
         @Argument(help: "Case number(s) to unmark (e.g. CS0353598)")
         var caseNumbers: [String]
 
-        func run() {
+        @Option(help: "Path to config file")
+        var configPath: String?
+
+        func run() async throws {
+            let config = try ConfigLoader.load(from: configPath)
+            let apiClient = VigilAPIClient(
+                baseURL: URL(string: config.apiBaseUrl)!,
+                apiKey: config.apiKey
+            )
+
+            struct StatusBody: Encodable { let status: String }
+            struct StatusResponse: Decodable { let caseNumber: String; let status: String }
+
             for cn in caseNumbers {
-                CompletionStore.markIncomplete(cn)
-                print("Work order \(cn) → open")
+                do {
+                    let _: StatusResponse = try await apiClient.put(
+                        path: "/work-orders/\(cn)/status",
+                        body: StatusBody(status: "open")
+                    )
+                    print("Work order \(cn) -> open")
+                } catch {
+                    print("API error for \(cn): \(error.localizedDescription)")
+                    CompletionStore.markIncomplete(cn)
+                    print("  (saved locally as fallback)")
+                }
             }
         }
     }
@@ -698,21 +750,43 @@ extension DailyBrief {
 // MARK: - List Completed
 
 extension DailyBrief {
-    struct ListCompleted: ParsableCommand {
+    struct ListCompleted: AsyncParsableCommand {
         static let configuration = CommandConfiguration(
             commandName: "list-completed",
             abstract: "Show all completed work order case numbers."
         )
 
-        func run() {
-            let items = CompletionStore.listCompleted()
-            if items.isEmpty {
+        @Option(help: "Path to config file")
+        var configPath: String?
+
+        func run() async throws {
+            let config = try ConfigLoader.load(from: configPath)
+            let apiClient = VigilAPIClient(
+                baseURL: URL(string: config.apiBaseUrl)!,
+                apiKey: config.apiKey
+            )
+
+            let statuses: [String: String]
+            do {
+                statuses = try await apiClient.get(path: "/work-orders/statuses")
+            } catch {
+                Logger.error("API fetch failed, falling back to local store: \(error.localizedDescription)")
+                let items = CompletionStore.listCompleted()
+                if items.isEmpty {
+                    print("No completed work orders")
+                } else {
+                    print("Completed work orders (local):")
+                    for item in items { print("  \(item)") }
+                }
+                return
+            }
+
+            let completed = statuses.filter { $0.value == "done" }.keys.sorted()
+            if completed.isEmpty {
                 print("No completed work orders")
             } else {
                 print("Completed work orders:")
-                for item in items {
-                    print("  \(item)")
-                }
+                for item in completed { print("  \(item)") }
             }
         }
     }
