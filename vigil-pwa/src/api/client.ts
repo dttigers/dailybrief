@@ -215,3 +215,29 @@ export async function prioritizeWorkOrders(
   if (!res.ok) throw new Error(`Failed to prioritize work orders: ${res.status}`)
   return res.json()
 }
+
+// ---------------------------------------------------------------------------
+// Chat API
+// ---------------------------------------------------------------------------
+
+export interface ChatMessage {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface ChatResponse {
+  response: string
+  contextUsed: number
+}
+
+export async function sendChatMessage(
+  messages: ChatMessage[],
+  includeContext = true,
+): Promise<ChatResponse> {
+  const res = await vigilFetch('/v1/chat', {
+    method: 'POST',
+    body: JSON.stringify({ messages, includeContext }),
+  })
+  if (!res.ok) throw new Error(`Chat failed: ${res.status}`)
+  return res.json()
+}

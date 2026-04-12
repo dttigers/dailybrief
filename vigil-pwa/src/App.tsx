@@ -6,6 +6,7 @@ import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
 import WorkOrdersPage from './pages/WorkOrdersPage'
 import ProjectsPage from './pages/ProjectsPage'
+import ChatPage from './pages/ChatPage'
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => getStoredKey() !== null)
@@ -34,6 +35,7 @@ export default function App() {
                   <Route path="/" element={<DashboardPage />} />
                   <Route path="/work-orders" element={<WorkOrdersPage />} />
                   <Route path="/projects" element={<ProjectsPage />} />
+                  <Route path="/chat" element={<ChatPage />} />
                 </Routes>
               </Layout>
             )
