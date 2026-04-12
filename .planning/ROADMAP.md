@@ -220,7 +220,10 @@ Plans:
   1. User can see a list of all work orders showing title, current status (open/in-progress/done), and AI priority rank
   2. User can tap a status control on any work order and change it to complete, in-progress, or reopen — the change is reflected immediately in the list
   3. After marking a work order done in the PWA, generating the daily brief produces a PDF that omits that work order from the active list
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 66-01-PLAN.md — Work orders table, GET/POST endpoints, CLI sync
+- [ ] 66-02-PLAN.md — PWA WorkOrdersPage with status cycling and tab navigation
 **UI hint**: yes
 
 ### Phase 67: Projects UI
@@ -357,7 +360,7 @@ Plans:
 | 63. PWA Foundation | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 64. Thoughts Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 65. Work Order Status API | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 66. Work Orders Dashboard | v2.5 | 0/TBD | Not started | - |
+| 66. Work Orders Dashboard | v2.5 | 0/2 | Not started | - |
 | 67. Projects UI | v2.5 | 0/TBD | Not started | - |
 | 68. README | v2.5 | 0/TBD | Not started | - |
 
