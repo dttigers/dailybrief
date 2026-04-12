@@ -234,7 +234,9 @@ Plans:
   1. User can navigate to a Projects view and see all named projects, each expandable to show the thoughts assigned to it
   2. User can assign an unassigned thought to a project from the PWA and the assignment persists on reload
   3. User can unassign a thought from a project from the PWA and it no longer appears under that project
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 67-01-PLAN.md — Projects page with expandable cards, assign/unassign thoughts, navigation tab
 **UI hint**: yes
 
 ### Phase 68: Bulk Actions & Filters
@@ -361,7 +363,7 @@ Plans:
 | 64. Thoughts Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 65. Work Order Status API | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 66. Work Orders Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 67. Projects UI | v2.5 | 0/TBD | Not started | - |
+| 67. Projects UI | v2.5 | 0/1 | Planning | - |
 | 68. README | v2.5 | 0/TBD | Not started | - |
 
 ## Backlog
