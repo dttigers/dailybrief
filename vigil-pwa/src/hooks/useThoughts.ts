@@ -47,5 +47,14 @@ export function useThoughts(category: string | null, searchQuery: string) {
     setFetchTick((n) => n + 1)
   }, [])
 
-  return { thoughts, total, isLoading, error, updateLocal, prependThought, refetch }
+  const removeMany = useCallback((ids: Set<number>) => {
+    setThoughts((prev) => prev.filter((t) => !ids.has(t.id)))
+    setTotal((prev) => prev - ids.size)
+  }, [])
+
+  const updateMany = useCallback((ids: Set<number>, patch: Partial<ThoughtApiResponse>) => {
+    setThoughts((prev) => prev.map((t) => (ids.has(t.id) ? { ...t, ...patch } : t)))
+  }, [])
+
+  return { thoughts, total, isLoading, error, updateLocal, prependThought, refetch, removeMany, updateMany }
 }
