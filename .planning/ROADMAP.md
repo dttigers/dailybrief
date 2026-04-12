@@ -207,7 +207,10 @@ Plans:
   1. A `PATCH /work-orders/:id/status` (or equivalent) endpoint exists and accepts open/in-progress/done — status persists in PostgreSQL
   2. The DailyBrief CLI reads work order completion status from the Vigil Core API instead of local CompletionStore, so status set via any client is reflected in the next PDF
   3. An existing work order marked done via the API does not reappear as open in the next generated daily brief
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 65-01-PLAN.md — Schema, migration, route, tests, seed for work_order_statuses
+- [ ] 65-02-PLAN.md — CLI migration from CompletionStore to API with fallback
 
 ### Phase 66: Work Orders Dashboard
 **Goal**: Users can view all work orders with AI priority ranking and update their status directly from the PWA
@@ -353,7 +356,7 @@ Plans:
 | 62. Folder Watch Settings UI | v2.4 | 1/1 | Complete    | 2026-04-10 |
 | 63. PWA Foundation | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 64. Thoughts Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 65. Work Order Status API | v2.5 | 0/TBD | Not started | - |
+| 65. Work Order Status API | v2.5 | 0/2 | Planned | - |
 | 66. Work Orders Dashboard | v2.5 | 0/TBD | Not started | - |
 | 67. Projects UI | v2.5 | 0/TBD | Not started | - |
 | 68. README | v2.5 | 0/TBD | Not started | - |
