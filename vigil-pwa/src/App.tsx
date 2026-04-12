@@ -10,6 +10,7 @@ import ChatPage from './pages/ChatPage'
 import InsightsPage from './pages/InsightsPage'
 import TherapyPage from './pages/TherapyPage'
 import BriefHistoryPage from './pages/BriefHistoryPage'
+import PhotoUploadPage from './pages/PhotoUploadPage'
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => getStoredKey() !== null)
@@ -42,6 +43,7 @@ export default function App() {
                   <Route path="/insights" element={<InsightsPage />} />
                   <Route path="/therapy" element={<TherapyPage />} />
                   <Route path="/history" element={<BriefHistoryPage />} />
+                  <Route path="/upload" element={<PhotoUploadPage />} />
                 </Routes>
               </Layout>
             )
