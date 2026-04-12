@@ -156,7 +156,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 ### Phases
 
-- [ ] **Phase 63: PWA Foundation** — React/Vite scaffold deployed to app.vigilhub.io with Vigil API auth, responsive layout, and offline indicator
+- [x] **Phase 63: PWA Foundation** — React/Vite scaffold deployed to app.vigilhub.io with Vigil API auth, responsive layout, and offline indicator (completed 2026-04-12)
 - [ ] **Phase 64: Thoughts Dashboard** — Full thoughts UI with view, filter, search, capture, and inline edit
 - [ ] **Phase 65: Work Order Status API** — New backend route for status changes and CLI/PDF pipeline reads status from API
 - [ ] **Phase 66: Work Orders Dashboard** — View, prioritize, and update work order status from the PWA
@@ -176,8 +176,8 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   4. When the device goes offline, the PWA shows a visible offline indicator instead of a broken blank screen
 **Plans**: 2 plans
 Plans:
-- [ ] 63-01-PLAN.md — Scaffold vigil-pwa with Vite, React, Tailwind, PWA manifest, auth, layout, offline indicator
-- [ ] 63-02-PLAN.md — Deploy to Vercel at app.vigilhub.io and verify all requirements
+- [x] 63-01-PLAN.md — Scaffold vigil-pwa with Vite, React, Tailwind, PWA manifest, auth, layout, offline indicator
+- [x] 63-02-PLAN.md — Deploy to Vercel at app.vigilhub.io and verify all requirements
 **UI hint**: yes
 
 ### Phase 64: Thoughts Dashboard
@@ -301,7 +301,7 @@ Plans:
 | 60. Smart Photo Upload Dashboard UX | v2.4 | 2/2 | Complete    | 2026-04-09 |
 | 61. Folder Watch Feeder | v2.4 | 2/2 | Complete    | 2026-04-10 |
 | 62. Folder Watch Settings UI | v2.4 | 1/1 | Complete    | 2026-04-10 |
-| 63. PWA Foundation | v2.5 | 0/2 | Planned | - |
+| 63. PWA Foundation | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 64. Thoughts Dashboard | v2.5 | 0/TBD | Not started | - |
 | 65. Work Order Status API | v2.5 | 0/TBD | Not started | - |
 | 66. Work Orders Dashboard | v2.5 | 0/TBD | Not started | - |
