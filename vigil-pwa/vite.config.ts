@@ -40,6 +40,10 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // Skip waiting — new SW activates immediately instead of waiting
+        // for all tabs to close. Means deploys reflect within seconds.
+        skipWaiting: true,
+        clientsClaim: true,
       },
     }),
   ],
