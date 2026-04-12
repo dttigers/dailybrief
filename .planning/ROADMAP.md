@@ -16,6 +16,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.2 Polish & Power** — Phases 45-50 (shipped 2026-04-05)
 - ✅ **v2.3 Projects & Precision** — Phases 51-53, 55-57 (shipped 2026-04-08; Phase 54 deferred to v2.4)
 - ✅ **v2.4 Capture Without Friction** — Phases 58-62 (shipped 2026-04-10)
+- 🚧 **v2.5 Dashboard Everywhere** — Phases 63-68 (in progress)
 
 ## Completed Milestones
 
@@ -149,13 +150,87 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
+## v2.5 Dashboard Everywhere (Phases 63-68)
+
+**Milestone Goal:** Replace the Mac-only SwiftUI dashboard with a PWA at app.vigilhub.io that any device can access, and add work order management as the first new feature.
+
+### Phases
+
+- [ ] **Phase 63: PWA Foundation** — React/Vite scaffold deployed to app.vigilhub.io with Vigil API auth, responsive layout, and offline indicator
+- [ ] **Phase 64: Thoughts Dashboard** — Full thoughts UI with view, filter, search, capture, and inline edit
+- [ ] **Phase 65: Work Order Status API** — New backend route for status changes and CLI/PDF pipeline reads status from API
+- [ ] **Phase 66: Work Orders Dashboard** — View, prioritize, and update work order status from the PWA
+- [ ] **Phase 67: Projects UI** — View projects and assign/unassign thoughts from the PWA
+- [ ] **Phase 68: README** — GitHub project documentation
+
 ## Phase Details
 
-_All phase details archived to `.planning/milestones/v[X.Y]-ROADMAP.md`._
+### Phase 63: PWA Foundation
+**Goal**: Users can access the Vigil dashboard at app.vigilhub.io from any browser, authenticate, and get a responsive shell that works offline
+**Depends on**: Phase 62 (existing Vigil Core API on Railway)
+**Requirements**: PWA-01, PWA-02, PWA-03, PWA-04
+**Success Criteria** (what must be TRUE):
+  1. User navigates to app.vigilhub.io in any browser and sees a login screen where they can enter their Vigil API key
+  2. After authenticating, the PWA shell loads and is usable on phone, tablet, and desktop without horizontal scrolling or broken layout
+  3. User can tap "Add to Home Screen" on iOS/Android and the PWA launches as a standalone app without browser chrome
+  4. When the device goes offline, the PWA shows a visible offline indicator instead of a broken blank screen
+**Plans**: TBD
+**UI hint**: yes
 
-## Domain Expertise
+### Phase 64: Thoughts Dashboard
+**Goal**: Users can view, search, filter, capture, and edit thoughts from the PWA with the same core capabilities as the Mac dashboard
+**Depends on**: Phase 63
+**Requirements**: THOUGHT-01, THOUGHT-02, THOUGHT-03, THOUGHT-04
+**Success Criteria** (what must be TRUE):
+  1. User can see a list of all their thoughts grouped or filterable by category (work, personal, health, etc.)
+  2. User can type into a search box and the thought list filters to matching results in real time
+  3. User can submit a new text thought from the PWA and it appears in the list after save
+  4. User can click into a thought's text, edit it inline, and save — the updated content persists on reload
+**Plans**: TBD
+**UI hint**: yes
 
-None
+### Phase 65: Work Order Status API
+**Goal**: Work order status changes made anywhere are durable and the daily PDF reflects them — requires a new API route and a CLI pivot away from CompletionStore
+**Depends on**: Phase 63
+**Requirements**: WO-02, WO-03
+**Success Criteria** (what must be TRUE):
+  1. A `PATCH /work-orders/:id/status` (or equivalent) endpoint exists and accepts open/in-progress/done — status persists in PostgreSQL
+  2. The DailyBrief CLI reads work order completion status from the Vigil Core API instead of local CompletionStore, so status set via any client is reflected in the next PDF
+  3. An existing work order marked done via the API does not reappear as open in the next generated daily brief
+**Plans**: TBD
+
+### Phase 66: Work Orders Dashboard
+**Goal**: Users can view all work orders with AI priority ranking and update their status directly from the PWA
+**Depends on**: Phase 65
+**Requirements**: WO-01
+**Success Criteria** (what must be TRUE):
+  1. User can see a list of all work orders showing title, current status (open/in-progress/done), and AI priority rank
+  2. User can tap a status control on any work order and change it to complete, in-progress, or reopen — the change is reflected immediately in the list
+  3. After marking a work order done in the PWA, generating the daily brief produces a PDF that omits that work order from the active list
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 67: Projects UI
+**Goal**: Users can view their projects and manage thought assignments from the PWA using the existing projects API
+**Depends on**: Phase 64
+**Requirements**: PROJ-01, PROJ-02
+**Success Criteria** (what must be TRUE):
+  1. User can navigate to a Projects view and see all named projects, each expandable to show the thoughts assigned to it
+  2. User can assign an unassigned thought to a project from the PWA and the assignment persists on reload
+  3. User can unassign a thought from a project from the PWA and it no longer appears under that project
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 68: README
+**Goal**: The GitHub repository has documentation that explains what Vigil is, how it is architected, and how to set it up
+**Depends on**: Phase 67
+**Requirements**: DOC-01
+**Success Criteria** (what must be TRUE):
+  1. A README.md exists at the repository root and renders correctly on GitHub
+  2. README describes what Vigil is and what problem it solves in plain language
+  3. README contains an architecture overview covering the three client surfaces (Mac app, PWA, G2 plugin) and Vigil Core API
+  4. README contains setup instructions sufficient for a developer to clone and run the project locally
+**Plans**: TBD
 
 ## Progress
 
@@ -223,6 +298,12 @@ None
 | 60. Smart Photo Upload Dashboard UX | v2.4 | 2/2 | Complete    | 2026-04-09 |
 | 61. Folder Watch Feeder | v2.4 | 2/2 | Complete    | 2026-04-10 |
 | 62. Folder Watch Settings UI | v2.4 | 1/1 | Complete    | 2026-04-10 |
+| 63. PWA Foundation | v2.5 | 0/TBD | Not started | - |
+| 64. Thoughts Dashboard | v2.5 | 0/TBD | Not started | - |
+| 65. Work Order Status API | v2.5 | 0/TBD | Not started | - |
+| 66. Work Orders Dashboard | v2.5 | 0/TBD | Not started | - |
+| 67. Projects UI | v2.5 | 0/TBD | Not started | - |
+| 68. README | v2.5 | 0/TBD | Not started | - |
 
 ## Backlog
 

@@ -68,26 +68,26 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PWA-01 | TBD | Not started |
-| PWA-02 | TBD | Not started |
-| PWA-03 | TBD | Not started |
-| PWA-04 | TBD | Not started |
-| THOUGHT-01 | TBD | Not started |
-| THOUGHT-02 | TBD | Not started |
-| THOUGHT-03 | TBD | Not started |
-| THOUGHT-04 | TBD | Not started |
-| WO-01 | TBD | Not started |
-| WO-02 | TBD | Not started |
-| WO-03 | TBD | Not started |
-| PROJ-01 | TBD | Not started |
-| PROJ-02 | TBD | Not started |
-| DOC-01 | TBD | Not started |
+| PWA-01 | Phase 63 | Not started |
+| PWA-02 | Phase 63 | Not started |
+| PWA-03 | Phase 63 | Not started |
+| PWA-04 | Phase 63 | Not started |
+| THOUGHT-01 | Phase 64 | Not started |
+| THOUGHT-02 | Phase 64 | Not started |
+| THOUGHT-03 | Phase 64 | Not started |
+| THOUGHT-04 | Phase 64 | Not started |
+| WO-02 | Phase 65 | Not started |
+| WO-03 | Phase 65 | Not started |
+| WO-01 | Phase 66 | Not started |
+| PROJ-01 | Phase 67 | Not started |
+| PROJ-02 | Phase 67 | Not started |
+| DOC-01 | Phase 68 | Not started |
 
 **Coverage:**
 - v2.5 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14 (roadmap pending)
+- Mapped to phases: 14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-12*
-*Last updated: 2026-04-12 after initial definition*
+*Last updated: 2026-04-12 — traceability filled after roadmap creation*
