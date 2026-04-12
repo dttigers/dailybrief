@@ -81,14 +81,13 @@ processAudio.post("/process-audio", async (c) => {
           text: AUDIO_PROMPT,
         },
         {
-          // @ts-expect-error — Claude SDK supports audio content blocks
           type: "document",
           source: {
             type: "base64",
-            media_type: mediaType,
+            media_type: mediaType as "application/pdf",
             data: body.audio,
           },
-        },
+        } as never,
       ],
       maxTokens: 4096,
     });
