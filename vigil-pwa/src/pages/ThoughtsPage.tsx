@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import CaptureBar from '../components/CaptureBar'
 import CategoryTabs from '../components/CategoryTabs'
 import SearchBar from '../components/SearchBar'
 import ThoughtList from '../components/ThoughtList'
@@ -14,18 +15,29 @@ export default function ThoughtsPage() {
     return () => clearTimeout(timer)
   }, [searchInput])
 
-  const { thoughts, total, isLoading, error, updateLocal } = useThoughts(activeCategory, debouncedQuery)
+  const { thoughts, total, isLoading, error, updateLocal, prependThought } = useThoughts(
+    activeCategory,
+    debouncedQuery,
+  )
 
   return (
-    <div className="space-y-4">
-      <SearchBar value={searchInput} onChange={setSearchInput} />
-      <CategoryTabs activeCategory={activeCategory} onChange={setActiveCategory} />
-      <ThoughtList
-        thoughts={thoughts}
-        total={total}
-        isLoading={isLoading}
-        error={error}
-        onUpdate={updateLocal}
+    <div className="flex flex-col min-h-[calc(100vh-8rem)]">
+      <div className="space-y-4">
+        <SearchBar value={searchInput} onChange={setSearchInput} />
+        <CategoryTabs activeCategory={activeCategory} onChange={setActiveCategory} />
+      </div>
+      <div className="flex-1 overflow-y-auto mt-4">
+        <ThoughtList
+          thoughts={thoughts}
+          total={total}
+          isLoading={isLoading}
+          error={error}
+          onUpdate={updateLocal}
+        />
+      </div>
+      <CaptureBar
+        onCapture={prependThought}
+        onCategoryUpdate={(id, category) => updateLocal(id, { category })}
       />
     </div>
   )
