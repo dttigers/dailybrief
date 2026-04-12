@@ -3,6 +3,7 @@ import CaptureBar from '../components/CaptureBar'
 import CategoryTabs from '../components/CategoryTabs'
 import SearchBar from '../components/SearchBar'
 import ThoughtList from '../components/ThoughtList'
+import { updateThought } from '../api/client'
 import { useThoughts } from '../hooks/useThoughts'
 
 export default function ThoughtsPage() {
@@ -20,6 +21,11 @@ export default function ThoughtsPage() {
     debouncedQuery,
   )
 
+  async function handleUpdate(id: number, patch: { content?: string; category?: string }) {
+    await updateThought(id, patch)
+    updateLocal(id, patch)
+  }
+
   return (
     <div className="flex flex-col min-h-[calc(100vh-8rem)]">
       <div className="space-y-4">
@@ -32,7 +38,7 @@ export default function ThoughtsPage() {
           total={total}
           isLoading={isLoading}
           error={error}
-          onUpdate={updateLocal}
+          onUpdate={handleUpdate}
         />
       </div>
       <CaptureBar

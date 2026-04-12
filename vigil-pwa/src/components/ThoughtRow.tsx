@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import type { ThoughtApiResponse } from '../api/client'
 
 interface ThoughtRowProps {
@@ -28,7 +29,19 @@ function relativeTime(isoString: string): string {
   return new Date(isoString).toLocaleDateString()
 }
 
-export default function ThoughtRow({ thought, onUpdate: _onUpdate }: ThoughtRowProps) {
+export default function ThoughtRow({ thought, onUpdate }: ThoughtRowProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [draft, setDraft] = useState(thought.content)
+  const [isSaving, setIsSaving] = useState(false)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Select all text when textarea mounts
+  useEffect(() => {
+    if (isEditing && textareaRef.current) {
+      textareaRef.current.select()
+    }
+  }, [isEditing])
+
   const categoryStyle = thought.category
     ? (CATEGORY_STYLES[thought.category] ?? 'bg-slate-700 text-slate-400')
     : 'bg-slate-700 text-slate-400'
@@ -36,17 +49,77 @@ export default function ThoughtRow({ thought, onUpdate: _onUpdate }: ThoughtRowP
     ? thought.category.charAt(0).toUpperCase() + thought.category.slice(1)
     : 'Uncategorized'
 
+  function handleContentClick() {
+    setDraft(thought.content)
+    setIsEditing(true)
+  }
+
+  async function handleSave() {
+    const trimmed = draft.trim()
+
+    // No change — just exit editing
+    if (trimmed === thought.content) {
+      setIsEditing(false)
+      return
+    }
+
+    // Reject empty content — revert instead
+    if (!trimmed) {
+      setDraft(thought.content)
+      setIsEditing(false)
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      await onUpdate(thought.id, { content: trimmed })
+    } finally {
+      setIsEditing(false)
+      setIsSaving(false)
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      setDraft(thought.content)
+      setIsEditing(false)
+    } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault()
+      handleSave()
+    }
+    // Plain Enter: allow newline in textarea (do nothing)
+  }
+
   return (
-    <div className="p-4 border-b border-slate-800 hover:bg-slate-900/50 transition-colors cursor-pointer">
+    <div className="p-4 border-b border-slate-800 hover:bg-slate-900/50 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-1.5">
         <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${categoryStyle}`}>
           {categoryLabel}
         </span>
-        <span className="text-xs text-slate-500 shrink-0">{relativeTime(thought.createdAt)}</span>
+        <span className="text-xs text-slate-500 shrink-0 flex items-center gap-2">
+          {isSaving && <span className="text-slate-500 text-xs">Saving...</span>}
+          {relativeTime(thought.createdAt)}
+        </span>
       </div>
-      <p className="text-slate-200 text-sm leading-relaxed line-clamp-3 break-words">
-        {thought.content}
-      </p>
+      {isEditing ? (
+        <textarea
+          ref={textareaRef}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={handleSave}
+          onKeyDown={handleKeyDown}
+          className="w-full bg-slate-800 border border-indigo-500 rounded-lg p-2 text-slate-100 focus:outline-none resize-y min-h-[4rem]"
+          autoFocus
+        />
+      ) : (
+        <p
+          onClick={handleContentClick}
+          className="text-slate-200 text-sm leading-relaxed line-clamp-3 break-words cursor-text"
+        >
+          {thought.content}
+        </p>
+      )}
     </div>
   )
 }
