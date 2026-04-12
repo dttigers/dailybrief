@@ -85,20 +85,63 @@ codesign --verify --verbose "$INSTALL_DIR/DailyBrief" 2>&1 \
     || { echo "ERROR: DailyBrief signature verification failed." >&2; exit 1; }
 echo "  DailyBrief signed + verified."
 
-# 4. Copy Monitor binary
-echo "Installing DailyBriefMonitor to $INSTALL_DIR/DailyBriefMonitor..."
+# 4. Build Monitor .app bundle
+MONITOR_APP="$INSTALL_DIR/DailyBriefMonitor.app"
+MONITOR_MACOS="$MONITOR_APP/Contents/MacOS"
+MONITOR_RESOURCES="$MONITOR_APP/Contents/Resources"
+echo "Installing DailyBriefMonitor.app to $MONITOR_APP..."
+mkdir -p "$MONITOR_MACOS" "$MONITOR_RESOURCES"
+cp -f "$REPO_DIR/.build/release/DailyBriefMonitor" "$MONITOR_MACOS/DailyBriefMonitor"
+
+# Also keep the bare binary for backward compat (UpdateService, bootstrap.sh)
 cp -f "$REPO_DIR/.build/release/DailyBriefMonitor" "$INSTALL_DIR/DailyBriefMonitor"
-# Sign Monitor in the install destination. The entitlements file is the
-# post-Phase-58 empty-dict version (CloudKit keys removed — they were
-# incompatible with Developer ID signing; see 58-RESEARCH.md blocker).
+
+# Write Info.plist
+cat > "$MONITOR_APP/Contents/Info.plist" <<INFOPLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleIdentifier</key>
+    <string>com.jamesonmorrill.dailybriefmonitor</string>
+    <key>CFBundleName</key>
+    <string>Vigil</string>
+    <key>CFBundleDisplayName</key>
+    <string>Vigil</string>
+    <key>CFBundleExecutable</key>
+    <string>DailyBriefMonitor</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>CFBundleShortVersionString</key>
+    <string>2.4</string>
+    <key>LSUIElement</key>
+    <true/>
+    <key>LSMinimumSystemVersion</key>
+    <string>13.0</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+</dict>
+</plist>
+INFOPLIST
+
+# Sign the .app bundle (signs the entire bundle including binary).
+# --deep signs embedded frameworks/helpers if any exist in future.
+codesign --deep --force \
+         --sign "$IDENTITY" \
+         --identifier "com.jamesonmorrill.dailybriefmonitor" \
+         --entitlements "$REPO_DIR/Entitlements/DailyBriefMonitor.entitlements" \
+         "$MONITOR_APP"
+codesign --verify --verbose "$MONITOR_APP" 2>&1 \
+    || { echo "ERROR: DailyBriefMonitor.app signature verification failed." >&2; exit 1; }
+# Also sign the bare binary copy
 codesign --force \
          --sign "$IDENTITY" \
          --identifier "com.jamesonmorrill.dailybriefmonitor" \
          --entitlements "$REPO_DIR/Entitlements/DailyBriefMonitor.entitlements" \
          "$INSTALL_DIR/DailyBriefMonitor"
-codesign --verify --verbose "$INSTALL_DIR/DailyBriefMonitor" 2>&1 \
-    || { echo "ERROR: DailyBriefMonitor signature verification failed." >&2; exit 1; }
-echo "  DailyBriefMonitor signed + verified."
+echo "  DailyBriefMonitor.app signed + verified."
 
 # 5. Create log directory
 mkdir -p "$LOG_DIR"
@@ -114,7 +157,7 @@ cat > "$MONITOR_PLIST" <<PLIST
     <string>$MONITOR_LABEL</string>
     <key>ProgramArguments</key>
     <array>
-        <string>$INSTALL_DIR/DailyBriefMonitor</string>
+        <string>$INSTALL_DIR/DailyBriefMonitor.app/Contents/MacOS/DailyBriefMonitor</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
@@ -172,7 +215,7 @@ echo ""
 echo "=== Installation Complete ==="
 echo ""
 echo "  CLI:      $INSTALL_DIR/DailyBrief"
-echo "  Monitor:  $INSTALL_DIR/DailyBriefMonitor"
+echo "  Monitor:  $INSTALL_DIR/DailyBriefMonitor.app"
 echo "  Plist:    $MONITOR_PLIST"
 echo "  Logs:     $LOG_DIR/"
 echo ""
