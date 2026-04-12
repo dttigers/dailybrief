@@ -3,7 +3,19 @@ import type { ThoughtApiResponse } from '../api/client'
 
 interface ThoughtRowProps {
   thought: ThoughtApiResponse
-  onUpdate: (id: number, patch: { content?: string; category?: string }) => void
+  onUpdate: (id: number, patch: { content?: string; category?: string; taskStatus?: string }) => void
+}
+
+const TASK_STATUS_CYCLE = ['open', 'inProgress', 'done'] as const
+const TASK_STATUS_LABELS: Record<string, string> = {
+  open: 'To Do',
+  inProgress: 'In Progress',
+  done: 'Done',
+}
+const TASK_STATUS_STYLES: Record<string, string> = {
+  open: 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30',
+  inProgress: 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30',
+  done: 'bg-green-500/20 text-green-400 hover:bg-green-500/30',
 }
 
 const CATEGORY_STYLES: Record<string, string> = {
@@ -48,6 +60,14 @@ export default function ThoughtRow({ thought, onUpdate }: ThoughtRowProps) {
   const categoryLabel = thought.category
     ? thought.category.charAt(0).toUpperCase() + thought.category.slice(1)
     : 'Uncategorized'
+
+  function handleTaskStatusCycle() {
+    if (thought.category !== 'task') return
+    const current = thought.taskStatus ?? 'open'
+    const idx = TASK_STATUS_CYCLE.indexOf(current as typeof TASK_STATUS_CYCLE[number])
+    const next = TASK_STATUS_CYCLE[(idx + 1) % TASK_STATUS_CYCLE.length]
+    onUpdate(thought.id, { taskStatus: next })
+  }
 
   function handleContentClick() {
     setDraft(thought.content)
@@ -94,8 +114,18 @@ export default function ThoughtRow({ thought, onUpdate }: ThoughtRowProps) {
   return (
     <div className="p-4 border-b border-slate-800 hover:bg-slate-900/50 transition-colors">
       <div className="flex items-start justify-between gap-3 mb-1.5">
-        <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${categoryStyle}`}>
-          {categoryLabel}
+        <span className="flex items-center gap-1.5">
+          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${categoryStyle}`}>
+            {categoryLabel}
+          </span>
+          {thought.category === 'task' && (
+            <button
+              onClick={handleTaskStatusCycle}
+              className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors ${TASK_STATUS_STYLES[thought.taskStatus ?? 'open'] ?? TASK_STATUS_STYLES.open}`}
+            >
+              {TASK_STATUS_LABELS[thought.taskStatus ?? 'open'] ?? 'To Do'}
+            </button>
+          )}
         </span>
         <span className="text-xs text-slate-500 shrink-0 flex items-center gap-2">
           {isSaving && <span className="text-slate-500 text-xs">Saving...</span>}
