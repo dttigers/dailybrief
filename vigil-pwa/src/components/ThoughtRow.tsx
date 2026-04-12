@@ -4,6 +4,7 @@ import type { ThoughtApiResponse } from '../api/client'
 interface ThoughtRowProps {
   thought: ThoughtApiResponse
   onUpdate: (id: number, patch: { content?: string; category?: string; taskStatus?: string }) => void
+  onToggleFavorite?: (id: number, isFavorited: boolean) => void
   isSelectable?: boolean
   isSelected?: boolean
   onToggleSelect?: (id: number) => void
@@ -44,7 +45,7 @@ function relativeTime(isoString: string): string {
   return new Date(isoString).toLocaleDateString()
 }
 
-export default function ThoughtRow({ thought, onUpdate, isSelectable, isSelected, onToggleSelect }: ThoughtRowProps) {
+export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, isSelectable, isSelected, onToggleSelect }: ThoughtRowProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(thought.content)
   const [isSaving, setIsSaving] = useState(false)
@@ -140,6 +141,17 @@ export default function ThoughtRow({ thought, onUpdate, isSelectable, isSelected
         </span>
         <span className="text-xs text-slate-500 shrink-0 flex items-center gap-2">
           {isSaving && <span className="text-slate-500 text-xs">Saving...</span>}
+          {onToggleFavorite && (
+            <button
+              onClick={() => onToggleFavorite(thought.id, !thought.isFavorited)}
+              className={`text-base leading-none cursor-pointer transition-colors ${
+                thought.isFavorited ? 'text-red-400' : 'text-slate-600 hover:text-red-400'
+              }`}
+              title={thought.isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+            >
+              {thought.isFavorited ? '♥' : '♡'}
+            </button>
+          )}
           {relativeTime(thought.createdAt)}
         </span>
       </div>

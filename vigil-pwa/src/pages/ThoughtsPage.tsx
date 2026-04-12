@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import CaptureBar from '../components/CaptureBar'
 import CategoryTabs from '../components/CategoryTabs'
+import FilterBar from '../components/FilterBar'
 import SearchBar from '../components/SearchBar'
 import ThoughtList from '../components/ThoughtList'
 import BulkActionBar from '../components/BulkActionBar'
 import { updateThought, bulkDeleteThoughts, bulkRecategorizeThoughts } from '../api/client'
-import { useThoughts } from '../hooks/useThoughts'
+import { useThoughts, type ThoughtFilters } from '../hooks/useThoughts'
 
 export default function ThoughtsPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
@@ -15,24 +16,44 @@ export default function ThoughtsPage() {
   const [isSelectable, setIsSelectable] = useState(false)
   const [isBulkProcessing, setIsBulkProcessing] = useState(false)
 
+  // Filter state
+  const [showFilters, setShowFilters] = useState(false)
+  const [sourceFilter, setSourceFilter] = useState<string | undefined>()
+  const [dateAfter, setDateAfter] = useState<string | undefined>()
+  const [dateBefore, setDateBefore] = useState<string | undefined>()
+  const [favoritesOnly, setFavoritesOnly] = useState(false)
+
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedQuery(searchInput), 300)
     return () => clearTimeout(timer)
   }, [searchInput])
 
-  // Clear selection when filters change
+  // Clear selection when filters or category change
   useEffect(() => {
     setSelectedIds(new Set())
-  }, [activeCategory, debouncedQuery])
+  }, [activeCategory, debouncedQuery, sourceFilter, dateAfter, dateBefore, favoritesOnly])
+
+  const filters: ThoughtFilters = {
+    source: sourceFilter,
+    after: dateAfter,
+    before: dateBefore,
+    favoritesOnly: favoritesOnly || undefined,
+  }
 
   const { thoughts, total, isLoading, error, updateLocal, prependThought, removeMany, updateMany } = useThoughts(
     activeCategory,
     debouncedQuery,
+    filters,
   )
 
   async function handleUpdate(id: number, patch: { content?: string; category?: string }) {
     await updateThought(id, patch)
     updateLocal(id, patch)
+  }
+
+  async function handleToggleFavorite(id: number, isFavorited: boolean) {
+    await updateThought(id, { isFavorited })
+    updateLocal(id, { isFavorited })
   }
 
   function handleToggleSelect(id: number) {
@@ -87,6 +108,14 @@ export default function ThoughtsPage() {
   }
 
   const allSelected = thoughts.length > 0 && selectedIds.size === thoughts.length
+  const hasActiveFilters = !!sourceFilter || !!dateAfter || !!dateBefore || favoritesOnly
+
+  function handleClearFilters() {
+    setSourceFilter(undefined)
+    setDateAfter(undefined)
+    setDateBefore(undefined)
+    setFavoritesOnly(false)
+  }
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-8rem)]">
@@ -95,6 +124,19 @@ export default function ThoughtsPage() {
           <div className="flex-1">
             <SearchBar value={searchInput} onChange={setSearchInput} />
           </div>
+          <button
+            onClick={() => setShowFilters((v) => !v)}
+            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 relative ${
+              showFilters || hasActiveFilters
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            Filters
+            {hasActiveFilters && !showFilters && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-400" />
+            )}
+          </button>
           <button
             onClick={handleToggleSelectMode}
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 ${
@@ -106,6 +148,18 @@ export default function ThoughtsPage() {
             {isSelectable ? 'Cancel' : 'Select'}
           </button>
         </div>
+        {showFilters && (
+          <FilterBar
+            source={sourceFilter}
+            onSourceChange={setSourceFilter}
+            dateAfter={dateAfter}
+            onDateAfterChange={setDateAfter}
+            dateBefore={dateBefore}
+            onDateBeforeChange={setDateBefore}
+            favoritesOnly={favoritesOnly}
+            onFavoritesOnlyChange={setFavoritesOnly}
+          />
+        )}
         {isSelectable && (
           <div className="flex items-center gap-2 px-1">
             <input
@@ -128,6 +182,7 @@ export default function ThoughtsPage() {
           isLoading={isLoading}
           error={error}
           onUpdate={handleUpdate}
+          onToggleFavorite={handleToggleFavorite}
           selectedIds={selectedIds}
           onToggleSelect={handleToggleSelect}
           isSelectable={isSelectable}
