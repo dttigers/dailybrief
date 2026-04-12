@@ -158,7 +158,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 - [x] **Phase 63: PWA Foundation** — React/Vite scaffold deployed to app.vigilhub.io with Vigil API auth, responsive layout, and offline indicator (completed 2026-04-12)
 - [x] **Phase 64: Thoughts Dashboard** — Full thoughts UI with view, filter, search, capture, and inline edit (completed 2026-04-12)
-- [ ] **Phase 65: Work Order Status API** — New backend route for status changes and CLI/PDF pipeline reads status from API
+- [x] **Phase 65: Work Order Status API** — New backend route for status changes and CLI/PDF pipeline reads status from API (completed 2026-04-12)
 - [ ] **Phase 66: Work Orders Dashboard** — View, prioritize, and update work order status from the PWA
 - [ ] **Phase 67: Projects UI** — View projects and assign/unassign thoughts from the PWA
 - [ ] **Phase 68: Bulk Actions & Filters** — Multi-select delete/recategorize, source/date filters, tags/favorites
@@ -209,8 +209,8 @@ Plans:
   3. An existing work order marked done via the API does not reappear as open in the next generated daily brief
 **Plans**: 2 plans
 Plans:
-- [ ] 65-01-PLAN.md — Schema, migration, route, tests, seed for work_order_statuses
-- [ ] 65-02-PLAN.md — CLI migration from CompletionStore to API with fallback
+- [x] 65-01-PLAN.md — Schema, migration, route, tests, seed for work_order_statuses
+- [x] 65-02-PLAN.md — CLI migration from CompletionStore to API with fallback
 
 ### Phase 66: Work Orders Dashboard
 **Goal**: Users can view all work orders with AI priority ranking and update their status directly from the PWA
@@ -356,7 +356,7 @@ Plans:
 | 62. Folder Watch Settings UI | v2.4 | 1/1 | Complete    | 2026-04-10 |
 | 63. PWA Foundation | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 64. Thoughts Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 65. Work Order Status API | v2.5 | 0/2 | Planned | - |
+| 65. Work Order Status API | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 66. Work Orders Dashboard | v2.5 | 0/TBD | Not started | - |
 | 67. Projects UI | v2.5 | 0/TBD | Not started | - |
 | 68. README | v2.5 | 0/TBD | Not started | - |
