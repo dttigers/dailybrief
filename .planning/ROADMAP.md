@@ -274,7 +274,10 @@ Plans:
   1. User can view AI-generated insights (patterns, connections, action prompts, trends) in a dedicated section
   2. User can see therapy classification on relevant thoughts (self-learnable vs bring-to-therapist)
   3. User can view therapy session prep and pattern analysis
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 70-01-PLAN.md — API functions, InsightsPage, therapy badges on ThoughtRow
+- [ ] 70-02-PLAN.md — TherapyPage with pattern analysis and session prep
 **UI hint**: yes
 
 ### Phase 71: Brief History & Photo Upload
