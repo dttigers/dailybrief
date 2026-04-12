@@ -23,10 +23,12 @@ Respond with ONLY a JSON object, no other text:
 
 const VALID_MEDIA_TYPES = [
   "audio/wav",
+  "audio/x-wav",
   "audio/mpeg",
   "audio/mp3",
   "audio/mp4",
   "audio/m4a",
+  "audio/x-m4a",
   "audio/webm",
   "audio/ogg",
 ] as const;
