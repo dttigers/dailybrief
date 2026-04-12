@@ -12,6 +12,7 @@ const TABS = [
   { label: 'Projects', to: '/projects' },
   { label: 'Chat', to: '/chat' },
   { label: 'Insights', to: '/insights' },
+  { label: 'Therapy', to: '/therapy' },
 ]
 
 export default function Layout({ children }: LayoutProps) {
