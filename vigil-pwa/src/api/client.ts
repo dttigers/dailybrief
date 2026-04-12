@@ -124,6 +124,24 @@ export async function updateThought(
   return res.json()
 }
 
+export async function bulkDeleteThoughts(ids: number[]): Promise<{ deleted: number }> {
+  const res = await vigilFetch('/v1/thoughts/bulk/delete', {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+  })
+  if (!res.ok) throw new Error(`Bulk delete failed: ${res.status}`)
+  return res.json()
+}
+
+export async function bulkRecategorizeThoughts(ids: number[], category: string): Promise<{ updated: number }> {
+  const res = await vigilFetch('/v1/thoughts/bulk/recategorize', {
+    method: 'POST',
+    body: JSON.stringify({ ids, category }),
+  })
+  if (!res.ok) throw new Error(`Bulk recategorize failed: ${res.status}`)
+  return res.json()
+}
+
 // ---------------------------------------------------------------------------
 // Projects API
 // ---------------------------------------------------------------------------

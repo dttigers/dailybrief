@@ -4,6 +4,9 @@ import type { ThoughtApiResponse } from '../api/client'
 interface ThoughtRowProps {
   thought: ThoughtApiResponse
   onUpdate: (id: number, patch: { content?: string; category?: string; taskStatus?: string }) => void
+  isSelectable?: boolean
+  isSelected?: boolean
+  onToggleSelect?: (id: number) => void
 }
 
 const TASK_STATUS_CYCLE = ['open', 'inProgress', 'done'] as const
@@ -41,7 +44,7 @@ function relativeTime(isoString: string): string {
   return new Date(isoString).toLocaleDateString()
 }
 
-export default function ThoughtRow({ thought, onUpdate }: ThoughtRowProps) {
+export default function ThoughtRow({ thought, onUpdate, isSelectable, isSelected, onToggleSelect }: ThoughtRowProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(thought.content)
   const [isSaving, setIsSaving] = useState(false)
@@ -112,8 +115,16 @@ export default function ThoughtRow({ thought, onUpdate }: ThoughtRowProps) {
   }
 
   return (
-    <div className="p-4 border-b border-slate-800 hover:bg-slate-900/50 transition-colors">
+    <div className={`p-4 border-b border-slate-800 hover:bg-slate-900/50 transition-colors${isSelectable && isSelected ? ' border-l-2 border-l-indigo-500' : ''}`}>
       <div className="flex items-start justify-between gap-3 mb-1.5">
+        {isSelectable && (
+          <input
+            type="checkbox"
+            checked={isSelected ?? false}
+            onChange={() => onToggleSelect?.(thought.id)}
+            className="w-5 h-5 rounded border-slate-600 bg-slate-800 accent-indigo-500 shrink-0 cursor-pointer mt-0.5"
+          />
+        )}
         <span className="flex items-center gap-1.5">
           <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${categoryStyle}`}>
             {categoryLabel}

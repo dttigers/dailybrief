@@ -7,9 +7,12 @@ interface ThoughtListProps {
   isLoading: boolean
   error: string | null
   onUpdate: (id: number, patch: { content?: string; category?: string }) => void
+  selectedIds?: Set<number>
+  onToggleSelect?: (id: number) => void
+  isSelectable?: boolean
 }
 
-export default function ThoughtList({ thoughts, total, isLoading, error, onUpdate }: ThoughtListProps) {
+export default function ThoughtList({ thoughts, total, isLoading, error, onUpdate, selectedIds, onToggleSelect, isSelectable }: ThoughtListProps) {
   if (isLoading) {
     return (
       <div className="text-slate-500 text-center py-12">
@@ -38,7 +41,14 @@ export default function ThoughtList({ thoughts, total, isLoading, error, onUpdat
     <div>
       <div className="rounded-lg border border-slate-800 overflow-hidden">
         {thoughts.map((thought) => (
-          <ThoughtRow key={thought.id} thought={thought} onUpdate={onUpdate} />
+          <ThoughtRow
+            key={thought.id}
+            thought={thought}
+            onUpdate={onUpdate}
+            isSelectable={isSelectable}
+            isSelected={selectedIds?.has(thought.id)}
+            onToggleSelect={onToggleSelect}
+          />
         ))}
       </div>
       {total > thoughts.length && (
