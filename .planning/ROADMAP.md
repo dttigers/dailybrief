@@ -248,7 +248,10 @@ Plans:
   2. User can filter thoughts by source type (text, voice, image)
   3. User can filter thoughts by date range
   4. User can toggle favorites on thoughts and filter to show only favorites
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 68-01-PLAN.md — Multi-select with bulk delete and recategorize
+- [ ] 68-02-PLAN.md — Source, date range, and favorites filters
 **UI hint**: yes
 
 ### Phase 69: AI Chat
@@ -364,7 +367,7 @@ Plans:
 | 65. Work Order Status API | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 66. Work Orders Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 67. Projects UI | v2.5 | 1/1 | Complete    | 2026-04-12 |
-| 68. README | v2.5 | 0/TBD | Not started | - |
+| 68. Bulk Actions & Filters | v2.5 | 0/2 | Not started | - |
 
 ## Backlog
 
