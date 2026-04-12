@@ -40,3 +40,81 @@ export async function validateApiKey(key: string): Promise<boolean> {
     return false
   }
 }
+
+// ---------------------------------------------------------------------------
+// Thoughts API
+// ---------------------------------------------------------------------------
+
+export interface ThoughtApiResponse {
+  id: number
+  content: string
+  category: string | null
+  confidence: number | null
+  source: string
+  createdAt: string
+  modifiedAt: string
+  taskStatus: string | null
+  tags: string[]
+  isFavorited: boolean
+  projectId: number | null
+}
+
+export interface ThoughtsListResponse {
+  data: ThoughtApiResponse[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export async function getThoughts(params: {
+  category?: string
+  q?: string
+  limit?: number
+  offset?: number
+}): Promise<ThoughtsListResponse> {
+  const qs = new URLSearchParams()
+  if (params.category) qs.set('category', params.category)
+  if (params.q) qs.set('q', params.q)
+  if (params.limit !== undefined) qs.set('limit', String(params.limit))
+  if (params.offset !== undefined) qs.set('offset', String(params.offset))
+  const res = await vigilFetch(`/v1/thoughts?${qs}`)
+  if (!res.ok) throw new Error(`Failed to fetch thoughts: ${res.status}`)
+  return res.json()
+}
+
+export async function createThought(content: string): Promise<ThoughtApiResponse> {
+  const res = await vigilFetch('/v1/thoughts', {
+    method: 'POST',
+    body: JSON.stringify({ content, source: 'text' }),
+  })
+  if (!res.ok) throw new Error(`Failed to create thought: ${res.status}`)
+  return res.json()
+}
+
+export async function triageThought(content: string): Promise<{ category: string; confidence: number }> {
+  const res = await vigilFetch('/v1/triage', {
+    method: 'POST',
+    body: JSON.stringify({ content }),
+  })
+  if (!res.ok) throw new Error(`Triage failed: ${res.status}`)
+  return res.json()
+}
+
+export async function updateThought(
+  id: number,
+  patch: { content?: string; category?: string; isFavorited?: boolean; taskStatus?: string },
+): Promise<ThoughtApiResponse> {
+  // Only include defined (non-undefined) fields — sending category: null causes a 400
+  const body: Record<string, unknown> = {}
+  if (patch.content !== undefined) body.content = patch.content
+  if (patch.category !== undefined && patch.category !== null) body.category = patch.category
+  if (patch.isFavorited !== undefined) body.isFavorited = patch.isFavorited
+  if (patch.taskStatus !== undefined) body.taskStatus = patch.taskStatus
+
+  const res = await vigilFetch(`/v1/thoughts/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) throw new Error(`Update failed: ${res.status}`)
+  return res.json()
+}
