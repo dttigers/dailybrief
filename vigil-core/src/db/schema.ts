@@ -134,6 +134,18 @@ export const thoughtLinks = pgTable(
   ],
 );
 
+// ── chat_sessions table ────────────────────────────────────────────────────
+
+export const chatSessions = pgTable("chat_sessions", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull().default("New Chat"),
+  messages: jsonb("messages").$type<Array<{ role: "user" | "assistant"; content: string }>>().notNull().default([]),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("idx_chat_sessions_updated_at").on(table.updatedAt),
+]);
+
 // ── work_order_statuses table ───────────────────────────────────────────────
 
 export const workOrderStatuses = pgTable("work_order_statuses", {

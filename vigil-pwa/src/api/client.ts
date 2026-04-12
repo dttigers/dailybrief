@@ -358,3 +358,73 @@ export async function generateTherapyPrep(
   if (!res.ok) throw new Error(`Therapy prep failed: ${res.status}`)
   return res.json()
 }
+
+// ── Audio transcription ──────────────────────────────────────────────────────
+
+export interface ProcessAudioResponse {
+  id: number
+  content: string
+  source: string
+  transcription: string
+}
+
+export async function processAudio(audio: string, mediaType: string): Promise<ProcessAudioResponse> {
+  const res = await vigilFetch('/v1/process-audio', {
+    method: 'POST',
+    body: JSON.stringify({ audio, mediaType }),
+  })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error((body as { error?: string }).error ?? `Audio processing failed: ${res.status}`)
+  }
+  return res.json()
+}
+
+// ── Chat sessions ────────────────────────────────────────────────────────────
+
+export interface ChatSession {
+  id: number
+  title: string
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>
+  messageCount?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export async function getChatSessions(): Promise<{ data: ChatSession[] }> {
+  const res = await vigilFetch('/v1/chat-sessions')
+  if (!res.ok) throw new Error(`Failed to load chat sessions: ${res.status}`)
+  return res.json()
+}
+
+export async function getChatSession(id: number): Promise<ChatSession> {
+  const res = await vigilFetch(`/v1/chat-sessions/${id}`)
+  if (!res.ok) throw new Error(`Failed to load chat session: ${res.status}`)
+  return res.json()
+}
+
+export async function createChatSession(title?: string): Promise<ChatSession> {
+  const res = await vigilFetch('/v1/chat-sessions', {
+    method: 'POST',
+    body: JSON.stringify({ title }),
+  })
+  if (!res.ok) throw new Error(`Failed to create chat session: ${res.status}`)
+  return res.json()
+}
+
+export async function updateChatSession(
+  id: number,
+  updates: { title?: string; messages?: Array<{ role: 'user' | 'assistant'; content: string }> },
+): Promise<ChatSession> {
+  const res = await vigilFetch(`/v1/chat-sessions/${id}`, {
+    method: 'PUT',
+    body: JSON.stringify(updates),
+  })
+  if (!res.ok) throw new Error(`Failed to update chat session: ${res.status}`)
+  return res.json()
+}
+
+export async function deleteChatSession(id: number): Promise<void> {
+  const res = await vigilFetch(`/v1/chat-sessions/${id}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error(`Failed to delete chat session: ${res.status}`)
+}
