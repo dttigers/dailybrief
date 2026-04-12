@@ -159,7 +159,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 63: PWA Foundation** — React/Vite scaffold deployed to app.vigilhub.io with Vigil API auth, responsive layout, and offline indicator (completed 2026-04-12)
 - [x] **Phase 64: Thoughts Dashboard** — Full thoughts UI with view, filter, search, capture, and inline edit (completed 2026-04-12)
 - [x] **Phase 65: Work Order Status API** — New backend route for status changes and CLI/PDF pipeline reads status from API (completed 2026-04-12)
-- [ ] **Phase 66: Work Orders Dashboard** — View, prioritize, and update work order status from the PWA
+- [x] **Phase 66: Work Orders Dashboard** — View, prioritize, and update work order status from the PWA (completed 2026-04-12)
 - [ ] **Phase 67: Projects UI** — View projects and assign/unassign thoughts from the PWA
 - [ ] **Phase 68: Bulk Actions & Filters** — Multi-select delete/recategorize, source/date filters, tags/favorites
 - [ ] **Phase 69: AI Chat** — Multi-turn Claude conversation with thought context injection
@@ -222,8 +222,8 @@ Plans:
   3. After marking a work order done in the PWA, generating the daily brief produces a PDF that omits that work order from the active list
 **Plans**: 2 plans
 Plans:
-- [ ] 66-01-PLAN.md — Work orders table, GET/POST endpoints, CLI sync
-- [ ] 66-02-PLAN.md — PWA WorkOrdersPage with status cycling and tab navigation
+- [x] 66-01-PLAN.md — Work orders table, GET/POST endpoints, CLI sync
+- [x] 66-02-PLAN.md — PWA WorkOrdersPage with status cycling and tab navigation
 **UI hint**: yes
 
 ### Phase 67: Projects UI
@@ -360,7 +360,7 @@ Plans:
 | 63. PWA Foundation | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 64. Thoughts Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 65. Work Order Status API | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 66. Work Orders Dashboard | v2.5 | 0/2 | Not started | - |
+| 66. Work Orders Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 67. Projects UI | v2.5 | 0/TBD | Not started | - |
 | 68. README | v2.5 | 0/TBD | Not started | - |
 
