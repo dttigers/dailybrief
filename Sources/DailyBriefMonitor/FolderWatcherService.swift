@@ -342,6 +342,19 @@ public actor FolderWatcherService {
             return
         }
 
+        // iCloud files can report stable size while content isn't materialized yet.
+        // Check download status — if not fully downloaded, remove from knownFiles
+        // so the next VNODE event (when download completes) re-queues it.
+        if let resourceValues = try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey]),
+           let status = resourceValues.ubiquitousItemDownloadingStatus,
+           status != .current {
+            NSLog("FolderWatcherService: %@ not yet downloaded from iCloud (status: %@), deferring", url.lastPathComponent, status.rawValue)
+            knownFiles.remove(url.lastPathComponent)
+            // Trigger download if not already in progress
+            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+            return
+        }
+
         guard let kind = Self.classify(url) else {
             // Extension not in accepted set — silently ignore (D-07).
             return
