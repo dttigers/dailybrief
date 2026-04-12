@@ -165,7 +165,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 69: AI Chat** — Multi-turn Claude conversation with thought context injection (completed 2026-04-12)
 - [x] **Phase 70: Insights & Therapy** — AI insights, therapy classification, patterns, session prep (completed 2026-04-12)
 - [x] **Phase 71: Brief History & Photo Upload** — Browse past briefs, upload photos with smart preview (completed 2026-04-12)
-- [ ] **Phase 72: README** — GitHub project documentation
+- [x] **Phase 72: README** — GitHub project documentation (completed 2026-04-12)
 
 ## Phase Details
 
