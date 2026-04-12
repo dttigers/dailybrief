@@ -141,3 +141,18 @@ export const workOrderStatuses = pgTable("work_order_statuses", {
   status: text("status").notNull().default("open"),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ── work_orders table ───────────────────────────────────────────────────────
+
+export const workOrders = pgTable("work_orders", {
+  caseNumber: text("case_number").primaryKey(),
+  store: text("store").notNull().default(""),
+  shortDescription: text("short_description").notNull().default(""),
+  trade: text("trade").notNull().default(""),
+  location: text("location").notNull().default(""),
+  equipment: text("equipment").notNull().default(""),
+  priority: text("priority").notNull().default(""),
+  contact: text("contact").notNull().default(""),
+  state: text("state").notNull().default(""),
+  syncedAt: timestamp("synced_at", { withTimezone: true }).defaultNow().notNull(),
+});
