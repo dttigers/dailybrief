@@ -268,6 +268,42 @@ export async function generateInsights(
 }
 
 // ---------------------------------------------------------------------------
+// Brief History API
+// ---------------------------------------------------------------------------
+
+export interface BriefApiResponse {
+  id: number
+  date: string
+  summary: unknown
+  pdfFilename: string | null
+  thoughtCount: number
+  taskCount: number
+  createdAt: string
+}
+
+export interface BriefsListResponse {
+  data: BriefApiResponse[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export async function getBriefs(params?: { limit?: number; offset?: number }): Promise<BriefsListResponse> {
+  const qs = new URLSearchParams()
+  qs.set('limit', String(params?.limit ?? 50))
+  if (params?.offset !== undefined) qs.set('offset', String(params.offset))
+  const res = await vigilFetch(`/v1/briefs?${qs}`)
+  if (!res.ok) throw new Error(`Failed to fetch briefs: ${res.status}`)
+  return res.json()
+}
+
+export async function getBriefByDate(date: string): Promise<BriefApiResponse> {
+  const res = await vigilFetch(`/v1/briefs/${date}`)
+  if (!res.ok) throw new Error(`Failed to fetch brief for ${date}: ${res.status}`)
+  return res.json()
+}
+
+// ---------------------------------------------------------------------------
 // Therapy API
 // ---------------------------------------------------------------------------
 

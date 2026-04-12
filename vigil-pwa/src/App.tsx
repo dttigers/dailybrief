@@ -9,6 +9,7 @@ import ProjectsPage from './pages/ProjectsPage'
 import ChatPage from './pages/ChatPage'
 import InsightsPage from './pages/InsightsPage'
 import TherapyPage from './pages/TherapyPage'
+import BriefHistoryPage from './pages/BriefHistoryPage'
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => getStoredKey() !== null)
@@ -40,6 +41,7 @@ export default function App() {
                   <Route path="/chat" element={<ChatPage />} />
                   <Route path="/insights" element={<InsightsPage />} />
                   <Route path="/therapy" element={<TherapyPage />} />
+                  <Route path="/history" element={<BriefHistoryPage />} />
                 </Routes>
               </Layout>
             )
