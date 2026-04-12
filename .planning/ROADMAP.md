@@ -189,7 +189,10 @@ Plans:
   2. User can type into a search box and the thought list filters to matching results in real time
   3. User can submit a new text thought from the PWA and it appears in the list after save
   4. User can click into a thought's text, edit it inline, and save — the updated content persists on reload
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 64-01-PLAN.md — API functions, useThoughts hook, ThoughtsPage with category filter and search
+- [ ] 64-02-PLAN.md — CaptureBar for new thoughts with AI triage, inline editing in ThoughtRow
 **UI hint**: yes
 
 ### Phase 65: Work Order Status API
@@ -302,7 +305,7 @@ Plans:
 | 61. Folder Watch Feeder | v2.4 | 2/2 | Complete    | 2026-04-10 |
 | 62. Folder Watch Settings UI | v2.4 | 1/1 | Complete    | 2026-04-10 |
 | 63. PWA Foundation | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 64. Thoughts Dashboard | v2.5 | 0/TBD | Not started | - |
+| 64. Thoughts Dashboard | v2.5 | 0/2 | Planned | - |
 | 65. Work Order Status API | v2.5 | 0/TBD | Not started | - |
 | 66. Work Orders Dashboard | v2.5 | 0/TBD | Not started | - |
 | 67. Projects UI | v2.5 | 0/TBD | Not started | - |
