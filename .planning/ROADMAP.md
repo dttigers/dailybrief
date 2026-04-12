@@ -161,7 +161,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 65: Work Order Status API** — New backend route for status changes and CLI/PDF pipeline reads status from API (completed 2026-04-12)
 - [x] **Phase 66: Work Orders Dashboard** — View, prioritize, and update work order status from the PWA (completed 2026-04-12)
 - [x] **Phase 67: Projects UI** — View projects and assign/unassign thoughts from the PWA (completed 2026-04-12)
-- [ ] **Phase 68: Bulk Actions & Filters** — Multi-select delete/recategorize, source/date filters, tags/favorites
+- [x] **Phase 68: Bulk Actions & Filters** — Multi-select delete/recategorize, source/date filters, tags/favorites (completed 2026-04-12)
 - [ ] **Phase 69: AI Chat** — Multi-turn Claude conversation with thought context injection
 - [ ] **Phase 70: Insights & Therapy** — AI insights, therapy classification, patterns, session prep
 - [ ] **Phase 71: Brief History & Photo Upload** — Browse past briefs, upload photos with smart preview
@@ -250,8 +250,8 @@ Plans:
   4. User can toggle favorites on thoughts and filter to show only favorites
 **Plans**: 2 plans
 Plans:
-- [ ] 68-01-PLAN.md — Multi-select with bulk delete and recategorize
-- [ ] 68-02-PLAN.md — Source, date range, and favorites filters
+- [x] 68-01-PLAN.md — Multi-select with bulk delete and recategorize
+- [x] 68-02-PLAN.md — Source, date range, and favorites filters
 **UI hint**: yes
 
 ### Phase 69: AI Chat
@@ -367,7 +367,7 @@ Plans:
 | 65. Work Order Status API | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 66. Work Orders Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 67. Projects UI | v2.5 | 1/1 | Complete    | 2026-04-12 |
-| 68. Bulk Actions & Filters | v2.5 | 0/2 | Not started | - |
+| 68. Bulk Actions & Filters | v2.5 | 2/2 | Complete    | 2026-04-12 |
 
 ## Backlog
 
