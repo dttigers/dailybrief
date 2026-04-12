@@ -9,6 +9,7 @@ interface LayoutProps {
 const TABS = [
   { label: 'Thoughts', to: '/' },
   { label: 'Work Orders', to: '/work-orders' },
+  { label: 'Projects', to: '/projects' },
 ]
 
 export default function Layout({ children }: LayoutProps) {

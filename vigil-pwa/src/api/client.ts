@@ -71,12 +71,16 @@ export async function getThoughts(params: {
   q?: string
   limit?: number
   offset?: number
+  projectId?: number
+  unassigned?: boolean
 }): Promise<ThoughtsListResponse> {
   const qs = new URLSearchParams()
   if (params.category) qs.set('category', params.category)
   if (params.q) qs.set('q', params.q)
   if (params.limit !== undefined) qs.set('limit', String(params.limit))
   if (params.offset !== undefined) qs.set('offset', String(params.offset))
+  if (params.projectId !== undefined) qs.set('projectId', String(params.projectId))
+  if (params.unassigned) qs.set('unassigned', 'true')
   const res = await vigilFetch(`/v1/thoughts?${qs}`)
   if (!res.ok) throw new Error(`Failed to fetch thoughts: ${res.status}`)
   return res.json()
@@ -102,7 +106,7 @@ export async function triageThought(content: string): Promise<{ category: string
 
 export async function updateThought(
   id: number,
-  patch: { content?: string; category?: string; isFavorited?: boolean; taskStatus?: string },
+  patch: { content?: string; category?: string; isFavorited?: boolean; taskStatus?: string; projectId?: number | null },
 ): Promise<ThoughtApiResponse> {
   // Only include defined (non-undefined) fields — sending category: null causes a 400
   const body: Record<string, unknown> = {}
@@ -110,12 +114,32 @@ export async function updateThought(
   if (patch.category !== undefined && patch.category !== null) body.category = patch.category
   if (patch.isFavorited !== undefined) body.isFavorited = patch.isFavorited
   if (patch.taskStatus !== undefined) body.taskStatus = patch.taskStatus
+  if (patch.projectId !== undefined) body.projectId = patch.projectId
 
   const res = await vigilFetch(`/v1/thoughts/${id}`, {
     method: 'PUT',
     body: JSON.stringify(body),
   })
   if (!res.ok) throw new Error(`Update failed: ${res.status}`)
+  return res.json()
+}
+
+// ---------------------------------------------------------------------------
+// Projects API
+// ---------------------------------------------------------------------------
+
+export interface ProjectApiResponse {
+  id: number
+  name: string
+  description: string | null
+  status: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export async function getProjects(): Promise<ProjectApiResponse[]> {
+  const res = await vigilFetch('/v1/projects')
+  if (!res.ok) throw new Error(`Failed to fetch projects: ${res.status}`)
   return res.json()
 }
 
