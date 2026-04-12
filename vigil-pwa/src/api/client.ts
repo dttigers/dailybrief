@@ -118,3 +118,50 @@ export async function updateThought(
   if (!res.ok) throw new Error(`Update failed: ${res.status}`)
   return res.json()
 }
+
+// ---------------------------------------------------------------------------
+// Work Orders API
+// ---------------------------------------------------------------------------
+
+export interface WorkOrderApiResponse {
+  caseNumber: string
+  store: string
+  shortDescription: string
+  trade: string
+  location: string
+  equipment: string
+  priority: string
+  contact: string
+  state: string
+  status: string
+  syncedAt: string
+}
+
+export async function getWorkOrders(): Promise<{ data: WorkOrderApiResponse[] }> {
+  const res = await vigilFetch('/v1/work-orders')
+  if (!res.ok) throw new Error(`Failed to fetch work orders: ${res.status}`)
+  return res.json()
+}
+
+export async function updateWorkOrderStatus(
+  caseNumber: string,
+  status: 'open' | 'inProgress' | 'done',
+): Promise<{ caseNumber: string; status: string }> {
+  const res = await vigilFetch(`/v1/work-orders/${encodeURIComponent(caseNumber)}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status }),
+  })
+  if (!res.ok) throw new Error(`Failed to update work order status: ${res.status}`)
+  return res.json()
+}
+
+export async function prioritizeWorkOrders(
+  workOrders: WorkOrderApiResponse[],
+): Promise<{ prioritizedCaseNumbers: string[]; cached: boolean }> {
+  const res = await vigilFetch('/v1/prioritize', {
+    method: 'POST',
+    body: JSON.stringify({ workOrders }),
+  })
+  if (!res.ok) throw new Error(`Failed to prioritize work orders: ${res.status}`)
+  return res.json()
+}
