@@ -483,17 +483,11 @@ export async function validateApiKey(key: string): Promise<boolean> {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Icon source asset**
-   - What we know: Need 192×192 and 512×512 PNG icons; `@vite-pwa/assets-generator` can generate both from one SVG
-   - What's unclear: Does a Vigil SVG logo exist in the repo?
-   - Recommendation: Check `vigil-core/` or `Sources/` for any existing logo assets. If none, Wave 0 must create a placeholder SVG.
+1. **Icon source asset** — RESOLVED: No existing logo in repo. Plan 63-01 Task 1 creates a placeholder favicon.svg and generates placeholder 192x192 + 512x512 PNGs. Replace with real branding later.
 
-2. **Railway CORS_ORIGINS current value**
-   - What we know: vigil-core reads `CORS_ORIGINS` env var and either uses it (comma-split) or falls back to `"*"`
-   - What's unclear: Current Railway production value
-   - Recommendation: Check Railway dashboard during deployment wave. If already set to specific origins, append `,https://app.vigilhub.io`. If unset, set it explicitly rather than leaving wildcard in production.
+2. **Railway CORS_ORIGINS current value** — RESOLVED: Plan 63-02 user_setup handles explicit CORS_ORIGINS set regardless of current value. Check Railway dashboard during deployment and set/append as needed.
 
 ---
 
