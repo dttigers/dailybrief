@@ -164,7 +164,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 68: Bulk Actions & Filters** — Multi-select delete/recategorize, source/date filters, tags/favorites (completed 2026-04-12)
 - [x] **Phase 69: AI Chat** — Multi-turn Claude conversation with thought context injection (completed 2026-04-12)
 - [x] **Phase 70: Insights & Therapy** — AI insights, therapy classification, patterns, session prep (completed 2026-04-12)
-- [ ] **Phase 71: Brief History & Photo Upload** — Browse past briefs, upload photos with smart preview
+- [x] **Phase 71: Brief History & Photo Upload** — Browse past briefs, upload photos with smart preview (completed 2026-04-12)
 - [ ] **Phase 72: README** — GitHub project documentation
 
 ## Phase Details
@@ -289,8 +289,8 @@ Plans:
   2. User can upload a photo from the PWA and it processes through the smart photo pipeline (paper-type detection, transcription)
 **Plans**: 2 plans
 Plans:
-- [ ] 71-01-PLAN.md — Brief history API, hook, page with list/detail view, nav wiring
-- [ ] 71-02-PLAN.md — Photo upload hook, page with preview/commit flow, nav wiring
+- [x] 71-01-PLAN.md — Brief history API, hook, page with list/detail view, nav wiring
+- [x] 71-02-PLAN.md — Photo upload hook, page with preview/commit flow, nav wiring
 **UI hint**: yes
 
 ### Phase 72: README
