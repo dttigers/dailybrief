@@ -4,6 +4,7 @@ import { getStoredKey } from './api/client'
 import Layout from './components/Layout'
 import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
+import WorkOrdersPage from './pages/WorkOrdersPage'
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => getStoredKey() !== null)
@@ -26,7 +27,14 @@ export default function App() {
         path="/*"
         element={
           isAuthenticated
-            ? <Layout><DashboardPage /></Layout>
+            ? (
+              <Layout>
+                <Routes>
+                  <Route path="/" element={<DashboardPage />} />
+                  <Route path="/work-orders" element={<WorkOrdersPage />} />
+                </Routes>
+              </Layout>
+            )
             : <Navigate to="/auth" replace />
         }
       />
