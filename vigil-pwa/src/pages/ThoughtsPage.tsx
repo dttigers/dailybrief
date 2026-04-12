@@ -5,7 +5,7 @@ import FilterBar from '../components/FilterBar'
 import SearchBar from '../components/SearchBar'
 import ThoughtList from '../components/ThoughtList'
 import BulkActionBar from '../components/BulkActionBar'
-import { updateThought, bulkDeleteThoughts, bulkRecategorizeThoughts } from '../api/client'
+import { updateThought, bulkDeleteThoughts, bulkRecategorizeThoughts, triageThought } from '../api/client'
 import { useThoughts, type ThoughtFilters } from '../hooks/useThoughts'
 
 export default function ThoughtsPage() {
@@ -54,6 +54,14 @@ export default function ThoughtsPage() {
   async function handleToggleFavorite(id: number, isFavorited: boolean) {
     await updateThought(id, { isFavorited })
     updateLocal(id, { isFavorited })
+  }
+
+  async function handleRetriage(id: number) {
+    const thought = thoughts.find((t) => t.id === id)
+    if (!thought) return
+    const result = await triageThought(thought.content)
+    await updateThought(id, { category: result.category })
+    updateLocal(id, { category: result.category, confidence: result.confidence })
   }
 
   function handleToggleSelect(id: number) {
@@ -183,6 +191,7 @@ export default function ThoughtsPage() {
           error={error}
           onUpdate={handleUpdate}
           onToggleFavorite={handleToggleFavorite}
+          onRetriage={handleRetriage}
           selectedIds={selectedIds}
           onToggleSelect={handleToggleSelect}
           isSelectable={isSelectable}

@@ -8,12 +8,13 @@ interface ThoughtListProps {
   error: string | null
   onUpdate: (id: number, patch: { content?: string; category?: string }) => void
   onToggleFavorite?: (id: number, isFavorited: boolean) => void
+  onRetriage?: (id: number) => void
   selectedIds?: Set<number>
   onToggleSelect?: (id: number) => void
   isSelectable?: boolean
 }
 
-export default function ThoughtList({ thoughts, total, isLoading, error, onUpdate, onToggleFavorite, selectedIds, onToggleSelect, isSelectable }: ThoughtListProps) {
+export default function ThoughtList({ thoughts, total, isLoading, error, onUpdate, onToggleFavorite, onRetriage, selectedIds, onToggleSelect, isSelectable }: ThoughtListProps) {
   if (isLoading) {
     return (
       <div className="text-slate-500 text-center py-12">
@@ -47,6 +48,7 @@ export default function ThoughtList({ thoughts, total, isLoading, error, onUpdat
             thought={thought}
             onUpdate={onUpdate}
             onToggleFavorite={onToggleFavorite}
+            onRetriage={onRetriage}
             isSelectable={isSelectable}
             isSelected={selectedIds?.has(thought.id)}
             onToggleSelect={onToggleSelect}

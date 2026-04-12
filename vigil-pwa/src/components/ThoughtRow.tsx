@@ -5,6 +5,7 @@ interface ThoughtRowProps {
   thought: ThoughtApiResponse
   onUpdate: (id: number, patch: { content?: string; category?: string; taskStatus?: string }) => void
   onToggleFavorite?: (id: number, isFavorited: boolean) => void
+  onRetriage?: (id: number) => void
   isSelectable?: boolean
   isSelected?: boolean
   onToggleSelect?: (id: number) => void
@@ -50,7 +51,8 @@ function relativeTime(isoString: string): string {
   return new Date(isoString).toLocaleDateString()
 }
 
-export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, isSelectable, isSelected, onToggleSelect }: ThoughtRowProps) {
+export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetriage, isSelectable, isSelected, onToggleSelect }: ThoughtRowProps) {
+  const [isTriaging, setIsTriaging] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(thought.content)
   const [isSaving, setIsSaving] = useState(false)
@@ -160,6 +162,19 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, isSele
               title={thought.isFavorited ? 'Remove from favorites' : 'Add to favorites'}
             >
               {thought.isFavorited ? '♥' : '♡'}
+            </button>
+          )}
+          {onRetriage && (
+            <button
+              onClick={async () => {
+                setIsTriaging(true)
+                try { await onRetriage(thought.id) } finally { setIsTriaging(false) }
+              }}
+              disabled={isTriaging}
+              className="text-slate-600 hover:text-indigo-400 transition-colors cursor-pointer disabled:opacity-40"
+              title="Re-triage with AI"
+            >
+              {isTriaging ? '...' : '↻'}
             </button>
           )}
           {relativeTime(thought.createdAt)}
