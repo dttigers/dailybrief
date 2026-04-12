@@ -1,5 +1,27 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v2.5 Dashboard Everywhere (Shipped: 2026-04-12)
+
+**Phases completed:** 10 phases, 16 plans, 11 tasks
+
+**Key accomplishments:**
+
+- One-liner:
+- Read-only thoughts dashboard with category tab filtering and 300ms-debounced full-text search, replacing the Phase 63 placeholder via six new components and four new API functions
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- One-liner:
+- `bulkDeleteThoughts` / `bulkRecategorizeThoughts`
+- FilterBar component
+- One-liner:
+- useTherapy hook
+- API layer (client.ts):
+- Status:
+
+---
+
 ## v2.4 Capture Without Friction (Shipped: 2026-04-10)
 
 **Phases completed:** 11 phases, 23 plans, 46 tasks
