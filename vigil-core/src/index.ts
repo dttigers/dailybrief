@@ -23,6 +23,7 @@ import { therapy } from "./routes/therapy.js";
 import { briefHistory } from "./routes/brief-history.js";
 import { exportRoute } from "./routes/export.js";
 import { chat } from "./routes/chat.js";
+import { workOrderStatus } from "./routes/work-order-status.js";
 import { testConnection, closeConnection } from "./db/connection.js";
 
 // Verify database connection at startup
@@ -80,6 +81,7 @@ app.route("/v1", therapy);
 app.route("/v1", briefHistory);
 app.route("/v1", exportRoute);
 app.route("/v1", chat);
+app.route("/v1", workOrderStatus);
 
 const port = Number(process.env.PORT) || 3001;
 

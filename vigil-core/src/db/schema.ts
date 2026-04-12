@@ -133,3 +133,11 @@ export const thoughtLinks = pgTable(
     ),
   ],
 );
+
+// ── work_order_statuses table ───────────────────────────────────────────────
+
+export const workOrderStatuses = pgTable("work_order_statuses", {
+  caseNumber: text("case_number").primaryKey(),
+  status: text("status").notNull().default("open"),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});
