@@ -1,12 +1,22 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getThoughts, type ThoughtApiResponse } from '../api/client'
 
-export function useThoughts(category: string | null, searchQuery: string) {
+export interface ThoughtFilters {
+  source?: string
+  after?: string
+  before?: string
+  favoritesOnly?: boolean
+}
+
+export function useThoughts(category: string | null, searchQuery: string, filters?: ThoughtFilters) {
   const [thoughts, setThoughts] = useState<ThoughtApiResponse[]>([])
   const [total, setTotal] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fetchTick, setFetchTick] = useState(0)
+
+  // Stringify filters to use as a stable dependency value
+  const filtersKey = JSON.stringify(filters)
 
   useEffect(() => {
     let cancelled = false
@@ -15,6 +25,10 @@ export function useThoughts(category: string | null, searchQuery: string) {
     getThoughts({
       category: category ?? undefined,
       q: searchQuery || undefined,
+      source: filters?.source,
+      after: filters?.after,
+      before: filters?.before,
+      favoritesOnly: filters?.favoritesOnly,
       limit: 50,
     })
       .then((res) => {
@@ -32,7 +46,8 @@ export function useThoughts(category: string | null, searchQuery: string) {
     return () => {
       cancelled = true
     }
-  }, [category, searchQuery, fetchTick])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, searchQuery, fetchTick, filtersKey])
 
   const updateLocal = useCallback((id: number, patch: Partial<ThoughtApiResponse>) => {
     setThoughts((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)))

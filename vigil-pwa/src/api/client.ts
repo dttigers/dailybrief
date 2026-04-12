@@ -73,6 +73,10 @@ export async function getThoughts(params: {
   offset?: number
   projectId?: number
   unassigned?: boolean
+  source?: string
+  after?: string
+  before?: string
+  favoritesOnly?: boolean
 }): Promise<ThoughtsListResponse> {
   const qs = new URLSearchParams()
   if (params.category) qs.set('category', params.category)
@@ -81,6 +85,10 @@ export async function getThoughts(params: {
   if (params.offset !== undefined) qs.set('offset', String(params.offset))
   if (params.projectId !== undefined) qs.set('projectId', String(params.projectId))
   if (params.unassigned) qs.set('unassigned', 'true')
+  if (params.source) qs.set('source', params.source)
+  if (params.after) qs.set('after', params.after)
+  if (params.before) qs.set('before', params.before)
+  if (params.favoritesOnly) qs.set('favoritesOnly', 'true')
   const res = await vigilFetch(`/v1/thoughts?${qs}`)
   if (!res.ok) throw new Error(`Failed to fetch thoughts: ${res.status}`)
   return res.json()
