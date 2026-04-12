@@ -157,7 +157,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 ### Phases
 
 - [x] **Phase 63: PWA Foundation** — React/Vite scaffold deployed to app.vigilhub.io with Vigil API auth, responsive layout, and offline indicator (completed 2026-04-12)
-- [ ] **Phase 64: Thoughts Dashboard** — Full thoughts UI with view, filter, search, capture, and inline edit
+- [x] **Phase 64: Thoughts Dashboard** — Full thoughts UI with view, filter, search, capture, and inline edit (completed 2026-04-12)
 - [ ] **Phase 65: Work Order Status API** — New backend route for status changes and CLI/PDF pipeline reads status from API
 - [ ] **Phase 66: Work Orders Dashboard** — View, prioritize, and update work order status from the PWA
 - [ ] **Phase 67: Projects UI** — View projects and assign/unassign thoughts from the PWA
@@ -191,8 +191,8 @@ Plans:
   4. User can click into a thought's text, edit it inline, and save — the updated content persists on reload
 **Plans**: 2 plans
 Plans:
-- [ ] 64-01-PLAN.md — API functions, useThoughts hook, ThoughtsPage with category filter and search
-- [ ] 64-02-PLAN.md — CaptureBar for new thoughts with AI triage, inline editing in ThoughtRow
+- [x] 64-01-PLAN.md — API functions, useThoughts hook, ThoughtsPage with category filter and search
+- [x] 64-02-PLAN.md — CaptureBar for new thoughts with AI triage, inline editing in ThoughtRow
 **UI hint**: yes
 
 ### Phase 65: Work Order Status API
@@ -305,7 +305,7 @@ Plans:
 | 61. Folder Watch Feeder | v2.4 | 2/2 | Complete    | 2026-04-10 |
 | 62. Folder Watch Settings UI | v2.4 | 1/1 | Complete    | 2026-04-10 |
 | 63. PWA Foundation | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 64. Thoughts Dashboard | v2.5 | 0/2 | Planned | - |
+| 64. Thoughts Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 65. Work Order Status API | v2.5 | 0/TBD | Not started | - |
 | 66. Work Orders Dashboard | v2.5 | 0/TBD | Not started | - |
 | 67. Projects UI | v2.5 | 0/TBD | Not started | - |
