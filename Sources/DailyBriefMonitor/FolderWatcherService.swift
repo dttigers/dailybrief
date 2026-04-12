@@ -178,6 +178,43 @@ public actor FolderWatcherService {
         return nil
     }
 
+    // MARK: - iCloud evicted file download
+
+    /// Scans for `.icloud` placeholder files and triggers their download.
+    /// iCloud placeholder files are hidden (dot-prefixed) like `.IMG_1234.jpg.icloud`.
+    /// When downloaded, macOS replaces them with the real file and fires another
+    /// VNODE_WRITE event, which the normal scan will pick up.
+    private func triggerICloudDownloads(in directoryURL: URL) {
+        guard let contents = try? FileManager.default.contentsOfDirectory(
+            at: directoryURL,
+            includingPropertiesForKeys: nil,
+            options: []  // Don't skip hidden files — .icloud placeholders are hidden
+        ) else { return }
+
+        for url in contents {
+            let name = url.lastPathComponent
+            // iCloud placeholders are named ".OriginalName.icloud"
+            guard name.hasSuffix(".icloud"), name.hasPrefix(".") else { continue }
+            // Exclude done/ subfolder
+            guard !url.pathComponents.contains("done") else { continue }
+
+            // Extract the real filename to check if it's a supported type
+            // ".IMG_1234.jpg.icloud" → "IMG_1234.jpg"
+            let realName = String(name.dropFirst().dropLast(".icloud".count))
+            let realURL = URL(fileURLWithPath: realName)
+            guard Self.classify(realURL) != nil else { continue }
+
+            // Trigger download — macOS will replace the placeholder with the real file
+            do {
+                try FileManager.default.startDownloadingUbiquitousItem(at: url)
+                NSLog("FolderWatcherService: triggered iCloud download for %@", realName)
+            } catch {
+                // Not an iCloud file or not ubiquitous — silently ignore.
+                // This happens for local-only folders, which is fine.
+            }
+        }
+    }
+
     // MARK: - Directory scan
 
     /// Scans a directory for files that haven't been seen yet, excluding `done/`
@@ -214,6 +251,12 @@ public actor FolderWatcherService {
     }
 
     private func handleDirectoryChange(_ directoryURL: URL) {
+        // Trigger download of iCloud evicted files (.icloud placeholders).
+        // When a photo saves to iCloud from iPhone, the Mac gets a hidden
+        // placeholder like ".IMG_1234.jpg.icloud". We trigger the download
+        // and let the next VNODE_WRITE event pick up the real file.
+        triggerICloudDownloads(in: directoryURL)
+
         // Auto-clear stale failure entries (D-03): remove any entries whose
         // file no longer exists on disk.
         _failedFiles.removeAll { entry in
