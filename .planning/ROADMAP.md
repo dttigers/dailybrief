@@ -259,9 +259,11 @@ Plans:
 **Depends on**: Phase 64
 **Requirements**: CHAT-01, CHAT-02
 **Success Criteria** (what must be TRUE):
-  1. User can open a chat view and send messages to Claude, receiving streaming responses
+  1. User can open a chat view and send messages to Claude, receiving responses
   2. Claude's responses are informed by the user's recent thoughts — the system injects thought context into the conversation
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 69-01-PLAN.md — Chat API function, useChat hook, ChatPage with message UI, nav tab wiring
 **UI hint**: yes
 
 ### Phase 70: Insights & Therapy
