@@ -6,18 +6,18 @@
 
 **Notable outcome:** Phase 56's push hook fired for real during Phase 53 complete, pushing 22 backlogged commits to origin — the exact 53-04 bug it was built to prevent would have recurred otherwise.
 
-## Current Milestone: v2.4 Capture Without Friction
+## Current Milestone: v2.5 Dashboard Everywhere
 
-**Goal:** Close the capture loop so that a photo of handwritten notes — or any file dropped into a watched folder — becomes correctly-structured thoughts with no manual dashboard step, and stop losing macOS TCC permissions on every rebuild.
+**Goal:** Replace the Mac-only SwiftUI dashboard with a PWA at app.vigilhub.io that any device can access, and add work order management as the first new feature.
 
-**Target features (sequenced):**
-1. **Persistent macOS permissions** — Developer ID signing for DailyBrief + DailyBriefMonitor binaries; TCC permissions (FDA, Automation, Accessibility) survive every rebuild because the designated requirement stops changing. Signing cert handling folded into bootstrap.sh step 0 via 1Password CLI.
-2. **Smart Photo Upload** — Paper-type detection (lined → split into thoughts, gridded → single thought), verbatim transcription, user override, uncertainty fallback. Runs through Vigil Core AI endpoints. (PHOTO-01..06 carried from v2.3.)
-3. **Folder Watch — API Era** — Local Swift DispatchSource watcher in DailyBriefMonitor feeds images + audio to Vigil Core via existing endpoints. Images flow through the Smart Photo Upload pipeline above. Settings UI un-hidden and wired to the real feature.
+**Target features:**
+1. **PWA foundation** — React/Vite app deployed alongside Vigil Core, Vigil API bearer auth, responsive layout
+2. **Thought dashboard** — View, filter, search, capture thoughts (parity with Mac dashboard core)
+3. **Work order dashboard** — View work orders, mark complete/in-progress, AI priority ranking
+4. **Project management** — View projects, assign/unassign thoughts
+5. **README.md** — GitHub project documentation
 
-**Key decision — scope discipline:** If something urgent fires mid-milestone it goes to backlog → v2.5, NOT promoted into v2.4. PHOTO-01..06 has been deferred once already and doesn't get deferred twice. (This rule was baked in at milestone kickoff 2026-04-09 after v2.3's infrastructure scope-slip displaced Phase 54.)
-
-**Deferred:** G2 physical hardware validation (still awaiting glasses + Even Hub + ServiceNow token per `.planning/vigil-v0.2.0-g2-plan.md`), `.app` bundle packaging (still out of scope), notarization (not needed — single-user distribution).
+**Architecture shift:** Mac Monitor keeps menu bar, folder watcher, hotkey capture, LaunchAgent. PWA becomes the primary dashboard — stops feature duplication across Mac SwiftUI and web.
 
 ## What This Is
 
@@ -85,34 +85,37 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Projects as first-class entities — named projects with per-project dashboard views, optimistic assign/move/unassign, NewProjectSheet with create+edit modes, status filter — v2.3
 - ✓ Push-on-phase-complete structural fix — `gsd phase complete` auto-pushes deploy-target commits; first real fire during Phase 53 UAT pushed 22 backlogged commits — v2.3
 - ✓ Cross-machine bootstrap + drift doctor — `scripts/bootstrap.sh` (1Password CLI + 10-step orchestration) and `scripts/dailybrief-doctor.sh` (read-only ANTHROPIC + VIGIL bearer drift detection) — v2.3
+- ✓ Persistent code signing — Developer ID Application signing in install.sh; TCC permissions survive rebuilds — v2.4
+- ✓ Smart photo upload — Claude vision paper-type detection, verbatim transcription, lined→split/gridded→single, preview with override, uncertainty surfacing — v2.4
+- ✓ Folder watch feeder — DispatchSource watcher feeds images + audio to Vigil Core headlessly, iCloud support, auto-triage, menu bar error state — v2.4
+- ✓ Folder watch settings UI — paper-type picker, live watcher restart on save, corrected extension help text — v2.4
+- ✓ .app bundle packaging — DailyBriefMonitor.app with Info.plist, LSUIElement, Developer ID bundle signing — v2.4
 
-### Active (v2.4 — TBD)
+### Active (v2.5)
 
-- [~] Smart photo upload — backend shipped Phase 59 (2026-04-09): `/v1/process-photo` verbatim-OCR endpoint with Claude vision, lined→N split / gridded→1 blob, batched Drizzle insert. Dashboard UX (Phase 60) still active.
+- [ ] PWA dashboard — cross-platform web app at app.vigilhub.io replacing Mac-only SwiftUI dashboard
+- [ ] Work order management — view, complete, prioritize work orders from the PWA
 - [ ] G2 hardware testing — deferred until physical Even G2 glasses arrive
 
 ### Out of Scope
 
-- iOS/mobile app — Vigil Core now on a server; build when ready to invest in mobile UX
+- Native iOS/Android app — PWA covers cross-platform access; native mobile only if PWA proves insufficient
 - Real-time voice assistant — this is capture-and-review, not conversational
 - Replacing the physical notebook — digital complements the traveler's notebook, doesn't replace it
 - Multi-user support — build after Vigil Core is proven on a server
-- Android XR — wait for SDK maturity, build after Even G2 shows traction
-- CKSubscription push notifications — CloudKit sync removed in v2.2; no longer relevant
-- `.app` bundle packaging for the Mac app — desired eventually but deferred until Vigil has traction; shell-script install is sufficient while user is the only developer+user
-- Auto-detection of project assignment from photo content — v2.3 ships manual assignment; auto-routing is a future enhancement
-- Work order → project linkage — v2.3 projects are personal only; work orders stay separate
+- Android XR native — WebXR/PWA first; native Kotlin only if spatial features needed
+- ServiceNow API integration — blocked on IT token; work orders stay IMAP-sourced until unblocked
+- Auto-detection of project assignment from photo content — manual assignment works; auto-routing is future
+- Work order → project linkage — projects are personal only; work orders stay separate
 
 ## Context
 
-Shipped v2.3 Projects & Precision (2026-04-08) — projects as first-class entities, menu-bar update action, and 3 promoted-from-backlog infrastructure wins (auto-migrate verification, push-on-complete hook, bootstrap + drift doctor). Phase 54 Smart Photo Upload deferred to v2.4.
-Shipped v2.2 Polish & Power — platform is fully API-only, all local code paths retired.
-Tech stack: Swift 6.2/SwiftUI/SPM (Mac app, ~12,900 LOC), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API, ~5,000 LOC), Vite/TypeScript/Even Hub SDK (G2 plugin).
-3 client surfaces all connected to production: Mac app (dashboard + capture + PDF brief + AI chat), Vigil Core API (Railway, 20+ REST endpoints), Even G2 plugin (3 screens + task detail).
-Features added in v2.2: brief history browsing, thought export (JSON/CSV/MD), configurable PDF layout, dashboard AI chat with thought context.
+Shipped v2.4 Capture Without Friction (2026-04-10) — Developer ID signing, smart photo upload (Claude vision + paper-type detection), folder watch feeder with iCloud support, .app bundle packaging. 5 phases, 9 plans, 17/17 requirements.
+Shipped v2.3 Projects & Precision (2026-04-08) — projects as first-class entities, menu-bar update action, infrastructure wins.
+Tech stack: Swift 6.2/SwiftUI/SPM (Mac app, ~14,000 LOC), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API, ~5,500 LOC), Vite/TypeScript/Even Hub SDK (G2 plugin).
+3 client surfaces connected to production: Mac app (capture + menu bar + folder watcher + PDF brief), Vigil Core API (Railway, 20+ REST endpoints), Even G2 plugin (3 screens + task detail).
 API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s timeouts, security headers, and CORS.
-G2 plugin configured for production but awaiting physical hardware for validation.
-56 phases and 125+ plans completed across 9 milestones in ~12 days.
+62 phases and 148 plans completed across 10 milestones in ~13 days.
 
 ## Constraints
 
@@ -165,4 +168,4 @@ G2 plugin configured for production but awaiting physical hardware for validatio
 | Retire local GRDB/CloudKit/AI in v2.2 | API backend proven stable in v2.1; dual code paths were maintenance burden | ✓ Good |
 
 ---
-*Last updated: 2026-04-09 — Phase 59 smart-photo-upload backend shipped (v2.4 in progress)*
+*Last updated: 2026-04-12 after v2.4 milestone — v2.5 Dashboard Everywhere started*

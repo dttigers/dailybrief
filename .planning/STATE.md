@@ -1,11 +1,11 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.4
-milestone_name: Capture Without Friction
-status: executing
-stopped_at: Phase 61 context gathered
-last_updated: "2026-04-10T22:50:57.860Z"
-last_activity: 2026-04-10
+milestone: v2.5
+milestone_name: Dashboard Everywhere
+status: defining requirements
+stopped_at: null
+last_updated: "2026-04-12T00:00:00.000Z"
+last_activity: 2026-04-12
 progress:
   total_phases: 11
   completed_phases: 11
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-08)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 62 — folder-watch-settings-ui
+**Current focus:** Defining requirements for v2.5 Dashboard Everywhere
 
 ## Current Position
 
-Phase: 62
-Plan: Not started
-Status: Executing Phase 62
-Last activity: 2026-04-10
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-12 — Milestone v2.5 started
 
 Progress: [██████████████████████████████] 57/57 phases complete (through v2.3); v2.4 0/5
 
