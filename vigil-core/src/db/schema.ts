@@ -168,3 +168,22 @@ export const workOrders = pgTable("work_orders", {
   state: text("state").notNull().default(""),
   syncedAt: timestamp("synced_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ── oauth_tokens table ─────────────────────────────────────────────────────
+
+export const oauthTokens = pgTable(
+  "oauth_tokens",
+  {
+    id: serial("id").primaryKey(),
+    provider: text("provider").notNull().unique(),
+    encryptedRefreshToken: text("encrypted_refresh_token").notNull(),
+    accessToken: text("access_token").notNull().default(""),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    calendarSelections: jsonb("calendar_selections").$type<string[]>().default([]),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("uq_oauth_tokens_provider").on(table.provider),
+  ],
+);

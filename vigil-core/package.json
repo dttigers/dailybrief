@@ -20,6 +20,7 @@
     "@anthropic-ai/sdk": "^0.88.0",
     "@hono/node-server": "^1.14.0",
     "drizzle-orm": "^0.45.2",
+    "google-auth-library": "^10.6.2",
     "hono": "^4.7.0",
     "postgres": "^3.4.9"
   },
