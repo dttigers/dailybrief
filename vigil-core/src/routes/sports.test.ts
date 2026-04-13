@@ -23,7 +23,7 @@ function makeNBASuccessResponse() {
   });
 }
 
-function makeNFLSuccessResponse() {
+function makeNFLGamesResponse() {
   return JSON.stringify({
     data: [
       {
@@ -38,7 +38,7 @@ function makeNFLSuccessResponse() {
   });
 }
 
-function makeNHLSuccessResponse() {
+function makeNHLGamesResponse() {
   return JSON.stringify({
     data: [
       {
@@ -53,11 +53,11 @@ function makeNHLSuccessResponse() {
   });
 }
 
-function makeStandingsResponse() {
+function makeStandingsResponse(teamName = "Los Angeles Lakers") {
   return JSON.stringify({
     data: [
       {
-        team: { full_name: "Los Angeles Lakers" },
+        team: { full_name: teamName },
         wins: 50,
         losses: 30,
         games_back: "—",
@@ -75,20 +75,24 @@ test("SPORT-06: one league rejection returns partial true with other leagues ok"
     teamIds: { mlb: "1", nfl: "1", nba: "1", nhl: "1" },
     fetchFn: async (url: string) => {
       // MLB URLs throw an error (simulates network/API failure)
-      if (url.includes("/mlb/")) {
+      // MLB uses https://api.balldontlie.io/mlb/v1/...
+      if (url.includes("balldontlie.io/mlb/")) {
         throw new Error("MLB API unavailable");
       }
-      // NBA games/standings response
-      if (url.includes("/v1/games") || url.includes("/v1/standings")) {
-        return new Response(makeNBASuccessResponse(), { status: 200 });
+      // NFL — https://api.balldontlie.io/nfl/v1/...
+      if (url.includes("balldontlie.io/nfl/")) {
+        if (url.includes("/games")) return new Response(makeNFLGamesResponse(), { status: 200 });
+        return new Response(makeStandingsResponse("Kansas City Chiefs"), { status: 200 });
       }
-      // NFL games/standings response
-      if (url.includes("/nfl/v1/games") || url.includes("/nfl/v1/standings")) {
-        return new Response(makeNFLSuccessResponse(), { status: 200 });
+      // NHL — https://api.balldontlie.io/nhl/v1/...
+      if (url.includes("balldontlie.io/nhl/")) {
+        if (url.includes("/games")) return new Response(makeNHLGamesResponse(), { status: 200 });
+        return new Response(makeStandingsResponse("Toronto Maple Leafs"), { status: 200 });
       }
-      // NHL games/standings response
-      if (url.includes("/nhl/v1/games") || url.includes("/nhl/v1/standings")) {
-        return new Response(makeNHLSuccessResponse(), { status: 200 });
+      // NBA — https://api.balldontlie.io/v1/... (no league prefix)
+      if (url.includes("balldontlie.io/v1/")) {
+        if (url.includes("/games")) return new Response(makeNBASuccessResponse(), { status: 200 });
+        return new Response(makeStandingsResponse("Los Angeles Lakers"), { status: 200 });
       }
       return new Response(makeStandingsResponse(), { status: 200 });
     },
