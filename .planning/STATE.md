@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Server-Side PDF
-status: executing
-stopped_at: Completed 78-01-PLAN.md
-last_updated: "2026-04-13T19:35:17.774Z"
+status: verifying
+stopped_at: Completed 78-02-PLAN.md
+last_updated: "2026-04-13T19:38:06.838Z"
 last_activity: 2026-04-13
 progress:
   total_phases: 6
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 11
-  completed_plans: 10
-  percent: 91
+  completed_plans: 11
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 
 Phase: 78 (mac-cli-thin-client) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-13
 
 ## Performance Metrics
@@ -54,6 +54,7 @@ Last activity: 2026-04-13
 | v2.4 Capture Without Friction | 58-62 | 9 | 2 days |
 | v2.5 Dashboard Everywhere | 63-72 | 17 | 2 days |
 | Phase 78 P01 | 3min | 2 tasks | 2 files |
+| Phase 78 P02 | 1min | 1 tasks | 12 files |
 
 ## Accumulated Context
 
@@ -72,6 +73,7 @@ Recent decisions affecting v3.0:
 - Auto-print workflow preserved — BriefScheduler calls API instead of rendering locally
 - Email delivery deferred to v3.1+
 - [Phase 78]: postRawData mirrors getRawData with POST; 333 lines of local rendering removed from Generate
+- [Phase 78]: Removed entire linkerSettings block from DailyBrief target; all 3 frameworks were generate-only dead code
 
 ### Phase Ordering Rationale
 
@@ -98,7 +100,7 @@ Note: Phase 74 and Phase 75 can execute in parallel — no dependency between th
 
 ## Session Continuity
 
-Last session: 2026-04-13T19:35:17.769Z
-Stopped at: Completed 78-01-PLAN.md
+Last session: 2026-04-13T19:38:06.832Z
+Stopped at: Completed 78-02-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 73`

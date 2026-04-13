@@ -179,7 +179,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 75: PDF Generation Engine** — PDFKit 3-page brief layout matching current CoreGraphics output (completed 2026-04-13)
 - [x] **Phase 76: Brief Assembly Endpoint** — `/v1/brief/generate` orchestrator with partial-failure tolerance and storage (completed 2026-04-13)
 - [x] **Phase 77: PWA Brief UI** — generate, preview, and download brief from the PWA (completed 2026-04-13)
-- [ ] **Phase 78: Mac CLI Thin Client** — replace local rendering with API call, preserve lpr auto-print
+- [x] **Phase 78: Mac CLI Thin Client** — replace local rendering with API call, preserve lpr auto-print (completed 2026-04-13)
 
 ## Phase Details
 
@@ -267,7 +267,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 78-01-PLAN.md — Rewrite Generate command as thin client + add postRawData to VigilAPIClient (CLI-01, CLI-02)
-- [ ] 78-02-PLAN.md — Delete CoreGraphics PDF rendering code and generate-only services (CLI-03)
+- [x] 78-02-PLAN.md — Delete CoreGraphics PDF rendering code and generate-only services (CLI-03)
 
 
 ## Progress
@@ -351,7 +351,7 @@ Plans:
 | 75. PDF Generation Engine | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete   | 2026-04-13 |
 | 77. PWA Brief UI | v3.0 | 1/1 | Complete    | 2026-04-13 |
-| 78. Mac CLI Thin Client | v3.0 | 1/2 | In Progress|  |
+| 78. Mac CLI Thin Client | v3.0 | 2/2 | Complete   | 2026-04-13 |
 
 ## Backlog
 

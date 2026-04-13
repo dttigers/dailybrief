@@ -48,7 +48,7 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 - [x] **CLI-01**: Mac CLI fetches PDF from `/v1/brief/generate` instead of rendering locally
 - [x] **CLI-02**: Mac CLI auto-print workflow preserved — BriefScheduler triggers API call + `lpr`
-- [ ] **CLI-03**: CoreGraphics PDF rendering code removed from Mac CLI
+- [x] **CLI-03**: CoreGraphics PDF rendering code removed from Mac CLI
 
 ## Future Requirements
 
@@ -107,7 +107,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PWA-03 | Phase 77 | Pending |
 | CLI-01 | Phase 78 | Complete |
 | CLI-02 | Phase 78 | Complete |
-| CLI-03 | Phase 78 | Pending |
+| CLI-03 | Phase 78 | Complete |
 
 **Coverage:**
 - v3.0 requirements: 25 total
