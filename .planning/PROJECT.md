@@ -2,7 +2,7 @@
 
 ## Current State: v3.1 Gmail & CLI Evolution in progress (2026-04-13)
 
-**Delivered:** v3.0 Server-Side PDF complete — brief generation moved to vigil-core, Mac CLI is a thin client, PWA generates/previews/downloads briefs. 78 phases and ~176 plans completed across 12 milestones.
+**Delivered:** v3.0 Server-Side PDF complete — brief generation moved to vigil-core, Mac CLI is a thin client, PWA generates/previews/downloads briefs. Phase 80.1 complete — PWA brand token foundation applied (Vigil teal palette, Inter font, warm neutrals across all 22 component/page files). 79 phases and ~179 plans completed across 12 milestones.
 
 ## Current Milestone: v3.1 Gmail & CLI Evolution
 
@@ -199,4 +199,4 @@ API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s 
 | HTML+CSS to PDF over CoreText port | Easier to maintain, iterate on layout; Puppeteer/similar in Node | — Pending |
 
 ---
-*Last updated: 2026-04-13 after v3.1 Gmail & CLI Evolution milestone started*
+*Last updated: 2026-04-13 after Phase 80.1 PWA Brand Token Foundation complete*
