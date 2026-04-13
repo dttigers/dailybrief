@@ -34,7 +34,7 @@ Declared values (must be multiples of 4):
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Icon gaps (`gap-1` = 4px) |
-| sm | 8px | Compact element spacing, tight list gaps (`py-2.5`), back-navigation icon+label gap (`gap-2`) |
+| sm | 8px | Compact element spacing, tight list gaps (`py-2`), back-navigation icon+label gap (`gap-2`) |
 | md | 16px | Default horizontal padding (`px-4`), section-level vertical padding (`py-6`) |
 | lg | 24px | Section heading bottom margin (`mb-6`) |
 | xl | 32px | Not used in this phase |
@@ -60,7 +60,7 @@ Source: Extracted from `vigil-pwa/src/pages/BriefHistoryPage.tsx` and `vigil-pwa
 
 Notes:
 - Page title ("Briefs") uses `text-lg font-semibold text-slate-100` — matches existing BriefHistoryPage `h1`.
-- Brief date in history list uses `text-sm font-medium text-slate-100`.
+- Brief date in history list uses `text-sm font-normal text-slate-100`.
 - Metadata (thought count, task count) uses `text-xs text-slate-500`.
 - Generating status text ("Generating your brief...") uses `text-sm text-slate-400`.
 - No display-size type needed in this phase.
@@ -135,7 +135,7 @@ iframe loads blob URL. `title="Daily Brief PDF"` for accessibility.
 
 **DownloadButton**
 ```
-className="mt-3 px-4 py-2 border border-indigo-500 text-indigo-400 hover:text-indigo-300 hover:border-indigo-400 text-sm font-medium rounded-lg transition-colors min-h-[44px]"
+className="mt-3 px-4 py-2 border border-indigo-500 text-indigo-400 hover:text-indigo-300 hover:border-indigo-400 text-sm font-semibold rounded-lg transition-colors min-h-[44px]"
 ```
 Renders as `<a>` with `download="vigil-brief-YYYY-MM-DD.pdf"` attribute.
 
@@ -212,7 +212,7 @@ Source:
 ```
 BriefHistoryPage (enhanced)
 ├── [Today section — top]
-│   ├── Heading: "Today's Brief" (text-sm font-medium text-slate-400 uppercase tracking-wide mb-3)
+│   ├── Heading: "Today's Brief" (text-sm font-normal text-slate-400 uppercase tracking-wide mb-3)
 │   ├── GenerateBriefButton  — when no today brief
 │   │   OR GeneratingSpinner — while generating
 │   │   OR PdfPreviewFrame + DownloadButton + RegenerateButton — after generation
