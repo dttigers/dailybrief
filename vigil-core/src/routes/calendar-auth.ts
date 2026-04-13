@@ -60,24 +60,26 @@ export function createCalendarAuthRouter(deps?: CalendarAuthDeps): Hono {
 
   // ── GET /auth/google/callback — exchange code, store tokens ──────────────
   router.get("/auth/google/callback", async (c) => {
-    const pwaUrl = process.env["PWA_URL"] ?? "http://localhost:5173";
+    const pwaUrlRaw = process.env["PWA_URL"] ?? "http://localhost:5173";
+    // Strip trailing slash so `${pwaBase}/settings` never produces `//settings`
+    const pwaBase = pwaUrlRaw.replace(/\/$/, "");
     const code = c.req.query("code");
     const error = c.req.query("error");
     const state = c.req.query("state");
 
     // Handle OAuth error from Google
     if (error || !code) {
-      return c.redirect(`${pwaUrl}?calendar_error=${encodeURIComponent(error ?? "no_code")}`);
+      return c.redirect(`${pwaBase}/settings?google_error=${encodeURIComponent(error ?? "no_code")}`);
     }
 
     // Validate state nonce (CSRF protection, T-74-03)
     if (!state || !stateStore.has(state)) {
-      return c.redirect(`${pwaUrl}?calendar_error=invalid_state`);
+      return c.redirect(`${pwaBase}/settings?google_error=invalid_state`);
     }
     const stateTs = stateStore.get(state)!;
     if (Date.now() - stateTs > STATE_TTL_MS) {
       stateStore.delete(state);
-      return c.redirect(`${pwaUrl}?calendar_error=invalid_state`);
+      return c.redirect(`${pwaBase}/settings?google_error=invalid_state`);
     }
     stateStore.delete(state); // one-time use
 
@@ -95,7 +97,7 @@ export function createCalendarAuthRouter(deps?: CalendarAuthDeps): Hono {
       const { tokens } = await getTokenFn(client, code);
 
       if (!tokens.refresh_token) {
-        return c.redirect(`${pwaUrl}?calendar_error=no_refresh_token`);
+        return c.redirect(`${pwaBase}/settings?google_error=no_refresh_token`);
       }
 
       // Encrypt refresh token before storage (T-74-01 mitigation)
@@ -137,10 +139,10 @@ export function createCalendarAuthRouter(deps?: CalendarAuthDeps): Hono {
 
       await dbUpsertFn("google", encrypted, accessToken, expiresAt);
 
-      return c.redirect(pwaUrl);
+      return c.redirect(`${pwaBase}/settings?google_connected=true`);
     } catch (err) {
       console.error("[calendar-auth] Token exchange error:", err instanceof Error ? err.message : String(err));
-      return c.redirect(`${pwaUrl}?calendar_error=server_error`);
+      return c.redirect(`${pwaBase}/settings?google_error=server_error`);
     }
   });
 

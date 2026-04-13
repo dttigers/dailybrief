@@ -75,13 +75,16 @@ test("CAL-01-callback-success: GET /auth/google/callback with valid code redirec
 
   const location = res.headers.get("location") ?? "";
   assert.ok(location.startsWith("http://localhost:5173"), "Should redirect to PWA_URL");
-  assert.ok(!location.includes("calendar_error"), "Should not contain calendar_error on success");
+  assert.ok(location.includes("/settings"), "Should land on /settings path (D-10)");
+  assert.ok(location.includes("google_connected=true"), "Should include google_connected=true on success");
+  assert.ok(!location.includes("google_error"), "Should not contain google_error on success");
+  assert.ok(!/calendar[_]error/.test(location), "Should not contain legacy calendar-error param (D-11 rename)");
 
   assert.equal(dbCalls.length, 1, "Expected exactly one DB upsert call");
   assert.equal(dbCalls[0].provider, "google", "DB upsert must use 'google' as provider");
 });
 
-test("CAL-01-callback-error: GET /auth/google/callback?error=access_denied redirects with calendar_error", async () => {
+test("CAL-01-callback-error: GET /auth/google/callback?error=access_denied redirects with google_error (D-11)", async () => {
   const stateNonce = "validstatenonce456";
   const { app } = buildApp(buildValidStateStore(stateNonce));
 
@@ -90,7 +93,7 @@ test("CAL-01-callback-error: GET /auth/google/callback?error=access_denied redir
   assert.equal(res.status, 302, "Expected 302 redirect on error");
 
   const location = res.headers.get("location") ?? "";
-  assert.ok(location.includes("calendar_error"), "Location must include calendar_error param");
+  assert.ok(location.includes("/settings?google_error="), "Location must land on /settings with google_error param (D-10, D-11)");
   assert.ok(location.includes("access_denied"), "Location must include the error value");
 });
 
@@ -102,7 +105,7 @@ test("CAL-01-callback-no-code: GET /auth/google/callback with no code or error r
   assert.equal(res.status, 302, "Expected 302 redirect");
 
   const location = res.headers.get("location") ?? "";
-  assert.ok(location.includes("calendar_error=no_code"), "Location must include calendar_error=no_code");
+  assert.ok(location.includes("/settings?google_error=no_code"), "Location must include /settings?google_error=no_code");
 });
 
 test("CAL-01-state-mismatch: missing state param redirects with invalid_state", async () => {
@@ -114,7 +117,7 @@ test("CAL-01-state-mismatch: missing state param redirects with invalid_state", 
   assert.equal(res.status, 302, "Expected 302 redirect");
 
   const location = res.headers.get("location") ?? "";
-  assert.ok(location.includes("calendar_error=invalid_state"), "Location must include calendar_error=invalid_state");
+  assert.ok(location.includes("/settings?google_error=invalid_state"), "Location must include /settings?google_error=invalid_state");
 });
 
 test("CAL-01-state-mismatch: wrong state value redirects with invalid_state", async () => {
@@ -126,5 +129,22 @@ test("CAL-01-state-mismatch: wrong state value redirects with invalid_state", as
   assert.equal(res.status, 302, "Expected 302 redirect");
 
   const location = res.headers.get("location") ?? "";
-  assert.ok(location.includes("calendar_error=invalid_state"), "Wrong state must produce invalid_state error");
+  assert.ok(location.includes("/settings?google_error=invalid_state"), "Wrong state must produce /settings?google_error=invalid_state");
+});
+
+test("81-02-D10: trailing slash on PWA_URL is normalized before /settings concat", async () => {
+  const origPwaUrl = process.env["PWA_URL"];
+  process.env["PWA_URL"] = "http://localhost:5173/";
+  try {
+    const { app } = buildApp();
+    const res = await app.request("/auth/google/callback");
+    const location = res.headers.get("location") ?? "";
+    assert.ok(
+      location.startsWith("http://localhost:5173/settings?"),
+      `Expected normalized /settings concat, got: ${location}`
+    );
+    assert.ok(!location.includes("//settings"), "Must not contain // before settings path");
+  } finally {
+    process.env["PWA_URL"] = origPwaUrl;
+  }
 });
