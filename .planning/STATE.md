@@ -1,40 +1,40 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Server-Side PDF
-status: verifying
-stopped_at: Completed 78-02-PLAN.md
-last_updated: "2026-04-13T19:42:43.825Z"
+milestone: v3.1
+milestone_name: Gmail & CLI Evolution
+status: defining
+stopped_at: Defining requirements
+last_updated: "2026-04-13T20:30:00.000Z"
 last_activity: 2026-04-13
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 11
-  completed_plans: 11
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-12)
+See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 78 — mac-cli-thin-client
+**Current focus:** Milestone v3.1 — Gmail & CLI Evolution (defining requirements)
 
 ## Current Position
 
-Phase: 78
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-13
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-13 — Milestone v3.1 started
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: ~165 (through v2.5)
+- Total plans completed: ~176 (through v3.0)
 - Total execution time: ~13 days
 - Average duration: ~5 min per plan
 
@@ -53,8 +53,7 @@ Last activity: 2026-04-13
 | v2.3 Projects & Precision | 51-57 | 14 | ~19h |
 | v2.4 Capture Without Friction | 58-62 | 9 | 2 days |
 | v2.5 Dashboard Everywhere | 63-72 | 17 | 2 days |
-| Phase 78 P01 | 3min | 2 tasks | 2 files |
-| Phase 78 P02 | 1min | 1 tasks | 12 files |
+| v3.0 Server-Side PDF | 73-78 | 11 | 1 day |
 
 ## Accumulated Context
 
@@ -62,45 +61,29 @@ Last activity: 2026-04-13
 
 All decisions logged in PROJECT.md Key Decisions table.
 
-Recent decisions affecting v3.0:
+Recent decisions affecting v3.1:
 
-- Apple Reminders dropped — Vigil task thoughts replace the todo section on Page 1
-- PDF rendering moves from Mac CLI (CoreGraphics) to vigil-core — using PDFKit 0.18 (NOT Puppeteer, disqualified on Railway due to pthread/D-Bus launch failures)
-- Sports API is balldontlie.io (NOT ESPN — undocumented ESPN API replaced by documented, authenticated balldontlie.io covering all 4 leagues)
-- Google OAuth tokens must use `access_type: 'offline'` AND `prompt: 'consent'`; consent screen must be published to Production (Testing tokens expire in 7 days)
-- PDF storage uses storage_key text column (NOT bytea in PostgreSQL)
-- Mac CLI becomes thin client: fetch PDF from API, pipe to lpr
-- Auto-print workflow preserved — BriefScheduler calls API instead of rendering locally
-- Email delivery deferred to v3.1+
-- [Phase 78]: postRawData mirrors getRawData with POST; 333 lines of local rendering removed from Generate
-- [Phase 78]: Removed entire linkerSettings block from DailyBrief target; all 3 frameworks were generate-only dead code
-
-### Phase Ordering Rationale
-
-1. Phase 73 — Sports Proxy: no dependencies, proves deploy pipeline cheaply
-2. Phase 74 — Google Calendar: highest complexity (OAuth), must be isolated and proven
-3. Phase 75 — PDF Engine: core risk, validate PDFKit on Railway before full orchestrator
-4. Phase 76 — Brief Assembly: wire proven components together with Promise.allSettled
-5. Phase 77 — PWA Brief UI: consume the assembly endpoint from the browser
-6. Phase 78 — Mac CLI Thin Client: replace local rendering, preserve lpr
-
-Note: Phase 74 and Phase 75 can execute in parallel — no dependency between them.
+- Google OAuth infrastructure exists from Phase 74 — reuse token storage/refresh, add gmail.readonly scope
+- Google OAuth consent screen must be in Production mode (Testing tokens expire in 7 days)
+- Google OAuth requires `access_type: 'offline'` AND `prompt: 'consent'`
+- CLI restructure follows Vigil CLI Structure PDF spec (April 2026)
+- Email delivery deferred from v3.0 — not in v3.1 scope either (future)
+- Work order complete/uncomplete/list-completed moving from CLI to dashboard-only
 
 ### Pending Todos
 
-- Verify Railway "Always On" is enabled before Phase 76 UAT (service sleep kills first brief request)
-- Port 270x540pt traveler's notebook layout constants from Swift to PDFKit during Phase 75
-- Test ESPN off-season behavior (empty events arrays) during Phase 73 — confirmed: use balldontlie.io
+- Verify Railway "Always On" is enabled (service sleep kills first request)
+- G2 hardware testing still pending
 
 ### Blockers/Concerns
 
 - G2 hardware testing — plugin validated in simulator only, awaiting physical Even G2 glasses
-- ServiceNow API token — blocks future WO-F01 (deferred to future milestone)
-- Railway Buckets availability — if not available on current plan, fallback to volume mount for PDF storage
+- ServiceNow API token — blocks future WO integration (deferred)
+- Google OAuth consent screen approval — may need to add gmail.readonly scope and re-verify with Google
 
 ## Session Continuity
 
-Last session: 2026-04-13T19:38:06.832Z
-Stopped at: Completed 78-02-PLAN.md
+Last session: 2026-04-13T20:30:00.000Z
+Stopped at: Defining requirements for v3.1
 Resume file: None
-Next action: `/gsd-plan-phase 73`
+Next action: Define requirements and create roadmap
