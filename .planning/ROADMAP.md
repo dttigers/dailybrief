@@ -239,8 +239,9 @@ Plans:
   4. Calling `GET /v1/brief/:storage_key` returns the same PDF that was generated
 **Plans**: 2 plans
 Plans:
-- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
-- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
+- [x] 76-01-PLAN.md — Brief assembly service with Promise.allSettled orchestration and PDF storage
+- [x] 76-02-PLAN.md — Hono route handlers for POST /brief/generate and GET /brief/:date
+
 
 ### Phase 77: PWA Brief UI
 **Goal**: Users can generate, preview, and download their daily brief from the PWA without touching the Mac
@@ -265,8 +266,9 @@ Plans:
   3. The CoreGraphics/PDFLayout rendering code is absent from the Mac CLI codebase (no dead code left behind)
 **Plans**: 2 plans
 Plans:
-- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
-- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
+- [ ] 78-01-PLAN.md — Rewrite Generate command as thin client + add postRawData to VigilAPIClient (CLI-01, CLI-02)
+- [ ] 78-02-PLAN.md — Delete CoreGraphics PDF rendering code and generate-only services (CLI-03)
+
 
 ## Progress
 
@@ -349,7 +351,7 @@ Plans:
 | 75. PDF Generation Engine | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete   | 2026-04-13 |
 | 77. PWA Brief UI | v3.0 | 1/1 | Complete    | 2026-04-13 |
-| 78. Mac CLI Thin Client | v3.0 | 0/TBD | Not started | - |
+| 78. Mac CLI Thin Client | v3.0 | 0/2 | Not started | - |
 
 ## Backlog
 
