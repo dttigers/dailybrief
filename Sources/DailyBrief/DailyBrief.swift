@@ -100,7 +100,10 @@ extension DailyBrief {
 
         private func cleanupOldPDFs(directory: String, keepDays: Int) {
             let fm = FileManager.default
-            let cutoff = Calendar.current.date(byAdding: .day, value: -keepDays, to: Date())!
+            guard let cutoff = Calendar.current.date(byAdding: .day, value: -keepDays, to: Date()) else {
+                Logger.error("Invalid keepDays value: \(keepDays)")
+                return
+            }
 
             guard let files = try? fm.contentsOfDirectory(atPath: directory) else { return }
             for file in files where file.hasSuffix(".pdf") {
