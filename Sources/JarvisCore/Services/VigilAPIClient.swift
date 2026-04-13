@@ -7,6 +7,7 @@ public enum VigilAPIError: Error, LocalizedError {
     case networkError(Error)
     case httpError(statusCode: Int, message: String)
     case decodingError(Error)
+    case encodingError(Error)
     case serverUnavailable
 
     public var errorDescription: String? {
@@ -17,6 +18,8 @@ public enum VigilAPIError: Error, LocalizedError {
             return "HTTP \(statusCode): \(message)"
         case .decodingError(let error):
             return "Decoding error: \(error.localizedDescription)"
+        case .encodingError(let error):
+            return "Encoding error: \(error.localizedDescription)"
         case .serverUnavailable:
             return "Vigil Core API server is unavailable"
         }
@@ -306,7 +309,7 @@ public actor VigilAPIClient {
         do {
             return try jsonEncoder.encode(body)
         } catch {
-            throw VigilAPIError.decodingError(error)
+            throw VigilAPIError.encodingError(error)
         }
     }
 }
