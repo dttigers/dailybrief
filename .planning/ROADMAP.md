@@ -239,10 +239,8 @@ Plans:
   4. Calling `GET /v1/brief/:storage_key` returns the same PDF that was generated
 **Plans**: 2 plans
 Plans:
-- [ ] 76-01-PLAN.md — Brief assembly service: Promise.allSettled orchestration, data source mappers, DI factory (BRIEF-01, BRIEF-02)
-- [ ] 76-02-PLAN.md — Hono routes (POST /brief/generate + GET /brief/:date), index.ts registration (BRIEF-01, BRIEF-03, BRIEF-04)
-
-
+- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
+- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
 
 ### Phase 77: PWA Brief UI
 **Goal**: Users can generate, preview, and download their daily brief from the PWA without touching the Mac
@@ -350,7 +348,7 @@ Plans:
 | 73. Sports Proxy | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 74. Google Calendar Server-Side | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 75. PDF Generation Engine | v3.0 | 2/2 | Complete    | 2026-04-13 |
-| 76. Brief Assembly Endpoint | v3.0 | 0/2 | Not started | - |
+| 76. Brief Assembly Endpoint | v3.0 | 0/TBD | Not started | - |
 | 77. PWA Brief UI | v3.0 | 0/TBD | Not started | - |
 | 78. Mac CLI Thin Client | v3.0 | 0/TBD | Not started | - |
 
@@ -358,11 +356,4 @@ Plans:
 
 Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
-### Phase 999.1: Apply Vigil brand guidelines to PWA (BACKLOG)
-
-**Goal:** Replace default Tailwind colors with Vigil brand palette (Teal #2C7A7B, warm grays #2C2C2A/#6B6B68/#D9D9D5/#F2F2EE), Inter font family, and consistent component styling matching the PDF engine's visual identity
-**Requirements:** TBD
-**Plans:** 0 plans
-
-Plans:
-- [ ] TBD (promote with /gsd-review-backlog when ready)
+_Backlog is currently empty. Add new ideas with `/gsd-add-backlog`._
