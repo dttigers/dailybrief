@@ -311,14 +311,18 @@ Plans:
 
 **Goal**: The PWA uses Vigil brand tokens (teal palette, warm neutrals, Inter font, type scale) from a single Tailwind theme config — all existing hardcoded slate/blue colors replaced with brand-compliant values from docs/BRAND-GUIDELINES.md
 **Depends on**: Phase 80 (continues v3.1 work; brand spec in docs/BRAND-GUIDELINES.md)
-**Requirements**: TBD
+**Requirements**: SC-01, SC-02, SC-03, SC-04, SC-05
 **Success Criteria** (what must be TRUE):
   1. Tailwind config defines Vigil color tokens (teal-50 through teal-800, gray-50 through gray-900, surface, and status accent colors) matching docs/BRAND-GUIDELINES.md hex values
   2. Inter font is loaded and applied as the default font family across all PWA pages
   3. Only font weights 400 (Regular) and 500 (Medium) are used — no 600/700 anywhere in the codebase
   4. All existing hardcoded slate/blue Tailwind classes in PWA components are replaced with brand token classes
   5. Category tags use rounded pills and routing tags use square badges, matching the tag system spec
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 80.1-01-PLAN.md — Define brand tokens in Tailwind v4 @theme and load Inter font
+- [ ] 80.1-02-PLAN.md — Migrate 12 component files to brand token classes + fix tag shapes
+- [ ] 80.1-03-PLAN.md — Migrate 10 page files to brand token classes
 **UI hint**: yes
 
 ### Phase 81: PWA Settings & Google OAuth UI
