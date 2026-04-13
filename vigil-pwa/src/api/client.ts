@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'vigil_api_key'
-const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? 'https://api.vigilhub.io'
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? (import.meta.env.DEV ? '' : 'https://api.vigilhub.io')
 
 export const getStoredKey = (): string | null => localStorage.getItem(STORAGE_KEY)
 

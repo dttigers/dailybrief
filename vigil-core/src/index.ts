@@ -53,7 +53,11 @@ app.use(
 );
 
 // Security headers — X-Content-Type-Options, X-Frame-Options, etc.
-app.use("*", secureHeaders());
+// Disable CORP and COEP so CORS middleware can allow cross-origin PWA requests
+app.use("*", secureHeaders({
+  crossOriginResourcePolicy: false,
+  crossOriginOpenerPolicy: false,
+}));
 
 // Request timeout — 30 seconds max per request
 app.use("*", timeout(30_000));

@@ -4,6 +4,14 @@ import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  server: {
+    proxy: {
+      '/v1': {
+        target: 'https://api.vigilhub.io',
+        changeOrigin: true,
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),
