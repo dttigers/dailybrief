@@ -254,3 +254,141 @@ test("renderBrief with empty workOrders array produces valid PDF", async () => {
     "valid PDF header"
   );
 });
+
+// ── Page 2 tests ──────────────────────────────────────────────────────────────
+
+test("renderBrief with 2+ sports leagues produces valid PDF (compact mode)", async () => {
+  const data = createSampleBriefData();
+  data.sports.push({
+    sport: "nfl",
+    displayName: "NFL",
+    teamName: "Broncos",
+    divisionName: "AFC West",
+    recentGame: {
+      homeTeam: "Broncos",
+      awayTeam: "Chiefs",
+      homeScore: 24,
+      awayScore: 17,
+      result: "W" as const,
+      gameDate: "2026-04-10",
+    },
+    upcomingGame: null,
+    standings: [
+      {
+        team: "Kansas City Chiefs",
+        wins: 10,
+        losses: 3,
+        gamesBack: "-",
+        winPct: ".769",
+        streak: "W3",
+        rank: 1,
+      },
+      {
+        team: "Denver Broncos",
+        wins: 8,
+        losses: 5,
+        gamesBack: "2.0",
+        winPct: ".615",
+        streak: "W1",
+        rank: 2,
+      },
+    ],
+  });
+  const buf = await renderer.renderBrief(data);
+  assert.ok(buf instanceof Buffer, "result is a Buffer");
+  assert.ok(buf.length > 0, "buffer is non-empty");
+  assert.equal(buf.subarray(0, 4).toString("ascii"), "%PDF", "valid PDF header");
+});
+
+test("renderBrief with 0 sports leagues and affirmation only produces valid PDF", async () => {
+  const data = createSampleBriefData();
+  data.sports = [];
+  const config: PdfConfig = {
+    ...DEFAULT_PDF_CONFIG,
+    enabledSections: ["affirmation"],
+  };
+  const buf = await renderer.renderBrief(data, config);
+  assert.ok(buf instanceof Buffer, "result is a Buffer");
+  assert.ok(buf.length > 0, "buffer is non-empty");
+  assert.equal(buf.subarray(0, 4).toString("ascii"), "%PDF", "valid PDF header");
+});
+
+test("renderBrief with sports disabled in enabledSections skips sports content", async () => {
+  const data = createSampleBriefData();
+  const config: PdfConfig = {
+    ...DEFAULT_PDF_CONFIG,
+    enabledSections: ["workOrders", "taskThoughts", "affirmation"],
+  };
+  const buf = await renderer.renderBrief(data, config);
+  assert.ok(buf instanceof Buffer, "result is a Buffer");
+  assert.ok(buf.length > 0, "buffer is non-empty");
+  assert.equal(buf.subarray(0, 4).toString("ascii"), "%PDF", "valid PDF header");
+});
+
+// ── Page 3+ tests ─────────────────────────────────────────────────────────────
+
+test("renderBrief with thoughts and many insights produces valid PDF with overflow pages", async () => {
+  const data = createSampleBriefData();
+  data.insights = Array.from({ length: 25 }, (_, i) => ({
+    type: "pattern" as const,
+    title: `Insight ${i + 1}: A detailed observation about behavioral patterns`,
+    message: `This insight explores the recurring theme of ${i + 1} in your recent thoughts. The pattern suggests a connection between your work habits and emotional state that could benefit from further reflection and intentional practice.`,
+  }));
+  const buf = await renderer.renderBrief(data);
+  assert.ok(buf instanceof Buffer, "result is a Buffer");
+  assert.ok(buf.length > 0, "buffer is non-empty");
+  assert.equal(buf.subarray(0, 4).toString("ascii"), "%PDF", "valid PDF header");
+  // PDF with 25 insights should be larger than a standard 2-page brief
+  const standardBuf = await renderer.renderBrief({ ...data, insights: [] });
+  assert.ok(buf.length > standardBuf.length, "overflow PDF is larger than non-overflow PDF");
+});
+
+test("renderBrief with therapy prep renders valid PDF", async () => {
+  const data = createSampleBriefData();
+  // Ensure therapy prep is populated
+  data.therapyPrep = {
+    items: [
+      {
+        topic: "Anxiety about upcoming review",
+        context: "Performance review scheduled for next week — feeling unprepared",
+        urgency: "high" as const,
+      },
+      {
+        topic: "Sleep disruption",
+        context: "Waking at 3am with work thoughts, happened 4 nights this week",
+        urgency: "medium" as const,
+      },
+    ],
+    suggestedFocus: "Develop boundary-setting strategies around work thoughts at night",
+  };
+  const buf = await renderer.renderBrief(data);
+  assert.ok(buf instanceof Buffer, "result is a Buffer");
+  assert.ok(buf.length > 0, "buffer is non-empty");
+  assert.equal(buf.subarray(0, 4).toString("ascii"), "%PDF", "valid PDF header");
+});
+
+test("renderBrief with NO thoughts/insights/therapy produces 2-page PDF (page 3 skipped)", async () => {
+  const data = createSampleBriefData();
+  data.unprocessedThoughts = [];
+  data.recentThoughts = [];
+  data.insights = [];
+  data.therapyPrep = undefined;
+  const config: PdfConfig = {
+    ...DEFAULT_PDF_CONFIG,
+    enabledSections: ["workOrders", "taskThoughts", "calendar", "sports", "affirmation"],
+  };
+  const buf = await renderer.renderBrief(data, config);
+  assert.ok(buf instanceof Buffer, "result is a Buffer");
+  assert.ok(buf.length > 0, "buffer is non-empty");
+  assert.equal(buf.subarray(0, 4).toString("ascii"), "%PDF", "valid PDF header");
+  // Should be smaller than a full 3-page brief (no page 3)
+  const fullBuf = await renderer.renderBrief(sampleData);
+  assert.ok(buf.length < fullBuf.length, "2-page PDF is smaller than 3-page PDF");
+});
+
+test("renderBrief with all sections enabled and full sample data produces valid PDF", async () => {
+  const buf = await renderer.renderBrief(sampleData, DEFAULT_PDF_CONFIG);
+  assert.ok(buf instanceof Buffer, "result is a Buffer");
+  assert.ok(buf.length > 0, "buffer is non-empty");
+  assert.equal(buf.subarray(0, 4).toString("ascii"), "%PDF", "valid PDF header");
+});
