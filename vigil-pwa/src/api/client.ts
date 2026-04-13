@@ -304,6 +304,26 @@ export async function getBriefByDate(date: string): Promise<BriefApiResponse> {
   return res.json()
 }
 
+export async function generateBrief(): Promise<Blob> {
+  const res = await vigilFetch('/v1/brief/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': '' },
+  })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`Brief generation failed: ${res.status}${text ? ` — ${text}` : ''}`)
+  }
+  return res.blob()
+}
+
+export async function getBriefPdf(date: string): Promise<Blob> {
+  const res = await vigilFetch(`/v1/brief/${date}`, {
+    headers: { 'Content-Type': '' },
+  })
+  if (!res.ok) throw new Error(`Failed to load brief PDF: ${res.status}`)
+  return res.blob()
+}
+
 // ---------------------------------------------------------------------------
 // Therapy API
 // ---------------------------------------------------------------------------
