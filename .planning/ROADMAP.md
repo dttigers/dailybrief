@@ -356,4 +356,11 @@ Plans:
 
 Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
-_Backlog is currently empty. Add new ideas with `/gsd-add-backlog`._
+### Phase 999.1: Apply Vigil brand guidelines to PWA (BACKLOG)
+
+**Goal:** Replace default Tailwind colors with Vigil brand palette (Teal #2C7A7B, warm grays #2C2C2A/#6B6B68/#D9D9D5/#F2F2EE), Inter font family, and consistent component styling matching the PDF engine's visual identity
+**Requirements:** TBD
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (promote with /gsd-review-backlog when ready)
