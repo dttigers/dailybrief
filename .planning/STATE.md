@@ -50,6 +50,10 @@ Progress: [░░░░░░░░░░] 0%
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 80.1 inserted after Phase 80: PWA Brand Token Foundation (INSERTED) — apply Vigil brand guidelines (teal palette, Inter font, type scale) to PWA before Settings UI in Phase 81
+
 ### Decisions
 
 All decisions logged in PROJECT.md Key Decisions table.

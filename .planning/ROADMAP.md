@@ -307,6 +307,20 @@ Plans:
   5. Triggering extraction a second time for already-imported work orders does not create duplicates
 **Plans**: TBD
 
+### Phase 80.1: PWA Brand Token Foundation (INSERTED)
+
+**Goal**: The PWA uses Vigil brand tokens (teal palette, warm neutrals, Inter font, type scale) from a single Tailwind theme config — all existing hardcoded slate/blue colors replaced with brand-compliant values from docs/BRAND-GUIDELINES.md
+**Depends on**: Phase 80 (continues v3.1 work; brand spec in docs/BRAND-GUIDELINES.md)
+**Requirements**: TBD
+**Success Criteria** (what must be TRUE):
+  1. Tailwind config defines Vigil color tokens (teal-50 through teal-800, gray-50 through gray-900, surface, and status accent colors) matching docs/BRAND-GUIDELINES.md hex values
+  2. Inter font is loaded and applied as the default font family across all PWA pages
+  3. Only font weights 400 (Regular) and 500 (Medium) are used — no 600/700 anywhere in the codebase
+  4. All existing hardcoded slate/blue Tailwind classes in PWA components are replaced with brand token classes
+  5. Category tags use rounded pills and routing tags use square badges, matching the tag system spec
+**Plans**: TBD
+**UI hint**: yes
+
 ### Phase 81: PWA Settings & Google OAuth UI
 **Goal**: Users can connect and disconnect their Google account from the PWA Settings page, see per-scope authorization status, and trigger OAuth re-authorization when gmail scope is missing
 **Depends on**: Phase 79
