@@ -70,7 +70,7 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
       });
 
       // Return PDF binary (D-09)
-      return new Response(buffer, {
+      return new Response(new Uint8Array(buffer), {
         status: 200,
         headers: {
           "Content-Type": "application/pdf",
@@ -106,7 +106,7 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
 
       try {
         const buffer = await readFile(rows[0].pdfFilename);
-        return new Response(buffer, {
+        return new Response(new Uint8Array(buffer), {
           status: 200,
           headers: {
             "Content-Type": "application/pdf",

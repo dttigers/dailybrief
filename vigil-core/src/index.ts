@@ -30,6 +30,7 @@ import { workOrderStatus } from "./routes/work-order-status.js";
 import { sports } from "./routes/sports.js";
 import { calendar } from "./routes/calendar.js";
 import { calendarAuth } from "./routes/calendar-auth.js";
+import { briefGenerate } from "./routes/brief-generate.js";
 import { testConnection, closeConnection } from "./db/connection.js";
 
 // Verify database connection at startup
@@ -79,6 +80,7 @@ app.route("/v1", thoughts);
 app.route("/v1", projects);
 app.route("/v1", tags);
 app.route("/v1", links);
+app.route("/v1", briefGenerate);
 app.route("/v1", brief);
 app.route("/v1", bulk);
 app.route("/v1", triage);
