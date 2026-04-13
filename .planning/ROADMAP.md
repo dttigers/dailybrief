@@ -192,7 +192,10 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   2. A second call within the cache window returns data without hitting balldontlie.io again (verified via logs)
   3. When a league returns an empty or error response, the endpoint still returns data for the remaining leagues with a partial-success flag
   4. The endpoint is deployed and reachable on the production Railway URL
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
+- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
 
 ### Phase 74: Google Calendar Server-Side
 **Goal**: Users can authorize Google Calendar from the PWA, and the server stores, refreshes, and uses OAuth tokens to fetch today's events — no Mac app required
@@ -203,7 +206,10 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   2. After authorization, the server stores an encrypted refresh token in PostgreSQL
   3. The server fetches today's calendar events and returns them via API without prompting the user again
   4. When the access token expires, the server silently refreshes it using the stored refresh token
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
+- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
 **UI hint**: yes
 
 ### Phase 75: PDF Generation Engine
@@ -216,7 +222,10 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   3. Page 2 contains sports scores and standings for all configured leagues, an AI-generated affirmation, and a notes section
   4. Page 3 contains captured thoughts paginated with AI insights and therapy prep
   5. Paper size, margins, font scale, and section toggles from the existing PDFConfig are all respected in the output
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
+- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
 
 ### Phase 76: Brief Assembly Endpoint
 **Goal**: `/v1/brief/generate` orchestrates all data sources concurrently, tolerates partial failures, returns a PDF binary, and saves the generated brief server-side for later retrieval
@@ -227,7 +236,10 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   2. If one data source (e.g. sports or calendar) fails, the endpoint still returns a complete PDF — missing sections show a graceful placeholder
   3. Each generated PDF is saved server-side and assigned a storage_key returned in the response
   4. Calling `GET /v1/brief/:storage_key` returns the same PDF that was generated
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
+- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
 
 ### Phase 77: PWA Brief UI
 **Goal**: Users can generate, preview, and download their daily brief from the PWA without touching the Mac
@@ -237,7 +249,10 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   1. The PWA has a "Generate Brief" button that calls `/v1/brief/generate` and shows a loading state while it runs
   2. After generation, the PDF renders inline in the PWA so the user can read it without downloading
   3. A download button saves the PDF to the user's device with a sensible filename
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
+- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
 **UI hint**: yes
 
 ### Phase 78: Mac CLI Thin Client
@@ -248,7 +263,10 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   1. Running the Mac CLI brief command results in a PDF fetched from `/v1/brief/generate` written to disk — no local PDF rendering occurs
   2. BriefScheduler's scheduled auto-print still fires at the configured time, calling the API and piping the result to `lpr`
   3. The CoreGraphics/PDFLayout rendering code is absent from the Mac CLI codebase (no dead code left behind)
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
+- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
 
 ## Progress
 
