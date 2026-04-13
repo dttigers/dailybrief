@@ -320,9 +320,9 @@ Plans:
   5. Category tags use rounded pills and routing tags use square badges, matching the tag system spec
 **Plans**: 3 plans
 Plans:
-- [ ] 80.1-01-PLAN.md — Define brand tokens in Tailwind v4 @theme and load Inter font
-- [ ] 80.1-02-PLAN.md — Migrate 12 component files to brand token classes + fix tag shapes
-- [ ] 80.1-03-PLAN.md — Migrate 10 page files to brand token classes
+- [x] 80.1-01-PLAN.md — Define brand tokens in Tailwind v4 @theme and load Inter font
+- [x] 80.1-02-PLAN.md — Migrate 12 component files to brand token classes + fix tag shapes
+- [x] 80.1-03-PLAN.md — Migrate 10 page files to brand token classes
 **UI hint**: yes
 
 ### Phase 81: PWA Settings & Google OAuth UI
