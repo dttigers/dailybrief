@@ -214,7 +214,8 @@ extension DailyBrief {
                     print("Reprinted brief for \(reprintDate)")
                 } else {
                     // Try to get info from API
-                    if let record: BriefRecord = try? await apiClient.get(path: "/briefs/\(reprintDate)") {
+                    let encodedDate = reprintDate.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? reprintDate
+                    if let record: BriefRecord = try? await apiClient.get(path: "/briefs/\(encodedDate)") {
                         print("PDF not found locally. Brief was generated on \(record.date) with \(record.thoughtCount) thoughts.")
                     } else {
                         print("PDF not found locally and no record found in API for \(reprintDate).")
@@ -390,9 +391,13 @@ extension DailyBrief {
             struct StatusResponse: Decodable { let caseNumber: String; let status: String }
 
             for cn in caseNumbers {
+                guard let encoded = cn.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+                    print("Invalid case number: \(cn)")
+                    continue
+                }
                 do {
                     let _: StatusResponse = try await apiClient.put(
-                        path: "/work-orders/\(cn)/status",
+                        path: "/work-orders/\(encoded)/status",
                         body: StatusBody(status: status)
                     )
                     print("Work order \(cn) -> \(status)")
@@ -429,9 +434,13 @@ extension DailyBrief {
             struct StatusResponse: Decodable { let caseNumber: String; let status: String }
 
             for cn in caseNumbers {
+                guard let encoded = cn.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+                    print("Invalid case number: \(cn)")
+                    continue
+                }
                 do {
                     let _: StatusResponse = try await apiClient.put(
-                        path: "/work-orders/\(cn)/status",
+                        path: "/work-orders/\(encoded)/status",
                         body: StatusBody(status: "open")
                     )
                     print("Work order \(cn) -> open")
