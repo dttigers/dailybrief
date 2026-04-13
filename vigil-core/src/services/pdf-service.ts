@@ -73,10 +73,12 @@ export function createPdfRenderer(deps: PdfRendererDeps = {}) {
 
       // Page 1
       doc.addPage({ size: [layout.pageW, layout.pageH], margin: 0 });
+      drawCuttingGuide(doc, layout);
       drawPageOne(doc, data, layout);
 
       // Page 2: sports + affirmation + notes
       doc.addPage({ size: [layout.pageW, layout.pageH], margin: 0 });
+      drawCuttingGuide(doc, layout);
       drawPageTwo(doc, data, layout);
 
       // Page 3: only if there's content for it
@@ -91,6 +93,7 @@ export function createPdfRenderer(deps: PdfRendererDeps = {}) {
         layout.enabledSections.has("therapyPrep");
       if (hasThoughts || hasInsights || hasTherapy) {
         doc.addPage({ size: [layout.pageW, layout.pageH], margin: 0 });
+        drawCuttingGuide(doc, layout);
         drawPageThree(doc, data, layout);
       }
 
@@ -131,6 +134,21 @@ function drawSectionHeader(
     .fillColor(COLORS.vigilTeal)
     .text(text, leftX, y, { lineBreak: false });
   return y + layout.headerSize + 4;
+}
+
+// ── Cutting guide ─────────────────────────────────────────────────────────────
+
+function drawCuttingGuide(doc: PDFKit.PDFDocument, layout: PdfLayout): void {
+  const inset = 4; // 4pt inset from page edge
+  doc
+    .save()
+    .dash(4, { space: 3 })
+    .lineWidth(0.5)
+    .strokeColor("#999999")
+    .rect(inset, inset, layout.pageW - 2 * inset, layout.pageH - 2 * inset)
+    .stroke()
+    .undash()
+    .restore();
 }
 
 // ── Page 1 renderer ───────────────────────────────────────────────────────────
