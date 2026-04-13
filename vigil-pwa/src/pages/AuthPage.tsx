@@ -38,11 +38,11 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-950">
-      <div className="bg-slate-900 rounded-lg p-8 w-full max-w-md mx-4">
-        <h1 className="text-2xl font-bold text-white mb-6">Sign in to Vigil</h1>
+    <div className="min-h-screen flex items-center justify-center bg-gray-900">
+      <div className="bg-gray-900 rounded-lg p-8 w-full max-w-md mx-4">
+        <h1 className="text-2xl font-medium text-white mb-6">Sign in to Vigil</h1>
         <form onSubmit={handleSubmit}>
-          <label className="block text-sm text-slate-400 mb-2" htmlFor="apiKey">
+          <label className="block text-sm text-gray-400 mb-2" htmlFor="apiKey">
             Vigil API Key
           </label>
           <input
@@ -51,7 +51,7 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
             placeholder="Enter your API key"
             value={apiKey}
             onChange={(e) => setApiKey(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+            className="w-full px-3 py-2 bg-gray-900/80 border border-gray-400/30 rounded text-white placeholder-gray-400 focus:outline-none focus:border-teal-600"
             disabled={loading}
           />
           {error && (
@@ -60,7 +60,7 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded font-medium disabled:opacity-50"
+            className="w-full mt-4 py-2 bg-teal-600 hover:bg-teal-800 text-white rounded font-medium disabled:opacity-50"
           >
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
