@@ -178,7 +178,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 74: Google Calendar Server-Side** — OAuth token storage in PostgreSQL and server-side event fetch (completed 2026-04-13)
 - [x] **Phase 75: PDF Generation Engine** — PDFKit 3-page brief layout matching current CoreGraphics output (completed 2026-04-13)
 - [x] **Phase 76: Brief Assembly Endpoint** — `/v1/brief/generate` orchestrator with partial-failure tolerance and storage (completed 2026-04-13)
-- [ ] **Phase 77: PWA Brief UI** — generate, preview, and download brief from the PWA
+- [x] **Phase 77: PWA Brief UI** — generate, preview, and download brief from the PWA (completed 2026-04-13)
 - [ ] **Phase 78: Mac CLI Thin Client** — replace local rendering with API call, preserve lpr auto-print
 
 ## Phase Details
@@ -252,7 +252,7 @@ Plans:
   3. A download button saves the PDF to the user's device with a sensible filename
 **Plans**: 1 plan
 Plans:
-- [ ] 77-01-PLAN.md — API client binary fetch + Layout tab rename + BriefHistoryPage generate/preview/download
+- [x] 77-01-PLAN.md — API client binary fetch + Layout tab rename + BriefHistoryPage generate/preview/download
 **UI hint**: yes
 
 ### Phase 78: Mac CLI Thin Client
@@ -348,7 +348,7 @@ Plans:
 | 74. Google Calendar Server-Side | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 75. PDF Generation Engine | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete   | 2026-04-13 |
-| 77. PWA Brief UI | v3.0 | 0/TBD | Not started | - |
+| 77. PWA Brief UI | v3.0 | 1/1 | Complete    | 2026-04-13 |
 | 78. Mac CLI Thin Client | v3.0 | 0/TBD | Not started | - |
 
 ## Backlog
