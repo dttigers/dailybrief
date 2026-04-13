@@ -9,6 +9,15 @@ struct DailyBrief: AsyncParsableCommand {
         subcommands: [Generate.self, History.self, Export.self, Complete.self, Uncomplete.self, ListCompleted.self, EmailAuth.self],
         defaultSubcommand: Generate.self
     )
+
+    /// Build a VigilAPIClient from config, throwing ExitCode.failure on invalid URL.
+    static func makeAPIClient(config: AppConfig) throws -> VigilAPIClient {
+        guard let baseURL = URL(string: config.apiBaseUrl) else {
+            Logger.error("Invalid API base URL: \(config.apiBaseUrl)")
+            throw ExitCode.failure
+        }
+        return VigilAPIClient(baseURL: baseURL, apiKey: config.apiKey)
+    }
 }
 
 // MARK: - Generate (default)
@@ -43,10 +52,7 @@ extension DailyBrief {
                 throw error
             }
 
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             if dryRun {
                 Logger.log("Dry run: would call POST /v1/brief/generate")
@@ -189,10 +195,7 @@ extension DailyBrief {
                 throw error
             }
 
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             // Reprint mode: find and print a specific date's PDF
             if let reprintDate = reprint {
@@ -304,10 +307,7 @@ extension DailyBrief {
                 throw error
             }
 
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             // Build query params
             var params: [String: String] = ["format": format]
@@ -384,10 +384,7 @@ extension DailyBrief {
             }
 
             let config = try ConfigLoader.load(from: configPath)
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             struct StatusBody: Encodable { let status: String }
             struct StatusResponse: Decodable { let caseNumber: String; let status: String }
@@ -426,10 +423,7 @@ extension DailyBrief {
 
         func run() async throws {
             let config = try ConfigLoader.load(from: configPath)
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             struct StatusBody: Encodable { let status: String }
             struct StatusResponse: Decodable { let caseNumber: String; let status: String }
@@ -465,10 +459,7 @@ extension DailyBrief {
 
         func run() async throws {
             let config = try ConfigLoader.load(from: configPath)
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             let statuses: [String: String]
             do {
