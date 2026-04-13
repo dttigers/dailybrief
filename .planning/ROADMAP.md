@@ -351,7 +351,7 @@ Plans:
 | 75. PDF Generation Engine | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete   | 2026-04-13 |
 | 77. PWA Brief UI | v3.0 | 1/1 | Complete    | 2026-04-13 |
-| 78. Mac CLI Thin Client | v3.0 | 2/2 | Complete   | 2026-04-13 |
+| 78. Mac CLI Thin Client | v3.0 | 2/2 | Complete    | 2026-04-13 |
 
 ## Backlog
 
