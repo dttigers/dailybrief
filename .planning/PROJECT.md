@@ -1,8 +1,8 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v3.0 Server-Side PDF in progress (2026-04-13)
+## Current State: v3.0 Server-Side PDF complete (2026-04-13)
 
-**Delivered:** Full PWA at app.vigilhub.io with thoughts dashboard, work order management, projects UI, bulk actions, AI chat, insights/therapy, brief history, and photo upload. 10 phases shipped, 17 plans. Mac Monitor retains menu bar, folder watcher, hotkey capture. Phase 75 complete — PDFKit 3-page brief engine with Vigil branding, Inter fonts, and all configurable sections.
+**Delivered:** Full PWA at app.vigilhub.io with thoughts dashboard, work order management, projects UI, bulk actions, AI chat, insights/therapy, brief history, and photo upload. 10 phases shipped, 17 plans. Mac Monitor retains menu bar, folder watcher, hotkey capture. Phase 78 complete — Mac CLI is now a thin client (POST /v1/brief/generate → save PDF → lpr), all CoreGraphics rendering removed, v3.0 milestone complete.
 
 ## Current Milestone: v3.0 Server-Side PDF
 
@@ -184,4 +184,4 @@ API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s 
 | HTML+CSS to PDF over CoreText port | Easier to maintain, iterate on layout; Puppeteer/similar in Node | — Pending |
 
 ---
-*Last updated: 2026-04-13 after Phase 75 PDF Generation Engine complete — v3.0 Server-Side PDF in progress*
+*Last updated: 2026-04-13 after Phase 78 Mac CLI Thin Client complete — v3.0 Server-Side PDF milestone complete*
