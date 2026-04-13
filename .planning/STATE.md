@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Gmail & CLI Evolution
-status: ready_to_plan
-stopped_at: Roadmap created — Phase 79 ready to plan
-last_updated: "2026-04-13T20:45:00.000Z"
-last_activity: 2026-04-13
+status: planning
+stopped_at: Phase 79 context gathered
+last_updated: "2026-04-13T20:33:35.421Z"
+last_activity: 2026-04-13 — Roadmap created for v3.1 (4 phases, 12 requirements mapped)
 progress:
-  total_phases: 4
+  total_phases: 10
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 All decisions logged in PROJECT.md Key Decisions table.
 
 Recent decisions affecting v3.1:
+
 - Phase 74 OAuth token row (provider='google') shared by Calendar + Gmail — no schema migration
 - gmail.readonly is restricted scope (not sensitive) — keep app in Testing/personal-use, no CASA audit
 - In-memory nonce must move to signed JWT before any Phase 79 production deploy (Railway rolling restarts kill in-memory state)
@@ -76,7 +77,7 @@ Recent decisions affecting v3.1:
 
 ## Session Continuity
 
-Last session: 2026-04-13T20:45:00.000Z
-Stopped at: Roadmap written — 4 phases, 12/12 requirements mapped
-Resume file: None
+Last session: 2026-04-13T20:33:35.414Z
+Stopped at: Phase 79 context gathered
+Resume file: .planning/phases/79-gmail-oauth-server-foundation/79-CONTEXT.md
 Next action: /gsd-plan-phase 79
