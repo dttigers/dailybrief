@@ -13,5 +13,6 @@ COPY package*.json ./
 RUN npm ci --omit=dev
 COPY --from=builder /app/dist ./dist
 COPY drizzle ./drizzle
+COPY assets ./assets
 EXPOSE 3001
 CMD ["sh", "-c", "node dist/db/migrate.js && node dist/index.js"]
