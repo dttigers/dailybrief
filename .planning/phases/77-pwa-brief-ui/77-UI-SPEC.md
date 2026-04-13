@@ -33,17 +33,15 @@ Declared values (must be multiples of 4):
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| xs | 4px | Icon gaps (`gap-1.5` = 6px nearest 4-aligned — see exception below) |
-| sm | 8px | Compact element spacing, tight list gaps (`py-2.5`) |
+| xs | 4px | Icon gaps (`gap-1` = 4px) |
+| sm | 8px | Compact element spacing, tight list gaps (`py-2.5`), back-navigation icon+label gap (`gap-2`) |
 | md | 16px | Default horizontal padding (`px-4`), section-level vertical padding (`py-6`) |
 | lg | 24px | Section heading bottom margin (`mb-6`) |
 | xl | 32px | Not used in this phase |
-| 2xl | 48px | Empty state centering vertical padding (`py-24` = 96px — see exception) |
-| 3xl | 64px | Not used in this phase |
+| 2xl | 48px | Not used in this phase |
+| 3xl | 64px | Empty state centering vertical padding (`py-16`) |
 
 Exceptions:
-- `gap-1.5` (6px) on back-navigation icon+label — matches existing BriefHistoryPage pattern, preserve as-is.
-- `py-24` (96px) on empty state centering — matches existing empty state in BriefHistoryPage, preserve as-is.
 - iframe height: 600px fixed on desktop, 400px on mobile (max-w-sm breakpoint). Not a spacing token; a fixed layout constraint for PDF viewport.
 - Touch targets for Generate and Download buttons: minimum 44px height (accessibility requirement for mobile).
 
@@ -58,7 +56,7 @@ Source: Extracted from `vigil-pwa/src/pages/BriefHistoryPage.tsx` and `vigil-pwa
 | Body | 14px (text-sm) | 400 (regular) | 1.5 (leading-relaxed) |
 | Label | 12px (text-xs) | 400 (regular) | 1.5 |
 | Heading | 18px (text-lg) | 600 (semibold) | 1.2 |
-| Section subtext | 14px (text-sm) | 500 (medium) | 1.5 |
+| Section subtext | 14px (text-sm) | 400 (regular) | 1.5 |
 
 Notes:
 - Page title ("Briefs") uses `text-lg font-semibold text-slate-100` — matches existing BriefHistoryPage `h1`.
@@ -111,7 +109,7 @@ All components are custom Tailwind — no external library. Existing components 
 Conditions:
 - No today's brief: show "Generate Today's Brief" button (prominent, full-width on mobile, auto-width on desktop)
 - Generating: replace button with spinner + "Generating your brief..." text
-- Today's brief exists: show PDF preview iframe + smaller "Regenerate" secondary button
+- Today's brief exists: show PDF preview iframe + smaller "Regenerate Brief" secondary button
 - Error: show red banner with "Brief generation failed. Try again." + retry button
 
 **GenerateBriefButton**
@@ -190,14 +188,14 @@ New `generateBrief(): Promise<Blob>` in `client.ts`:
 | Page heading | "Briefs" |
 | Primary CTA (generate) | "Generate Today's Brief" |
 | Loading state | "Generating your brief..." |
-| Today's brief exists — regenerate | "Regenerate" |
+| Today's brief exists — regenerate | "Regenerate Brief" |
 | Download button label | "Download PDF" |
 | Back navigation | "← Back to Briefs" |
 | Empty state heading | "No briefs yet" |
 | Empty state body | "Generate your first daily brief to get started." |
 | Error state — generation failed | "Brief generation failed. Try again." |
 | Error state — PDF load failed | "Failed to load brief. Try again." |
-| Error state — history load failed | existing pattern — preserve from BriefHistoryPage |
+| Error state — history load failed | Raw API error message surfaced via `e.message` (e.g., "Failed to fetch" or server-returned error string), displayed inline in the red banner: `bg-red-900/50 text-red-300 px-4 py-3 rounded-lg text-sm mb-4`. |
 | Today's brief label | "Today's Brief" (shown above iframe) |
 | Past brief detail label | formatted date string — e.g., "April 13, 2026" |
 
