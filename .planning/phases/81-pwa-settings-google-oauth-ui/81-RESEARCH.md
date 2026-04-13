@@ -468,24 +468,28 @@ return c.redirect(`${pwaUrl}/settings?google_connected=true`);
 | A6 | Account email display is OPTIONAL and gated on Phase 79 discretion outcome | D-04 | [VERIFIED: CONTEXT.md D-04 and discretion explicitly state "if stored, else generic 'Google account'"] |
 | A7 | iOS standalone PWA preserves localStorage across `window.location.href` redirect round-trips | Pitfall 3 | [ASSUMED based on general PWA spec — must be validated in manual E2E. If false, API key gets wiped on OAuth return, which would be a showstopper requiring a different auth persistence strategy.] |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does Phase 79 expose a disconnect endpoint?**
    - What we know: Phase 79 CONTEXT.md describes status + JWT nonce + scope column — no explicit disconnect route.
    - What's unclear: Whether Phase 79 silently adds one, or Phase 81 must.
    - Recommendation: **Planner MUST read the actual `vigil-core/src/routes/google-auth.ts` when Phase 81 plans start — after Phase 79 has merged. If missing, include a task in Phase 81 to add `DELETE /v1/google/tokens`.** Default assumption: Phase 81 must add it.
+   - **RESOLVED:** DELETE endpoint presence is handled defensively by Plan 02 Task 2 — idempotent add-if-missing (preflight grep determines whether to add or leave intact).
 
 2. **Install vitest + RTL or go manual-only?**
    - What we know: No test infrastructure in vigil-pwa; phase is UI-heavy with state matrix.
    - Recommendation: Install. State-matrix regressions are cheap to write and would otherwise require human re-testing on every refactor.
+   - **RESOLVED:** Install vitest + RTL + jsdom as Wave 0 devDeps (per 81-VALIDATION.md Wave 0). Plan 01 Task 1 wires config, Task 2 creates stub tests.
 
 3. **Does the `Layout` status dot need to live in a Context provider, or is a module-level cache enough?**
    - What we know: Two consumers (Layout + SettingsPage). SettingsPage must be able to trigger Layout's refetch after disconnect.
    - Recommendation: Start with a Context provider wrapping `<Layout>` — simplest React-idiomatic pattern, no third-party state lib. Context value exposes `{ status, refetch, isLoading }`.
+   - **RESOLVED:** Context provider around the authenticated Layout (chosen for shared fetch + refetch API). Plan 04 implements `GoogleStatusProvider` in App.tsx's authenticated branch.
 
 4. **Should the gear icon be visible in all tabs, or only on desktop-wide viewports?**
    - What we know: Current Layout header is single-row with "Vigil" brand + "Sign out" on the right. Adding one small icon left of Sign Out fits comfortably.
    - Recommendation: Visible at all viewports. Mobile gear icon + dot is the primary notification mechanism (per CONTEXT.md specifics).
+   - **RESOLVED:** Gear icon visible at all viewports; responsive dot size (w-2 h-2 absolute overlay — same on mobile and desktop per Plan 05).
 
 ## Sources
 
