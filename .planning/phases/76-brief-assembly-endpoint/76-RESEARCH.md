@@ -544,17 +544,19 @@ briefGenerate.get("/brief/:date", async (c) => {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Insights and therapy sections in BriefRenderData**
+1. **Insights and therapy sections in BriefRenderData** (RESOLVED)
    - What we know: `insights`, `therapyPatterns`, `therapyPrep` fields exist on `BriefRenderData`. The `insights.ts` route calls Claude with recent thoughts. The `therapy.ts` route likely has similar logic.
    - What's unclear: Whether to call Claude for insights/therapy during brief generation, or leave these fields empty in v1. The CONTEXT.md marks this as Claude's discretion.
    - Recommendation: Call Claude for insights (existing `callClaude` pattern) only if thoughts count >= 3. Skip `therapyPatterns`/`therapyPrep` in v1 (empty) to keep assembly latency bounded — these are visible only on Page 3 which is the least time-critical.
+   - **Resolution:** Call Claude for insights when `recentThoughts.length >= 3` and AI client is available. Skip `therapyPatterns`/`therapyPrep` in v1 (empty arrays). Implemented in Plan 01, Task 2.
 
-2. **30-second timeout with AI calls**
+2. **30-second timeout with AI calls** (RESOLVED)
    - What we know: Affirmation and insights each make Claude API calls with variable latency.
    - What's unclear: Combined worst-case latency of parallel Claude + sports + calendar calls.
    - Recommendation: Add a 10-second `Promise.race` timeout wrapper around each individual AI call. Return the fallback string/empty array if the timeout fires. Affirmation already has a hardcoded fallback string.
+   - **Resolution:** Apply 10-second `Promise.race` timeout per source in the `Promise.allSettled` call. Each source independently times out without blocking others. Implemented in Plan 01, Task 2.
 
 ---
 
@@ -588,10 +590,10 @@ briefGenerate.get("/brief/:date", async (c) => {
 
 | Req ID | Behavior | Test Type | Automated Command | File Exists? |
 |--------|----------|-----------|-------------------|-------------|
-| BRIEF-01 | POST /brief/generate returns Buffer with Content-Type: application/pdf | unit | `npm test` | ❌ Wave 0 |
-| BRIEF-02 | Promise.allSettled — if one source fails, brief still returns 200 | unit | `npm test` | ❌ Wave 0 |
-| BRIEF-03 | PDF is saved to filesystem; pdfFilename in briefs row matches path | unit | `npm test` | ❌ Wave 0 |
-| BRIEF-04 | GET /brief/:date returns PDF binary; 404 if file missing | unit | `npm test` | ❌ Wave 0 |
+| BRIEF-01 | POST /brief/generate returns Buffer with Content-Type: application/pdf | unit | `npm test` | No Wave 0 |
+| BRIEF-02 | Promise.allSettled — if one source fails, brief still returns 200 | unit | `npm test` | No Wave 0 |
+| BRIEF-03 | PDF is saved to filesystem; pdfFilename in briefs row matches path | unit | `npm test` | No Wave 0 |
+| BRIEF-04 | GET /brief/:date returns PDF binary; 404 if file missing | unit | `npm test` | No Wave 0 |
 
 ### Sampling Rate
 
