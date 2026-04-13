@@ -27,6 +27,7 @@ import { processAudio } from "./routes/process-audio.js";
 import { chatSessionsRouter } from "./routes/chat-sessions.js";
 import { workOrdersRouter } from "./routes/work-orders.js";
 import { workOrderStatus } from "./routes/work-order-status.js";
+import { sports } from "./routes/sports.js";
 import { testConnection, closeConnection } from "./db/connection.js";
 
 // Verify database connection at startup
@@ -88,6 +89,7 @@ app.route("/v1", chat);
 app.route("/v1", chatSessionsRouter);
 app.route("/v1", workOrdersRouter);
 app.route("/v1", workOrderStatus);
+app.route("/v1", sports);
 
 const port = Number(process.env.PORT) || 3001;
 
