@@ -583,22 +583,13 @@ node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Should `state` CSRF protection be included in the auth flow?**
-   - What we know: It's ASVS best practice for OAuth. It's absent from CONTEXT.md decisions.
-   - What's unclear: For a single-user system, the attack surface is minimal. But the implementation cost is low (random nonce + 5-minute cookie or in-memory map).
-   - Recommendation: Include it. A short-lived in-memory Map or a signed cookie is sufficient. Not worth a discussion-phase question — just implement it.
+1. **Should `state` CSRF protection be included in the auth flow?** — RESOLVED: Plan 74-01 Task 2 implements state CSRF with in-memory Map, 5-minute expiry, one-time use. Test coverage in calendar-auth.test.ts (CAL-01-state-mismatch).
 
-2. **What is the CORS_ORIGINS env var value on Railway?**
-   - What we know: CORS is configured in index.ts using `CORS_ORIGINS` env var. Auth callback comes from Google (no Origin header) — this is fine. But the redirect itself goes to PWA_URL.
-   - What's unclear: Whether `PWA_URL` is already set on Railway.
-   - Recommendation: Plan should verify `PWA_URL` is set in Railway environment before UAT.
+2. **What is the CORS_ORIGINS env var value on Railway?** — RESOLVED: Plan 74-01 user_setup section documents PWA_URL env var setup on Railway. Auth callback from Google has no Origin header (not a CORS concern).
 
-3. **Is there a Google Cloud Console project already set up?**
-   - What we know: `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are referenced in CONTEXT.md as new Railway env vars, suggesting they don't exist yet.
-   - What's unclear: Whether the user has already created a Google Cloud project with Calendar API enabled.
-   - Recommendation: Wave 0 should include a setup-prerequisites plan that documents the Google Cloud Console steps needed before implementation can be tested.
+3. **Is there a Google Cloud Console project already set up?** — RESOLVED: Plan 74-01 user_setup.dashboard_config documents all Google Cloud Console steps (create project, enable Calendar API, create OAuth 2.0 Client ID, add redirect URI, publish consent screen).
 
 ---
 
