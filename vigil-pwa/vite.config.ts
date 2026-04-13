@@ -22,7 +22,7 @@ export default defineConfig({
         name: 'Vigil Dashboard',
         short_name: 'Vigil',
         description: 'Vigil ambient AI dashboard',
-        theme_color: '#0f172a',
+        theme_color: '#0F6E56',
         background_color: '#0f172a',
         display: 'standalone',
         start_url: '/',
