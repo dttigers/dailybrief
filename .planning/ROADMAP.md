@@ -335,7 +335,14 @@ Plans:
   3. A "Disconnect" button removes the stored token and immediately updates the UI to disconnected state
   4. When the stored token covers calendar but not gmail (scope gap), the page shows "Gmail: needs re-authorization" and a re-connect button — without breaking calendar functionality
   5. The OAuth callback URL redirects cleanly back to the PWA Settings page on both desktop and iOS standalone mode
-**Plans**: TBD
+**Plans**: 6 plans
+Plans:
+- [ ] 81-01-PLAN.md — Install vitest + RTL + jsdom; create stub tests for SettingsPage / Layout / api client / useGoogleStatus (Wave 0 Nyquist)
+- [ ] 81-02-PLAN.md — vigil-core callback redirect to /settings + rename calendar_error→google_error + verify/add DELETE /v1/google/tokens and GET /v1/google/status
+- [ ] 81-03-PLAN.md — PWA api/client.ts: getGoogleStatus (404→null), disconnectGoogle, redirectToGoogleAuth
+- [ ] 81-04-PLAN.md — GoogleStatusContext provider + useGoogleStatus hook; wrap authenticated Layout in App.tsx
+- [ ] 81-05-PLAN.md — Layout.tsx gear icon + red status dot (reads shared context)
+- [ ] 81-06-PLAN.md — SettingsPage.tsx (all 4 states + callback banner + inline disconnect) + route registration
 **UI hint**: yes
 
 ### Phase 82: CLI Restructure
