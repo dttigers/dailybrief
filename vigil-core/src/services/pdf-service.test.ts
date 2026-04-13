@@ -3,14 +3,14 @@ import assert from "node:assert/strict";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createPdfRenderer } from "./pdf-service.js";
-import { DEFAULT_PDF_CONFIG, PdfConfig } from "./pdf-types.js";
+import { BriefRenderData, DEFAULT_PDF_CONFIG, PdfConfig } from "./pdf-types.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ── Sample fixture ────────────────────────────────────────────────────────────
 
-export function createSampleBriefData() {
+export function createSampleBriefData(): BriefRenderData {
   return {
     date: new Date("2026-04-13T08:00:00Z"),
     workOrders: [

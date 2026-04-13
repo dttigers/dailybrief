@@ -878,7 +878,7 @@ function drawPageThree(
 
   // Handle overflow: emit continuation pages (cap at 10 spillover pages — T-75-04)
   if (overflowIndex !== null) {
-    let spilloverIndex = overflowIndex;
+    let spilloverIndex: number | null = overflowIndex;
     let spilloverCount = 0;
     const MAX_SPILLOVER = 10;
 
@@ -1216,8 +1216,8 @@ function sortWorkOrders(
 }
 
 function sortThoughts(
-  thoughts: Array<{ taskStatus?: string; createdAt: string }>
-): typeof thoughts {
+  thoughts: BriefThought[]
+): BriefThought[] {
   const statusRank = (status?: string): number => {
     switch (status) {
       case "inProgress":
