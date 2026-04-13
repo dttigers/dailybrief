@@ -83,37 +83,37 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SPORT-01 | TBD | Pending |
-| SPORT-02 | TBD | Pending |
-| SPORT-03 | TBD | Pending |
-| SPORT-04 | TBD | Pending |
-| SPORT-05 | TBD | Pending |
-| SPORT-06 | TBD | Pending |
-| CAL-01 | TBD | Pending |
-| CAL-02 | TBD | Pending |
-| CAL-03 | TBD | Pending |
-| PDF-01 | TBD | Pending |
-| PDF-02 | TBD | Pending |
-| PDF-03 | TBD | Pending |
-| PDF-04 | TBD | Pending |
-| PDF-05 | TBD | Pending |
-| PDF-06 | TBD | Pending |
-| BRIEF-01 | TBD | Pending |
-| BRIEF-02 | TBD | Pending |
-| BRIEF-03 | TBD | Pending |
-| BRIEF-04 | TBD | Pending |
-| PWA-01 | TBD | Pending |
-| PWA-02 | TBD | Pending |
-| PWA-03 | TBD | Pending |
-| CLI-01 | TBD | Pending |
-| CLI-02 | TBD | Pending |
-| CLI-03 | TBD | Pending |
+| SPORT-01 | Phase 73 | Pending |
+| SPORT-02 | Phase 73 | Pending |
+| SPORT-03 | Phase 73 | Pending |
+| SPORT-04 | Phase 73 | Pending |
+| SPORT-05 | Phase 73 | Pending |
+| SPORT-06 | Phase 73 | Pending |
+| CAL-01 | Phase 74 | Pending |
+| CAL-02 | Phase 74 | Pending |
+| CAL-03 | Phase 74 | Pending |
+| PDF-01 | Phase 75 | Pending |
+| PDF-02 | Phase 75 | Pending |
+| PDF-03 | Phase 75 | Pending |
+| PDF-04 | Phase 75 | Pending |
+| PDF-05 | Phase 75 | Pending |
+| PDF-06 | Phase 75 | Pending |
+| BRIEF-01 | Phase 76 | Pending |
+| BRIEF-02 | Phase 76 | Pending |
+| BRIEF-03 | Phase 76 | Pending |
+| BRIEF-04 | Phase 76 | Pending |
+| PWA-01 | Phase 77 | Pending |
+| PWA-02 | Phase 77 | Pending |
+| PWA-03 | Phase 77 | Pending |
+| CLI-01 | Phase 78 | Pending |
+| CLI-02 | Phase 78 | Pending |
+| CLI-03 | Phase 78 | Pending |
 
 **Coverage:**
 - v3.0 requirements: 25 total
-- Mapped to phases: 0
-- Unmapped: 25 ⚠️
+- Mapped to phases: 25
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-12*
-*Last updated: 2026-04-12 after initial definition*
+*Last updated: 2026-04-12 — traceability updated after roadmap creation*

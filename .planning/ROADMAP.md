@@ -17,6 +17,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.3 Projects & Precision** — Phases 51-53, 55-57 (shipped 2026-04-08; Phase 54 deferred to v2.4)
 - ✅ **v2.4 Capture Without Friction** — Phases 58-62 (shipped 2026-04-10)
 - ✅ **v2.5 Dashboard Everywhere** — Phases 63-72 (shipped 2026-04-12)
+- 🚧 **v3.0 Server-Side PDF** — Phases 73-78 (in progress)
 
 ## Completed Milestones
 
@@ -77,7 +78,6 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - [x] Phase 28: Tags & Organization (3/3 plans) — completed 2026-04-04
 
 Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish)
-
 </details>
 
 <details>
@@ -168,9 +168,87 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
+## 🚧 v3.0 Server-Side PDF (In Progress)
+
+**Milestone Goal:** Move PDF generation from Mac CLI into vigil-core so any client can generate and receive daily briefs without macOS. Mac CLI becomes a thin client.
+
+### Phases
+
+- [ ] **Phase 73: Sports Proxy** — balldontlie.io routes for all 4 leagues with caching and graceful fallback
+- [ ] **Phase 74: Google Calendar Server-Side** — OAuth token storage in PostgreSQL and server-side event fetch
+- [ ] **Phase 75: PDF Generation Engine** — PDFKit 3-page brief layout matching current CoreGraphics output
+- [ ] **Phase 76: Brief Assembly Endpoint** — `/v1/brief/generate` orchestrator with partial-failure tolerance and storage
+- [ ] **Phase 77: PWA Brief UI** — generate, preview, and download brief from the PWA
+- [ ] **Phase 78: Mac CLI Thin Client** — replace local rendering with API call, preserve lpr auto-print
+
 ## Phase Details
 
-_All phase details archived to `.planning/milestones/v[X.Y]-ROADMAP.md`._
+### Phase 73: Sports Proxy
+**Goal**: The server can fetch live scores, standings, and schedules for all 4 major leagues from balldontlie.io, with caching and graceful fallback when a league is off-season or the API is unavailable
+**Depends on**: Nothing (first phase of v3.0; proves deploy pipeline)
+**Requirements**: SPORT-01, SPORT-02, SPORT-03, SPORT-04, SPORT-05, SPORT-06
+**Success Criteria** (what must be TRUE):
+  1. Calling the sports proxy endpoint returns MLB, NFL, NBA, and NHL data in a consistent shape
+  2. A second call within the cache window returns data without hitting balldontlie.io again (verified via logs)
+  3. When a league returns an empty or error response, the endpoint still returns data for the remaining leagues with a partial-success flag
+  4. The endpoint is deployed and reachable on the production Railway URL
+**Plans**: TBD
+
+### Phase 74: Google Calendar Server-Side
+**Goal**: Users can authorize Google Calendar from the PWA, and the server stores, refreshes, and uses OAuth tokens to fetch today's events — no Mac app required
+**Depends on**: Phase 73
+**Requirements**: CAL-01, CAL-02, CAL-03
+**Success Criteria** (what must be TRUE):
+  1. User clicks "Connect Google Calendar" in the PWA and completes the OAuth flow without leaving the browser
+  2. After authorization, the server stores an encrypted refresh token in PostgreSQL
+  3. The server fetches today's calendar events and returns them via API without prompting the user again
+  4. When the access token expires, the server silently refreshes it using the stored refresh token
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 75: PDF Generation Engine
+**Goal**: The server renders a faithful 3-page daily brief PDF using PDFKit — matching the existing CoreGraphics layout including all configurable options — deployable on Railway without system dependencies
+**Depends on**: Phase 73
+**Requirements**: PDF-01, PDF-02, PDF-03, PDF-04, PDF-05, PDF-06
+**Success Criteria** (what must be TRUE):
+  1. Calling the PDF render function with sample data returns a valid PDF binary that opens correctly in Preview
+  2. Page 1 contains work orders with status checkboxes and AI priority, Vigil task thoughts, calendar events, and a notes section
+  3. Page 2 contains sports scores and standings for all configured leagues, an AI-generated affirmation, and a notes section
+  4. Page 3 contains captured thoughts paginated with AI insights and therapy prep
+  5. Paper size, margins, font scale, and section toggles from the existing PDFConfig are all respected in the output
+**Plans**: TBD
+
+### Phase 76: Brief Assembly Endpoint
+**Goal**: `/v1/brief/generate` orchestrates all data sources concurrently, tolerates partial failures, returns a PDF binary, and saves the generated brief server-side for later retrieval
+**Depends on**: Phase 74, Phase 75
+**Requirements**: BRIEF-01, BRIEF-02, BRIEF-03, BRIEF-04
+**Success Criteria** (what must be TRUE):
+  1. Calling `POST /v1/brief/generate` returns a PDF binary response with the correct content-type header
+  2. If one data source (e.g. sports or calendar) fails, the endpoint still returns a complete PDF — missing sections show a graceful placeholder
+  3. Each generated PDF is saved server-side and assigned a storage_key returned in the response
+  4. Calling `GET /v1/brief/:storage_key` returns the same PDF that was generated
+**Plans**: TBD
+
+### Phase 77: PWA Brief UI
+**Goal**: Users can generate, preview, and download their daily brief from the PWA without touching the Mac
+**Depends on**: Phase 76
+**Requirements**: PWA-01, PWA-02, PWA-03
+**Success Criteria** (what must be TRUE):
+  1. The PWA has a "Generate Brief" button that calls `/v1/brief/generate` and shows a loading state while it runs
+  2. After generation, the PDF renders inline in the PWA so the user can read it without downloading
+  3. A download button saves the PDF to the user's device with a sensible filename
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 78: Mac CLI Thin Client
+**Goal**: The Mac CLI fetches the brief PDF from the server instead of rendering it locally — auto-print is preserved, and all CoreGraphics rendering code is removed
+**Depends on**: Phase 76
+**Requirements**: CLI-01, CLI-02, CLI-03
+**Success Criteria** (what must be TRUE):
+  1. Running the Mac CLI brief command results in a PDF fetched from `/v1/brief/generate` written to disk — no local PDF rendering occurs
+  2. BriefScheduler's scheduled auto-print still fires at the configured time, calling the API and piping the result to `lpr`
+  3. The CoreGraphics/PDFLayout rendering code is absent from the Mac CLI codebase (no dead code left behind)
+**Plans**: TBD
 
 ## Progress
 
@@ -244,6 +322,16 @@ _All phase details archived to `.planning/milestones/v[X.Y]-ROADMAP.md`._
 | 66. Work Orders Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
 | 67. Projects UI | v2.5 | 1/1 | Complete    | 2026-04-12 |
 | 68. Bulk Actions & Filters | v2.5 | 2/2 | Complete    | 2026-04-12 |
+| 69. AI Chat | v2.5 | 1/1 | Complete    | 2026-04-12 |
+| 70. Insights & Therapy | v2.5 | 2/2 | Complete    | 2026-04-12 |
+| 71. Brief History & Photo Upload | v2.5 | 2/2 | Complete    | 2026-04-12 |
+| 72. README | v2.5 | 1/1 | Complete    | 2026-04-12 |
+| 73. Sports Proxy | v3.0 | 0/TBD | Not started | - |
+| 74. Google Calendar Server-Side | v3.0 | 0/TBD | Not started | - |
+| 75. PDF Generation Engine | v3.0 | 0/TBD | Not started | - |
+| 76. Brief Assembly Endpoint | v3.0 | 0/TBD | Not started | - |
+| 77. PWA Brief UI | v3.0 | 0/TBD | Not started | - |
+| 78. Mac CLI Thin Client | v3.0 | 0/TBD | Not started | - |
 
 ## Backlog
 

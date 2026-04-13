@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v3.0
 milestone_name: Server-Side PDF
 status: executing
-stopped_at: v3.0 milestone started — defining requirements
+stopped_at: Roadmap created — ready to plan Phase 73
 last_updated: "2026-04-12"
 last_activity: 2026-04-12
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-12)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Defining requirements for v3.0 Server-Side PDF
+**Current focus:** v3.0 Server-Side PDF — Phase 73 (Sports Proxy) is next
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 73 — Sports Proxy (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-12 — Milestone v3.0 started
+Status: Roadmap defined, ready to plan
+Last activity: 2026-04-12 — Roadmap created for v3.0
 
 ## Performance Metrics
 
@@ -63,22 +63,40 @@ All decisions logged in PROJECT.md Key Decisions table.
 Recent decisions affecting v3.0:
 
 - Apple Reminders dropped — Vigil task thoughts replace the todo section on Page 1
-- PDF rendering moves from Mac CLI (CoreGraphics) to vigil-core (HTML+CSS to PDF)
+- PDF rendering moves from Mac CLI (CoreGraphics) to vigil-core — using PDFKit 0.18 (NOT Puppeteer, disqualified on Railway due to pthread/D-Bus launch failures)
+- Sports API is balldontlie.io (NOT ESPN — undocumented ESPN API replaced by documented, authenticated balldontlie.io covering all 4 leagues)
+- Google OAuth tokens must use `access_type: 'offline'` AND `prompt: 'consent'`; consent screen must be published to Production (Testing tokens expire in 7 days)
+- PDF storage uses storage_key text column (NOT bytea in PostgreSQL)
 - Mac CLI becomes thin client: fetch PDF from API, pipe to lpr
 - Auto-print workflow preserved — BriefScheduler calls API instead of rendering locally
+- Email delivery deferred to v3.1+
+
+### Phase Ordering Rationale
+
+1. Phase 73 — Sports Proxy: no dependencies, proves deploy pipeline cheaply
+2. Phase 74 — Google Calendar: highest complexity (OAuth), must be isolated and proven
+3. Phase 75 — PDF Engine: core risk, validate PDFKit on Railway before full orchestrator
+4. Phase 76 — Brief Assembly: wire proven components together with Promise.allSettled
+5. Phase 77 — PWA Brief UI: consume the assembly endpoint from the browser
+6. Phase 78 — Mac CLI Thin Client: replace local rendering, preserve lpr
+
+Note: Phase 74 and Phase 75 can execute in parallel — no dependency between them.
 
 ### Pending Todos
 
-None.
+- Verify Railway "Always On" is enabled before Phase 76 UAT (service sleep kills first brief request)
+- Port 270x540pt traveler's notebook layout constants from Swift to PDFKit during Phase 75
+- Test ESPN off-season behavior (empty events arrays) during Phase 73 — confirmed: use balldontlie.io
 
 ### Blockers/Concerns
 
 - G2 hardware testing — plugin validated in simulator only, awaiting physical Even G2 glasses
 - ServiceNow API token — blocks future WO-F01 (deferred to future milestone)
-- Google Calendar server-side OAuth — need to design token storage/refresh for server context
+- Railway Buckets availability — if not available on current plan, fallback to volume mount for PDF storage
 
 ## Session Continuity
 
 Last session: 2026-04-12
-Stopped at: v3.0 milestone started — defining requirements
+Stopped at: Roadmap created for v3.0 — 6 phases, 25 requirements mapped
 Resume file: None
+Next action: `/gsd-plan-phase 73`
