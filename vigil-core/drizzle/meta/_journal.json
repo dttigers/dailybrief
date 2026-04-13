@@ -50,6 +50,13 @@
       "when": 1776029649746,
       "tag": "0006_awesome_lockjaw",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776049076889,
+      "tag": "0007_melted_silhouette",
+      "breakpoints": true
     }
   ]
 }

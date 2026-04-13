@@ -28,6 +28,7 @@ import { chatSessionsRouter } from "./routes/chat-sessions.js";
 import { workOrdersRouter } from "./routes/work-orders.js";
 import { workOrderStatus } from "./routes/work-order-status.js";
 import { sports } from "./routes/sports.js";
+import { calendarAuth } from "./routes/calendar-auth.js";
 import { testConnection, closeConnection } from "./db/connection.js";
 
 // Verify database connection at startup
@@ -61,9 +62,13 @@ app.use("*", rateLimiter);
 // Health route — no auth required (monitoring)
 app.route("/v1", health);
 
+// Calendar OAuth routes — no auth required (browser redirect flow)
+app.route("/v1", calendarAuth);
+
 // Auth middleware — all /v1/* routes except /v1/health require a valid API key
 app.use("/v1/*", async (c, next) => {
   if (c.req.path === "/v1/health") return next();
+  if (c.req.path.startsWith("/v1/auth/google")) return next();
   return bearerAuth(c, next);
 });
 
