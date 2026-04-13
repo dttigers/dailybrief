@@ -289,7 +289,10 @@ Plans:
   2. After a Railway rolling deploy, the OAuth callback succeeds — the state parameter validates correctly using the JWT-based nonce (no in-memory map dependency)
   3. `GET /v1/google/status` returns a structured response showing per-scope authorization state (e.g., `{ calendar: 'connected', gmail: 'needs_auth' }`) so the PWA can prompt re-connect when only gmail scope is missing
   4. Calling the Gmail API with the stored token returns data — not a 403 insufficientPermissions error
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 79-01-PLAN.md — Install jose, add scopes column, replace calendar-auth with JWT-based google-auth (dual scopes)
+- [ ] 79-02-PLAN.md — GET /v1/google/status endpoint (per-scope authorization state)
 **UI hint**: no
 
 ### Phase 80: Gmail Server Service & Work Order Extraction
@@ -412,7 +415,7 @@ Plans:
 | 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete   | 2026-04-13 |
 | 77. PWA Brief UI | v3.0 | 1/1 | Complete    | 2026-04-13 |
 | 78. Mac CLI Thin Client | v3.0 | 2/2 | Complete    | 2026-04-13 |
-| 79. Gmail OAuth Server Foundation | v3.1 | 0/TBD | Not started | - |
+| 79. Gmail OAuth Server Foundation | v3.1 | 0/2 | Not started | - |
 | 80. Gmail Server Service & Work Order Extraction | v3.1 | 0/TBD | Not started | - |
 | 81. PWA Settings & Google OAuth UI | v3.1 | 0/TBD | Not started | - |
 | 82. CLI Restructure | v3.1 | 0/TBD | Not started | - |
