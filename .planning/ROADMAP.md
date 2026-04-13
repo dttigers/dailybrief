@@ -17,7 +17,8 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.3 Projects & Precision** — Phases 51-53, 55-57 (shipped 2026-04-08; Phase 54 deferred to v2.4)
 - ✅ **v2.4 Capture Without Friction** — Phases 58-62 (shipped 2026-04-10)
 - ✅ **v2.5 Dashboard Everywhere** — Phases 63-72 (shipped 2026-04-12)
-- 🚧 **v3.0 Server-Side PDF** — Phases 73-78 (in progress)
+- ✅ **v3.0 Server-Side PDF** — Phases 73-78 (shipped 2026-04-13)
+- 🚧 **v3.1 Gmail & CLI Evolution** — Phases 79-82 (in progress)
 
 ## Completed Milestones
 
@@ -168,18 +169,28 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
-## 🚧 v3.0 Server-Side PDF (In Progress)
+<details>
+<summary>✅ v3.0 Server-Side PDF (Phases 73-78) — SHIPPED 2026-04-13</summary>
 
-**Milestone Goal:** Move PDF generation from Mac CLI into vigil-core so any client can generate and receive daily briefs without macOS. Mac CLI becomes a thin client.
+- [x] Phase 73: Sports Proxy (2/2 plans) — completed 2026-04-13
+- [x] Phase 74: Google Calendar Server-Side (2/2 plans) — completed 2026-04-13
+- [x] Phase 75: PDF Generation Engine (2/2 plans) — completed 2026-04-13
+- [x] Phase 76: Brief Assembly Endpoint (2/2 plans) — completed 2026-04-13
+- [x] Phase 77: PWA Brief UI (1/1 plan) — completed 2026-04-13
+- [x] Phase 78: Mac CLI Thin Client (2/2 plans) — completed 2026-04-13
+
+</details>
+
+## 🚧 v3.1 Gmail & CLI Evolution (In Progress)
+
+**Milestone Goal:** Add Gmail reading to vigil-core via Google OAuth integration (reusing Phase 74 token infrastructure), and restructure the Mac CLI to match the Vigil CLI spec (capture, triage, doctor, setup; retire work order commands).
 
 ### Phases
 
-- [x] **Phase 73: Sports Proxy** — balldontlie.io routes for all 4 leagues with caching and graceful fallback (completed 2026-04-13)
-- [x] **Phase 74: Google Calendar Server-Side** — OAuth token storage in PostgreSQL and server-side event fetch (completed 2026-04-13)
-- [x] **Phase 75: PDF Generation Engine** — PDFKit 3-page brief layout matching current CoreGraphics output (completed 2026-04-13)
-- [x] **Phase 76: Brief Assembly Endpoint** — `/v1/brief/generate` orchestrator with partial-failure tolerance and storage (completed 2026-04-13)
-- [x] **Phase 77: PWA Brief UI** — generate, preview, and download brief from the PWA (completed 2026-04-13)
-- [x] **Phase 78: Mac CLI Thin Client** — replace local rendering with API call, preserve lpr auto-print (completed 2026-04-13)
+- [ ] **Phase 79: Gmail OAuth Server Foundation** — Expand OAuth scope to gmail.readonly, fix JWT nonce, add scope-status endpoint
+- [ ] **Phase 80: Gmail Server Service & Work Order Extraction** — gmail-service.ts, inbox/search/extract routes deployed to Railway
+- [ ] **Phase 81: PWA Settings & Google OAuth UI** — Settings/Integrations page with connect/disconnect, scope status display, OAuth callback handling
+- [ ] **Phase 82: CLI Restructure** — capture/triage/doctor/setup subcommands; retire complete/uncomplete/list-completed; plist updated atomically
 
 ## Phase Details
 
@@ -269,6 +280,55 @@ Plans:
 - [x] 78-01-PLAN.md — Rewrite Generate command as thin client + add postRawData to VigilAPIClient (CLI-01, CLI-02)
 - [x] 78-02-PLAN.md — Delete CoreGraphics PDF rendering code and generate-only services (CLI-03)
 
+### Phase 79: Gmail OAuth Server Foundation
+**Goal**: The server can authorize Gmail API access using the existing Google OAuth infrastructure — scope expanded to include gmail.readonly, CSRF nonce survives Railway rolling deploys, and the server can report per-scope authorization status to any client
+**Depends on**: Phase 78 (continues v3.1 work; OAuth infrastructure from Phase 74)
+**Requirements**: OAUTH-04
+**Success Criteria** (what must be TRUE):
+  1. The OAuth authorization URL includes both `calendar.readonly` and `gmail.readonly` scopes
+  2. After a Railway rolling deploy, the OAuth callback succeeds — the state parameter validates correctly using the JWT-based nonce (no in-memory map dependency)
+  3. `GET /v1/google/status` returns a structured response showing per-scope authorization state (e.g., `{ calendar: 'connected', gmail: 'needs_auth' }`) so the PWA can prompt re-connect when only gmail scope is missing
+  4. Calling the Gmail API with the stored token returns data — not a 403 insufficientPermissions error
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 80: Gmail Server Service & Work Order Extraction
+**Goal**: vigil-core exposes Gmail inbox list, thread read, search, and work order extraction endpoints — all using the existing oauthTokens row, mirroring the calendar-service.ts pattern
+**Depends on**: Phase 79
+**Requirements**: GWO-01, GWO-02, GWO-03
+**Success Criteria** (what must be TRUE):
+  1. `GET /v1/gmail/messages` returns a list of recent messages with sender, subject, snippet, and date — fetched with `format: metadata` to avoid N+1 quota burn
+  2. `GET /v1/gmail/messages/:threadId` returns the full thread content
+  3. `GET /v1/gmail/search?q=...` returns messages matching the query using Gmail's native `q:` parameter
+  4. `POST /v1/gmail/extract-work-orders` identifies work order candidate emails using configurable sender/subject patterns, extracts structured work orders, and stores them in the existing workOrders table
+  5. Triggering extraction a second time for already-imported work orders does not create duplicates
+**Plans**: TBD
+
+### Phase 81: PWA Settings & Google OAuth UI
+**Goal**: Users can connect and disconnect their Google account from the PWA Settings page, see per-scope authorization status, and trigger OAuth re-authorization when gmail scope is missing
+**Depends on**: Phase 79
+**Requirements**: OAUTH-01, OAUTH-02, OAUTH-03
+**Success Criteria** (what must be TRUE):
+  1. The PWA Settings/Integrations page shows a "Connect Google" button when no token is stored
+  2. After clicking connect and completing the OAuth flow, the page shows "Connected" with the authorized scopes listed
+  3. A "Disconnect" button removes the stored token and immediately updates the UI to disconnected state
+  4. When the stored token covers calendar but not gmail (scope gap), the page shows "Gmail: needs re-authorization" and a re-connect button — without breaking calendar functionality
+  5. The OAuth callback URL redirects cleanly back to the PWA Settings page on both desktop and iOS standalone mode
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 82: CLI Restructure
+**Goal**: The Mac CLI follows the Vigil CLI spec — capture, triage, doctor, and setup are first-class subcommands; work order management commands are retired; the LaunchAgent plist is updated atomically in the same commit
+**Depends on**: Phase 78 (continues from v3.0 CLI thin client)
+**Requirements**: CLI-04, CLI-05, CLI-06, CLI-07, CLI-08
+**Success Criteria** (what must be TRUE):
+  1. `dailybrief capture "text"` posts a thought to vigil-core and reports back the AI triage result — `--category`, `--no-triage`, and `--source` flags all work
+  2. `dailybrief triage` re-triages uncategorized thoughts in batch — `--limit` and `--force` flags work; progress is printed to stdout
+  3. `dailybrief doctor` prints a pass/fail status for each check: VIGIL_API_KEY present, vigil-core reachable, LaunchAgent plist exists and loaded, plist points to correct binary
+  4. `dailybrief setup` runs the interactive setup flow — the old `--setup` flag is removed or shimmed with a deprecation warning
+  5. Running `dailybrief complete`, `dailybrief uncomplete`, or `dailybrief list-completed` prints a "use the dashboard" message and exits cleanly — no silent failure
+  6. The LaunchAgent plist invokes only commands that still exist after the restructure — verified and committed in the same change
+**Plans**: TBD
 
 ## Progress
 
@@ -352,6 +412,10 @@ Plans:
 | 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete   | 2026-04-13 |
 | 77. PWA Brief UI | v3.0 | 1/1 | Complete    | 2026-04-13 |
 | 78. Mac CLI Thin Client | v3.0 | 2/2 | Complete    | 2026-04-13 |
+| 79. Gmail OAuth Server Foundation | v3.1 | 0/TBD | Not started | - |
+| 80. Gmail Server Service & Work Order Extraction | v3.1 | 0/TBD | Not started | - |
+| 81. PWA Settings & Google OAuth UI | v3.1 | 0/TBD | Not started | - |
+| 82. CLI Restructure | v3.1 | 0/TBD | Not started | - |
 
 ## Backlog
 

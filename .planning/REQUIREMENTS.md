@@ -46,15 +46,15 @@ Requirements for this milestone. Each maps to roadmap phases.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| OAUTH-01 | — | Pending |
-| OAUTH-02 | — | Pending |
-| OAUTH-03 | — | Pending |
-| OAUTH-04 | — | Pending |
-| GWO-01 | — | Pending |
-| GWO-02 | — | Pending |
-| GWO-03 | — | Pending |
-| CLI-04 | — | Pending |
-| CLI-05 | — | Pending |
-| CLI-06 | — | Pending |
-| CLI-07 | — | Pending |
-| CLI-08 | — | Pending |
+| OAUTH-04 | Phase 79 | Pending |
+| GWO-01 | Phase 80 | Pending |
+| GWO-02 | Phase 80 | Pending |
+| GWO-03 | Phase 80 | Pending |
+| OAUTH-01 | Phase 81 | Pending |
+| OAUTH-02 | Phase 81 | Pending |
+| OAUTH-03 | Phase 81 | Pending |
+| CLI-04 | Phase 82 | Pending |
+| CLI-05 | Phase 82 | Pending |
+| CLI-06 | Phase 82 | Pending |
+| CLI-07 | Phase 82 | Pending |
+| CLI-08 | Phase 82 | Pending |

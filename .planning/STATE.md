@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v3.1
 milestone_name: Gmail & CLI Evolution
-status: defining
-stopped_at: Defining requirements
-last_updated: "2026-04-13T20:30:00.000Z"
+status: ready_to_plan
+stopped_at: Roadmap created — Phase 79 ready to plan
+last_updated: "2026-04-13T20:45:00.000Z"
 last_activity: 2026-04-13
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-13)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Milestone v3.1 — Gmail & CLI Evolution (defining requirements)
+**Current focus:** Milestone v3.1 — Phase 79: Gmail OAuth Server Foundation
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-13 — Milestone v3.1 started
+Phase: 79 of 82 (Gmail OAuth Server Foundation)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-04-13 — Roadmap created for v3.1 (4 phases, 12 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -42,18 +44,9 @@ Last activity: 2026-04-13 — Milestone v3.1 started
 
 | Milestone | Phases | Plans | Timeline |
 |-----------|--------|-------|----------|
-| v1.0 MVP | 1-7 | 17 | 3 days |
-| v1.1 Always On | 8-13 | 16 | 1 day |
-| v1.2 Daily Driver | 14-18 | 14 | 1 day |
-| v1.3 Stability & Smarts | 19-23 | 7 | 1 day |
-| v1.4 Intelligence & Org | 24-28 | 11 | 1 day |
-| v2.0 Vigil Platform | 29-36 | 22 | 1 day |
-| v2.1 Server Deployment | 37-44 | 13 | 1 day |
-| v2.2 Polish & Power | 45-50 | 12 | 1 day |
-| v2.3 Projects & Precision | 51-57 | 14 | ~19h |
-| v2.4 Capture Without Friction | 58-62 | 9 | 2 days |
-| v2.5 Dashboard Everywhere | 63-72 | 17 | 2 days |
+| v1.0–v2.5 | 1-72 | ~165 | 12 days |
 | v3.0 Server-Side PDF | 73-78 | 11 | 1 day |
+| v3.1 Gmail & CLI | 79-82 | TBD | - |
 
 ## Accumulated Context
 
@@ -62,28 +55,28 @@ Last activity: 2026-04-13 — Milestone v3.1 started
 All decisions logged in PROJECT.md Key Decisions table.
 
 Recent decisions affecting v3.1:
-
-- Google OAuth infrastructure exists from Phase 74 — reuse token storage/refresh, add gmail.readonly scope
-- Google OAuth consent screen must be in Production mode (Testing tokens expire in 7 days)
-- Google OAuth requires `access_type: 'offline'` AND `prompt: 'consent'`
-- CLI restructure follows Vigil CLI Structure PDF spec (April 2026)
-- Email delivery deferred from v3.0 — not in v3.1 scope either (future)
-- Work order complete/uncomplete/list-completed moving from CLI to dashboard-only
+- Phase 74 OAuth token row (provider='google') shared by Calendar + Gmail — no schema migration
+- gmail.readonly is restricted scope (not sensitive) — keep app in Testing/personal-use, no CASA audit
+- In-memory nonce must move to signed JWT before any Phase 79 production deploy (Railway rolling restarts kill in-memory state)
+- Existing Calendar refresh token will 403 on Gmail calls until user re-authorizes — Phase 79 must detect scope gap
+- CLI plist must be audited and updated atomically with command retirement in Phase 82
 
 ### Pending Todos
 
+- Verify `GOOGLE_OAUTH_STATE_SECRET` env var exists in Railway before Phase 79 deploy
+- Confirm WO sender domain allowlist value (required for Phase 80 extraction)
 - Verify Railway "Always On" is enabled (service sleep kills first request)
 - G2 hardware testing still pending
 
 ### Blockers/Concerns
 
-- G2 hardware testing — plugin validated in simulator only, awaiting physical Even G2 glasses
-- ServiceNow API token — blocks future WO integration (deferred)
-- Google OAuth consent screen approval — may need to add gmail.readonly scope and re-verify with Google
+- Google OAuth consent screen may need re-verification after adding gmail.readonly scope
+- `jsonwebtoken` availability in vigil-core — confirm before writing JWT nonce implementation in Phase 79
+- iOS PWA OAuth full-page redirect behavior — requires real device test during Phase 81
 
 ## Session Continuity
 
-Last session: 2026-04-13T20:30:00.000Z
-Stopped at: Defining requirements for v3.1
+Last session: 2026-04-13T20:45:00.000Z
+Stopped at: Roadmap written — 4 phases, 12/12 requirements mapped
 Resume file: None
-Next action: Define requirements and create roadmap
+Next action: /gsd-plan-phase 79
