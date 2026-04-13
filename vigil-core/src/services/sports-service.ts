@@ -266,25 +266,30 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
     const gamesUrl = `${BASE_URLS.mlb}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.mlb}/standings?season=2026`;
 
-    const [gamesRes, standingsRes] = await Promise.all([
+    const [gamesRes, standingsRes] = await Promise.allSettled([
       fetchJSON<{ data: BDLMLBGame[] }>(gamesUrl),
       fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
     ]);
 
-    if (gamesRes.data.length === 0 && standingsRes.data.length === 0) {
+    const games = gamesRes.status === "fulfilled" ? gamesRes.value.data : [];
+    const standingsData = standingsRes.status === "fulfilled" ? standingsRes.value.data : [];
+
+    if (games.length === 0 && standingsData.length === 0) {
+      // If games failed (not just empty), report error rather than off_season
+      if (gamesRes.status === "rejected") {
+        throw gamesRes.reason;
+      }
       return { status: "off_season" };
     }
 
-    // Find team name for result computation — use home_team_name from any game or from standings
-    const configuredTeamEntry = standingsRes.data[0]?.team?.full_name ?? "";
+    const configuredTeamEntry = standingsData[0]?.team?.full_name ?? "";
 
-    // Find most recent final game for configured team
-    const finalGames = gamesRes.data.filter((g) => isFinalStatus("mlb", g.status));
+    const finalGames = games.filter((g) => isFinalStatus("mlb", g.status));
     const recentGame = finalGames.length > 0
       ? normalizeMLBGame(finalGames[finalGames.length - 1], configuredTeamEntry)
       : null;
 
-    const standings = normalizeStandings(standingsRes.data);
+    const standings = normalizeStandings(standingsData);
 
     return {
       status: "ok",
@@ -302,23 +307,29 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
     const gamesUrl = `${BASE_URLS.nfl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nfl}/standings?season=2026`;
 
-    const [gamesRes, standingsRes] = await Promise.all([
+    const [gamesRes, standingsRes] = await Promise.allSettled([
       fetchJSON<{ data: BDLNFLGame[] }>(gamesUrl),
       fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
     ]);
 
-    if (gamesRes.data.length === 0 && standingsRes.data.length === 0) {
+    const games = gamesRes.status === "fulfilled" ? gamesRes.value.data : [];
+    const standingsData = standingsRes.status === "fulfilled" ? standingsRes.value.data : [];
+
+    if (games.length === 0 && standingsData.length === 0) {
+      if (gamesRes.status === "rejected") {
+        throw gamesRes.reason;
+      }
       return { status: "off_season" };
     }
 
-    const configuredTeamEntry = standingsRes.data[0]?.team?.full_name ?? "";
+    const configuredTeamEntry = standingsData[0]?.team?.full_name ?? "";
 
-    const finalGames = gamesRes.data.filter((g) => isFinalStatus("nfl", g.status));
+    const finalGames = games.filter((g) => isFinalStatus("nfl", g.status));
     const recentGame = finalGames.length > 0
       ? normalizeNFLGame(finalGames[finalGames.length - 1], configuredTeamEntry)
       : null;
 
-    const standings = normalizeStandings(standingsRes.data);
+    const standings = normalizeStandings(standingsData);
 
     return {
       status: "ok",
@@ -336,23 +347,29 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
     const gamesUrl = `${BASE_URLS.nba}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nba}/standings?season=2026`;
 
-    const [gamesRes, standingsRes] = await Promise.all([
+    const [gamesRes, standingsRes] = await Promise.allSettled([
       fetchJSON<{ data: BDLNBAGame[] }>(gamesUrl),
       fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
     ]);
 
-    if (gamesRes.data.length === 0 && standingsRes.data.length === 0) {
+    const games = gamesRes.status === "fulfilled" ? gamesRes.value.data : [];
+    const standingsData = standingsRes.status === "fulfilled" ? standingsRes.value.data : [];
+
+    if (games.length === 0 && standingsData.length === 0) {
+      if (gamesRes.status === "rejected") {
+        throw gamesRes.reason;
+      }
       return { status: "off_season" };
     }
 
-    const configuredTeamEntry = standingsRes.data[0]?.team?.full_name ?? "";
+    const configuredTeamEntry = standingsData[0]?.team?.full_name ?? "";
 
-    const finalGames = gamesRes.data.filter((g) => isFinalStatus("nba", g.status));
+    const finalGames = games.filter((g) => isFinalStatus("nba", g.status));
     const recentGame = finalGames.length > 0
       ? normalizeNBAGame(finalGames[finalGames.length - 1], configuredTeamEntry)
       : null;
 
-    const standings = normalizeStandings(standingsRes.data);
+    const standings = normalizeStandings(standingsData);
 
     return {
       status: "ok",
@@ -370,23 +387,29 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
     const gamesUrl = `${BASE_URLS.nhl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nhl}/standings?season=2026`;
 
-    const [gamesRes, standingsRes] = await Promise.all([
+    const [gamesRes, standingsRes] = await Promise.allSettled([
       fetchJSON<{ data: BDLNHLGame[] }>(gamesUrl),
       fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
     ]);
 
-    if (gamesRes.data.length === 0 && standingsRes.data.length === 0) {
+    const games = gamesRes.status === "fulfilled" ? gamesRes.value.data : [];
+    const standingsData = standingsRes.status === "fulfilled" ? standingsRes.value.data : [];
+
+    if (games.length === 0 && standingsData.length === 0) {
+      if (gamesRes.status === "rejected") {
+        throw gamesRes.reason;
+      }
       return { status: "off_season" };
     }
 
-    const configuredTeamEntry = standingsRes.data[0]?.team?.full_name ?? "";
+    const configuredTeamEntry = standingsData[0]?.team?.full_name ?? "";
 
-    const finalGames = gamesRes.data.filter((g) => isFinalStatus("nhl", g.status));
+    const finalGames = games.filter((g) => isFinalStatus("nhl", g.status));
     const recentGame = finalGames.length > 0
       ? normalizeNHLGame(finalGames[finalGames.length - 1], configuredTeamEntry)
       : null;
 
-    const standings = normalizeStandings(standingsRes.data);
+    const standings = normalizeStandings(standingsData);
 
     return {
       status: "ok",
