@@ -121,7 +121,8 @@ describe("assembleAndRender orchestration", () => {
 
     assert.ok(result.buffer.length > 0);
     assert.ok(capturedData);
-    assert.deepEqual(capturedData!.sports, []);
+    const data2 = capturedData as BriefRenderData;
+    assert.deepEqual(data2.sports, []);
   });
 
   test("Test 3: calendar needs_reauth — still succeeds with calendarEvents = []", async () => {
@@ -140,7 +141,8 @@ describe("assembleAndRender orchestration", () => {
 
     assert.ok(result.buffer.length > 0);
     assert.ok(capturedData);
-    assert.deepEqual(capturedData!.calendarEvents, []);
+    const data3 = capturedData as BriefRenderData;
+    assert.deepEqual(data3.calendarEvents, []);
   });
 
   test("Test 4: all external sources fail — still returns valid buffer", async () => {
@@ -177,9 +179,10 @@ describe("assembleAndRender orchestration", () => {
 
     assert.ok(result.buffer.length > 0);
     assert.ok(capturedData);
-    assert.deepEqual(capturedData!.sports, []);
-    assert.deepEqual(capturedData!.calendarEvents, []);
-    assert.equal(capturedData!.affirmation, "You are capable, you are enough, and today is full of possibility.");
+    const data7 = capturedData as BriefRenderData;
+    assert.deepEqual(data7.sports, []);
+    assert.deepEqual(data7.calendarEvents, []);
+    assert.equal(data7.affirmation, "You are capable, you are enough, and today is full of possibility.");
   });
 
   test("Test 8: per-source timeout — slow source does not block others", async () => {
@@ -205,10 +208,11 @@ describe("assembleAndRender orchestration", () => {
 
     assert.ok(result.buffer.length > 0);
     assert.ok(capturedData);
+    const data8 = capturedData as BriefRenderData;
     // Sports should have timed out, resulting in empty
-    assert.deepEqual(capturedData!.sports, []);
+    assert.deepEqual(data8.sports, []);
     // Calendar should still have worked
-    assert.ok(capturedData!.calendarEvents.length > 0);
+    assert.ok(data8.calendarEvents.length > 0);
   });
 
   test("Test 9: filesystem write — PDF buffer written to BRIEFS_DIR", async () => {
@@ -277,8 +281,9 @@ describe("assembleAndRender orchestration", () => {
 
     assert.ok(result.buffer.length > 0);
     assert.ok(capturedData);
+    const data10 = capturedData as BriefRenderData;
     // When work orders exist and AI is available, prioritization should be populated
-    assert.ok(capturedData!.workOrderPriorityOrder !== undefined || capturedData!.workOrders.length >= 0,
+    assert.ok(data10.workOrderPriorityOrder !== undefined || data10.workOrders.length >= 0,
       "workOrderPriorityOrder should be set when work orders exist and AI available");
   });
 });
