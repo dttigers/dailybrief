@@ -108,12 +108,17 @@ public actor VigilAPIClient {
     ///   - query: Optional query parameters.
     /// - Returns: Decoded response of type `T`.
     public func get<T: Decodable>(path: String, query: [String: String] = [:]) async throws -> T {
-        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        guard var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
+            throw VigilAPIError.networkError(URLError(.badURL))
+        }
         if !query.isEmpty {
             components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
 
-        var request = URLRequest(url: components.url!)
+        guard let url = components.url else {
+            throw VigilAPIError.networkError(URLError(.badURL))
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         applyHeaders(&request)
 
@@ -145,11 +150,16 @@ public actor VigilAPIClient {
     ///   - body: Encodable request body.
     /// - Returns: Decoded response of type `T`.
     public func post<T: Decodable, B: Encodable>(path: String, query: [String: String], body: B) async throws -> T {
-        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        guard var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
+            throw VigilAPIError.networkError(URLError(.badURL))
+        }
         if !query.isEmpty {
             components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
-        var request = URLRequest(url: components.url!)
+        guard let url = components.url else {
+            throw VigilAPIError.networkError(URLError(.badURL))
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         applyHeaders(&request)
@@ -232,12 +242,17 @@ public actor VigilAPIClient {
     ///   - accept: Accept header value (e.g., `text/csv`). Defaults to `application/json`.
     /// - Returns: Raw response Data.
     public func getRawData(path: String, query: [String: String] = [:], accept: String = "application/json") async throws -> Data {
-        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
+        guard var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
+            throw VigilAPIError.networkError(URLError(.badURL))
+        }
         if !query.isEmpty {
             components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
 
-        var request = URLRequest(url: components.url!)
+        guard let url = components.url else {
+            throw VigilAPIError.networkError(URLError(.badURL))
+        }
+        var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue(accept, forHTTPHeaderField: "Accept")
         if let apiKey, !apiKey.isEmpty {
