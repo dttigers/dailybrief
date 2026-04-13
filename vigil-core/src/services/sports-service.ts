@@ -1,5 +1,7 @@
-// STUB — RED phase: exports types and factory signature but throws "not implemented"
-// Replace in GREEN phase with full implementation.
+// Sports service — balldontlie.io API integration
+// Supports MLB, NFL, NBA, NHL with injectable fetch for testability.
+// In-memory cache with 5-min TTL prevents redundant API calls (critical on free tier: 5 req/min).
+// Security: BALLDONTLIE_API_KEY is NEVER logged or included in any response body.
 
 export interface SportsResponse {
   fetchedAt: string;
@@ -55,23 +57,411 @@ export interface UpcomingGame {
 
 export interface SportsServiceDeps {
   fetchFn?: (url: string, init?: RequestInit) => Promise<Response>;
-  teamIds?: Record<"mlb" | "nfl" | "nba" | "nhl", string>;
+  teamIds?: Record<League, string>;
 }
 
-export function createSportsService(_deps?: SportsServiceDeps): {
-  fetchLeague: (league: "mlb" | "nfl" | "nba" | "nhl") => Promise<LeagueResult>;
+// ── Internals ─────────────────────────────────────────────────────────────────
+
+type League = "mlb" | "nfl" | "nba" | "nhl";
+
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+const BASE_URLS: Record<League, string> = {
+  nba: "https://api.balldontlie.io/v1",
+  nfl: "https://api.balldontlie.io/nfl/v1",
+  mlb: "https://api.balldontlie.io/mlb/v1",
+  nhl: "https://api.balldontlie.io/nhl/v1",
+};
+
+interface CacheEntry<T> {
+  data: T;
+  fetchedAt: number;
+}
+
+function isFresh(entry: CacheEntry<unknown>): boolean {
+  return Date.now() - entry.fetchedAt < CACHE_TTL_MS;
+}
+
+// Per-league raw game types (BDL response shapes differ per league)
+interface BDLMLBGame {
+  home_team_name: string;
+  away_team_name: string;
+  home_team_data: { runs: number };
+  away_team_data: { runs: number };
+  status: string;
+  date: string;
+}
+
+interface BDLNBAGame {
+  home_team: { full_name: string };
+  visitor_team: { full_name: string };
+  home_team_score: number;
+  visitor_team_score: number;
+  status: string;
+  date: string;
+}
+
+interface BDLNFLGame {
+  home_team: { full_name: string };
+  visitor_team: { full_name: string };
+  home_team_score: number;
+  visitor_team_score: number;
+  status: string;
+  date: string;
+  week?: number;
+}
+
+interface BDLNHLGame {
+  home_team: { full_name: string };
+  away_team: { full_name: string };
+  home_score: number;
+  away_score: number;
+  status: string;
+  date: string;
+}
+
+interface BDLStandingsEntry {
+  team: { full_name: string };
+  wins: number;
+  losses: number;
+  games_back?: string;
+  win_pct?: string;
+  streak?: string;
+  ot_losses?: number;
+}
+
+// ── Status helpers ─────────────────────────────────────────────────────────────
+
+function isFinalStatus(league: League, status: string): boolean {
+  // MLB uses "STATUS_FINAL"; NBA/NFL/NHL use "Final"
+  return league === "mlb" ? status === "STATUS_FINAL" : status === "Final";
+}
+
+function computeResult(
+  configuredTeamName: string,
+  homeTeam: string,
+  homeScore: number,
+  awayScore: number,
+): "W" | "L" | "T" | null {
+  if (homeScore === awayScore) return "T";
+  const isHome = configuredTeamName === homeTeam;
+  const homeWon = homeScore > awayScore;
+  if (isHome) return homeWon ? "W" : "L";
+  return homeWon ? "L" : "W";
+}
+
+// ── Normalization functions ────────────────────────────────────────────────────
+
+function normalizeMLBGame(raw: BDLMLBGame, configuredTeamName: string): GameScore {
+  return {
+    homeTeam: raw.home_team_name,
+    awayTeam: raw.away_team_name,
+    homeScore: raw.home_team_data.runs,
+    awayScore: raw.away_team_data.runs,
+    result: computeResult(configuredTeamName, raw.home_team_name, raw.home_team_data.runs, raw.away_team_data.runs),
+    gameType: "regular",
+    gameDate: raw.date,
+  };
+}
+
+function normalizeNFLGame(raw: BDLNFLGame, configuredTeamName: string): GameScore {
+  return {
+    homeTeam: raw.home_team.full_name,
+    awayTeam: raw.visitor_team.full_name,
+    homeScore: raw.home_team_score,
+    awayScore: raw.visitor_team_score,
+    result: computeResult(configuredTeamName, raw.home_team.full_name, raw.home_team_score, raw.visitor_team_score),
+    gameType: "regular",
+    gameDate: raw.date,
+  };
+}
+
+function normalizeNBAGame(raw: BDLNBAGame, configuredTeamName: string): GameScore {
+  // NBA uses visitor_team (not away_team)
+  return {
+    homeTeam: raw.home_team.full_name,
+    awayTeam: raw.visitor_team.full_name,
+    homeScore: raw.home_team_score,
+    awayScore: raw.visitor_team_score,
+    result: computeResult(configuredTeamName, raw.home_team.full_name, raw.home_team_score, raw.visitor_team_score),
+    gameType: "regular",
+    gameDate: raw.date,
+  };
+}
+
+function normalizeNHLGame(raw: BDLNHLGame, configuredTeamName: string): GameScore {
+  // NHL uses home_score/away_score (NOT home_team_score/visitor_team_score)
+  return {
+    homeTeam: raw.home_team.full_name,
+    awayTeam: raw.away_team.full_name,
+    homeScore: raw.home_score,
+    awayScore: raw.away_score,
+    result: computeResult(configuredTeamName, raw.home_team.full_name, raw.home_score, raw.away_score),
+    gameType: "regular",
+    gameDate: raw.date,
+  };
+}
+
+function normalizeStandings(rawList: BDLStandingsEntry[]): StandingsEntry[] {
+  return rawList.map((raw, index) => ({
+    team: raw.team.full_name,
+    wins: raw.wins,
+    losses: raw.losses,
+    gamesBack: raw.games_back ?? "—",
+    winPct: raw.win_pct ?? "0.000",
+    streak: raw.streak ?? "—",
+    rank: index + 1,
+  }));
+}
+
+// ── Factory ────────────────────────────────────────────────────────────────────
+
+export function createSportsService(deps: SportsServiceDeps = {}): {
+  fetchLeague: (league: League) => Promise<LeagueResult>;
   fetchAllLeagues: () => Promise<SportsResponse>;
   clearCache: () => void;
 } {
-  return {
-    fetchLeague: (_league) => {
-      throw new Error("not implemented");
-    },
-    fetchAllLeagues: () => {
-      throw new Error("not implemented");
-    },
-    clearCache: () => {
-      throw new Error("not implemented");
-    },
-  };
+  const fetchFn = deps.fetchFn ?? globalThis.fetch.bind(globalThis);
+  const cache = new Map<string, CacheEntry<LeagueResult>>();
+
+  function getCachedLeague(league: League): LeagueResult | null {
+    const key = `league:${league}`;
+    const entry = cache.get(key);
+    if (entry && isFresh(entry)) return entry.data;
+    return null;
+  }
+
+  function setCachedLeague(league: League, data: LeagueResult): void {
+    cache.set(`league:${league}`, { data, fetchedAt: Date.now() });
+  }
+
+  function getTeamId(league: League): string {
+    if (deps.teamIds?.[league]) return deps.teamIds[league];
+    const envKey = `SPORTS_${league.toUpperCase()}_TEAM_ID`;
+    return process.env[envKey] ?? "";
+  }
+
+  function getYesterday(): string {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }
+
+  async function fetchJSON<T>(url: string): Promise<T> {
+    // Authorization: raw key only — NOT "Bearer <key>" (balldontlie.io requirement)
+    const apiKey = process.env["BALLDONTLIE_API_KEY"] ?? "";
+    const res = await fetchFn(url, {
+      headers: { Authorization: apiKey },
+    });
+    if (!res.ok) {
+      // Log URL and status only — never log the API key value (T-73-01)
+      throw new Error(`BDL fetch failed: ${url} → ${res.status}`);
+    }
+    return res.json() as Promise<T>;
+  }
+
+  async function fetchLeagueMLB(): Promise<LeagueResult> {
+    const teamId = getTeamId("mlb");
+    const yesterday = getYesterday();
+    const gamesUrl = `${BASE_URLS.mlb}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const standingsUrl = `${BASE_URLS.mlb}/standings?season=2026`;
+
+    const [gamesRes, standingsRes] = await Promise.all([
+      fetchJSON<{ data: BDLMLBGame[] }>(gamesUrl),
+      fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
+    ]);
+
+    if (gamesRes.data.length === 0 && standingsRes.data.length === 0) {
+      return { status: "off_season" };
+    }
+
+    // Find team name for result computation — use home_team_name from any game or from standings
+    const configuredTeamEntry = standingsRes.data[0]?.team?.full_name ?? "";
+
+    // Find most recent final game for configured team
+    const finalGames = gamesRes.data.filter((g) => isFinalStatus("mlb", g.status));
+    const recentGame = finalGames.length > 0
+      ? normalizeMLBGame(finalGames[finalGames.length - 1], configuredTeamEntry)
+      : null;
+
+    const standings = normalizeStandings(standingsRes.data);
+
+    return {
+      status: "ok",
+      data: {
+        recentGame,
+        upcomingGame: null,
+        standings,
+      },
+    };
+  }
+
+  async function fetchLeagueNFL(): Promise<LeagueResult> {
+    const teamId = getTeamId("nfl");
+    const yesterday = getYesterday();
+    const gamesUrl = `${BASE_URLS.nfl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const standingsUrl = `${BASE_URLS.nfl}/standings?season=2026`;
+
+    const [gamesRes, standingsRes] = await Promise.all([
+      fetchJSON<{ data: BDLNFLGame[] }>(gamesUrl),
+      fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
+    ]);
+
+    if (gamesRes.data.length === 0 && standingsRes.data.length === 0) {
+      return { status: "off_season" };
+    }
+
+    const configuredTeamEntry = standingsRes.data[0]?.team?.full_name ?? "";
+
+    const finalGames = gamesRes.data.filter((g) => isFinalStatus("nfl", g.status));
+    const recentGame = finalGames.length > 0
+      ? normalizeNFLGame(finalGames[finalGames.length - 1], configuredTeamEntry)
+      : null;
+
+    const standings = normalizeStandings(standingsRes.data);
+
+    return {
+      status: "ok",
+      data: {
+        recentGame,
+        upcomingGame: null,
+        standings,
+      },
+    };
+  }
+
+  async function fetchLeagueNBA(): Promise<LeagueResult> {
+    const teamId = getTeamId("nba");
+    const yesterday = getYesterday();
+    const gamesUrl = `${BASE_URLS.nba}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const standingsUrl = `${BASE_URLS.nba}/standings?season=2026`;
+
+    const [gamesRes, standingsRes] = await Promise.all([
+      fetchJSON<{ data: BDLNBAGame[] }>(gamesUrl),
+      fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
+    ]);
+
+    if (gamesRes.data.length === 0 && standingsRes.data.length === 0) {
+      return { status: "off_season" };
+    }
+
+    const configuredTeamEntry = standingsRes.data[0]?.team?.full_name ?? "";
+
+    const finalGames = gamesRes.data.filter((g) => isFinalStatus("nba", g.status));
+    const recentGame = finalGames.length > 0
+      ? normalizeNBAGame(finalGames[finalGames.length - 1], configuredTeamEntry)
+      : null;
+
+    const standings = normalizeStandings(standingsRes.data);
+
+    return {
+      status: "ok",
+      data: {
+        recentGame,
+        upcomingGame: null,
+        standings,
+      },
+    };
+  }
+
+  async function fetchLeagueNHL(): Promise<LeagueResult> {
+    const teamId = getTeamId("nhl");
+    const yesterday = getYesterday();
+    const gamesUrl = `${BASE_URLS.nhl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const standingsUrl = `${BASE_URLS.nhl}/standings?season=2026`;
+
+    const [gamesRes, standingsRes] = await Promise.all([
+      fetchJSON<{ data: BDLNHLGame[] }>(gamesUrl),
+      fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
+    ]);
+
+    if (gamesRes.data.length === 0 && standingsRes.data.length === 0) {
+      return { status: "off_season" };
+    }
+
+    const configuredTeamEntry = standingsRes.data[0]?.team?.full_name ?? "";
+
+    const finalGames = gamesRes.data.filter((g) => isFinalStatus("nhl", g.status));
+    const recentGame = finalGames.length > 0
+      ? normalizeNHLGame(finalGames[finalGames.length - 1], configuredTeamEntry)
+      : null;
+
+    const standings = normalizeStandings(standingsRes.data);
+
+    return {
+      status: "ok",
+      data: {
+        recentGame,
+        upcomingGame: null,
+        standings,
+      },
+    };
+  }
+
+  async function fetchLeague(league: League): Promise<LeagueResult> {
+    // Cache check first
+    const cached = getCachedLeague(league);
+    if (cached) return cached;
+
+    let result: LeagueResult;
+    try {
+      switch (league) {
+        case "mlb":
+          result = await fetchLeagueMLB();
+          break;
+        case "nfl":
+          result = await fetchLeagueNFL();
+          break;
+        case "nba":
+          result = await fetchLeagueNBA();
+          break;
+        case "nhl":
+          result = await fetchLeagueNHL();
+          break;
+      }
+    } catch (err) {
+      result = {
+        status: "error",
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+
+    setCachedLeague(league, result);
+    return result;
+  }
+
+  async function fetchAllLeagues(): Promise<SportsResponse> {
+    const [mlbResult, nflResult, nbaResult, nhlResult] = await Promise.allSettled([
+      fetchLeague("mlb"),
+      fetchLeague("nfl"),
+      fetchLeague("nba"),
+      fetchLeague("nhl"),
+    ]);
+
+    function settledToResult(r: PromiseSettledResult<LeagueResult>): LeagueResult {
+      if (r.status === "fulfilled") return r.value;
+      return { status: "error", error: String(r.reason) };
+    }
+
+    const leagues = {
+      mlb: settledToResult(mlbResult),
+      nfl: settledToResult(nflResult),
+      nba: settledToResult(nbaResult),
+      nhl: settledToResult(nhlResult),
+    };
+
+    const partial = Object.values(leagues).some((l) => l.status !== "ok");
+
+    return {
+      fetchedAt: new Date().toISOString(),
+      partial,
+      leagues,
+    };
+  }
+
+  function clearCache(): void {
+    cache.clear();
+  }
+
+  return { fetchLeague, fetchAllLeagues, clearCache };
 }
