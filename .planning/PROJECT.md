@@ -1,26 +1,24 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v3.1 Gmail & CLI Evolution in progress (2026-04-13)
+## Current State: v3.0 Server-Side PDF in progress (2026-04-13)
 
-**Delivered:** v3.0 Server-Side PDF complete — brief generation moved to vigil-core, Mac CLI is a thin client, PWA generates/previews/downloads briefs. 78 phases and ~176 plans completed across 12 milestones.
+**Delivered:** Full PWA at app.vigilhub.io with thoughts dashboard, work order management, projects UI, bulk actions, AI chat, insights/therapy, brief history, and photo upload. 10 phases shipped, 17 plans. Mac Monitor retains menu bar, folder watcher, hotkey capture. Phase 75 complete — PDFKit 3-page brief engine with Vigil branding, Inter fonts, and all configurable sections.
 
-## Current Milestone: v3.1 Gmail & CLI Evolution
+## Current Milestone: v3.0 Server-Side PDF
 
-**Goal:** Add Gmail reading to the PWA via Google OAuth integration, and restructure the CLI to match the Vigil CLI spec (capture, triage, doctor; retire work order commands).
+**Goal:** Move daily brief PDF generation from the Mac CLI to vigil-core so any client (PWA, email, Mac) can generate and receive briefs without macOS.
 
 **Target features:**
-1. **Google OAuth in PWA** — Settings/Integrations page, connect/disconnect Google account
-2. **Gmail inbox reading** — List messages, read threads in PWA
-3. **Gmail search** — Search by keyword, sender, date range
-4. **Work order extraction from Gmail** — Auto-detect WO emails, feed into existing WO system
-5. **Gmail API on server** — Add gmail.readonly scope, Gmail service + routes in vigil-core
-6. **CLI capture command** — POST thought from terminal, triggers AI triage
-7. **CLI triage command** — Batch re-triage uncategorized thoughts
-8. **CLI doctor command** — Check API keys, env vars, plist, Railway sync
-9. **Retire CLI work order commands** — Move complete/uncomplete/list-completed to dashboard-only
-10. **Promote setup to subcommand** — Replace --setup flag with proper `setup` subcommand
+1. **Sports API route** — ESPN proxy in vigil-core (MLB, NFL, NBA, NHL)
+2. **Google Calendar server-side** — OAuth token storage + refresh in vigil-core
+3. **Brief assembly endpoint** — `/v1/brief/generate` orchestrates all data sources, returns PDF binary
+4. **PDF rendering in Node** — Replicate 3-page layout via HTML+CSS to PDF
+5. **PWA brief UI** — Generate button, preview, download, print-from-browser
+6. **Brief history storage** — Save generated PDFs server-side for retrieval by any client
+7. **Mac CLI thin client** — Replace local rendering with API call + `lpr` print (auto-print preserved)
+8. **Optional email delivery** — Send brief as PDF attachment on schedule
 
-**Key context:** Google OAuth infrastructure exists from Phase 74 (calendar). Reuse token storage/refresh, add gmail.readonly scope. CLI restructure follows Vigil CLI Structure PDF spec (April 2026).
+**Architecture shift:** PDF rendering moves from Mac CLI (CoreGraphics) to vigil-core (server-side). Mac CLI becomes a thin client that fetches the PDF and prints. Apple Reminders dropped — Vigil task thoughts are the todo source.
 
 ## What This Is
 
@@ -99,30 +97,17 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ AI chat in PWA — multi-turn Claude conversation with thought context — v2.5
 - ✓ Insights & therapy in PWA — pattern recognition, therapy prep display — v2.5
 - ✓ Brief history & photo upload in PWA — browse past briefs, upload photos — v2.5
-- ✓ Server-side sports API — balldontlie.io proxy in vigil-core for MLB, NFL, NBA, NHL — v3.0
-- ✓ Server-side Google Calendar — OAuth token storage + refresh in vigil-core — v3.0
-- ✓ Brief assembly endpoint — `/v1/brief/generate` orchestrates all data, returns PDF — v3.0
-- ✓ Server-side PDF rendering — PDFKit 3-page brief with Vigil branding — v3.0
-- ✓ PWA brief UI — generate, preview, download, print-from-browser — v3.0
-- ✓ Server-side brief storage — save generated PDFs for retrieval by any client — v3.0
-- ✓ Mac CLI thin client — replace local CoreGraphics rendering with API call + lpr — v3.0
 
-### Active (v3.1)
+### Active (v3.0)
 
-- [ ] Google OAuth in PWA — Settings/Integrations page with connect/disconnect Google account
-- [ ] Gmail inbox reading — list messages and read threads in PWA
-- [ ] Gmail search — search by keyword, sender, date range in PWA
-- [ ] Work order extraction from Gmail — auto-detect WO emails, feed into WO system
-- [ ] Gmail API on server — gmail.readonly scope, Gmail service + routes in vigil-core
-- [ ] CLI capture command — POST thought from terminal with AI triage
-- [ ] CLI triage command — batch re-triage uncategorized thoughts
-- [ ] CLI doctor command — check API keys, env vars, plist, Railway sync
-- [ ] Retire CLI work order commands — complete/uncomplete/list-completed to dashboard-only
-- [ ] Promote setup to subcommand — replace --setup flag with proper subcommand
-
-### Future
-
-- Email delivery — optional scheduled brief delivery as PDF attachment (deferred from v3.0)
+- [ ] Server-side sports API — ESPN proxy in vigil-core for MLB, NFL, NBA, NHL scores/standings
+- [ ] Server-side Google Calendar — OAuth token storage + refresh in vigil-core
+- [ ] Brief assembly endpoint — `/v1/brief/generate` orchestrates all data, returns PDF
+- [ ] Server-side PDF rendering — replicate 3-page brief layout in Node (HTML+CSS to PDF)
+- [ ] PWA brief UI — generate, preview, download, print-from-browser
+- [ ] Server-side brief storage — save generated PDFs for retrieval by any client
+- [ ] Mac CLI thin client — replace local CoreGraphics rendering with API call + lpr
+- [ ] Email delivery — optional scheduled brief delivery as PDF attachment
 
 ### Out of Scope
 
@@ -137,13 +122,13 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
-Shipped v3.0 Server-Side PDF (2026-04-13) — Brief generation moved to vigil-core (PDFKit), Mac CLI is thin client, PWA generates/previews/downloads. 6 phases, 11 plans.
 Shipped v2.5 Dashboard Everywhere (2026-04-12) — Full PWA at app.vigilhub.io with thoughts, work orders, projects, bulk actions, AI chat, insights/therapy, brief history, photo upload. 10 phases, 17 plans.
 Shipped v2.4 Capture Without Friction (2026-04-10) — Developer ID signing, smart photo upload, folder watch feeder, .app bundle packaging.
+Shipped v2.3 Projects & Precision (2026-04-08) — projects as first-class entities, menu-bar update action, infrastructure wins.
 Tech stack: Swift 6.2/SwiftUI/SPM (Mac app, ~14,000 LOC), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API), React/Vite/TypeScript (PWA), Vite/TypeScript/Even Hub SDK (G2 plugin).
 4 client surfaces connected to production: Mac app (capture + menu bar + folder watcher + PDF brief), PWA (dashboard + management), Vigil Core API (Railway, 20+ REST endpoints), Even G2 plugin (3 screens + task detail).
 API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s timeouts, security headers, and CORS.
-78 phases and ~176 plans completed across 12 milestones in ~13 days.
+72 phases and ~165 plans completed across 11 milestones in ~13 days.
 
 ## Constraints
 
@@ -199,4 +184,4 @@ API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s 
 | HTML+CSS to PDF over CoreText port | Easier to maintain, iterate on layout; Puppeteer/similar in Node | — Pending |
 
 ---
-*Last updated: 2026-04-13 after v3.1 Gmail & CLI Evolution milestone started*
+*Last updated: 2026-04-13 after Phase 75 PDF Generation Engine complete — v3.0 Server-Side PDF in progress*

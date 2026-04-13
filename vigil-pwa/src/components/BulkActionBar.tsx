@@ -33,8 +33,8 @@ export default function BulkActionBar({
   }
 
   return (
-    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-slate-800 border border-slate-700 rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3">
-      <span className="text-slate-300 text-sm font-medium whitespace-nowrap">
+    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-50 bg-gray-900/80 border border-gray-400/30 rounded-xl shadow-2xl px-4 py-3 flex items-center gap-3">
+      <span className="text-gray-100 text-sm font-medium whitespace-nowrap">
         {selectedCount} selected
       </span>
 
@@ -50,17 +50,17 @@ export default function BulkActionBar({
         <button
           onClick={() => setShowCategoryMenu((v) => !v)}
           disabled={isProcessing}
-          className="bg-slate-700 hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+          className="bg-gray-400/30 hover:bg-gray-400/50 disabled:opacity-50 disabled:cursor-not-allowed text-white px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
         >
           Recategorize{isProcessing ? '...' : ''}
         </button>
         {showCategoryMenu && (
-          <div className="absolute bottom-full mb-2 left-0 bg-slate-800 border border-slate-700 rounded-lg shadow-xl overflow-hidden min-w-[140px]">
+          <div className="absolute bottom-full mb-2 left-0 bg-gray-900/80 border border-gray-400/30 rounded-lg shadow-xl overflow-hidden min-w-[140px]">
             {CATEGORIES.map((cat) => (
               <button
                 key={cat}
                 onClick={() => handleRecategorize(cat)}
-                className="w-full text-left px-3 py-2 text-sm text-slate-200 hover:bg-slate-700 transition-colors capitalize"
+                className="w-full text-left px-3 py-2 text-sm text-gray-100 hover:bg-gray-400/30 transition-colors capitalize"
               >
                 {cat}
               </button>
@@ -71,7 +71,7 @@ export default function BulkActionBar({
 
       <button
         onClick={onClearSelection}
-        className="text-slate-400 hover:text-white transition-colors ml-1"
+        className="text-gray-400 hover:text-gray-50 transition-colors ml-1"
         aria-label="Clear selection"
       >
         &#x2715;

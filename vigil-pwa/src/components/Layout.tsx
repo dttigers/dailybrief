@@ -32,26 +32,26 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-gray-900 text-gray-50">
       <OfflineBanner />
-      <nav className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
-        <span className="font-semibold text-lg">Vigil</span>
+      <nav className="px-4 py-3 border-b border-gray-900/40 flex items-center justify-between">
+        <span className="font-medium text-lg">Vigil</span>
         <button
           onClick={handleSignOut}
-          className="text-sm text-slate-400 hover:text-white"
+          className="text-sm text-gray-400 hover:text-gray-50"
         >
           Sign out
         </button>
       </nav>
-      <div className="flex border-b border-slate-800 px-4">
+      <div className="flex border-b border-gray-900/40 px-4">
         {TABS.map((tab) => (
           <Link
             key={tab.to}
             to={tab.to}
             className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
               isActive(tab.to)
-                ? 'border-indigo-500 text-white'
-                : 'border-transparent text-slate-400 hover:text-white hover:border-slate-600'
+                ? 'border-teal-600 text-gray-50'
+                : 'border-transparent text-gray-400 hover:text-gray-50 hover:border-gray-400'
             }`}
           >
             {tab.label}

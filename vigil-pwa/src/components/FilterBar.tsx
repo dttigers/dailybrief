@@ -20,7 +20,7 @@ export default function FilterBar({
   onFavoritesOnlyChange,
 }: FilterBarProps) {
   const inputStyle =
-    'bg-slate-800 border border-slate-700 text-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-indigo-500'
+    'bg-gray-900/80 border border-gray-400/30 text-gray-100 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-teal-600'
 
   // Convert ISO string back to YYYY-MM-DD for display in date input
   function isoToDateValue(iso: string | undefined): string {
@@ -46,7 +46,7 @@ export default function FilterBar({
   const hasActiveFilters = !!source || !!dateAfter || !!dateBefore || favoritesOnly
 
   return (
-    <div className="bg-slate-900/50 rounded-lg p-3 border border-slate-800">
+    <div className="bg-gray-900/50 rounded-lg p-3 border border-gray-900/40">
       <div className="flex flex-wrap items-center gap-2">
         {/* Source filter */}
         <select
@@ -62,7 +62,7 @@ export default function FilterBar({
 
         {/* Date range: From */}
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-slate-400">From</span>
+          <span className="text-xs text-gray-400">From</span>
           <input
             type="date"
             value={isoToDateValue(dateAfter)}
@@ -73,7 +73,7 @@ export default function FilterBar({
 
         {/* Date range: To */}
         <div className="flex items-center gap-1.5">
-          <span className="text-xs text-slate-400">To</span>
+          <span className="text-xs text-gray-400">To</span>
           <input
             type="date"
             value={isoToDateValue(dateBefore)}
@@ -88,7 +88,7 @@ export default function FilterBar({
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
             favoritesOnly
               ? 'text-red-400 bg-red-500/20 border border-red-500/30'
-              : 'text-slate-500 bg-slate-800 border border-slate-700 hover:text-red-400'
+              : 'text-gray-400 bg-gray-900/80 border border-gray-400/30 hover:text-red-400'
           }`}
         >
           <span className="text-base leading-none">{favoritesOnly ? '♥' : '♡'}</span>
@@ -99,7 +99,7 @@ export default function FilterBar({
         {hasActiveFilters && (
           <button
             onClick={handleClear}
-            className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-white bg-slate-800 border border-slate-700 hover:border-slate-500 transition-colors"
+            className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:text-gray-50 bg-gray-900/80 border border-gray-400/30 hover:border-gray-400 transition-colors"
           >
             Clear
           </button>

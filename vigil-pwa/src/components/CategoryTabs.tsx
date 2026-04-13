@@ -23,8 +23,8 @@ export default function CategoryTabs({ activeCategory, onChange }: CategoryTabsP
             onClick={() => onChange(tab.value)}
             className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
               isActive
-                ? 'bg-indigo-600 text-white'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-teal-600 text-white'
+                : 'bg-gray-900/80 text-gray-100 hover:bg-gray-400/30'
             }`}
           >
             {tab.label}
