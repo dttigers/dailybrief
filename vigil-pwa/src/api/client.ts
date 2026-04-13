@@ -449,3 +449,47 @@ export async function deleteChatSession(id: number): Promise<void> {
   const res = await vigilFetch(`/v1/chat-sessions/${id}`, { method: 'DELETE' })
   if (!res.ok) throw new Error(`Failed to delete chat session: ${res.status}`)
 }
+
+// ---------------------------------------------------------------------------
+// Google OAuth (Phase 81 Plan 03)
+// ---------------------------------------------------------------------------
+
+export interface GoogleStatus {
+  calendar: 'connected' | 'needs_auth'
+  gmail: 'connected' | 'needs_auth'
+  email?: string
+}
+
+/**
+ * Fetch Google OAuth connection status.
+ *
+ * D-07 / Pitfall 6: 404 means "no token stored yet" (disconnected) — return null.
+ * Non-404 non-ok responses indicate a real server error and must throw so the
+ * UI can distinguish "disconnected" from "server broken".
+ */
+export async function getGoogleStatus(): Promise<GoogleStatus | null> {
+  const res = await vigilFetch('/v1/google/status')
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`Failed to fetch Google status: ${res.status}`)
+  return (await res.json()) as GoogleStatus
+}
+
+/**
+ * Revoke the stored Google OAuth token server-side.
+ */
+export async function disconnectGoogle(): Promise<void> {
+  const res = await vigilFetch('/v1/google/tokens', { method: 'DELETE' })
+  if (!res.ok) throw new Error(`Failed to disconnect Google: ${res.status}`)
+}
+
+/**
+ * Trigger the Google OAuth flow via a full-page redirect.
+ *
+ * D-08 (reconciled): uses full-page navigation (NOT a popup) so it works inside
+ * iOS standalone PWA mode. Endpoint is mounted at `/v1/auth/google` per
+ * vigil-core/src/index.ts; GOOGLE_REDIRECT_URI must resolve to
+ * `{server_origin}/v1/auth/google/callback`.
+ */
+export function redirectToGoogleAuth(): void {
+  window.location.href = `${API_BASE}/v1/auth/google`
+}
