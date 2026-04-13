@@ -620,22 +620,19 @@ do {
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Vigil brand hex values**
+1. **Vigil brand hex values** — RESOLVED
    - What we know: D-01 specifies Vigil Teal palette, warm Gray 900, status accent colors
-   - What's unclear: Exact hex values — brand guidelines PDF was referenced but not extractable via tool
-   - Recommendation: Implementer reads `vigil-brand-guidelines.pdf` p3 before coding color constants
+   - Resolution: Hex values specified in plan action COLORS constant (`#2C7A7B` teal, `#2C2C2A` body text, etc.) per brand guidelines. Implementer reads `vigil-brand-guidelines.pdf` p3 to verify.
 
-2. **Vigil diamond icon format**
+2. **Vigil diamond icon format** — RESOLVED
    - What we know: D-11 calls for Vigil icon on page 1 header; CONTEXT.md leaves format to discretion
-   - What's unclear: Whether an SVG path or PNG file exists/is preferred
-   - Recommendation: Use `doc.image(pngPath, x, y, { width: 12, height: 12 })` if a PNG exists in assets; otherwise skip for now and add post-Phase 75
+   - Resolution: Plain text "Vigil Daily Brief" header is sufficient for Phase 75. Icon can be added as a follow-up if a suitable asset is available.
 
-3. **Inter font download source**
+3. **Inter font download source** — RESOLVED
    - What we know: D-04 specifies bundle TTF files in `vigil-core/assets/fonts/`
-   - What's unclear: Whether to use Google Fonts direct download or Fontsource npm package
-   - Recommendation: Direct download from Google Fonts static CDN at implementation time — no npm package needed
+   - Resolution: Direct download from Inter GitHub release (`github.com/rsms/inter/releases/download/v4.1/Inter-4.1.zip`) as specified in plan action step 2. No npm package needed.
 
 ---
 

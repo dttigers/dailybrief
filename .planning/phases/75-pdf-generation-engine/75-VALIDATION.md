@@ -19,16 +19,16 @@ created: 2026-04-12
 |----------|-------|
 | **Framework** | node:test + node:assert/strict |
 | **Config file** | vigil-core/package.json (test script) |
-| **Quick run command** | `npx tsx --test vigil-core/src/services/__tests__/pdf-renderer.test.ts` |
-| **Full suite command** | `npx tsx --test vigil-core/src/**/__tests__/*.test.ts` |
+| **Quick run command** | `npx tsx --test vigil-core/src/services/pdf-service.test.ts` |
+| **Full suite command** | `npx tsx --test vigil-core/src/services/pdf-service.test.ts` |
 | **Estimated runtime** | ~5 seconds |
 
 ---
 
 ## Sampling Rate
 
-- **After every task commit:** Run `npx tsx --test vigil-core/src/services/__tests__/pdf-renderer.test.ts`
-- **After every plan wave:** Run `npx tsx --test vigil-core/src/**/__tests__/*.test.ts`
+- **After every task commit:** Run `npx tsx --test vigil-core/src/services/pdf-service.test.ts`
+- **After every plan wave:** Run `npx tsx --test vigil-core/src/services/pdf-service.test.ts`
 - **Before `/gsd-verify-work`:** Full suite must be green
 - **Max feedback latency:** 5 seconds
 
@@ -38,12 +38,12 @@ created: 2026-04-12
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 75-01-01 | 01 | 1 | PDF-01 | — | N/A | unit | `npx tsx --test vigil-core/src/services/__tests__/pdf-renderer.test.ts` | ❌ W0 | ⬜ pending |
-| 75-01-02 | 01 | 1 | PDF-05 | — | N/A | unit | `npx tsx --test vigil-core/src/services/__tests__/pdf-renderer.test.ts` | ❌ W0 | ⬜ pending |
-| 75-02-01 | 02 | 2 | PDF-02 | — | N/A | unit | `npx tsx --test vigil-core/src/services/__tests__/pdf-renderer.test.ts` | ❌ W0 | ⬜ pending |
-| 75-02-02 | 02 | 2 | PDF-03 | — | N/A | unit | `npx tsx --test vigil-core/src/services/__tests__/pdf-renderer.test.ts` | ❌ W0 | ⬜ pending |
-| 75-02-03 | 02 | 2 | PDF-04 | — | N/A | unit | `npx tsx --test vigil-core/src/services/__tests__/pdf-renderer.test.ts` | ❌ W0 | ⬜ pending |
-| 75-02-04 | 02 | 2 | PDF-06 | — | N/A | unit | `npx tsx --test vigil-core/src/services/__tests__/pdf-renderer.test.ts` | ❌ W0 | ⬜ pending |
+| 75-01-01 | 01 | 1 | PDF-01 | — | N/A | unit | `npx tsx --test vigil-core/src/services/pdf-service.test.ts` | ❌ W0 | ⬜ pending |
+| 75-01-02 | 01 | 1 | PDF-05 | — | N/A | unit | `npx tsx --test vigil-core/src/services/pdf-service.test.ts` | ❌ W0 | ⬜ pending |
+| 75-02-01 | 02 | 2 | PDF-02 | — | N/A | unit | `npx tsx --test vigil-core/src/services/pdf-service.test.ts` | ❌ W0 | ⬜ pending |
+| 75-02-02 | 02 | 2 | PDF-03 | — | N/A | unit | `npx tsx --test vigil-core/src/services/pdf-service.test.ts` | ❌ W0 | ⬜ pending |
+| 75-02-03 | 02 | 2 | PDF-04 | — | N/A | unit | `npx tsx --test vigil-core/src/services/pdf-service.test.ts` | ❌ W0 | ⬜ pending |
+| 75-02-04 | 02 | 2 | PDF-06 | — | N/A | unit | `npx tsx --test vigil-core/src/services/pdf-service.test.ts` | ❌ W0 | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -51,7 +51,7 @@ created: 2026-04-12
 
 ## Wave 0 Requirements
 
-- [ ] `vigil-core/src/services/__tests__/pdf-renderer.test.ts` — test stubs for PDF-01 through PDF-06
+- [ ] `vigil-core/src/services/pdf-service.test.ts` — test stubs for PDF-01 through PDF-06
 - [ ] `pdfkit` + `@types/pdfkit` — npm install
 - [ ] `vigil-core/assets/fonts/Inter-Regular.ttf` + `Inter-Medium.ttf` — font files
 
