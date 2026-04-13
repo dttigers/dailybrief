@@ -176,7 +176,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 - [x] **Phase 73: Sports Proxy** — balldontlie.io routes for all 4 leagues with caching and graceful fallback (completed 2026-04-13)
 - [x] **Phase 74: Google Calendar Server-Side** — OAuth token storage in PostgreSQL and server-side event fetch (completed 2026-04-13)
-- [ ] **Phase 75: PDF Generation Engine** — PDFKit 3-page brief layout matching current CoreGraphics output
+- [x] **Phase 75: PDF Generation Engine** — PDFKit 3-page brief layout matching current CoreGraphics output (completed 2026-04-13)
 - [ ] **Phase 76: Brief Assembly Endpoint** — `/v1/brief/generate` orchestrator with partial-failure tolerance and storage
 - [ ] **Phase 77: PWA Brief UI** — generate, preview, and download brief from the PWA
 - [ ] **Phase 78: Mac CLI Thin Client** — replace local rendering with API call, preserve lpr auto-print
@@ -225,8 +225,8 @@ Plans:
   5. Paper size, margins, font scale, and section toggles from the existing PDFConfig are all respected in the output
 **Plans**: 2 plans
 Plans:
-- [ ] 75-01-PLAN.md — Types, fonts, PDFKit scaffold, Page 1 renderer (PDF-01, PDF-02, PDF-03, PDF-04)
-- [ ] 75-02-PLAN.md — Page 2 (sports, affirmation) + Page 3+ (thoughts, insights, therapy prep) renderers (PDF-05, PDF-06)
+- [x] 75-01-PLAN.md — Types, fonts, PDFKit scaffold, Page 1 renderer (PDF-01, PDF-02, PDF-03, PDF-04)
+- [x] 75-02-PLAN.md — Page 2 (sports, affirmation) + Page 3+ (thoughts, insights, therapy prep) renderers (PDF-05, PDF-06)
 
 ### Phase 76: Brief Assembly Endpoint
 **Goal**: `/v1/brief/generate` orchestrates all data sources concurrently, tolerates partial failures, returns a PDF binary, and saves the generated brief server-side for later retrieval
@@ -347,7 +347,7 @@ Plans:
 | 72. README | v2.5 | 1/1 | Complete    | 2026-04-12 |
 | 73. Sports Proxy | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 74. Google Calendar Server-Side | v3.0 | 2/2 | Complete    | 2026-04-13 |
-| 75. PDF Generation Engine | v3.0 | 0/2 | Not started | - |
+| 75. PDF Generation Engine | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 76. Brief Assembly Endpoint | v3.0 | 0/TBD | Not started | - |
 | 77. PWA Brief UI | v3.0 | 0/TBD | Not started | - |
 | 78. Mac CLI Thin Client | v3.0 | 0/TBD | Not started | - |
