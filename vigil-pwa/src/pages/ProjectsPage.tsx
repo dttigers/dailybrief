@@ -7,8 +7,8 @@ export default function ProjectsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16 text-slate-400">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+      <div className="flex items-center justify-center py-16 text-gray-400">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600" />
       </div>
     )
   }
@@ -23,7 +23,7 @@ export default function ProjectsPage() {
 
   if (projects.length === 0) {
     return (
-      <div className="py-16 text-center text-slate-500 text-sm">
+      <div className="py-16 text-center text-gray-400 text-sm">
         No projects yet. Create projects from the Mac dashboard or API.
       </div>
     )
@@ -34,9 +34,9 @@ export default function ProjectsPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-10rem)]">
-      <div className="mb-3 text-sm text-slate-400">
+      <div className="mb-3 text-sm text-gray-400">
         {projects.length} project{projects.length !== 1 ? 's' : ''}{' '}
-        <span className="text-slate-500">
+        <span className="text-gray-400">
           ({activeCount} active, {archivedCount} archived)
         </span>
       </div>
