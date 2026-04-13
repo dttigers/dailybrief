@@ -522,17 +522,11 @@ These must be set on Railway before deployment (alongside existing secrets):
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Which NBA and NHL teams does the user follow?**
-   - What we know: MLB = Tigers (team ID to be confirmed via BDL `/teams`), NFL = Lions (team ID to be confirmed)
-   - What's unclear: NBA and NHL team preferences not discussed
-   - Recommendation: Plan should include a Wave 0 task to query `GET /teams` for each league and document the correct BDL team IDs in `.env.example`
+1. **Which NBA and NHL teams does the user follow?** — RESOLVED: Team IDs are configured via `SPORTS_NBA_TEAM_ID` / `SPORTS_NHL_TEAM_ID` env vars. User locates correct IDs via `GET /teams` before Railway deploy (documented in Plan 02 user_setup section).
 
-2. **What balldontlie.io plan tier is in use?**
-   - What we know: Free tier is 5 req/min; API key is "already available" (D-02)
-   - What's unclear: Whether the key is on Free, ALL-STAR (60/min), or GOAT (600/min)
-   - Recommendation: Cache TTL of 5 minutes is safe at any tier; the plan should note this risk
+2. **What balldontlie.io plan tier is in use?** — RESOLVED: 5-minute cache TTL is safe at any tier. No plan changes required.
 
 ---
 
