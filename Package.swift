@@ -21,11 +21,6 @@ let package = Package(
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 "JarvisCore",
             ],
-            linkerSettings: [
-                .linkedFramework("EventKit"),
-                .linkedFramework("CoreGraphics"),
-                .linkedFramework("CoreText"),
-            ]
         ),
         .executableTarget(
             name: "DailyBriefMonitor",
