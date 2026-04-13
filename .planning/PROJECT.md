@@ -1,23 +1,24 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v2.3 Projects & Precision SHIPPED (2026-04-08)
+## Current State: v2.5 Dashboard Everywhere SHIPPED (2026-04-12)
 
-**Delivered:** Menu-bar one-click update, projects as first-class entities with optimistic UI assign/move/unassign, and three promoted-from-backlog infrastructure wins (Phase 55 NO-OP verification, Phase 56 push-on-complete hook, Phase 57 cross-machine bootstrap + drift doctor). 6 phases shipped, 14 plans, 11/17 requirements complete, PHOTO-01..06 deferred to v2.4.
+**Delivered:** Full PWA at app.vigilhub.io with thoughts dashboard, work order management, projects UI, bulk actions, AI chat, insights/therapy, brief history, and photo upload. 10 phases shipped, 17 plans. Mac Monitor retains menu bar, folder watcher, hotkey capture.
 
-**Notable outcome:** Phase 56's push hook fired for real during Phase 53 complete, pushing 22 backlogged commits to origin — the exact 53-04 bug it was built to prevent would have recurred otherwise.
+## Current Milestone: v3.0 Server-Side PDF
 
-## Current Milestone: v2.5 Dashboard Everywhere
-
-**Goal:** Replace the Mac-only SwiftUI dashboard with a PWA at app.vigilhub.io that any device can access, and add work order management as the first new feature.
+**Goal:** Move daily brief PDF generation from the Mac CLI to vigil-core so any client (PWA, email, Mac) can generate and receive briefs without macOS.
 
 **Target features:**
-1. **PWA foundation** — React/Vite app deployed alongside Vigil Core, Vigil API bearer auth, responsive layout
-2. **Thought dashboard** — View, filter, search, capture thoughts (parity with Mac dashboard core)
-3. **Work order dashboard** — View work orders, mark complete/in-progress, AI priority ranking
-4. **Project management** — View projects, assign/unassign thoughts
-5. **README.md** — GitHub project documentation
+1. **Sports API route** — ESPN proxy in vigil-core (MLB, NFL, NBA, NHL)
+2. **Google Calendar server-side** — OAuth token storage + refresh in vigil-core
+3. **Brief assembly endpoint** — `/v1/brief/generate` orchestrates all data sources, returns PDF binary
+4. **PDF rendering in Node** — Replicate 3-page layout via HTML+CSS to PDF
+5. **PWA brief UI** — Generate button, preview, download, print-from-browser
+6. **Brief history storage** — Save generated PDFs server-side for retrieval by any client
+7. **Mac CLI thin client** — Replace local rendering with API call + `lpr` print (auto-print preserved)
+8. **Optional email delivery** — Send brief as PDF attachment on schedule
 
-**Architecture shift:** Mac Monitor keeps menu bar, folder watcher, hotkey capture, LaunchAgent. PWA becomes the primary dashboard — stops feature duplication across Mac SwiftUI and web.
+**Architecture shift:** PDF rendering moves from Mac CLI (CoreGraphics) to vigil-core (server-side). Mac CLI becomes a thin client that fetches the PDF and prints. Apple Reminders dropped — Vigil task thoughts are the todo source.
 
 ## What This Is
 
@@ -90,12 +91,23 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Folder watch feeder — DispatchSource watcher feeds images + audio to Vigil Core headlessly, iCloud support, auto-triage, menu bar error state — v2.4
 - ✓ Folder watch settings UI — paper-type picker, live watcher restart on save, corrected extension help text — v2.4
 - ✓ .app bundle packaging — DailyBriefMonitor.app with Info.plist, LSUIElement, Developer ID bundle signing — v2.4
+- ✓ PWA dashboard — cross-platform web app at app.vigilhub.io replacing Mac-only SwiftUI dashboard — v2.5
+- ✓ Work order management — view, complete, prioritize work orders from PWA — v2.5
+- ✓ Bulk actions & filters — multi-select delete/recategorize, category/date filters in PWA — v2.5
+- ✓ AI chat in PWA — multi-turn Claude conversation with thought context — v2.5
+- ✓ Insights & therapy in PWA — pattern recognition, therapy prep display — v2.5
+- ✓ Brief history & photo upload in PWA — browse past briefs, upload photos — v2.5
 
-### Active (v2.5)
+### Active (v3.0)
 
-- [ ] PWA dashboard — cross-platform web app at app.vigilhub.io replacing Mac-only SwiftUI dashboard
-- [ ] Work order management — view, complete, prioritize work orders from the PWA
-- [ ] G2 hardware testing — deferred until physical Even G2 glasses arrive
+- [ ] Server-side sports API — ESPN proxy in vigil-core for MLB, NFL, NBA, NHL scores/standings
+- [ ] Server-side Google Calendar — OAuth token storage + refresh in vigil-core
+- [ ] Brief assembly endpoint — `/v1/brief/generate` orchestrates all data, returns PDF
+- [ ] Server-side PDF rendering — replicate 3-page brief layout in Node (HTML+CSS to PDF)
+- [ ] PWA brief UI — generate, preview, download, print-from-browser
+- [ ] Server-side brief storage — save generated PDFs for retrieval by any client
+- [ ] Mac CLI thin client — replace local CoreGraphics rendering with API call + lpr
+- [ ] Email delivery — optional scheduled brief delivery as PDF attachment
 
 ### Out of Scope
 
@@ -110,16 +122,17 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
-Shipped v2.4 Capture Without Friction (2026-04-10) — Developer ID signing, smart photo upload (Claude vision + paper-type detection), folder watch feeder with iCloud support, .app bundle packaging. 5 phases, 9 plans, 17/17 requirements.
+Shipped v2.5 Dashboard Everywhere (2026-04-12) — Full PWA at app.vigilhub.io with thoughts, work orders, projects, bulk actions, AI chat, insights/therapy, brief history, photo upload. 10 phases, 17 plans.
+Shipped v2.4 Capture Without Friction (2026-04-10) — Developer ID signing, smart photo upload, folder watch feeder, .app bundle packaging.
 Shipped v2.3 Projects & Precision (2026-04-08) — projects as first-class entities, menu-bar update action, infrastructure wins.
-Tech stack: Swift 6.2/SwiftUI/SPM (Mac app, ~14,000 LOC), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API, ~5,500 LOC), Vite/TypeScript/Even Hub SDK (G2 plugin).
-3 client surfaces connected to production: Mac app (capture + menu bar + folder watcher + PDF brief), Vigil Core API (Railway, 20+ REST endpoints), Even G2 plugin (3 screens + task detail).
+Tech stack: Swift 6.2/SwiftUI/SPM (Mac app, ~14,000 LOC), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API), React/Vite/TypeScript (PWA), Vite/TypeScript/Even Hub SDK (G2 plugin).
+4 client surfaces connected to production: Mac app (capture + menu bar + folder watcher + PDF brief), PWA (dashboard + management), Vigil Core API (Railway, 20+ REST endpoints), Even G2 plugin (3 screens + task detail).
 API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s timeouts, security headers, and CORS.
-62 phases and 148 plans completed across 10 milestones in ~13 days.
+72 phases and ~165 plans completed across 11 milestones in ~13 days.
 
 ## Constraints
 
-- **Platform**: macOS 14+ (Sonoma), Swift 6.2, SwiftUI
+- **Platform**: macOS 14+ (Sonoma), Swift 6.2, SwiftUI; PWA via React/Vite
 - **AI Provider**: Anthropic Claude API (already integrated)
 - **Build System**: Swift Package Manager (existing setup)
 - **Data Storage**: Production PostgreSQL on Railway (Drizzle ORM, tsvector FTS)
@@ -134,7 +147,7 @@ API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s 
 | Pocket voice recorder for mobile capture | Phone is too much friction while driving; one-button press solves ADHD capture barrier | ✓ Good |
 | Claude for AI categorization | Already integrated for affirmations; natural language understanding for thought triage | ✓ Good |
 | Local-first data storage (GRDB/SQLite) | Privacy (therapy notes, personal thoughts); no cloud dependency; simplicity | ✓ Good |
-| Keep Apple Reminders integration | May eventually be replaced by internal task system, but keep for now | — Pending |
+| Drop Apple Reminders — use Vigil task thoughts | Vigil captures tasks natively; Reminders was redundant and Mac-only | ✓ Good — decided v3.0 |
 | Carbon API for global hotkey | No Accessibility permissions required; reliable system-wide capture | ✓ Good |
 | SFSpeechRecognizer over WhisperKit | WhisperKit crashes on Intel Macs (CoreML MLMultiArray segfault); SFSpeech needs no model downloads | ✓ Good |
 | Fire-and-forget triage | Instant capture UX; background categorization doesn't block user | ✓ Good |
@@ -167,5 +180,8 @@ API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s 
 | maxTokens 1024 for chat | ADHD-friendly concise replies from Claude | ✓ Good |
 | Retire local GRDB/CloudKit/AI in v2.2 | API backend proven stable in v2.1; dual code paths were maintenance burden | ✓ Good |
 
+| Server-side PDF rendering | Removes Mac dependency for brief generation; any client can get briefs | — Pending |
+| HTML+CSS to PDF over CoreText port | Easier to maintain, iterate on layout; Puppeteer/similar in Node | — Pending |
+
 ---
-*Last updated: 2026-04-12 after v2.4 milestone — v2.5 Dashboard Everywhere started*
+*Last updated: 2026-04-12 after v2.5 milestone — v3.0 Server-Side PDF started*

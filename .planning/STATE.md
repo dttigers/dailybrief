@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v2.5
-milestone_name: Dashboard Everywhere
+milestone: v3.0
+milestone_name: Server-Side PDF
 status: executing
-stopped_at: v2.5 roadmap created — 6 phases (63-68), 14 requirements mapped
-last_updated: "2026-04-12T22:14:26.362Z"
+stopped_at: v3.0 milestone started — defining requirements
+last_updated: "2026-04-12"
 last_activity: 2026-04-12
 progress:
-  total_phases: 10
-  completed_phases: 9
-  total_plans: 16
-  completed_plans: 16
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,22 +21,20 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-12)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 71 — brief-history-photo-upload
+**Current focus:** Defining requirements for v3.0 Server-Side PDF
 
 ## Current Position
 
-Phase: 72
-Plan: Not started
-Status: Executing Phase 71
-Last activity: 2026-04-12
-
-Progress: [░░░░░░░░░░] 0% (0/6 phases complete in v2.5)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-12 — Milestone v3.0 started
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 164 (through v2.4)
+- Total plans completed: ~165 (through v2.5)
 - Total execution time: ~13 days
 - Average duration: ~5 min per plan
 
@@ -54,7 +52,7 @@ Progress: [░░░░░░░░░░] 0% (0/6 phases complete in v2.5)
 | v2.2 Polish & Power | 45-50 | 12 | 1 day |
 | v2.3 Projects & Precision | 51-57 | 14 | ~19h |
 | v2.4 Capture Without Friction | 58-62 | 9 | 2 days |
-| v2.5 Dashboard Everywhere | 63-68 | TBD | - |
+| v2.5 Dashboard Everywhere | 63-72 | 17 | 2 days |
 
 ## Accumulated Context
 
@@ -62,12 +60,12 @@ Progress: [░░░░░░░░░░] 0% (0/6 phases complete in v2.5)
 
 All decisions logged in PROJECT.md Key Decisions table.
 
-Recent decisions affecting v2.5:
+Recent decisions affecting v3.0:
 
-- Phase order: PWA foundation (63) must precede all UI phases; Work Order Status API (65) must precede Work Orders Dashboard (66) because CompletionStore is CLI-only today and needs a /work-orders/status backend route first
-- WO-03 requires a CLI change so DailyBrief reads work order status from the Vigil Core API rather than local CompletionStore — this is scoped to Phase 65 (backend) not Phase 66 (UI)
-- Projects UI (Phase 67) reuses existing /projects API endpoints — no new backend work needed
-- README (Phase 68) is independent and placed last as lowest-risk, can be done any time
+- Apple Reminders dropped — Vigil task thoughts replace the todo section on Page 1
+- PDF rendering moves from Mac CLI (CoreGraphics) to vigil-core (HTML+CSS to PDF)
+- Mac CLI becomes thin client: fetch PDF from API, pipe to lpr
+- Auto-print workflow preserved — BriefScheduler calls API instead of rendering locally
 
 ### Pending Todos
 
@@ -77,10 +75,10 @@ None.
 
 - G2 hardware testing — plugin validated in simulator only, awaiting physical Even G2 glasses
 - ServiceNow API token — blocks future WO-F01 (deferred to future milestone)
-- PWA deployment target: app.vigilhub.io DNS/subdomain needs to be configured alongside api.vigilhub.io before Phase 63 can ship
+- Google Calendar server-side OAuth — need to design token storage/refresh for server context
 
 ## Session Continuity
 
 Last session: 2026-04-12
-Stopped at: v2.5 roadmap created — 6 phases (63-68), 14 requirements mapped
+Stopped at: v3.0 milestone started — defining requirements
 Resume file: None
