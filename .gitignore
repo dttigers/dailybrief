@@ -18,3 +18,4 @@ DerivedData/
 DailyBriefMonitor */
 DailyBriefMonitor.dSYM/
 *.dSYM/
+.claude/
