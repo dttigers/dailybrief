@@ -246,6 +246,24 @@ public actor VigilAPIClient {
         return data
     }
 
+    /// Perform a POST request and return raw Data (no JSON decoding).
+    /// Useful for endpoints that return binary data like PDFs.
+    /// - Parameters:
+    ///   - path: API path relative to baseURL (e.g., `/v1/brief/generate`).
+    ///   - accept: Accept header value. Defaults to `application/json`.
+    /// - Returns: Raw response Data.
+    public func postRawData(path: String, accept: String = "application/json") async throws -> Data {
+        var request = URLRequest(url: baseURL.appendingPathComponent(path))
+        request.httpMethod = "POST"
+        request.setValue(accept, forHTTPHeaderField: "Accept")
+        if let apiKey, !apiKey.isEmpty {
+            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await executeRequest(request)
+        try validateResponse(data: data, response: response)
+        return data
+    }
+
     // MARK: Private Helpers
 
     /// Execute a URLRequest, wrapping URLSession errors.
