@@ -86,6 +86,8 @@ function isFresh(entry: CacheEntry<unknown>): boolean {
 interface BDLMLBGame {
   home_team_name: string;
   away_team_name: string;
+  home_team: { id: number; display_name: string };
+  away_team: { id: number; display_name: string };
   home_team_data: { runs: number };
   away_team_data: { runs: number };
   status: string;
@@ -93,8 +95,8 @@ interface BDLMLBGame {
 }
 
 interface BDLNBAGame {
-  home_team: { full_name: string };
-  visitor_team: { full_name: string };
+  home_team: { id: number; full_name: string };
+  visitor_team: { id: number; full_name: string };
   home_team_score: number;
   visitor_team_score: number;
   status: string;
@@ -102,8 +104,8 @@ interface BDLNBAGame {
 }
 
 interface BDLNFLGame {
-  home_team: { full_name: string };
-  visitor_team: { full_name: string };
+  home_team: { id: number; full_name: string };
+  visitor_team: { id: number; full_name: string };
   home_team_score: number;
   visitor_team_score: number;
   status: string;
@@ -112,8 +114,8 @@ interface BDLNFLGame {
 }
 
 interface BDLNHLGame {
-  home_team: { full_name: string };
-  away_team: { full_name: string };
+  home_team: { id: number; full_name: string };
+  away_team: { id: number; full_name: string };
   home_score: number;
   away_score: number;
   status: string;
@@ -282,7 +284,12 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       return { status: "off_season" };
     }
 
-    const configuredTeamEntry = standingsData[0]?.team?.full_name ?? "";
+    // Derive team name by matching configured team ID against game data
+    const teamIdNum = parseInt(getTeamId("mlb"), 10);
+    const firstGame = games[0];
+    const configuredTeamEntry = firstGame
+      ? (firstGame.home_team.id === teamIdNum ? firstGame.home_team_name : firstGame.away_team_name)
+      : standingsData[0]?.team?.full_name ?? "";
 
     const finalGames = games.filter((g) => isFinalStatus("mlb", g.status));
     const recentGame = finalGames.length > 0
@@ -322,7 +329,11 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       return { status: "off_season" };
     }
 
-    const configuredTeamEntry = standingsData[0]?.team?.full_name ?? "";
+    const nflTeamId = parseInt(getTeamId("nfl"), 10);
+    const nflFirst = games[0];
+    const configuredTeamEntry = nflFirst
+      ? (nflFirst.home_team.id === nflTeamId ? nflFirst.home_team.full_name : nflFirst.visitor_team.full_name)
+      : standingsData[0]?.team?.full_name ?? "";
 
     const finalGames = games.filter((g) => isFinalStatus("nfl", g.status));
     const recentGame = finalGames.length > 0
@@ -362,7 +373,11 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       return { status: "off_season" };
     }
 
-    const configuredTeamEntry = standingsData[0]?.team?.full_name ?? "";
+    const nbaTeamId = parseInt(getTeamId("nba"), 10);
+    const nbaFirst = games[0];
+    const configuredTeamEntry = nbaFirst
+      ? (nbaFirst.home_team.id === nbaTeamId ? nbaFirst.home_team.full_name : nbaFirst.visitor_team.full_name)
+      : standingsData[0]?.team?.full_name ?? "";
 
     const finalGames = games.filter((g) => isFinalStatus("nba", g.status));
     const recentGame = finalGames.length > 0
@@ -402,7 +417,11 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       return { status: "off_season" };
     }
 
-    const configuredTeamEntry = standingsData[0]?.team?.full_name ?? "";
+    const nhlTeamId = parseInt(getTeamId("nhl"), 10);
+    const nhlFirst = games[0];
+    const configuredTeamEntry = nhlFirst
+      ? (nhlFirst.home_team.id === nhlTeamId ? nhlFirst.home_team.full_name : nhlFirst.away_team.full_name)
+      : standingsData[0]?.team?.full_name ?? "";
 
     const finalGames = games.filter((g) => isFinalStatus("nhl", g.status));
     const recentGame = finalGames.length > 0

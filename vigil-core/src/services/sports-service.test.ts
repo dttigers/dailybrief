@@ -41,6 +41,8 @@ const MLB_GAMES_RESPONSE = {
     {
       home_team_name: "Detroit Tigers",
       away_team_name: "Cleveland Guardians",
+      home_team: { id: 116, display_name: "Detroit Tigers" },
+      away_team: { id: 5, display_name: "Cleveland Guardians" },
       home_team_data: { runs: 5 },
       away_team_data: { runs: 3 },
       status: "STATUS_FINAL",
@@ -65,8 +67,8 @@ const MLB_STANDINGS_RESPONSE = {
 const NFL_GAMES_RESPONSE = {
   data: [
     {
-      home_team: { full_name: "Detroit Lions" },
-      visitor_team: { full_name: "Chicago Bears" },
+      home_team: { id: 13, full_name: "Detroit Lions" },
+      visitor_team: { id: 7, full_name: "Chicago Bears" },
       home_team_score: 24,
       visitor_team_score: 17,
       status: "Final",
@@ -92,8 +94,8 @@ const NFL_STANDINGS_RESPONSE = {
 const NBA_GAMES_RESPONSE = {
   data: [
     {
-      home_team: { full_name: "Detroit Pistons" },
-      visitor_team: { full_name: "Chicago Bulls" },
+      home_team: { id: 10, full_name: "Detroit Pistons" },
+      visitor_team: { id: 7, full_name: "Chicago Bulls" },
       home_team_score: 110,
       visitor_team_score: 98,
       status: "Final",
@@ -118,8 +120,8 @@ const NBA_STANDINGS_RESPONSE = {
 const NHL_GAMES_RESPONSE = {
   data: [
     {
-      home_team: { full_name: "Detroit Red Wings" },
-      away_team: { full_name: "Chicago Blackhawks" },
+      home_team: { id: 10, full_name: "Detroit Red Wings" },
+      away_team: { id: 7, full_name: "Chicago Blackhawks" },
       home_score: 4,
       away_score: 2,
       status: "Final",
@@ -256,6 +258,8 @@ test("SPORT-01: MLB STATUS_FINAL is recognized as final game status", async () =
         {
           home_team_name: "Detroit Tigers",
           away_team_name: "Cleveland Guardians",
+          home_team: { id: 116, display_name: "Detroit Tigers" },
+          away_team: { id: 5, display_name: "Cleveland Guardians" },
           home_team_data: { runs: 5 },
           away_team_data: { runs: 3 },
           status: "STATUS_FINAL",  // MLB-specific status string
