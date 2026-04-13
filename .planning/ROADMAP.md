@@ -250,10 +250,9 @@ Plans:
   1. The PWA has a "Generate Brief" button that calls `/v1/brief/generate` and shows a loading state while it runs
   2. After generation, the PDF renders inline in the PWA so the user can read it without downloading
   3. A download button saves the PDF to the user's device with a sensible filename
-**Plans**: 2 plans
+**Plans**: 1 plan
 Plans:
-- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
-- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
+- [ ] 77-01-PLAN.md — API client binary fetch + Layout tab rename + BriefHistoryPage generate/preview/download
 **UI hint**: yes
 
 ### Phase 78: Mac CLI Thin Client
