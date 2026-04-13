@@ -266,7 +266,7 @@ Plans:
   3. The CoreGraphics/PDFLayout rendering code is absent from the Mac CLI codebase (no dead code left behind)
 **Plans**: 2 plans
 Plans:
-- [ ] 78-01-PLAN.md — Rewrite Generate command as thin client + add postRawData to VigilAPIClient (CLI-01, CLI-02)
+- [x] 78-01-PLAN.md — Rewrite Generate command as thin client + add postRawData to VigilAPIClient (CLI-01, CLI-02)
 - [ ] 78-02-PLAN.md — Delete CoreGraphics PDF rendering code and generate-only services (CLI-03)
 
 
@@ -351,7 +351,7 @@ Plans:
 | 75. PDF Generation Engine | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete   | 2026-04-13 |
 | 77. PWA Brief UI | v3.0 | 1/1 | Complete    | 2026-04-13 |
-| 78. Mac CLI Thin Client | v3.0 | 0/2 | Not started | - |
+| 78. Mac CLI Thin Client | v3.0 | 1/2 | In Progress|  |
 
 ## Backlog
 
