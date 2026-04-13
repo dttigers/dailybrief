@@ -225,8 +225,8 @@ Plans:
   5. Paper size, margins, font scale, and section toggles from the existing PDFConfig are all respected in the output
 **Plans**: 2 plans
 Plans:
-- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
-- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
+- [ ] 75-01-PLAN.md — Types, fonts, PDFKit scaffold, Page 1 renderer (PDF-01, PDF-02, PDF-03, PDF-04)
+- [ ] 75-02-PLAN.md — Page 2 (sports, affirmation) + Page 3+ (thoughts, insights, therapy prep) renderers (PDF-05, PDF-06)
 
 ### Phase 76: Brief Assembly Endpoint
 **Goal**: `/v1/brief/generate` orchestrates all data sources concurrently, tolerates partial failures, returns a PDF binary, and saves the generated brief server-side for later retrieval
@@ -347,7 +347,7 @@ Plans:
 | 72. README | v2.5 | 1/1 | Complete    | 2026-04-12 |
 | 73. Sports Proxy | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 74. Google Calendar Server-Side | v3.0 | 2/2 | Complete    | 2026-04-13 |
-| 75. PDF Generation Engine | v3.0 | 0/TBD | Not started | - |
+| 75. PDF Generation Engine | v3.0 | 0/2 | Not started | - |
 | 76. Brief Assembly Endpoint | v3.0 | 0/TBD | Not started | - |
 | 77. PWA Brief UI | v3.0 | 0/TBD | Not started | - |
 | 78. Mac CLI Thin Client | v3.0 | 0/TBD | Not started | - |
