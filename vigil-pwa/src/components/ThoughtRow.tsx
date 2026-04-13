@@ -19,7 +19,7 @@ const TASK_STATUS_LABELS: Record<string, string> = {
 }
 const TASK_STATUS_STYLES: Record<string, string> = {
   open: 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30',
-  inProgress: 'bg-blue-500/20 text-blue-400 hover:bg-blue-500/30',
+  inProgress: 'bg-info-50 text-info-400 hover:bg-info-50/80',
   done: 'bg-green-500/20 text-green-400 hover:bg-green-500/30',
 }
 
@@ -29,11 +29,11 @@ const THERAPY_STYLES: Record<string, { label: string; style: string }> = {
 }
 
 const CATEGORY_STYLES: Record<string, string> = {
-  task: 'bg-blue-500/20 text-blue-400',
-  therapy: 'bg-purple-500/20 text-purple-400',
-  idea: 'bg-amber-500/20 text-amber-400',
-  reflection: 'bg-green-500/20 text-green-400',
-  project: 'bg-pink-500/20 text-pink-400',
+  task: 'bg-info-50 text-info-400',
+  therapy: 'bg-teal-50 text-teal-600',
+  idea: 'bg-warning-50 text-warning-400',
+  reflection: 'bg-success-50 text-success-400',
+  project: 'bg-teal-50 text-teal-400',
 }
 
 function relativeTime(isoString: string): string {
@@ -66,8 +66,8 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
   }, [isEditing])
 
   const categoryStyle = thought.category
-    ? (CATEGORY_STYLES[thought.category] ?? 'bg-slate-700 text-slate-400')
-    : 'bg-slate-700 text-slate-400'
+    ? (CATEGORY_STYLES[thought.category] ?? 'bg-gray-50 text-gray-400')
+    : 'bg-gray-50 text-gray-400'
   const categoryLabel = thought.category
     ? thought.category.charAt(0).toUpperCase() + thought.category.slice(1)
     : 'Uncategorized'
@@ -123,14 +123,14 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
   }
 
   return (
-    <div className={`p-4 border-b border-slate-800 hover:bg-slate-900/50 transition-colors${isSelectable && isSelected ? ' border-l-2 border-l-indigo-500' : ''}`}>
+    <div className={`p-4 border-b border-gray-900/40 hover:bg-gray-900/50 transition-colors${isSelectable && isSelected ? ' border-l-2 border-l-teal-600' : ''}`}>
       <div className="flex items-start justify-between gap-3 mb-1.5">
         {isSelectable && (
           <input
             type="checkbox"
             checked={isSelected ?? false}
             onChange={() => onToggleSelect?.(thought.id)}
-            className="w-5 h-5 rounded border-slate-600 bg-slate-800 accent-indigo-500 shrink-0 cursor-pointer mt-0.5"
+            className="w-5 h-5 rounded border-gray-400/30 bg-gray-900/80 accent-teal-600 shrink-0 cursor-pointer mt-0.5"
           />
         )}
         <span className="flex items-center gap-1.5">
@@ -146,18 +146,18 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
             </button>
           )}
           {thought.therapyClassification && THERAPY_STYLES[thought.therapyClassification] && (
-            <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${THERAPY_STYLES[thought.therapyClassification].style}`}>
+            <span className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${THERAPY_STYLES[thought.therapyClassification].style}`}>
               {THERAPY_STYLES[thought.therapyClassification].label}
             </span>
           )}
         </span>
-        <span className="text-xs text-slate-500 shrink-0 flex items-center gap-2">
-          {isSaving && <span className="text-slate-500 text-xs">Saving...</span>}
+        <span className="text-xs text-gray-400 shrink-0 flex items-center gap-2">
+          {isSaving && <span className="text-gray-400 text-xs">Saving...</span>}
           {onToggleFavorite && (
             <button
               onClick={() => onToggleFavorite(thought.id, !thought.isFavorited)}
               className={`text-base leading-none cursor-pointer transition-colors ${
-                thought.isFavorited ? 'text-red-400' : 'text-slate-600 hover:text-red-400'
+                thought.isFavorited ? 'text-red-400' : 'text-gray-400/50 hover:text-red-400'
               }`}
               title={thought.isFavorited ? 'Remove from favorites' : 'Add to favorites'}
             >
@@ -171,7 +171,7 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
                 try { await onRetriage(thought.id) } finally { setIsTriaging(false) }
               }}
               disabled={isTriaging}
-              className="text-slate-600 hover:text-indigo-400 transition-colors cursor-pointer disabled:opacity-40"
+              className="text-gray-400/50 hover:text-teal-400 transition-colors cursor-pointer disabled:opacity-40"
               title="Re-triage with AI"
             >
               {isTriaging ? '...' : '↻'}
@@ -187,13 +187,13 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
           onChange={(e) => setDraft(e.target.value)}
           onBlur={handleSave}
           onKeyDown={handleKeyDown}
-          className="w-full bg-slate-800 border border-indigo-500 rounded-lg p-2 text-slate-100 focus:outline-none resize-y min-h-[4rem]"
+          className="w-full bg-gray-900/80 border border-teal-600 rounded-lg p-2 text-gray-50 focus:outline-none resize-y min-h-[4rem]"
           autoFocus
         />
       ) : (
         <p
           onClick={handleContentClick}
-          className="text-slate-200 text-sm leading-relaxed line-clamp-3 break-words cursor-text"
+          className="text-gray-100 text-sm leading-relaxed line-clamp-3 break-words cursor-text"
         >
           {thought.content}
         </p>

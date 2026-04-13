@@ -17,7 +17,7 @@ interface ThoughtListProps {
 export default function ThoughtList({ thoughts, total, isLoading, error, onUpdate, onToggleFavorite, onRetriage, selectedIds, onToggleSelect, isSelectable }: ThoughtListProps) {
   if (isLoading) {
     return (
-      <div className="text-slate-500 text-center py-12">
+      <div className="text-gray-400 text-center py-12">
         Loading thoughts...
       </div>
     )
@@ -33,7 +33,7 @@ export default function ThoughtList({ thoughts, total, isLoading, error, onUpdat
 
   if (thoughts.length === 0) {
     return (
-      <div className="text-slate-500 text-center py-12">
+      <div className="text-gray-400 text-center py-12">
         No thoughts found
       </div>
     )
@@ -41,7 +41,7 @@ export default function ThoughtList({ thoughts, total, isLoading, error, onUpdat
 
   return (
     <div>
-      <div className="rounded-lg border border-slate-800 overflow-hidden">
+      <div className="rounded-lg border border-gray-900/40 overflow-hidden">
         {thoughts.map((thought) => (
           <ThoughtRow
             key={thought.id}
@@ -56,7 +56,7 @@ export default function ThoughtList({ thoughts, total, isLoading, error, onUpdat
         ))}
       </div>
       {total > thoughts.length && (
-        <p className="text-slate-500 text-sm text-center py-4">
+        <p className="text-gray-400 text-sm text-center py-4">
           Showing {thoughts.length} of {total} thoughts
         </p>
       )}
