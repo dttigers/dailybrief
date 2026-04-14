@@ -337,10 +337,10 @@ Plans:
   5. The OAuth callback URL redirects cleanly back to the PWA Settings page on both desktop and iOS standalone mode
 **Plans**: 6 plans
 Plans:
-- [ ] 81-01-PLAN.md — Install vitest + RTL + jsdom; create stub tests for SettingsPage / Layout / api client / useGoogleStatus (Wave 0 Nyquist)
-- [ ] 81-02-PLAN.md — vigil-core callback redirect to /settings + rename calendar_error→google_error + verify/add DELETE /v1/google/tokens and GET /v1/google/status
-- [ ] 81-03-PLAN.md — PWA api/client.ts: getGoogleStatus (404→null), disconnectGoogle, redirectToGoogleAuth
-- [ ] 81-04-PLAN.md — GoogleStatusContext provider + useGoogleStatus hook; wrap authenticated Layout in App.tsx
+- [x] 81-01-PLAN.md — Install vitest + RTL + jsdom; create stub tests for SettingsPage / Layout / api client / useGoogleStatus (Wave 0 Nyquist)
+- [x] 81-02-PLAN.md — vigil-core callback redirect to /settings + rename calendar_error→google_error + verify/add DELETE /v1/google/tokens and GET /v1/google/status
+- [x] 81-03-PLAN.md — PWA api/client.ts: getGoogleStatus (404→null), disconnectGoogle, redirectToGoogleAuth
+- [x] 81-04-PLAN.md — GoogleStatusContext provider + useGoogleStatus hook; wrap authenticated Layout in App.tsx
 - [ ] 81-05-PLAN.md — Layout.tsx gear icon + red status dot (reads shared context)
 - [ ] 81-06-PLAN.md — SettingsPage.tsx (all 4 states + callback banner + inline disconnect) + route registration
 **UI hint**: yes
@@ -442,7 +442,7 @@ Plans:
 | 78. Mac CLI Thin Client | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 79. Gmail OAuth Server Foundation | v3.1 | 0/2 | Not started | - |
 | 80. Gmail Server Service & Work Order Extraction | v3.1 | 0/TBD | Not started | - |
-| 81. PWA Settings & Google OAuth UI | v3.1 | 0/TBD | Not started | - |
+| 81. PWA Settings & Google OAuth UI | v3.1 | 4/6 | In Progress|  |
 | 82. CLI Restructure | v3.1 | 0/TBD | Not started | - |
 
 ## Backlog
