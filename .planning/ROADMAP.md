@@ -358,9 +358,9 @@ Plans:
   6. The LaunchAgent plist invokes only commands that still exist after the restructure — verified and committed in the same change
 **Plans**: 3 plans
 Plans:
-- [ ] 82-01-PLAN.md — CLI scaffolding: add Capture/Triage/Doctor/Setup stubs, retire work-order commands
-- [ ] 82-02-PLAN.md — Implement Capture, Triage, Doctor subcommand logic
-- [ ] 82-03-PLAN.md — Plist audit + release build + install + human verify
+- [x] 82-01-PLAN.md — CLI scaffolding: add Capture/Triage/Doctor/Setup stubs, retire work-order commands
+- [x] 82-02-PLAN.md — Implement Capture, Triage, Doctor subcommand logic
+- [x] 82-03-PLAN.md — Plist audit + release build + install + human verify
 
 ## Progress
 
