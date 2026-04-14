@@ -123,7 +123,7 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
   }
 
   return (
-    <div className={`p-4 border-b border-gray-900/40 hover:bg-gray-900/50 transition-colors${isSelectable && isSelected ? ' border-l-2 border-l-teal-600' : ''}`}>
+    <div className={`p-4 border-b border-gray-700/50 hover:bg-gray-900/50 transition-colors${isSelectable && isSelected ? ' border-l-2 border-l-teal-600' : ''}`}>
       <div className="flex items-start justify-between gap-3 mb-1.5">
         {isSelectable && (
           <input

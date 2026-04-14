@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { clearKey } from '../api/client'
 import { useGoogleStatus } from '../hooks/useGoogleStatus'
@@ -7,11 +8,14 @@ interface LayoutProps {
   children: React.ReactNode
 }
 
-const TABS = [
+const PRIMARY_TABS = [
   { label: 'Thoughts', to: '/' },
   { label: 'Work Orders', to: '/work-orders' },
   { label: 'Projects', to: '/projects' },
   { label: 'Chat', to: '/chat' },
+]
+
+const SECONDARY_TABS = [
   { label: 'Insights', to: '/insights' },
   { label: 'Therapy', to: '/therapy' },
   { label: 'Briefs', to: '/history' },
@@ -22,10 +26,28 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate()
   const location = useLocation()
   const { status } = useGoogleStatus()
+  const [moreOpen, setMoreOpen] = useState(false)
+  const moreRef = useRef<HTMLDivElement>(null)
+
   const needsAttention =
     !status ||
     status.calendar === 'needs_auth' ||
     status.gmail === 'needs_auth'
+
+  const secondaryActive = SECONDARY_TABS.some((t) =>
+    t.to === '/' ? location.pathname === '/' : location.pathname.startsWith(t.to)
+  )
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (moreRef.current && !moreRef.current.contains(e.target as Node)) {
+        setMoreOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
 
   function handleSignOut() {
     clearKey()
@@ -78,8 +100,8 @@ export default function Layout({ children }: LayoutProps) {
           </button>
         </div>
       </nav>
-      <div className="flex border-b border-gray-900/40 px-4">
-        {TABS.map((tab) => (
+      <div className="flex border-b border-gray-900/40 px-4 items-end">
+        {PRIMARY_TABS.map((tab) => (
           <Link
             key={tab.to}
             to={tab.to}
@@ -92,6 +114,44 @@ export default function Layout({ children }: LayoutProps) {
             {tab.label}
           </Link>
         ))}
+
+        {/* Divider */}
+        <div className="w-px h-4 bg-gray-700 mx-1 self-center" />
+
+        {/* More dropdown */}
+        <div ref={moreRef} className="relative">
+          <button
+            onClick={() => setMoreOpen((o) => !o)}
+            className={`px-3 py-2.5 text-xs font-medium border-b-2 transition-colors flex items-center gap-1 ${
+              secondaryActive && !moreOpen
+                ? 'border-teal-600 text-gray-50'
+                : 'border-transparent text-gray-500 hover:text-gray-300 hover:border-gray-400'
+            }`}
+          >
+            More
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
+              <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+            </svg>
+          </button>
+          {moreOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-gray-800 border border-gray-700 rounded-lg shadow-xl py-1 z-50 min-w-30">
+              {SECONDARY_TABS.map((tab) => (
+                <Link
+                  key={tab.to}
+                  to={tab.to}
+                  onClick={() => setMoreOpen(false)}
+                  className={`block px-4 py-2 text-sm transition-colors ${
+                    isActive(tab.to)
+                      ? 'text-teal-400 bg-gray-700/50'
+                      : 'text-gray-400 hover:text-gray-50 hover:bg-gray-700/50'
+                  }`}
+                >
+                  {tab.label}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       <main className="max-w-4xl mx-auto px-4 py-6">
         {children}
