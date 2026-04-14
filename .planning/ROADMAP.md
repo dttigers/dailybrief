@@ -300,11 +300,11 @@ Plans:
 **Goal:** oauth_tokens table has `scopes jsonb DEFAULT '[]'` and `account_email text` columns; the OAuth callback parses Google's space-separated `tokens.scope` into an array and persists it alongside `account_email` (decoded from id_token); `GET /v1/google/status` reads scopes directly and reports `gmail: 'connected'` when the gmail.readonly scope is present.
 **Requirements**: OAUTH-04
 **Depends on:** Phase 79
-**Plans:** 3 plans
+**Plans:** 2/3 plans executed
 
 Plans:
-- [ ] 79.1-01-PLAN.md — Add scopes + account_email columns to schema.ts, generate + apply drizzle migration 0008
-- [ ] 79.1-02-PLAN.md — Callback parses tokens.scope + decodes id_token email, writes both to oauth_tokens; /v1/google/status reads scopes column directly
+- [x] 79.1-01-PLAN.md — Add scopes + account_email columns to schema.ts, generate + apply drizzle migration 0008
+- [x] 79.1-02-PLAN.md — Callback parses tokens.scope + decodes id_token email, writes both to oauth_tokens; /v1/google/status reads scopes column directly
 - [ ] 79.1-03-PLAN.md — Regression tests covering scope parsing, email decoding, and status read-through
 
 ### Phase 80: Gmail Server Service & Work Order Extraction
