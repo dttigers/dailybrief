@@ -362,6 +362,47 @@ Plans:
 - [x] 82-02-PLAN.md — Implement Capture, Triage, Doctor subcommand logic
 - [x] 82-03-PLAN.md — Plist audit + release build + install + human verify
 
+## 🚧 v3.1 Gmail + Thin Clients (In Progress)
+
+**Milestone Goal:** Gmail work order extraction, menu bar app stripped to print-scheduler-only, browser extension for web capture, and iOS Shortcut for share-sheet capture.
+
+### Phases
+
+### Phase 83: Menu Bar Redesign
+**Goal**: DailyBriefMonitor becomes a lean menubar-only print scheduler — no dock presence, no dashboard UI. Schedule config moves to PWA Settings (persisted server-side). Mac app reads schedule from API, triggers generate + lpr at the configured time.
+**Depends on**: Phase 82
+**Success Criteria** (what must be TRUE):
+  1. App has no Dock icon — menubar only
+  2. Menu bar shows next scheduled print time and a "Print Now" action
+  3. Schedule (time + enabled toggle) is configurable from PWA Settings page and persisted via API
+  4. Mac app reads schedule from API on launch and reschedules accordingly
+  5. All SwiftUI dashboard views (thoughts, chat, work orders, projects) removed — PWA is the UI
+  6. LaunchAgent plist updated; `dailybrief doctor` passes all checks
+
+### Phase 84: Browser Extension
+**Goal**: A lightweight browser extension (Chrome/Safari/Firefox) that lets the user capture the current page title, URL, and optional note directly to Vigil from any browser tab.
+**Depends on**: Phase 79 (uses existing capture API)
+**Success Criteria** (what must be TRUE):
+  1. Extension popup shows a text field pre-filled with page title/URL
+  2. Submitting posts to POST /v1/thoughts and shows confirmation
+  3. API key stored in extension storage (not hardcoded)
+  4. Works in Chrome and Safari at minimum
+
+### Phase 85: iOS Shortcut
+**Goal**: A shareable iOS Shortcut that accepts share-sheet input (text, URL, or selected content) and posts it to Vigil as a thought. Distributed as a .shortcut file — no App Store required.
+**Depends on**: Phase 79 (uses existing capture API)
+**Success Criteria** (what must be TRUE):
+  1. Shortcut appears in iOS share sheet from any app
+  2. Accepts text and URL input types; posts to POST /v1/thoughts
+  3. Shows success/failure notification
+  4. API key and base URL are configurable inside the Shortcut (no hardcoded values)
+  5. Distributable as a .shortcut file link
+
+### Phase 80: Gmail Server Service & Work Order Extraction
+**Goal**: Server can read Gmail for ServiceNow work order emails and surface them via API
+**Depends on**: Phase 79, Phase 80.1 (blocked: ServiceNow API token)
+**Status**: Blocked — waiting on ServiceNow token
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -450,6 +491,9 @@ Plans:
 | 80.1. PWA Brand Token Foundation | v3.1 | 3/3 | Complete | 2026-04-14 |
 | 81. PWA Settings & Google OAuth UI | v3.1 | 3/3 | Complete | 2026-04-14 |
 | 82. CLI Restructure | v3.1 | 3/3 | Complete | 2026-04-14 |
+| 83. Menu Bar Redesign | v3.1 | 0/TBD | Not started | - |
+| 84. Browser Extension | v3.1 | 0/TBD | Not started | - |
+| 85. iOS Shortcut | v3.1 | 0/TBD | Not started | - |
 
 ## Backlog
 
