@@ -138,7 +138,13 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
       // Determine granted scopes (defensive per RESEARCH.md)
       const grantedScopes = tokens.scope?.split(" ") ?? [];
 
-      // Decode account email from id_token payload (no signature verify — TLS is trust anchor)
+      // Decode account email from id_token payload (no signature verify — TLS is trust anchor).
+      // SECURITY NOTE (CR-03): The RS256 signature on the id_token is NOT verified here.
+      // This is an accepted risk: the token exchange itself happens over TLS to accounts.google.com,
+      // so a forged id_token payload requires a network-level MITM or a compromised DI mock in tests.
+      // CONSTRAINT: accountEmail is DISPLAY-ONLY (shown in the Settings UI).
+      // It MUST NOT be used for any access-control, authorization, or identity-gating decisions.
+      // If email-based gating is ever needed, replace this block with google-auth-library verifyIdToken().
       let accountEmail: string | null = null;
       if (tokens.id_token) {
         try {
