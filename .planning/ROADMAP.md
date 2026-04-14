@@ -279,8 +279,8 @@ Plans:
   4. Calling the Gmail API with the stored token returns data — not a 403 insufficientPermissions error
 **Plans**: 2 plans
 Plans:
-- [ ] 79-01-PLAN.md — Install jose, add scopes column, replace calendar-auth with JWT-based google-auth (dual scopes)
-- [ ] 79-02-PLAN.md — GET /v1/google/status endpoint (per-scope authorization state)
+- [x] 79-01-PLAN.md — Install jose, add scopes column, replace calendar-auth with JWT-based google-auth (dual scopes)
+- [x] 79-02-PLAN.md — GET /v1/google/status endpoint (per-scope authorization state)
 **UI hint**: no
 
 ### Phase 79.1: Close OAuth schema gap — scopes + account_email columns, callback writes granted scopes (INSERTED)
@@ -288,7 +288,7 @@ Plans:
 **Goal:** oauth_tokens table has `scopes jsonb DEFAULT '[]'` and `account_email text` columns; the OAuth callback parses Google's space-separated `tokens.scope` into an array and persists it alongside `account_email` (decoded from id_token); `GET /v1/google/status` reads scopes directly and reports `gmail: 'connected'` when the gmail.readonly scope is present.
 **Requirements**: OAUTH-04
 **Depends on:** Phase 79
-**Plans:** 2/3 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [x] 79.1-01-PLAN.md — Add scopes + account_email columns to schema.ts, generate + apply drizzle migration 0008
