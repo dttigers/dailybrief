@@ -21,8 +21,8 @@ export default function WorkOrdersPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-16 text-slate-400">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+      <div className="flex items-center justify-center py-16 text-gray-400">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600" />
       </div>
     )
   }
@@ -37,7 +37,7 @@ export default function WorkOrdersPage() {
 
   if (workOrders.length === 0) {
     return (
-      <div className="py-16 text-center text-slate-500 text-sm">
+      <div className="py-16 text-center text-gray-400 text-sm">
         No work orders synced yet. Run the daily brief CLI to sync work orders.
       </div>
     )
@@ -45,13 +45,13 @@ export default function WorkOrdersPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-10rem)]">
-      <div className="mb-3 text-sm text-slate-400">
+      <div className="mb-3 text-sm text-gray-400">
         {workOrders.length} work order{workOrders.length !== 1 ? 's' : ''}{' '}
-        <span className="text-slate-500">
+        <span className="text-gray-400">
           ({openCount} open, {doneCount} done)
         </span>
       </div>
-      <div className="divide-y divide-slate-800 rounded-lg border border-slate-800 overflow-hidden">
+      <div className="divide-y divide-gray-900/40 rounded-lg border border-gray-900/40 overflow-hidden">
         {workOrders.map((wo) => (
           <WorkOrderRow
             key={wo.caseNumber}

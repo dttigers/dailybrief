@@ -9,6 +9,15 @@ struct DailyBrief: AsyncParsableCommand {
         subcommands: [Generate.self, History.self, Export.self, Complete.self, Uncomplete.self, ListCompleted.self, EmailAuth.self],
         defaultSubcommand: Generate.self
     )
+
+    /// Build a VigilAPIClient from config, throwing ExitCode.failure on invalid URL.
+    static func makeAPIClient(config: AppConfig) throws -> VigilAPIClient {
+        guard let baseURL = URL(string: config.apiBaseUrl) else {
+            Logger.error("Invalid API base URL: \(config.apiBaseUrl)")
+            throw ExitCode.failure
+        }
+        return VigilAPIClient(baseURL: baseURL, apiKey: config.apiKey)
+    }
 }
 
 // MARK: - Generate (default)
@@ -35,8 +44,6 @@ extension DailyBrief {
                 return
             }
 
-            Logger.log("DailyBrief starting")
-
             let config: AppConfig
             do {
                 config = try ConfigLoader.load(from: configPath)
@@ -45,196 +52,29 @@ extension DailyBrief {
                 throw error
             }
 
-            // Initialize API client (used for all AI and data services)
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
-            Logger.log("Using Vigil Core API backend")
-
-            // Initialize services
-            let sportsService = SportsService(config: config.sports.mlb)
-            let remindersService = RemindersService(config: config.reminders)
-            let emailService = EmailService(config: config.email)
-            let calendarService: GoogleCalendarService? = config.googleCalendar.enabled
-                ? GoogleCalendarService(config: config.googleCalendar) : nil
-
-            let aiProvider: any AIProvider = APIAIProvider(client: apiClient)
-            let prioritizer: any WorkOrderPrioritizing = APIWorkOrderPrioritizer(client: apiClient)
-            let thoughtStore = APIThoughtStore(client: apiClient)
-
-            // Fetch captured thoughts via API
-            var unprocessedThoughts: [Thought] = []
-            var taskThoughts: [Thought] = []
-            var recentThoughts: [Thought] = []
-
-            do {
-                let allRecent = try await thoughtStore.fetchAll(category: nil, limit: 50, offset: 0)
-                unprocessedThoughts = allRecent.filter { $0.category == nil }
-                    .prefix(20).map { $0 }
-                taskThoughts = try await thoughtStore.fetchAll(category: .task, limit: 10, offset: 0)
-
-                let twentyFourHoursAgo = Date().addingTimeInterval(-86400)
-                recentThoughts = allRecent.filter {
-                    $0.category != nil && $0.category != .task && $0.createdAt >= twentyFourHoursAgo
-                }
-            } catch {
-                Logger.error("Thought fetch failed, continuing without thoughts: \(error.localizedDescription)")
-            }
-
-            // Fetch AI insights when enabled (depends on allThoughts, so runs sequentially)
-            var insights: [Insight] = []
-            if config.insights.enabled {
-                do {
-                    let allForInsights = unprocessedThoughts + taskThoughts + recentThoughts
-                    let insightService = APIInsightService(client: apiClient)
-                    insights = try await insightService.generateInsights(thoughts: allForInsights, lookbackDays: config.insights.lookbackDays)
-                    Logger.log("Generated \(insights.count) insights")
-                } catch {
-                    Logger.error("Insight generation failed, continuing without insights: \(error.localizedDescription)")
-                }
-            }
-
-            // Fetch therapy patterns and prep
-            var therapyPatterns: [TherapyPattern] = []
-            var therapyPrep: TherapyPrep?
-            do {
-                let allTherapyThoughts = try await thoughtStore.fetchRecentTherapyThoughts(days: 30, classification: nil, limit: 200)
-                let bringToTherapistThoughts = try await thoughtStore.fetchRecentTherapyThoughts(days: 30, classification: .bringToTherapist, limit: 200)
-
-                let patternService = APITherapyPatternService(client: apiClient)
-                let prepService = APITherapyPrepService(client: apiClient)
-
-                therapyPatterns = await tryFetch("Therapy patterns") {
-                    try await patternService.detectPatterns(thoughts: allTherapyThoughts, lookbackDays: 30)
-                } ?? []
-
-                therapyPrep = await tryFetch("Therapy prep") {
-                    try await prepService.generatePrep(thoughts: bringToTherapistThoughts, patterns: therapyPatterns)
-                }
-                Logger.log("Therapy data: \(therapyPatterns.count) patterns, prep: \(therapyPrep != nil ? "yes" : "no")")
-            } catch {
-                Logger.error("Therapy data fetch failed, continuing without: \(error.localizedDescription)")
-            }
-
-            // Build thought summaries for contextual affirmation (max 10, truncated to 50 chars)
-            let allThoughts = unprocessedThoughts + taskThoughts + recentThoughts
-            let thoughtSummaries = allThoughts.prefix(10).map { String($0.content.prefix(50)) }
-
-            // Fetch all data concurrently
-            Logger.log("Fetching data...")
-
-            async let gameResult = tryFetch("Tigers score") { try await sportsService.fetchYesterdayGame() }
-            async let upcomingResult = tryFetch("Upcoming game") { try await sportsService.fetchUpcomingGame() }
-            async let standingsResult = tryFetch("Standings") { try await sportsService.fetchStandings() }
-            async let todosResult = tryFetch("Reminders") { try await remindersService.fetchTodoItems() }
-            async let workOrdersResult = tryFetch("Work orders") { try await emailService.fetchWorkOrders() }
-            async let affirmationResult = tryFetch("Affirmation") { try await aiProvider.generateAffirmation(recentThoughts: Array(thoughtSummaries)) }
-            async let calendarResult = tryFetch("Calendar") { try await calendarService?.fetchTodayEvents() ?? [] }
-
-            // Fetch additional sports data concurrently
-            let enabledOtherSports: [(key: String, displayName: String, sportPath: String, sportConfig: AppConfig.SportsConfig.SportLeagueConfig)] = [
-                ("nfl", "NFL", "football/nfl", config.sports.nfl),
-                ("nba", "NBA", "basketball/nba", config.sports.nba),
-                ("nhl", "NHL", "hockey/nhl", config.sports.nhl),
-            ].filter { $0.sportConfig.enabled }
-
-            var additionalSports: [SportData] = []
-            if !enabledOtherSports.isEmpty {
-                additionalSports = await withTaskGroup(of: SportData.self) { group in
-                    for (key, displayName, sportPath, sportConfig) in enabledOtherSports {
-                        group.addTask {
-                            let service = ESPNSportsService(sport: sportPath, config: sportConfig)
-                            let game = await self.tryFetch("\(displayName) score") { try await service.fetchYesterdayGame() }
-                            let upcoming = await self.tryFetch("\(displayName) upcoming") { try await service.fetchUpcomingGame() }
-                            let standings = await self.tryFetch("\(displayName) standings") { try await service.fetchStandings() }
-                            return SportData(
-                                sport: key,
-                                sportDisplayName: displayName,
-                                teamName: sportConfig.teamName,
-                                divisionName: sportConfig.divisionName,
-                                gameScore: game ?? nil,
-                                upcomingGame: upcoming ?? nil,
-                                standings: standings ?? []
-                            )
-                        }
-                    }
-                    var results: [SportData] = []
-                    for await result in group {
-                        results.append(result)
-                    }
-                    return results
-                }
-                // Sort to maintain consistent order: nfl, nba, nhl
-                let sportOrder = ["nfl", "nba", "nhl"]
-                additionalSports.sort { sportOrder.firstIndex(of: $0.sport) ?? 0 < sportOrder.firstIndex(of: $1.sport) ?? 0 }
-            }
-
-            // Pass all work orders with their statuses for status-aware rendering
-            let allWorkOrders = await (workOrdersResult ?? [])
-
-            // Sync work orders to Vigil Core so PWA can display them
-            if !allWorkOrders.isEmpty {
-                do {
-                    let _: SyncResponse = try await apiClient.post(
-                        path: "/work-orders/sync",
-                        body: SyncRequest(workOrders: allWorkOrders)
-                    )
-                    Logger.log("Synced \(allWorkOrders.count) work orders to API")
-                } catch {
-                    Logger.error("Work order sync failed (non-fatal): \(error.localizedDescription)")
-                }
-            }
-
-            var woStatuses: [String: String] = [:]
-            do {
-                woStatuses = try await apiClient.get(path: "/work-orders/statuses")
-            } catch {
-                Logger.error("WO status fetch failed, falling back to local store: \(error.localizedDescription)")
-                for wo in allWorkOrders {
-                    woStatuses[wo.caseNumber] = CompletionStore.status(for: wo.caseNumber).rawValue
-                }
-            }
-
-            // AI-prioritize open (non-done) work orders
-            let openWorkOrders = allWorkOrders.filter {
-                (woStatuses[$0.caseNumber] ?? "open") != "done"
-            }
-            let woPriorityOrder = await tryFetch("WO Priority") {
-                try await prioritizer.prioritize(workOrders: openWorkOrders)
-            } ?? nil
-
-            let briefData = await DailyBriefData(
-                date: Date(),
-                workOrders: allWorkOrders,
-                todoItems: todosResult ?? [],
-                gameScore: gameResult ?? nil,
-                upcomingGame: upcomingResult ?? nil,
-                standings: standingsResult ?? [],
-                affirmation: affirmationResult ?? "You've got this. Your brain works differently, and that's your superpower.",
-                calendarEvents: calendarResult ?? [],
-                teamName: config.sports.mlb.teamName,
-                divisionName: config.sports.mlb.divisionName,
-                additionalSports: additionalSports,
-                workOrderStatuses: woStatuses,
-                unprocessedThoughts: unprocessedThoughts,
-                taskThoughts: taskThoughts,
-                recentThoughts: recentThoughts,
-                insights: insights,
-                workOrderPriorityOrder: woPriorityOrder,
-                therapyPatterns: therapyPatterns,
-                therapyPrep: therapyPrep
-            )
-
-            Logger.log("Data fetched: \(briefData.workOrders.count) work orders, \(briefData.todoItems.count) todos, game: \(briefData.gameScore != nil ? "yes" : "no"), standings: \(briefData.standings.count) teams")
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             if dryRun {
-                printSummary(briefData, isContextualAffirmation: !thoughtSummaries.isEmpty)
-                Logger.log("Dry run complete")
+                Logger.log("Dry run: would call POST /v1/brief/generate")
                 return
             }
 
-            // Generate PDF
+            Logger.log("Requesting brief from server...")
+
+            let pdfData: Data
+            do {
+                pdfData = try await apiClient.postRawData(
+                    path: "/v1/brief/generate",
+                    accept: "application/pdf"
+                )
+            } catch {
+                Logger.error("Brief generation failed: \(error.localizedDescription)")
+                throw ExitCode.failure
+            }
+
+            Logger.log("PDF received (\(pdfData.count) bytes)")
+
+            // Save to output directory (same path convention as before)
             let outputDir = ConfigLoader.expandPath(config.pdf.outputDirectory)
             try ConfigLoader.ensureDirectoryExists(outputDir)
 
@@ -243,175 +83,27 @@ extension DailyBrief {
             let filename = "daily_sheet_\(formatter.string(from: Date())).pdf"
             let outputPath = (outputDir as NSString).appendingPathComponent(filename)
 
-            let layout = PDFLayout.layout(from: config.pdf)
-            try PDFGenerator.generate(data: briefData, outputPath: outputPath, layout: layout)
+            try pdfData.write(to: URL(fileURLWithPath: outputPath))
 
-            // Print
+            // Print (per D-04: pipe to PrintService)
             if !noPrint {
                 try PrintService.printPDF(at: outputPath, config: config.printing)
             } else {
                 Logger.log("Printing skipped (--no-print)")
             }
 
-            // Save brief snapshot to API (non-critical — don't fail generate on error)
-            let allThoughtsForSnapshot = unprocessedThoughts + taskThoughts + recentThoughts
-            let snapshot = buildBriefSnapshot(
-                date: briefData.date,
-                briefData: briefData,
-                allThoughts: allThoughtsForSnapshot,
-                pdfFilename: filename
-            )
-            if let _ = try? await apiClient.post(path: "/briefs", body: snapshot) as BriefRecord {
-                Logger.log("Brief snapshot saved to API")
-            } else {
-                Logger.error("Brief snapshot save failed (non-critical)")
-            }
-
-            // Cleanup old PDFs
+            // Cleanup old PDFs (existing behavior preserved)
             cleanupOldPDFs(directory: outputDir, keepDays: config.pdf.keepDays)
 
             Logger.log("DailyBrief complete")
         }
 
-        private struct SyncRequest: Encodable {
-            let workOrders: [WorkOrder]
-        }
-        private struct SyncResponse: Decodable {
-            let synced: Int
-        }
-
-        private func tryFetch<T>(_ label: String, _ block: () async throws -> T) async -> T? {
-            do {
-                return try await block()
-            } catch {
-                Logger.error("\(label) fetch failed: \(error.localizedDescription)")
-                return nil
-            }
-        }
-
-        private func printSummary(_ data: DailyBriefData, isContextualAffirmation: Bool = false) {
-            print("\n=== Daily Brief — \(data.dateString) ===\n")
-
-            print("WORK ORDERS (\(data.workOrders.count)):")
-            for wo in data.workOrders {
-                print("  [ ] \(wo.caseNumber) | \(wo.store) | \(wo.trade) | Pri: \(wo.priority)")
-                print("      \(wo.shortDescription)")
-                if !wo.location.isEmpty { print("      Location: \(wo.location) | Equipment: \(wo.equipment)") }
-                if !wo.contact.isEmpty { print("      Contact: \(wo.contact)") }
-            }
-            if data.workOrders.isEmpty { print("  (none)") }
-
-            print("\nTO DO (\(data.todoItems.count)):")
-            for item in data.todoItems {
-                print("  [ ] \(item.title)")
-            }
-            if data.todoItems.isEmpty { print("  (none)") }
-
-            print("\nTODAY'S SCHEDULE (\(data.calendarEvents.count)):")
-            for event in data.calendarEvents {
-                print("  \(event.timeString)  \(event.title)")
-                if let loc = event.location { print("    \u{1F4CD} \(loc)") }
-            }
-            if data.calendarEvents.isEmpty { print("  (no events)") }
-
-            print("\n\(data.teamName.uppercased()):")
-            if let game = data.gameScore {
-                print("  \(game.summaryLine1)")
-                print("  \(game.summaryLine2)")
-            } else {
-                print("  No game yesterday")
-            }
-
-            print("\nUPCOMING:")
-            if let next = data.upcomingGame {
-                print("  \(next.summaryLine)")
-                print("  \(next.venue)  |  \(next.gameType)")
-            } else {
-                print("  No upcoming game scheduled")
-            }
-
-            print("\n\(data.divisionName.uppercased()):")
-            for entry in data.standings {
-                print("  \(entry.divisionRank). \(entry.team)\t\(entry.wins)-\(entry.losses)\tGB: \(entry.gamesBack)")
-            }
-            if data.standings.isEmpty { print("  (unavailable)") }
-
-            let affirmationType = isContextualAffirmation ? "(contextual)" : "(generic)"
-            print("\nAFFIRMATION \(affirmationType):")
-            print("  \(data.affirmation)")
-
-            print("\nUNPROCESSED (\(data.unprocessedThoughts.count)):")
-            for thought in data.unprocessedThoughts.prefix(5) {
-                print("  • [\(thought.source.rawValue)] \(thought.content.prefix(60))")
-            }
-            if data.unprocessedThoughts.isEmpty { print("  All caught up!") }
-
-            print("\nTODAY'S TASKS (\(data.taskThoughts.count)):")
-            for thought in data.taskThoughts.prefix(8) {
-                print("  [ ] \(thought.content.prefix(60))")
-            }
-            if data.taskThoughts.isEmpty { print("  (none)") }
-
-            print("\nRECENT CAPTURES (\(data.recentThoughts.count)):")
-            for thought in data.recentThoughts.prefix(5) {
-                let cat = thought.category?.rawValue ?? "uncategorized"
-                print("  [\(cat)] \(thought.content.prefix(60))")
-            }
-            if data.recentThoughts.isEmpty { print("  (none)") }
-            print()
-        }
-
-        private func buildBriefSnapshot(
-            date: Date,
-            briefData: DailyBriefData,
-            allThoughts: [Thought],
-            pdfFilename: String
-        ) -> BriefSnapshot {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            let dateString = formatter.string(from: date)
-
-            // Category counts from all thoughts
-            var categoryCounts: [String: Int] = [:]
-            for thought in allThoughts {
-                let key = thought.category?.rawValue ?? "uncategorized"
-                categoryCounts[key, default: 0] += 1
-            }
-
-            // Top task summaries (first 5 task titles, truncated)
-            let topTasks = briefData.taskThoughts.prefix(5).map {
-                String($0.content.prefix(80))
-            }
-
-            // Sports summary
-            var sportsSummary: String? = nil
-            if let game = briefData.gameScore {
-                sportsSummary = "\(briefData.teamName): \(game.summaryLine1)"
-            }
-
-            let summary = BriefSnapshot.BriefSummary(
-                categoryCounts: categoryCounts,
-                openTaskCount: briefData.taskThoughts.count,
-                topTaskSummaries: Array(topTasks),
-                hasTherapyData: briefData.therapyPrep != nil || !briefData.therapyPatterns.isEmpty,
-                sportsSummary: sportsSummary,
-                affirmation: briefData.affirmation,
-                calendarEventCount: briefData.calendarEvents.count,
-                workOrderCount: briefData.workOrders.count
-            )
-
-            return BriefSnapshot(
-                date: dateString,
-                summary: summary,
-                pdfFilename: pdfFilename,
-                thoughtCount: allThoughts.count,
-                taskCount: briefData.taskThoughts.count
-            )
-        }
-
         private func cleanupOldPDFs(directory: String, keepDays: Int) {
             let fm = FileManager.default
-            let cutoff = Calendar.current.date(byAdding: .day, value: -keepDays, to: Date())!
+            guard let cutoff = Calendar.current.date(byAdding: .day, value: -keepDays, to: Date()) else {
+                Logger.error("Invalid keepDays value: \(keepDays)")
+                return
+            }
 
             guard let files = try? fm.contentsOfDirectory(atPath: directory) else { return }
             for file in files where file.hasSuffix(".pdf") {
@@ -506,10 +198,7 @@ extension DailyBrief {
                 throw error
             }
 
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             // Reprint mode: find and print a specific date's PDF
             if let reprintDate = reprint {
@@ -528,7 +217,8 @@ extension DailyBrief {
                     print("Reprinted brief for \(reprintDate)")
                 } else {
                     // Try to get info from API
-                    if let record: BriefRecord = try? await apiClient.get(path: "/briefs/\(reprintDate)") {
+                    let encodedDate = reprintDate.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? reprintDate
+                    if let record: BriefRecord = try? await apiClient.get(path: "/briefs/\(encodedDate)") {
                         print("PDF not found locally. Brief was generated on \(record.date) with \(record.thoughtCount) thoughts.")
                     } else {
                         print("PDF not found locally and no record found in API for \(reprintDate).")
@@ -621,10 +311,7 @@ extension DailyBrief {
                 throw error
             }
 
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             // Build query params
             var params: [String: String] = ["format": format]
@@ -701,18 +388,19 @@ extension DailyBrief {
             }
 
             let config = try ConfigLoader.load(from: configPath)
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             struct StatusBody: Encodable { let status: String }
             struct StatusResponse: Decodable { let caseNumber: String; let status: String }
 
             for cn in caseNumbers {
+                guard let encoded = cn.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+                    print("Invalid case number: \(cn)")
+                    continue
+                }
                 do {
                     let _: StatusResponse = try await apiClient.put(
-                        path: "/work-orders/\(cn)/status",
+                        path: "/work-orders/\(encoded)/status",
                         body: StatusBody(status: status)
                     )
                     print("Work order \(cn) -> \(status)")
@@ -743,18 +431,19 @@ extension DailyBrief {
 
         func run() async throws {
             let config = try ConfigLoader.load(from: configPath)
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             struct StatusBody: Encodable { let status: String }
             struct StatusResponse: Decodable { let caseNumber: String; let status: String }
 
             for cn in caseNumbers {
+                guard let encoded = cn.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
+                    print("Invalid case number: \(cn)")
+                    continue
+                }
                 do {
                     let _: StatusResponse = try await apiClient.put(
-                        path: "/work-orders/\(cn)/status",
+                        path: "/work-orders/\(encoded)/status",
                         body: StatusBody(status: "open")
                     )
                     print("Work order \(cn) -> open")
@@ -782,10 +471,7 @@ extension DailyBrief {
 
         func run() async throws {
             let config = try ConfigLoader.load(from: configPath)
-            let apiClient = VigilAPIClient(
-                baseURL: URL(string: config.apiBaseUrl)!,
-                apiKey: config.apiKey
-            )
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
 
             let statuses: [String: String]
             do {

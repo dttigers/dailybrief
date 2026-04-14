@@ -4,8 +4,8 @@ import ThoughtAssignmentRow from './ThoughtAssignmentRow'
 
 const STATUS_COLORS: Record<string, string> = {
   active: 'bg-green-900 text-green-300',
-  archived: 'bg-slate-700 text-slate-400',
-  done: 'bg-blue-900 text-blue-300',
+  archived: 'bg-gray-50 text-gray-400',
+  done: 'bg-info-50 text-info-400',
 }
 
 interface ProjectCardProps {
@@ -26,7 +26,7 @@ export default function ProjectCard({
   const [expanded, setExpanded] = useState(false)
 
   const statusColor = project.status
-    ? (STATUS_COLORS[project.status] ?? 'bg-slate-700 text-slate-400')
+    ? (STATUS_COLORS[project.status] ?? 'bg-gray-50 text-gray-400')
     : null
 
   function handleAssignChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -37,15 +37,15 @@ export default function ProjectCard({
   }
 
   return (
-    <div className="rounded-lg border border-slate-800 bg-slate-900 overflow-hidden">
+    <div className="rounded-lg border border-gray-900/40 bg-gray-900 overflow-hidden">
       {/* Header */}
       <div
-        className="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-slate-800/50"
+        className="px-4 py-3 cursor-pointer flex items-center justify-between hover:bg-gray-900/80"
         onClick={() => setExpanded((v) => !v)}
       >
         <div className="flex items-center gap-3 min-w-0">
           <span className="font-medium text-white truncate">{project.name}</span>
-          <span className="text-xs bg-slate-700 rounded-full px-2 py-0.5 text-slate-300 shrink-0">
+          <span className="text-xs bg-gray-400/30 rounded-full px-2 py-0.5 text-gray-100 shrink-0">
             {thoughts.length}
           </span>
           {project.status && statusColor && (
@@ -56,7 +56,7 @@ export default function ProjectCard({
         </div>
         {/* Chevron */}
         <svg
-          className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 text-gray-400 shrink-0 transition-transform ${expanded ? 'rotate-180' : ''}`}
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -69,7 +69,7 @@ export default function ProjectCard({
       {/* Description (always visible if present) */}
       {project.description && (
         <p
-          className={`px-4 pb-2 text-sm text-slate-400 ${expanded ? '' : 'truncate'}`}
+          className={`px-4 pb-2 text-sm text-gray-400 ${expanded ? '' : 'truncate'}`}
         >
           {project.description}
         </p>
@@ -79,7 +79,7 @@ export default function ProjectCard({
       {expanded && (
         <div>
           {thoughts.length === 0 ? (
-            <p className="px-4 py-3 text-sm text-slate-500">No thoughts assigned yet.</p>
+            <p className="px-4 py-3 text-sm text-gray-400">No thoughts assigned yet.</p>
           ) : (
             <div>
               {thoughts.map((t) => (
@@ -90,12 +90,12 @@ export default function ProjectCard({
 
           {/* Assign dropdown */}
           {unassignedThoughts.length > 0 && (
-            <div className="px-4 py-3 border-t border-slate-800">
-              <label className="block text-xs text-slate-500 mb-1">Assign a thought</label>
+            <div className="px-4 py-3 border-t border-gray-900/40">
+              <label className="block text-xs text-gray-400 mb-1">Assign a thought</label>
               <select
                 defaultValue=""
                 onChange={handleAssignChange}
-                className="w-full bg-slate-800 border border-slate-700 rounded text-sm text-slate-200 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full bg-gray-900/80 border border-gray-400/30 rounded text-sm text-gray-100 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-teal-600"
               >
                 <option value="" disabled>
                   Select a thought to assign...
