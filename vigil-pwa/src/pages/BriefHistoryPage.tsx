@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useBriefs } from '../hooks/useBriefs'
 import { generateBrief, getBriefPdf, type BriefApiResponse } from '../api/client'
 
@@ -15,6 +15,9 @@ export default function BriefHistoryPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
   const [detailBlobUrl, setDetailBlobUrl] = useState<string | null>(null)
+  // WR-02: ref tracks the live detail blob URL so rapid selection clicks always
+  // revoke the correct previous URL, even when the async callback is still in-flight.
+  const detailBlobUrlRef = useRef<string | null>(null)
 
   // Generate section state
   const [generateState, setGenerateState] = useState<'idle' | 'generating' | 'done' | 'error'>('idle')
@@ -75,14 +78,20 @@ export default function BriefHistoryPage() {
   }
 
   async function handleSelectBrief(date: string) {
+    // WR-02: revoke via ref so rapid clicks always clean up the correct previous URL,
+    // even if the prior in-flight callback hasn't settled yet.
+    if (detailBlobUrlRef.current) {
+      URL.revokeObjectURL(detailBlobUrlRef.current)
+      detailBlobUrlRef.current = null
+    }
     setSelectedDate(date)
     setDetailBlobUrl(null)
     setDetailError(null)
     setDetailLoading(true)
     try {
       const blob = await getBriefPdf(date)
-      if (detailBlobUrl) URL.revokeObjectURL(detailBlobUrl)
       const url = URL.createObjectURL(blob)
+      detailBlobUrlRef.current = url
       setDetailBlobUrl(url)
     } catch (e: unknown) {
       setDetailError(e instanceof Error ? e.message : 'Failed to load brief. Try again.')
@@ -92,7 +101,10 @@ export default function BriefHistoryPage() {
   }
 
   function handleBack() {
-    if (detailBlobUrl) URL.revokeObjectURL(detailBlobUrl)
+    if (detailBlobUrlRef.current) {
+      URL.revokeObjectURL(detailBlobUrlRef.current)
+      detailBlobUrlRef.current = null
+    }
     setSelectedDate(null)
     setDetailBlobUrl(null)
     setDetailError(null)
