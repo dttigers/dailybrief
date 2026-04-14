@@ -20,6 +20,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import * as crypto from "node:crypto";
+import { workOrders as workOrdersTable, workOrderStatuses as workOrderStatusesTable } from "../db/schema.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -398,8 +399,8 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     }
   }
 
-  function getWorkOrdersTable(): any { return { _: "workOrders" }; }
-  function getWorkOrderStatusesTable(): any { return { _: "workOrderStatuses" }; }
+  function getWorkOrdersTable() { return workOrdersTable; }
+  function getWorkOrderStatusesTable() { return workOrderStatusesTable; }
   function taskThoughtsFilter(): any { return {}; }
   function unprocessedFilter(): any { return {}; }
   function thoughtsOrderDesc(): any { return {}; }
