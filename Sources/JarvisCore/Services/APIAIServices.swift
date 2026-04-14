@@ -368,6 +368,8 @@ public actor APIImageDescriptionService: ImageDescriptionProviding {
                 throw ProcessPhotoError.transport(underlying)
             case .decodingError(let underlying):
                 throw ProcessPhotoError.transport(underlying)
+            case .encodingError(let underlying):
+                throw ProcessPhotoError.transport(underlying)
             case .serverUnavailable:
                 throw ProcessPhotoError.transport(error)
             }

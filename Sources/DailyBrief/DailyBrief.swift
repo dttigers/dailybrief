@@ -6,7 +6,9 @@ import JarvisCore
 struct DailyBrief: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Generate a daily briefing PDF with work orders, todos, sports scores, and an ADHD affirmation.",
-        subcommands: [Generate.self, History.self, Export.self, Complete.self, Uncomplete.self, ListCompleted.self, EmailAuth.self],
+        subcommands: [Generate.self, History.self, Export.self,
+                      Capture.self, Triage.self, Doctor.self, Setup.self,
+                      Complete.self, Uncomplete.self, ListCompleted.self, EmailAuth.self],
         defaultSubcommand: Generate.self
     )
 
@@ -32,7 +34,7 @@ extension DailyBrief {
         @Flag(help: "Fetch data and display results without generating PDF")
         var dryRun = false
 
-        @Flag(help: "Create a template config file and exit")
+        @Flag(help: "Create a template config file and exit (deprecated — use: dailybrief setup)")
         var setup = false
 
         @Option(help: "Path to config file")
@@ -40,7 +42,8 @@ extension DailyBrief {
 
         func run() async throws {
             if setup {
-                try createTemplateConfig()
+                print("Warning: --setup is deprecated. Use: dailybrief setup")
+                try Setup.createTemplateConfig()
                 return
             }
 
@@ -114,59 +117,6 @@ extension DailyBrief {
                     try? fm.removeItem(atPath: path)
                     Logger.log("Cleaned up old PDF: \(file)")
                 }
-            }
-        }
-
-        private func createTemplateConfig() throws {
-            let configDir = ConfigLoader.configDirectory
-            try FileManager.default.createDirectory(atPath: configDir, withIntermediateDirectories: true)
-
-            let template = """
-            {
-                "email": {
-                    "email_address": "your-email@example.com",
-                    "app_password": "xxxx xxxx xxxx xxxx",
-                    "imap_host": "imap.gmail.com",
-                    "imap_port": 993,
-                    "use_tls": true,
-                    "search_subject_pattern": "has been assigned to you",
-                    "lookback_days": 3,
-                    "auth_type": "app_password",
-                    "oauth2_client_id": "",
-                    "oauth2_tenant_id": "",
-                    "oauth2_refresh_token": ""
-                },
-                "reminders": {
-                    "list_name": "To Do"
-                },
-                "sports": {
-                    "team_id": 116,
-                    "division_id": 202,
-                    "league_id": 103
-                },
-                "ai": {
-                    "claude_api_key": "sk-ant-...",
-                    "claude_model": "claude-sonnet-4-20250514"
-                },
-                "pdf": {
-                    "output_directory": "~/Documents/DailyBrief",
-                    "keep_days": 30
-                },
-                "printing": {
-                    "enabled": true,
-                    "printer_name": "",
-                    "copies": 1
-                }
-            }
-            """
-
-            let path = ConfigLoader.configPath
-            if FileManager.default.fileExists(atPath: path) {
-                print("Config already exists at \(path)")
-            } else {
-                try template.write(toFile: path, atomically: true, encoding: .utf8)
-                print("Template config created at \(path)")
-                print("Edit it with your API keys and preferences before running.")
             }
         }
     }
@@ -365,6 +315,134 @@ extension DailyBrief {
     }
 }
 
+// MARK: - Capture (stub)
+
+extension DailyBrief {
+    struct Capture: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(
+            abstract: "Post a thought to Vigil and show the AI triage result."
+        )
+
+        @Argument(help: "The thought text to capture.")
+        var text: String
+
+        @Option(name: .long, help: "Force category (task|therapy|idea|reflection|project). Skips triage.")
+        var category: String?
+
+        @Flag(name: .long, help: "Skip AI triage after capture.")
+        var noTriage = false
+
+        @Option(name: .long, help: "Source label (default: cli).")
+        var source: String = "cli"
+
+        func run() async throws {
+            // Stub — implementation in Plan 02
+            print("[capture stub] text=\(text)")
+        }
+    }
+}
+
+// MARK: - Triage (stub)
+
+extension DailyBrief {
+    struct Triage: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(
+            abstract: "Re-triage uncategorized thoughts in batch."
+        )
+
+        @Option(name: .long, help: "Maximum thoughts to triage (default: 20).")
+        var limit: Int = 20
+
+        @Flag(name: .long, help: "Re-triage already-categorized thoughts.")
+        var force = false
+
+        func run() async throws {
+            print("[triage stub]")
+        }
+    }
+}
+
+// MARK: - Doctor (stub)
+
+extension DailyBrief {
+    struct Doctor: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(
+            abstract: "Check Vigil environment health."
+        )
+
+        func run() async throws {
+            print("[doctor stub]")
+        }
+    }
+}
+
+// MARK: - Setup
+
+extension DailyBrief {
+    struct Setup: AsyncParsableCommand {
+        static let configuration = CommandConfiguration(
+            abstract: "Create a template config file at ~/.config/dailybrief/config.json."
+        )
+
+        func run() async throws {
+            try Setup.createTemplateConfig()
+        }
+
+        static func createTemplateConfig() throws {
+            let configDir = ConfigLoader.configDirectory
+            try FileManager.default.createDirectory(atPath: configDir, withIntermediateDirectories: true)
+
+            let template = """
+            {
+                "email": {
+                    "email_address": "your-email@example.com",
+                    "app_password": "xxxx xxxx xxxx xxxx",
+                    "imap_host": "imap.gmail.com",
+                    "imap_port": 993,
+                    "use_tls": true,
+                    "search_subject_pattern": "has been assigned to you",
+                    "lookback_days": 3,
+                    "auth_type": "app_password",
+                    "oauth2_client_id": "",
+                    "oauth2_tenant_id": "",
+                    "oauth2_refresh_token": ""
+                },
+                "reminders": {
+                    "list_name": "To Do"
+                },
+                "sports": {
+                    "team_id": 116,
+                    "division_id": 202,
+                    "league_id": 103
+                },
+                "ai": {
+                    "claude_api_key": "sk-ant-...",
+                    "claude_model": "claude-sonnet-4-20250514"
+                },
+                "pdf": {
+                    "output_directory": "~/Documents/DailyBrief",
+                    "keep_days": 30
+                },
+                "printing": {
+                    "enabled": true,
+                    "printer_name": "",
+                    "copies": 1
+                }
+            }
+            """
+
+            let path = ConfigLoader.configPath
+            if FileManager.default.fileExists(atPath: path) {
+                print("Config already exists at \(path)")
+            } else {
+                try template.write(toFile: path, atomically: true, encoding: .utf8)
+                print("Template config created at \(path)")
+                print("Edit it with your API keys and preferences before running.")
+            }
+        }
+    }
+}
+
 // MARK: - Complete
 
 extension DailyBrief {
@@ -381,38 +459,8 @@ extension DailyBrief {
         var configPath: String?
 
         func run() async throws {
-            let validStatuses = ["open", "inProgress", "done"]
-            guard validStatuses.contains(status) else {
-                print("Invalid status '\(status)'. Use: open, inProgress, or done")
-                return
-            }
-
-            let config = try ConfigLoader.load(from: configPath)
-            let apiClient = try DailyBrief.makeAPIClient(config: config)
-
-            struct StatusBody: Encodable { let status: String }
-            struct StatusResponse: Decodable { let caseNumber: String; let status: String }
-
-            for cn in caseNumbers {
-                guard let encoded = cn.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-                    print("Invalid case number: \(cn)")
-                    continue
-                }
-                do {
-                    let _: StatusResponse = try await apiClient.put(
-                        path: "/work-orders/\(encoded)/status",
-                        body: StatusBody(status: status)
-                    )
-                    print("Work order \(cn) -> \(status)")
-                } catch {
-                    print("API error for \(cn): \(error.localizedDescription)")
-                    // Fallback to local store
-                    if let parsed = CompletionStore.WorkOrderStatus(rawValue: status) {
-                        CompletionStore.setStatus(cn, parsed)
-                        print("  (saved locally as fallback)")
-                    }
-                }
-            }
+            print("Work order management has moved to the Vigil dashboard.")
+            print("Visit: https://app.vigilhub.io")
         }
     }
 }
@@ -430,29 +478,8 @@ extension DailyBrief {
         var configPath: String?
 
         func run() async throws {
-            let config = try ConfigLoader.load(from: configPath)
-            let apiClient = try DailyBrief.makeAPIClient(config: config)
-
-            struct StatusBody: Encodable { let status: String }
-            struct StatusResponse: Decodable { let caseNumber: String; let status: String }
-
-            for cn in caseNumbers {
-                guard let encoded = cn.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) else {
-                    print("Invalid case number: \(cn)")
-                    continue
-                }
-                do {
-                    let _: StatusResponse = try await apiClient.put(
-                        path: "/work-orders/\(encoded)/status",
-                        body: StatusBody(status: "open")
-                    )
-                    print("Work order \(cn) -> open")
-                } catch {
-                    print("API error for \(cn): \(error.localizedDescription)")
-                    CompletionStore.markIncomplete(cn)
-                    print("  (saved locally as fallback)")
-                }
-            }
+            print("Work order management has moved to the Vigil dashboard.")
+            print("Visit: https://app.vigilhub.io")
         }
     }
 }
@@ -470,31 +497,8 @@ extension DailyBrief {
         var configPath: String?
 
         func run() async throws {
-            let config = try ConfigLoader.load(from: configPath)
-            let apiClient = try DailyBrief.makeAPIClient(config: config)
-
-            let statuses: [String: String]
-            do {
-                statuses = try await apiClient.get(path: "/work-orders/statuses")
-            } catch {
-                Logger.error("API fetch failed, falling back to local store: \(error.localizedDescription)")
-                let items = CompletionStore.listCompleted()
-                if items.isEmpty {
-                    print("No completed work orders")
-                } else {
-                    print("Completed work orders (local):")
-                    for item in items { print("  \(item)") }
-                }
-                return
-            }
-
-            let completed = statuses.filter { $0.value == "done" }.keys.sorted()
-            if completed.isEmpty {
-                print("No completed work orders")
-            } else {
-                print("Completed work orders:")
-                for item in completed { print("  \(item)") }
-            }
+            print("Work order management has moved to the Vigil dashboard.")
+            print("Visit: https://app.vigilhub.io")
         }
     }
 }
@@ -524,7 +528,7 @@ extension DailyBrief {
             let tenantId = config.email.oauth2TenantId
 
             guard !clientId.isEmpty, !tenantId.isEmpty else {
-                print("Error: Set oauth2_client_id and oauth2_tenant_id in config first (see --setup)")
+                print("Error: Set oauth2_client_id and oauth2_tenant_id in config first (see: dailybrief setup)")
                 throw ExitCode.failure
             }
 
