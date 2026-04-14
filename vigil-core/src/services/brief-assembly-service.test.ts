@@ -14,6 +14,8 @@ import type { BriefAssemblyDeps } from "./brief-assembly-service.js";
 import type { SportsResponse } from "./sports-service.js";
 import type { CalendarEventsResponse, CalendarEvent } from "./calendar-service.js";
 import type { BriefRenderData, PdfConfig } from "./pdf-types.js";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type * as schema from "../db/schema.js";
 
 // ── Test fixtures ───────────────────────────────────────────────────────────
 
@@ -57,6 +59,7 @@ function makeBaseDeps(overrides: Partial<BriefAssemblyDeps> = {}): BriefAssembly
     sportsService: { fetchAllLeagues: async () => makeSportsResponse() },
     calendarService: { fetchTodaysEvents: async () => makeCalendarResponse() },
     pdfRenderer: { renderBrief: async (_data: BriefRenderData, _config?: PdfConfig) => MOCK_PDF_BUFFER },
+    // Cast to the Drizzle type — the mock only implements the subset used by the service.
     dbClient: {
       select: () => ({
         from: (_table: any) => ({
@@ -73,7 +76,7 @@ function makeBaseDeps(overrides: Partial<BriefAssemblyDeps> = {}): BriefAssembly
           limit: (_n: number) => Promise.resolve([]),
         }),
       }),
-    },
+    } as unknown as PostgresJsDatabase<typeof schema>,
     callClaudeFn: async (_opts: any) => "You are capable and enough.",
     parseAIJsonFn: <T>(raw: string) => JSON.parse(raw) as T,
     getAIClientFn: () => ({}), // non-null = AI available
@@ -166,7 +169,7 @@ describe("assembleAndRender orchestration", () => {
             limit: (_n: number) => Promise.resolve([]),
           }),
         }),
-      },
+      } as unknown as PostgresJsDatabase<typeof schema>,
       pdfRenderer: {
         renderBrief: async (data: BriefRenderData, _config?: PdfConfig) => {
           capturedData = data;

@@ -1,6 +1,8 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createBriefGenerateRouter } from "./brief-generate.js";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type * as schema from "../db/schema.js";
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -22,6 +24,7 @@ function makeMockDb(opts: {
   captureInsert?: { called: boolean; values: any };
 } = {}) {
   const capture = opts.captureInsert ?? { called: false, values: null };
+  // Cast to the Drizzle type — the mock only implements the subset used by the router.
   return {
     select: () => ({
       from: () => ({
@@ -41,7 +44,7 @@ function makeMockDb(opts: {
         };
       },
     }),
-  };
+  } as unknown as PostgresJsDatabase<typeof schema>;
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────

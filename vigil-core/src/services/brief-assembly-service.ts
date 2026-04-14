@@ -22,6 +22,8 @@ import * as os from "node:os";
 import * as crypto from "node:crypto";
 import { workOrders as workOrdersTable, workOrderStatuses as workOrderStatusesTable, thoughts as thoughtsTable } from "../db/schema.js";
 import { desc, isNull, eq as drizzleEq } from "drizzle-orm";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type * as schema from "../db/schema.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -29,7 +31,7 @@ export interface BriefAssemblyDeps {
   sportsService?: { fetchAllLeagues: () => Promise<SportsResponse> };
   calendarService?: { fetchTodaysEvents: () => Promise<CalendarEventsResponse> };
   pdfRenderer?: { renderBrief: (data: BriefRenderData, config?: PdfConfig) => Promise<Buffer> };
-  dbClient?: any; // Drizzle db instance
+  dbClient?: PostgresJsDatabase<typeof schema> | null; // Drizzle db instance (null when DB unavailable)
   callClaudeFn?: (opts: { system: string; userMessage: string; maxTokens: number }) => Promise<string>;
   parseAIJsonFn?: <T>(raw: string) => T;
   getAIClientFn?: () => any;

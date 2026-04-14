@@ -6,6 +6,8 @@ import { Hono } from "hono";
 import { db as defaultDb } from "../db/connection.js";
 import { briefs } from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
+import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import type * as schema from "../db/schema.js";
 import { createBriefAssemblyService } from "../services/brief-assembly-service.js";
 import { getAIClient, callClaude, parseAIJson } from "../ai/client.js";
 import * as fs from "node:fs";
@@ -14,7 +16,8 @@ import * as path from "node:path";
 // ── Types ───────────────────────────────────────────────────────────────────
 
 export interface BriefGenerateDeps {
-  db?: any;
+  // null accepted to match the nullable db export from connection.ts
+  db?: PostgresJsDatabase<typeof schema> | null;
   assemblerFactory?: () => { assembleAndRender: (dateStr: string) => Promise<{
     buffer: Buffer;
     filePath: string;
