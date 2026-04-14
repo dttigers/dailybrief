@@ -97,7 +97,7 @@ test("GA-03-callback-success: GET /auth/google/callback with valid JWT state and
 });
 
 test("GA-04-scopes-stored: GET /auth/google/callback calls dbUpsertFn with scopes array containing both scopes", async () => {
-  const dbCalls: Array<{ provider: string; scopes: string[] }> = [];
+  const dbCalls: Array<{ provider: string; scopes: string[]; accountEmail: string | null }> = [];
   const { app } = buildApp({ dbUpsertCapture: dbCalls, verifyStateFn: async () => true });
 
   await app.request("/auth/google/callback?code=test_code&state=test-jwt");
