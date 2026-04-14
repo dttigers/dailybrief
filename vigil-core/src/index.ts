@@ -30,6 +30,7 @@ import { workOrderStatus } from "./routes/work-order-status.js";
 import { sports } from "./routes/sports.js";
 import { calendar } from "./routes/calendar.js";
 import { googleAuth } from "./routes/google-auth.js";
+import { googleStatus } from "./routes/google-status.js";
 import { briefGenerate } from "./routes/brief-generate.js";
 import { testConnection, closeConnection } from "./db/connection.js";
 
@@ -103,6 +104,7 @@ app.route("/v1", workOrdersRouter);
 app.route("/v1", workOrderStatus);
 app.route("/v1", sports);
 app.route("/v1", calendar);
+app.route("/v1", googleStatus);
 
 const port = Number(process.env.PORT) || 3001;
 
