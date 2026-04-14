@@ -4,14 +4,14 @@ milestone: v3.1
 milestone_name: Gmail & CLI Evolution
 status: executing
 stopped_at: Phase 81 context gathered
-last_updated: "2026-04-13T23:53:04.058Z"
-last_activity: 2026-04-13 -- Phase 81 planning complete
+last_updated: "2026-04-14T02:49:04.896Z"
+last_activity: 2026-04-14 -- Phase 79.1 planning complete
 progress:
-  total_phases: 11
-  completed_phases: 1
-  total_plans: 11
-  completed_plans: 3
-  percent: 27
+  total_phases: 12
+  completed_phases: 2
+  total_plans: 14
+  completed_plans: 9
+  percent: 64
 ---
 
 # Project State
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-13)
 Phase: 81 of 82 (pwa settings & google oauth ui)
 Plan: Not started
 Status: Ready to execute
-Last activity: 2026-04-13 -- Phase 81 planning complete
+Last activity: 2026-04-14 -- Phase 79.1 planning complete
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 ### Roadmap Evolution
 
 - Phase 80.1 inserted after Phase 80: PWA Brand Token Foundation (INSERTED) — apply Vigil brand guidelines (teal palette, Inter font, type scale) to PWA before Settings UI in Phase 81
+- Phase 79.1 inserted after Phase 79: Close OAuth schema gap (URGENT) — add `scopes` + `account_email` columns to oauth_tokens, parse tokens.scope in callback, remove back-compat branch from status endpoint. Surfaced by Phase 81 UAT 2026-04-13 — gmail scope granted by Google but status endpoint hardcodes needs_auth.
 
 ### Decisions
 
