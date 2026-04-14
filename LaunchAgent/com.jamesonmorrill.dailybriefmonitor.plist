@@ -6,7 +6,7 @@
     <string>com.jamesonmorrill.dailybriefmonitor</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/Users/jamesonmorrill/.local/bin/DailyBriefMonitor</string>
+        <string>/Users/jamesonmorrill/.local/bin/DailyBriefMonitor.app/Contents/MacOS/DailyBriefMonitor</string>
     </array>
     <key>RunAtLoad</key>
     <true/>
