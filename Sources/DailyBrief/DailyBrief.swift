@@ -336,8 +336,75 @@ extension DailyBrief {
         var source: String = "cli"
 
         func run() async throws {
-            // Stub — implementation in Plan 02
-            print("[capture stub] text=\(text)")
+            let config: AppConfig
+            do {
+                config = try ConfigLoader.load(from: nil)
+            } catch {
+                Logger.error("Config error: \(error.localizedDescription)")
+                throw ExitCode.failure
+            }
+
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
+
+            // Build request body — only include category if provided
+            struct CaptureBody: Encodable {
+                let content: String
+                let source: String
+                let category: String?
+            }
+            let body = CaptureBody(content: text, source: source, category: category)
+
+            // POST /thoughts
+            struct ThoughtResponse: Decodable {
+                let id: Int
+                let content: String
+                let category: String?
+            }
+
+            let thought: ThoughtResponse
+            do {
+                thought = try await apiClient.post(path: "/thoughts", body: body)
+            } catch {
+                Logger.error("Capture failed: \(error.localizedDescription)")
+                throw ExitCode.failure
+            }
+
+            print("Captured thought #\(thought.id): \(thought.content)")
+
+            // Triage step — skip if --no-triage or --category was supplied
+            if noTriage || category != nil {
+                if let cat = thought.category {
+                    print("Category: \(cat)")
+                } else {
+                    print("Triage skipped.")
+                }
+                return
+            }
+
+            // POST /triage
+            struct TriageBody: Encodable { let content: String }
+            struct TriageResponse: Decodable { let category: String; let confidence: Double }
+
+            let triageResult: TriageResponse
+            do {
+                triageResult = try await apiClient.post(path: "/triage", body: TriageBody(content: text))
+            } catch {
+                Logger.error("Triage failed: \(error.localizedDescription)")
+                // Capture succeeded; triage failure is non-fatal
+                print("Triage unavailable — thought saved without category.")
+                return
+            }
+
+            // Persist the triage result back onto the thought
+            struct UpdateBody: Encodable { let category: String }
+            struct UpdateResponse: Decodable { let id: Int; let category: String? }
+            let _: UpdateResponse = (try? await apiClient.put(
+                path: "/thoughts/\(thought.id)",
+                body: UpdateBody(category: triageResult.category)
+            )) ?? UpdateResponse(id: thought.id, category: triageResult.category)
+
+            let confidence = Int(triageResult.confidence * 100)
+            print("Category: \(triageResult.category) (\(confidence)% confidence)")
         }
     }
 }
