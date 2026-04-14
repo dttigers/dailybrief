@@ -17,7 +17,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.3 Projects & Precision** — Phases 51-53, 55-57 (shipped 2026-04-08; Phase 54 deferred to v2.4)
 - ✅ **v2.4 Capture Without Friction** — Phases 58-62 (shipped 2026-04-10)
 - ✅ **v2.5 Dashboard Everywhere** — Phases 63-72 (shipped 2026-04-12)
-- 🚧 **v3.0 Server-Side PDF** — Phases 73-78 (in progress)
+- ✅ **v3.0 Server-Side PDF** — Phases 73-78 (shipped 2026-04-14)
 
 ## Completed Milestones
 
@@ -442,8 +442,14 @@ Plans:
 | 74. Google Calendar Server-Side | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 75. PDF Generation Engine | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete   | 2026-04-13 |
-| 77. PWA Brief UI | v3.0 | 0/TBD | Not started | - |
-| 78. Mac CLI Thin Client | v3.0 | 0/TBD | Not started | - |
+| 77. PWA Brief UI | v3.0 | 1/1 | Complete | 2026-04-13 |
+| 78. Mac CLI Thin Client | v3.0 | 2/2 | Complete | 2026-04-14 |
+| 79. Gmail OAuth Server Foundation | v3.1 | 3/3 | Complete | 2026-04-14 |
+| 79.1. OAuth schema gap (scopes + account_email) | v3.1 | 3/3 | Complete | 2026-04-14 |
+| 80. Gmail Server Service & Work Order Extraction | v3.1 | 0/TBD | Blocked (ServiceNow token) | - |
+| 80.1. PWA Brand Token Foundation | v3.1 | 3/3 | Complete | 2026-04-14 |
+| 81. PWA Settings & Google OAuth UI | v3.1 | 3/3 | Complete | 2026-04-14 |
+| 82. CLI Restructure | v3.1 | 3/3 | Complete | 2026-04-14 |
 
 ## Backlog
 
