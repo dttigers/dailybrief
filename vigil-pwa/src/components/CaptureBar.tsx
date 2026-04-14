@@ -48,7 +48,7 @@ export default function CaptureBar({ onCapture, onCategoryUpdate }: CaptureBarPr
   }
 
   return (
-    <div className="sticky bottom-0 bg-gray-900 border-t border-gray-900/40 p-4">
+    <div className="sticky bottom-0 bg-slate-900 border-t border-slate-800 p-4">
       <div className="flex gap-2 max-w-4xl mx-auto">
         <input
           type="text"
@@ -57,12 +57,12 @@ export default function CaptureBar({ onCapture, onCategoryUpdate }: CaptureBarPr
           onKeyDown={handleKeyDown}
           placeholder="Capture a thought..."
           disabled={isSubmitting}
-          className="flex-1 bg-gray-900/80 border border-gray-400/30 rounded-lg px-4 py-2.5 text-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-600"
+          className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
         <button
           onClick={handleSubmit}
           disabled={input.trim() === '' || isSubmitting}
-          className="px-4 py-2.5 bg-teal-600 hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors"
+          className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg text-white font-medium transition-colors"
         >
           Save
         </button>

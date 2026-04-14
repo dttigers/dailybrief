@@ -17,8 +17,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.3 Projects & Precision** — Phases 51-53, 55-57 (shipped 2026-04-08; Phase 54 deferred to v2.4)
 - ✅ **v2.4 Capture Without Friction** — Phases 58-62 (shipped 2026-04-10)
 - ✅ **v2.5 Dashboard Everywhere** — Phases 63-72 (shipped 2026-04-12)
-- ✅ **v3.0 Server-Side PDF** — Phases 73-78 (shipped 2026-04-13)
-- 🚧 **v3.1 Gmail & CLI Evolution** — Phases 79-82 (in progress)
+- 🚧 **v3.0 Server-Side PDF** — Phases 73-78 (in progress)
 
 ## Completed Milestones
 
@@ -169,28 +168,18 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
-<details>
-<summary>✅ v3.0 Server-Side PDF (Phases 73-78) — SHIPPED 2026-04-13</summary>
+## 🚧 v3.0 Server-Side PDF (In Progress)
 
-- [x] Phase 73: Sports Proxy (2/2 plans) — completed 2026-04-13
-- [x] Phase 74: Google Calendar Server-Side (2/2 plans) — completed 2026-04-13
-- [x] Phase 75: PDF Generation Engine (2/2 plans) — completed 2026-04-13
-- [x] Phase 76: Brief Assembly Endpoint (2/2 plans) — completed 2026-04-13
-- [x] Phase 77: PWA Brief UI (1/1 plan) — completed 2026-04-13
-- [x] Phase 78: Mac CLI Thin Client (2/2 plans) — completed 2026-04-13
-
-</details>
-
-## 🚧 v3.1 Gmail & CLI Evolution (In Progress)
-
-**Milestone Goal:** Add Gmail reading to vigil-core via Google OAuth integration (reusing Phase 74 token infrastructure), and restructure the Mac CLI to match the Vigil CLI spec (capture, triage, doctor, setup; retire work order commands).
+**Milestone Goal:** Move PDF generation from Mac CLI into vigil-core so any client can generate and receive daily briefs without macOS. Mac CLI becomes a thin client.
 
 ### Phases
 
-- [ ] **Phase 79: Gmail OAuth Server Foundation** — Expand OAuth scope to gmail.readonly, fix JWT nonce, add scope-status endpoint
-- [ ] **Phase 80: Gmail Server Service & Work Order Extraction** — gmail-service.ts, inbox/search/extract routes deployed to Railway
-- [x] **Phase 81: PWA Settings & Google OAuth UI** — Settings/Integrations page with connect/disconnect, scope status display, OAuth callback handling (completed 2026-04-14)
-- [ ] **Phase 82: CLI Restructure** — capture/triage/doctor/setup subcommands; retire complete/uncomplete/list-completed; plist updated atomically
+- [x] **Phase 73: Sports Proxy** — balldontlie.io routes for all 4 leagues with caching and graceful fallback (completed 2026-04-13)
+- [x] **Phase 74: Google Calendar Server-Side** — OAuth token storage in PostgreSQL and server-side event fetch (completed 2026-04-13)
+- [x] **Phase 75: PDF Generation Engine** — PDFKit 3-page brief layout matching current CoreGraphics output (completed 2026-04-13)
+- [x] **Phase 76: Brief Assembly Endpoint** — `/v1/brief/generate` orchestrator with partial-failure tolerance and storage (completed 2026-04-13)
+- [ ] **Phase 77: PWA Brief UI** — generate, preview, and download brief from the PWA
+- [ ] **Phase 78: Mac CLI Thin Client** — replace local rendering with API call, preserve lpr auto-print
 
 ## Phase Details
 
@@ -250,9 +239,8 @@ Plans:
   4. Calling `GET /v1/brief/:storage_key` returns the same PDF that was generated
 **Plans**: 2 plans
 Plans:
-- [x] 76-01-PLAN.md — Brief assembly service with Promise.allSettled orchestration and PDF storage
-- [x] 76-02-PLAN.md — Hono route handlers for POST /brief/generate and GET /brief/:date
-
+- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
+- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
 
 ### Phase 77: PWA Brief UI
 **Goal**: Users can generate, preview, and download their daily brief from the PWA without touching the Mac
@@ -264,7 +252,7 @@ Plans:
   3. A download button saves the PDF to the user's device with a sensible filename
 **Plans**: 1 plan
 Plans:
-- [x] 77-01-PLAN.md — API client binary fetch + Layout tab rename + BriefHistoryPage generate/preview/download
+- [ ] 77-01-PLAN.md — API client binary fetch + Layout tab rename + BriefHistoryPage generate/preview/download
 **UI hint**: yes
 
 ### Phase 78: Mac CLI Thin Client
@@ -277,98 +265,8 @@ Plans:
   3. The CoreGraphics/PDFLayout rendering code is absent from the Mac CLI codebase (no dead code left behind)
 **Plans**: 2 plans
 Plans:
-- [x] 78-01-PLAN.md — Rewrite Generate command as thin client + add postRawData to VigilAPIClient (CLI-01, CLI-02)
-- [x] 78-02-PLAN.md — Delete CoreGraphics PDF rendering code and generate-only services (CLI-03)
-
-### Phase 79: Gmail OAuth Server Foundation
-**Goal**: The server can authorize Gmail API access using the existing Google OAuth infrastructure — scope expanded to include gmail.readonly, CSRF nonce survives Railway rolling deploys, and the server can report per-scope authorization status to any client
-**Depends on**: Phase 78 (continues v3.1 work; OAuth infrastructure from Phase 74)
-**Requirements**: OAUTH-04
-**Success Criteria** (what must be TRUE):
-  1. The OAuth authorization URL includes both `calendar.readonly` and `gmail.readonly` scopes
-  2. After a Railway rolling deploy, the OAuth callback succeeds — the state parameter validates correctly using the JWT-based nonce (no in-memory map dependency)
-  3. `GET /v1/google/status` returns a structured response showing per-scope authorization state (e.g., `{ calendar: 'connected', gmail: 'needs_auth' }`) so the PWA can prompt re-connect when only gmail scope is missing
-  4. Calling the Gmail API with the stored token returns data — not a 403 insufficientPermissions error
-**Plans**: 2 plans
-Plans:
-- [ ] 79-01-PLAN.md — Install jose, add scopes column, replace calendar-auth with JWT-based google-auth (dual scopes)
-- [ ] 79-02-PLAN.md — GET /v1/google/status endpoint (per-scope authorization state)
-**UI hint**: no
-
-### Phase 79.1: Close OAuth schema gap — scopes + account_email columns, callback writes granted scopes (INSERTED)
-
-**Goal:** oauth_tokens table has `scopes jsonb DEFAULT '[]'` and `account_email text` columns; the OAuth callback parses Google's space-separated `tokens.scope` into an array and persists it alongside `account_email` (decoded from id_token); `GET /v1/google/status` reads scopes directly and reports `gmail: 'connected'` when the gmail.readonly scope is present.
-**Requirements**: OAUTH-04
-**Depends on:** Phase 79
-**Plans:** 3 plans
-
-Plans:
-- [ ] 79.1-01-PLAN.md — Add scopes + account_email columns to schema.ts, generate + apply drizzle migration 0008
-- [ ] 79.1-02-PLAN.md — Callback parses tokens.scope + decodes id_token email, writes both to oauth_tokens; /v1/google/status reads scopes column directly
-- [ ] 79.1-03-PLAN.md — Regression tests covering scope parsing, email decoding, and status read-through
-
-### Phase 80: Gmail Server Service & Work Order Extraction
-**Goal**: vigil-core exposes Gmail inbox list, thread read, search, and work order extraction endpoints — all using the existing oauthTokens row, mirroring the calendar-service.ts pattern
-**Depends on**: Phase 79
-**Requirements**: GWO-01, GWO-02, GWO-03
-**Success Criteria** (what must be TRUE):
-  1. `GET /v1/gmail/messages` returns a list of recent messages with sender, subject, snippet, and date — fetched with `format: metadata` to avoid N+1 quota burn
-  2. `GET /v1/gmail/messages/:threadId` returns the full thread content
-  3. `GET /v1/gmail/search?q=...` returns messages matching the query using Gmail's native `q:` parameter
-  4. `POST /v1/gmail/extract-work-orders` identifies work order candidate emails using configurable sender/subject patterns, extracts structured work orders, and stores them in the existing workOrders table
-  5. Triggering extraction a second time for already-imported work orders does not create duplicates
-**Plans**: TBD
-
-### Phase 80.1: PWA Brand Token Foundation (INSERTED)
-
-**Goal**: The PWA uses Vigil brand tokens (teal palette, warm neutrals, Inter font, type scale) from a single Tailwind theme config — all existing hardcoded slate/blue colors replaced with brand-compliant values from docs/BRAND-GUIDELINES.md
-**Depends on**: Phase 80 (continues v3.1 work; brand spec in docs/BRAND-GUIDELINES.md)
-**Requirements**: SC-01, SC-02, SC-03, SC-04, SC-05
-**Success Criteria** (what must be TRUE):
-  1. Tailwind config defines Vigil color tokens (teal-50 through teal-800, gray-50 through gray-900, surface, and status accent colors) matching docs/BRAND-GUIDELINES.md hex values
-  2. Inter font is loaded and applied as the default font family across all PWA pages
-  3. Only font weights 400 (Regular) and 500 (Medium) are used — no 600/700 anywhere in the codebase
-  4. All existing hardcoded slate/blue Tailwind classes in PWA components are replaced with brand token classes
-  5. Category tags use rounded pills and routing tags use square badges, matching the tag system spec
-**Plans**: 3 plans
-Plans:
-- [x] 80.1-01-PLAN.md — Define brand tokens in Tailwind v4 @theme and load Inter font
-- [x] 80.1-02-PLAN.md — Migrate 12 component files to brand token classes + fix tag shapes
-- [x] 80.1-03-PLAN.md — Migrate 10 page files to brand token classes
-**UI hint**: yes
-
-### Phase 81: PWA Settings & Google OAuth UI
-**Goal**: Users can connect and disconnect their Google account from the PWA Settings page, see per-scope authorization status, and trigger OAuth re-authorization when gmail scope is missing
-**Depends on**: Phase 79
-**Requirements**: OAUTH-01, OAUTH-02, OAUTH-03
-**Success Criteria** (what must be TRUE):
-  1. The PWA Settings/Integrations page shows a "Connect Google" button when no token is stored
-  2. After clicking connect and completing the OAuth flow, the page shows "Connected" with the authorized scopes listed
-  3. A "Disconnect" button removes the stored token and immediately updates the UI to disconnected state
-  4. When the stored token covers calendar but not gmail (scope gap), the page shows "Gmail: needs re-authorization" and a re-connect button — without breaking calendar functionality
-  5. The OAuth callback URL redirects cleanly back to the PWA Settings page on both desktop and iOS standalone mode
-**Plans**: 6 plans
-Plans:
-- [x] 81-01-PLAN.md — Install vitest + RTL + jsdom; create stub tests for SettingsPage / Layout / api client / useGoogleStatus (Wave 0 Nyquist)
-- [x] 81-02-PLAN.md — vigil-core callback redirect to /settings + rename calendar_error→google_error + verify/add DELETE /v1/google/tokens and GET /v1/google/status
-- [x] 81-03-PLAN.md — PWA api/client.ts: getGoogleStatus (404→null), disconnectGoogle, redirectToGoogleAuth
-- [x] 81-04-PLAN.md — GoogleStatusContext provider + useGoogleStatus hook; wrap authenticated Layout in App.tsx
-- [x] 81-05-PLAN.md — Layout.tsx gear icon + red status dot (reads shared context)
-- [x] 81-06-PLAN.md — SettingsPage.tsx (all 4 states + callback banner + inline disconnect) + route registration
-**UI hint**: yes
-
-### Phase 82: CLI Restructure
-**Goal**: The Mac CLI follows the Vigil CLI spec — capture, triage, doctor, and setup are first-class subcommands; work order management commands are retired; the LaunchAgent plist is updated atomically in the same commit
-**Depends on**: Phase 78 (continues from v3.0 CLI thin client)
-**Requirements**: CLI-04, CLI-05, CLI-06, CLI-07, CLI-08
-**Success Criteria** (what must be TRUE):
-  1. `dailybrief capture "text"` posts a thought to vigil-core and reports back the AI triage result — `--category`, `--no-triage`, and `--source` flags all work
-  2. `dailybrief triage` re-triages uncategorized thoughts in batch — `--limit` and `--force` flags work; progress is printed to stdout
-  3. `dailybrief doctor` prints a pass/fail status for each check: VIGIL_API_KEY present, vigil-core reachable, LaunchAgent plist exists and loaded, plist points to correct binary
-  4. `dailybrief setup` runs the interactive setup flow — the old `--setup` flag is removed or shimmed with a deprecation warning
-  5. Running `dailybrief complete`, `dailybrief uncomplete`, or `dailybrief list-completed` prints a "use the dashboard" message and exits cleanly — no silent failure
-  6. The LaunchAgent plist invokes only commands that still exist after the restructure — verified and committed in the same change
-**Plans**: TBD
+- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
+- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
 
 ## Progress
 
@@ -450,12 +348,8 @@ Plans:
 | 74. Google Calendar Server-Side | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 75. PDF Generation Engine | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete   | 2026-04-13 |
-| 77. PWA Brief UI | v3.0 | 1/1 | Complete    | 2026-04-13 |
-| 78. Mac CLI Thin Client | v3.0 | 2/2 | Complete    | 2026-04-13 |
-| 79. Gmail OAuth Server Foundation | v3.1 | 0/2 | Not started | - |
-| 80. Gmail Server Service & Work Order Extraction | v3.1 | 0/TBD | Not started | - |
-| 81. PWA Settings & Google OAuth UI | v3.1 | 6/6 | Complete   | 2026-04-14 |
-| 82. CLI Restructure | v3.1 | 0/TBD | Not started | - |
+| 77. PWA Brief UI | v3.0 | 0/TBD | Not started | - |
+| 78. Mac CLI Thin Client | v3.0 | 0/TBD | Not started | - |
 
 ## Backlog
 

@@ -1,11 +1,11 @@
 import type { ThoughtApiResponse } from '../api/client'
 
 const CATEGORY_COLORS: Record<string, string> = {
-  task: 'bg-info-50 text-info-400',
-  therapy: 'bg-teal-50 text-teal-600',
-  idea: 'bg-warning-50 text-warning-400',
-  reflection: 'bg-success-50 text-success-400',
-  project: 'bg-teal-50 text-teal-400',
+  task: 'bg-blue-900 text-blue-300',
+  therapy: 'bg-purple-900 text-purple-300',
+  idea: 'bg-amber-900 text-amber-300',
+  reflection: 'bg-green-900 text-green-300',
+  project: 'bg-indigo-900 text-indigo-300',
 }
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -21,22 +21,22 @@ interface ThoughtAssignmentRowProps {
 
 export default function ThoughtAssignmentRow({ thought, onUnassign }: ThoughtAssignmentRowProps) {
   const categoryColor = thought.category
-    ? (CATEGORY_COLORS[thought.category] ?? 'bg-gray-50 text-gray-400')
-    : 'bg-gray-50 text-gray-400'
+    ? (CATEGORY_COLORS[thought.category] ?? 'bg-slate-700 text-slate-300')
+    : 'bg-slate-700 text-slate-300'
 
   const sourceLabel = SOURCE_LABELS[thought.source] ?? thought.source
 
   return (
-    <div className="px-3 py-2 flex items-start gap-3 text-sm border-t border-gray-900/40">
+    <div className="px-3 py-2 flex items-start gap-3 text-sm border-t border-slate-800/60">
       <div className="flex-1 min-w-0">
-        <p className="text-gray-100 line-clamp-2 leading-snug">{thought.content}</p>
+        <p className="text-slate-200 line-clamp-2 leading-snug">{thought.content}</p>
         <div className="flex items-center gap-2 mt-1">
           {thought.category && (
             <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${categoryColor}`}>
               {thought.category}
             </span>
           )}
-          <span className="text-xs text-gray-400">{sourceLabel}</span>
+          <span className="text-xs text-slate-500">{sourceLabel}</span>
         </div>
       </div>
       <button

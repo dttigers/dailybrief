@@ -102,17 +102,17 @@ export default function BriefHistoryPage() {
       <div>
         <button
           onClick={handleBack}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-50 mb-6 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-slate-400 hover:text-white mb-6 transition-colors"
         >
           <span aria-hidden="true">&larr;</span> Back to Briefs
         </button>
 
         {detailLoading && (
           <div className="space-y-3 animate-pulse">
-            <div className="h-6 bg-gray-400/30 rounded w-1/3 mb-4" />
-            <div className="h-4 bg-gray-900/80 rounded w-full" />
-            <div className="h-4 bg-gray-900/80 rounded w-5/6" />
-            <div className="h-4 bg-gray-900/80 rounded w-4/6" />
+            <div className="h-6 bg-slate-700 rounded w-1/3 mb-4" />
+            <div className="h-4 bg-slate-800 rounded w-full" />
+            <div className="h-4 bg-slate-800 rounded w-5/6" />
+            <div className="h-4 bg-slate-800 rounded w-4/6" />
           </div>
         )}
 
@@ -127,14 +127,14 @@ export default function BriefHistoryPage() {
             <iframe
               src={detailBlobUrl}
               title="Daily Brief PDF"
-              className="w-full rounded-lg border border-teal-600 overflow-hidden h-[400px] sm:h-[600px]"
+              className="w-full rounded-lg border border-slate-800 overflow-hidden h-[400px] sm:h-[600px]"
             />
             {briefMeta && (
               <div className="mt-4">
-                <h1 className="text-lg font-medium text-gray-50 mb-1">
+                <h1 className="text-lg font-semibold text-slate-100 mb-1">
                   {formatDate(briefMeta.date)}
                 </h1>
-                <div className="flex gap-4 text-xs text-gray-400">
+                <div className="flex gap-4 text-xs text-slate-500">
                   <span>{briefMeta.thoughtCount} thought{briefMeta.thoughtCount !== 1 ? 's' : ''}</span>
                   <span>{briefMeta.taskCount} task{briefMeta.taskCount !== 1 ? 's' : ''}</span>
                 </div>
@@ -143,7 +143,7 @@ export default function BriefHistoryPage() {
             <a
               href={detailBlobUrl}
               download={`vigil-brief-${selectedDate}.pdf`}
-              className="mt-3 inline-flex items-center px-4 py-2 border border-teal-600 text-teal-400 hover:text-teal-400 hover:border-teal-400 text-sm font-medium rounded-lg transition-colors min-h-[44px]"
+              className="mt-3 inline-flex items-center px-4 py-2 border border-indigo-500 text-indigo-400 hover:text-indigo-300 hover:border-indigo-400 text-sm font-semibold rounded-lg transition-colors min-h-[44px]"
             >
               Download PDF
             </a>
@@ -156,16 +156,16 @@ export default function BriefHistoryPage() {
   // List view
   return (
     <div>
-      <h1 className="text-lg font-medium text-gray-50 mb-6">Briefs</h1>
+      <h1 className="text-lg font-semibold text-slate-100 mb-6">Briefs</h1>
 
       {/* Today's Brief section */}
       <div className="mb-2">
-        <p className="text-sm font-normal text-gray-400 uppercase tracking-wide mb-3">Today's Brief</p>
+        <p className="text-sm font-normal text-slate-400 uppercase tracking-wide mb-3">Today's Brief</p>
 
         {generateState === 'generating' && (
-          <div className="flex items-center gap-3 py-3 text-gray-400 text-sm">
+          <div className="flex items-center gap-3 py-3 text-slate-400 text-sm">
             <svg
-              className="animate-spin h-5 w-5 text-teal-400"
+              className="animate-spin h-5 w-5 text-indigo-400"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
@@ -192,19 +192,19 @@ export default function BriefHistoryPage() {
             <iframe
               src={todayBlobUrl}
               title="Daily Brief PDF"
-              className="w-full rounded-lg border border-teal-600 overflow-hidden h-[400px] sm:h-[600px]"
+              className="w-full rounded-lg border border-slate-800 overflow-hidden h-[400px] sm:h-[600px]"
             />
             <div className="flex flex-wrap gap-3 mt-3">
               <a
                 href={todayBlobUrl}
                 download={`vigil-brief-${todayStr}.pdf`}
-                className="inline-flex items-center px-4 py-2 border border-teal-600 text-teal-400 hover:text-teal-400 hover:border-teal-400 text-sm font-medium rounded-lg transition-colors min-h-[44px]"
+                className="inline-flex items-center px-4 py-2 border border-indigo-500 text-indigo-400 hover:text-indigo-300 hover:border-indigo-400 text-sm font-semibold rounded-lg transition-colors min-h-[44px]"
               >
                 Download PDF
               </a>
               <button
                 onClick={handleGenerate}
-                className="mt-3 px-4 py-2 border border-gray-400/30 text-gray-400 hover:text-gray-50 hover:border-gray-400 text-sm rounded-lg transition-colors"
+                className="mt-3 px-4 py-2 border border-slate-700 text-slate-400 hover:text-white hover:border-slate-500 text-sm rounded-lg transition-colors"
               >
                 Regenerate Brief
               </button>
@@ -216,14 +216,14 @@ export default function BriefHistoryPage() {
           <button
             onClick={handleGenerate}
             disabled={generateState === 'generating'}
-            className="w-full sm:w-auto px-6 py-3 bg-teal-600 hover:bg-teal-400 text-white text-sm font-medium rounded-lg transition-colors min-h-[44px]"
+            className="w-full sm:w-auto px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-lg transition-colors min-h-[44px]"
           >
             Generate Today's Brief
           </button>
         )}
       </div>
 
-      <div className="border-t border-gray-900/40 my-6" />
+      <div className="border-t border-slate-800 my-6" />
 
       {error && (
         <div className="bg-red-900/50 text-red-300 px-4 py-3 rounded-lg text-sm mb-4">
@@ -236,10 +236,10 @@ export default function BriefHistoryPage() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="rounded-lg border border-gray-900/40 bg-gray-900/50 p-4 animate-pulse"
+              className="rounded-lg border border-slate-800 bg-slate-900/50 p-4 animate-pulse"
             >
-              <div className="h-4 bg-gray-400/30 rounded w-1/3 mb-2" />
-              <div className="h-3 bg-gray-900/80 rounded w-1/4" />
+              <div className="h-4 bg-slate-700 rounded w-1/3 mb-2" />
+              <div className="h-3 bg-slate-800 rounded w-1/4" />
             </div>
           ))}
         </div>
@@ -247,8 +247,8 @@ export default function BriefHistoryPage() {
 
       {!loading && briefs.length === 0 && !error && (
         <div className="flex flex-col items-center justify-center py-24 text-center">
-          <p className="text-gray-50 font-medium mb-2">No briefs yet</p>
-          <p className="text-gray-400 text-sm">Generate your first daily brief to get started.</p>
+          <p className="text-slate-100 font-semibold mb-2">No briefs yet</p>
+          <p className="text-slate-400 text-sm">Generate your first daily brief to get started.</p>
         </div>
       )}
 
@@ -258,12 +258,12 @@ export default function BriefHistoryPage() {
             <button
               key={brief.id}
               onClick={() => handleSelectBrief(brief.date)}
-              className="w-full text-left rounded-lg border border-gray-900/40 bg-gray-900/50 hover:bg-gray-900/60 hover:border-teal-600/40 p-4 transition-colors"
+              className="w-full text-left rounded-lg border border-slate-800 bg-slate-900/50 hover:bg-slate-800/60 hover:border-indigo-500/40 p-4 transition-colors"
             >
-              <p className="text-sm font-medium text-gray-50 mb-1">
+              <p className="text-sm font-medium text-slate-100 mb-1">
                 {formatDate(brief.date)}
               </p>
-              <div className="flex gap-4 text-xs text-gray-400">
+              <div className="flex gap-4 text-xs text-slate-500">
                 <span>{brief.thoughtCount} thought{brief.thoughtCount !== 1 ? 's' : ''}</span>
                 <span>{brief.taskCount} task{brief.taskCount !== 1 ? 's' : ''}</span>
               </div>
