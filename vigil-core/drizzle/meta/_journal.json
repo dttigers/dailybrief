@@ -57,6 +57,13 @@
       "when": 1776049076889,
       "tag": "0007_melted_silhouette",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1776135162812,
+      "tag": "0008_add_oauth_scopes_and_account_email",
+      "breakpoints": true
     }
   ]
 }
