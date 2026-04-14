@@ -172,7 +172,7 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
               encryptedRefreshToken,
               accessToken: storedAccessToken,
               expiresAt: storedExpiresAt,
-              calendarSelections: [],
+              // calendarSelections omitted — column default [] applies only on first insert
               scopes,
               accountEmail: email,
             })
@@ -185,6 +185,7 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
                 scopes,
                 accountEmail: email,
                 updatedAt: new Date(),
+                // calendarSelections intentionally omitted — preserve existing user selections
               },
             });
         });
