@@ -424,7 +424,87 @@ extension DailyBrief {
         var force = false
 
         func run() async throws {
-            print("[triage stub]")
+            let config: AppConfig
+            do {
+                config = try ConfigLoader.load(from: nil)
+            } catch {
+                Logger.error("Config error: \(error.localizedDescription)")
+                throw ExitCode.failure
+            }
+            let apiClient = try DailyBrief.makeAPIClient(config: config)
+
+            // Fetch thoughts — get `limit` recent thoughts, filter uncategorized client-side
+            // (API does not support ?category=null filter)
+            struct ThoughtItem: Decodable, Sendable {
+                let id: Int
+                let content: String
+                let category: String?
+            }
+
+            // Fetch up to limit*3 to get enough uncategorized ones, cap at 200 (API max)
+            let fetchLimit = force ? limit : min(limit * 3, 200)
+            let response: PaginatedResponse<ThoughtItem>
+            do {
+                response = try await apiClient.get(
+                    path: "/thoughts",
+                    query: ["limit": String(fetchLimit), "offset": "0"]
+                )
+            } catch {
+                Logger.error("Failed to fetch thoughts: \(error.localizedDescription)")
+                throw ExitCode.failure
+            }
+
+            let candidates: [ThoughtItem]
+            if force {
+                candidates = Array(response.data.prefix(limit))
+            } else {
+                candidates = response.data.filter { $0.category == nil }.prefix(limit).map { $0 }
+            }
+
+            if candidates.isEmpty {
+                print("No uncategorized thoughts found.")
+                return
+            }
+
+            print("Triaging \(candidates.count) thought(s)...")
+
+            struct TriageBody: Encodable { let content: String }
+            struct TriageResponse: Decodable { let category: String; let confidence: Double }
+            struct UpdateBody: Encodable { let category: String }
+            struct UpdateResponse: Decodable { let id: Int; let category: String? }
+
+            var successCount = 0
+            var failCount = 0
+
+            for thought in candidates {
+                let triageResult: TriageResponse
+                do {
+                    triageResult = try await apiClient.post(
+                        path: "/triage",
+                        body: TriageBody(content: thought.content)
+                    )
+                } catch {
+                    print("  #\(thought.id): FAIL (\(error.localizedDescription))")
+                    failCount += 1
+                    continue
+                }
+
+                do {
+                    let _: UpdateResponse = try await apiClient.put(
+                        path: "/thoughts/\(thought.id)",
+                        body: UpdateBody(category: triageResult.category)
+                    )
+                    let confidence = Int(triageResult.confidence * 100)
+                    print("  #\(thought.id): \(triageResult.category) (\(confidence)%) — \(thought.content.prefix(60))")
+                    successCount += 1
+                } catch {
+                    print("  #\(thought.id): triage ok but save failed (\(error.localizedDescription))")
+                    failCount += 1
+                }
+            }
+
+            print("\nDone: \(successCount) triaged, \(failCount) failed.")
+            if failCount > 0 { throw ExitCode.failure }
         }
     }
 }
@@ -438,7 +518,82 @@ extension DailyBrief {
         )
 
         func run() async throws {
-            print("[doctor stub]")
+            print("=== Vigil Doctor ===\n")
+
+            var allPass = true
+
+            // Check 1: VIGIL_API_KEY env var
+            let apiKeyEnv = ProcessInfo.processInfo.environment["VIGIL_API_KEY"]
+            printCheck("VIGIL_API_KEY env var present", pass: apiKeyEnv != nil && !apiKeyEnv!.isEmpty)
+            if apiKeyEnv == nil || apiKeyEnv!.isEmpty { allPass = false }
+
+            // Check 2: vigil-core reachable (GET /health from config's apiBaseUrl)
+            // Load config to get apiBaseUrl (best-effort — if no config, use default)
+            let apiBaseUrl: String
+            if let config = try? ConfigLoader.load(from: nil) {
+                apiBaseUrl = config.apiBaseUrl
+            } else {
+                apiBaseUrl = "https://api.vigilhub.io/v1"
+            }
+
+            let healthUrl = apiBaseUrl.hasSuffix("/v1")
+                ? String(apiBaseUrl.dropLast(3)) + "/v1/health"
+                : apiBaseUrl + "/health"
+
+            var coreReachable = false
+            if let url = URL(string: healthUrl) {
+                var req = URLRequest(url: url, timeoutInterval: 5)
+                req.httpMethod = "GET"
+                if let (_, resp) = try? await URLSession.shared.data(for: req),
+                   let http = resp as? HTTPURLResponse,
+                   (200...299).contains(http.statusCode) {
+                    coreReachable = true
+                }
+            }
+            printCheck("vigil-core reachable (\(healthUrl))", pass: coreReachable)
+            if !coreReachable { allPass = false }
+
+            // Check 3: LaunchAgent plist file exists
+            let plistPath = (NSHomeDirectory() as NSString)
+                .appendingPathComponent("Library/LaunchAgents/com.jamesonmorrill.dailybriefmonitor.plist")
+            let plistExists = FileManager.default.fileExists(atPath: plistPath)
+            printCheck("LaunchAgent plist exists (\(plistPath))", pass: plistExists)
+            if !plistExists { allPass = false }
+
+            // Check 4: LaunchAgent loaded in launchctl
+            let task = Process()
+            task.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+            task.arguments = ["list", "com.jamesonmorrill.dailybriefmonitor"]
+            let pipe = Pipe()
+            task.standardOutput = pipe
+            task.standardError = pipe
+            try? task.run()
+            task.waitUntilExit()
+            let launchctlLoaded = (task.terminationStatus == 0)
+            printCheck("LaunchAgent loaded (launchctl list dailybriefmonitor)", pass: launchctlLoaded)
+            if !launchctlLoaded { allPass = false }
+
+            // Check 5: plist ProgramArguments binary exists
+            if plistExists,
+               let plistData = FileManager.default.contents(atPath: plistPath),
+               let plistDict = try? PropertyListSerialization.propertyList(from: plistData, format: nil) as? [String: Any],
+               let args = plistDict["ProgramArguments"] as? [String],
+               let binaryPath = args.first {
+                let binaryExists = FileManager.default.fileExists(atPath: binaryPath)
+                printCheck("Plist binary exists (\(binaryPath))", pass: binaryExists)
+                if !binaryExists { allPass = false }
+            } else if plistExists {
+                printCheck("Plist binary exists (could not parse plist)", pass: false)
+                allPass = false
+            }
+
+            print(allPass ? "\n=== All checks passed ===" : "\n=== Some checks FAILED ===")
+            if !allPass { throw ExitCode.failure }
+        }
+
+        private func printCheck(_ label: String, pass: Bool) {
+            let status = pass ? "PASS" : "FAIL"
+            print("  [\(status)] \(label)")
         }
     }
 }
