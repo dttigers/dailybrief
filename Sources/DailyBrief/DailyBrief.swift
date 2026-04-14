@@ -756,7 +756,11 @@ extension DailyBrief {
 
             // Step 1: Request device code
             let deviceCodeURL = URL(string: "https://login.microsoftonline.com/\(tenantId)/oauth2/v2.0/devicecode")!
-            let deviceCodeBody = "client_id=\(clientId)&scope=offline_access%20https%3A%2F%2Foutlook.office365.com%2FIMAP.AccessAsUser.All"
+            // WR-04: percent-encode clientId so the form body stays well-formed if the
+            // value ever contains '&', '=', or other reserved characters.
+            let encodedClientIdForDeviceCode = clientId.addingPercentEncoding(
+                withAllowedCharacters: .urlQueryAllowed) ?? clientId
+            let deviceCodeBody = "client_id=\(encodedClientIdForDeviceCode)&scope=offline_access%20https%3A%2F%2Foutlook.office365.com%2FIMAP.AccessAsUser.All"
 
             var deviceCodeRequest = URLRequest(url: deviceCodeURL)
             deviceCodeRequest.httpMethod = "POST"
@@ -790,7 +794,14 @@ extension DailyBrief {
 
             // Step 3: Poll for token
             let tokenURL = URL(string: "https://login.microsoftonline.com/\(tenantId)/oauth2/v2.0/token")!
-            let tokenBody = "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code&device_code=\(deviceCode)&client_id=\(clientId)"
+            // WR-04: percent-encode deviceCode and clientId — the device_code value is opaque
+            // and its format is not guaranteed to be free of '&' or '=' characters.
+            let encodedDeviceCode = deviceCode.addingPercentEncoding(
+                withAllowedCharacters: .urlQueryAllowed) ?? deviceCode
+            let encodedClientId = clientId.addingPercentEncoding(
+                withAllowedCharacters: .urlQueryAllowed) ?? clientId
+            let tokenBody = "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
+                + "&device_code=\(encodedDeviceCode)&client_id=\(encodedClientId)"
 
             let deadline = Date().addingTimeInterval(Double(expiresIn))
 
