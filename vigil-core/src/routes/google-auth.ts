@@ -1,58 +1,71 @@
 import { Hono } from "hono";
 import { OAuth2Client } from "google-auth-library";
 import { randomBytes } from "node:crypto";
+import { SignJWT, jwtVerify } from "jose";
 import { encryptToken } from "../utils/token-crypto.js";
 import { db } from "../db/connection.js";
 import { oauthTokens } from "../db/schema.js";
 
+// ── Scope constants ────────────────────────────────────────────────────────────
+
+const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+const GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
+const REQUESTED_SCOPES = [CALENDAR_SCOPE, GMAIL_SCOPE];
+
 // ── Dependency injection interface (enables unit testing without real Google API / DB) ──
 
-export interface CalendarAuthDeps {
+export interface GoogleAuthDeps {
   getTokenFn?: (client: OAuth2Client, code: string) => Promise<{ tokens: Tokens }>;
   dbUpsertFn?: (
     provider: string,
     encryptedRefreshToken: string,
     accessToken: string,
-    expiresAt: Date | null
+    expiresAt: Date | null,
+    scopes: string[]
   ) => Promise<void>;
-  stateStore?: Map<string, number>; // state nonce -> timestamp (ms)
+  signStateFn?: (nonce: string) => Promise<string>;
+  verifyStateFn?: (token: string) => Promise<boolean>;
 }
 
 interface Tokens {
   refresh_token?: string | null;
   access_token?: string | null;
   expiry_date?: number | null;
+  scope?: string | null;
 }
-
-// ── State nonce expiry (5 minutes) ────────────────────────────────────────────
-
-const STATE_TTL_MS = 5 * 60 * 1000;
 
 // ── Factory ───────────────────────────────────────────────────────────────────
 
-export function createCalendarAuthRouter(deps?: CalendarAuthDeps): Hono {
-  // In-memory state store: nonce -> timestamp. Shared per router instance.
-  const stateStore: Map<string, number> = deps?.stateStore ?? new Map();
-
+export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
   const router = new Hono();
 
   // ── GET /auth/google — initiate OAuth consent flow ────────────────────────
-  router.get("/auth/google", (c) => {
+  router.get("/auth/google", async (c) => {
     const clientId = process.env["GOOGLE_CLIENT_ID"];
     const clientSecret = process.env["GOOGLE_CLIENT_SECRET"];
     const redirectUri = process.env["GOOGLE_REDIRECT_URI"];
 
     const client = new OAuth2Client(clientId, clientSecret, redirectUri);
 
-    // Generate and store state nonce (T-74-03 CSRF mitigation)
-    const stateNonce = randomBytes(16).toString("hex");
-    stateStore.set(stateNonce, Date.now());
+    // Generate JWT state nonce (T-79-01, T-79-02, T-79-03 mitigations)
+    let stateJwt: string;
+    if (deps?.signStateFn) {
+      stateJwt = await deps.signStateFn(randomBytes(16).toString("hex"));
+    } else {
+      const secret = new TextEncoder().encode(process.env["GOOGLE_OAUTH_STATE_SECRET"]!);
+      const nonce = randomBytes(16).toString("hex");
+      stateJwt = await new SignJWT({ nonce })
+        .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
+        .setExpirationTime("5m")
+        .sign(secret);
+    }
 
     const url = client.generateAuthUrl({
       access_type: "offline",
       prompt: "consent",
-      scope: ["https://www.googleapis.com/auth/calendar.readonly"],
-      state: stateNonce,
+      scope: REQUESTED_SCOPES,
+      state: stateJwt,
     });
 
     return c.redirect(url);
@@ -65,21 +78,38 @@ export function createCalendarAuthRouter(deps?: CalendarAuthDeps): Hono {
     const error = c.req.query("error");
     const state = c.req.query("state");
 
-    // Handle OAuth error from Google
+    // Handle OAuth error from Google or missing code (per D-07)
     if (error || !code) {
-      return c.redirect(`${pwaUrl}?calendar_error=${encodeURIComponent(error ?? "no_code")}`);
+      return c.redirect(
+        `${pwaUrl}?google_error=${encodeURIComponent(error ?? "no_code")}`
+      );
     }
 
-    // Validate state nonce (CSRF protection, T-74-03)
-    if (!state || !stateStore.has(state)) {
-      return c.redirect(`${pwaUrl}?calendar_error=invalid_state`);
+    // Validate JWT state (T-79-01, T-79-02, T-79-03 mitigations)
+    if (!state) {
+      return c.redirect(`${pwaUrl}?google_error=invalid_state`);
     }
-    const stateTs = stateStore.get(state)!;
-    if (Date.now() - stateTs > STATE_TTL_MS) {
-      stateStore.delete(state);
-      return c.redirect(`${pwaUrl}?calendar_error=invalid_state`);
+
+    try {
+      let stateValid: boolean;
+      if (deps?.verifyStateFn) {
+        stateValid = await deps.verifyStateFn(state);
+      } else {
+        const secret = new TextEncoder().encode(process.env["GOOGLE_OAUTH_STATE_SECRET"]!);
+        try {
+          await jwtVerify(state, secret);
+          stateValid = true;
+        } catch {
+          stateValid = false;
+        }
+      }
+
+      if (!stateValid) {
+        return c.redirect(`${pwaUrl}?google_error=invalid_state`);
+      }
+    } catch {
+      return c.redirect(`${pwaUrl}?google_error=invalid_state`);
     }
-    stateStore.delete(state); // one-time use
 
     try {
       const clientId = process.env["GOOGLE_CLIENT_ID"];
@@ -95,22 +125,26 @@ export function createCalendarAuthRouter(deps?: CalendarAuthDeps): Hono {
       const { tokens } = await getTokenFn(client, code);
 
       if (!tokens.refresh_token) {
-        return c.redirect(`${pwaUrl}?calendar_error=no_refresh_token`);
+        return c.redirect(`${pwaUrl}?google_error=no_refresh_token`);
       }
 
-      // Encrypt refresh token before storage (T-74-01 mitigation)
+      // Encrypt refresh token before storage (T-74-01 mitigation, T-79-05 accepted)
       const encrypted = encryptToken(tokens.refresh_token);
       const accessToken = tokens.access_token ?? "";
       const expiresAt = tokens.expiry_date ? new Date(tokens.expiry_date) : null;
 
-      // Upsert into oauth_tokens table
+      // Determine granted scopes (defensive per RESEARCH.md)
+      const grantedScopes = tokens.scope?.split(" ") ?? REQUESTED_SCOPES;
+
+      // Upsert into oauth_tokens table with scopes (D-04)
       const dbUpsertFn =
         deps?.dbUpsertFn ??
         (async (
           provider: string,
           encryptedRefreshToken: string,
           storedAccessToken: string,
-          storedExpiresAt: Date | null
+          storedExpiresAt: Date | null,
+          scopes: string[]
         ) => {
           if (!db) {
             throw new Error("Database not available");
@@ -123,6 +157,7 @@ export function createCalendarAuthRouter(deps?: CalendarAuthDeps): Hono {
               accessToken: storedAccessToken,
               expiresAt: storedExpiresAt,
               calendarSelections: [],
+              scopes,
             })
             .onConflictDoUpdate({
               target: oauthTokens.provider,
@@ -130,17 +165,22 @@ export function createCalendarAuthRouter(deps?: CalendarAuthDeps): Hono {
                 encryptedRefreshToken,
                 accessToken: storedAccessToken,
                 expiresAt: storedExpiresAt,
+                scopes,
                 updatedAt: new Date(),
               },
             });
         });
 
-      await dbUpsertFn("google", encrypted, accessToken, expiresAt);
+      await dbUpsertFn("google", encrypted, accessToken, expiresAt, grantedScopes);
 
-      return c.redirect(pwaUrl);
+      // Redirect to PWA with success param (per D-07: google_connected not calendar_connected)
+      return c.redirect(`${pwaUrl}?google_connected=true`);
     } catch (err) {
-      console.error("[calendar-auth] Token exchange error:", err instanceof Error ? err.message : String(err));
-      return c.redirect(`${pwaUrl}?calendar_error=server_error`);
+      console.error(
+        "[google-auth] Token exchange error:",
+        err instanceof Error ? err.message : String(err)
+      );
+      return c.redirect(`${pwaUrl}?google_error=server_error`);
     }
   });
 
@@ -149,4 +189,4 @@ export function createCalendarAuthRouter(deps?: CalendarAuthDeps): Hono {
 
 // ── Production export ─────────────────────────────────────────────────────────
 
-export const calendarAuth = createCalendarAuthRouter();
+export const googleAuth = createGoogleAuthRouter();
