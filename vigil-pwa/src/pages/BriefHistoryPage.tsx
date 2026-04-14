@@ -30,18 +30,21 @@ export default function BriefHistoryPage() {
   ].join('-')
   const todayBriefExists = !loading && briefs.some((b) => b.date === todayStr)
 
-  // Auto-load today's PDF when it exists and no blob URL yet
+  // Auto-load today's PDF when it exists and no blob URL yet.
+  // All closure values read inside this effect are included in deps — no suppression needed.
   useEffect(() => {
-    if (todayBriefExists && !todayBlobUrl && generateState === 'idle') {
-      getBriefPdf(todayStr).then((blob) => {
-        const url = URL.createObjectURL(blob)
-        setTodayBlobUrl(url)
-        setGenerateState('done')
-      }).catch(() => {
-        // Silently fail — user can still click Regenerate
-      })
-    }
-  }, [todayBriefExists]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!todayBriefExists || todayBlobUrl || generateState !== 'idle') return
+    let active = true
+    getBriefPdf(todayStr).then((blob) => {
+      if (!active) return
+      const url = URL.createObjectURL(blob)
+      setTodayBlobUrl(url)
+      setGenerateState('done')
+    }).catch(() => {
+      // Silently fail — user can still click Regenerate
+    })
+    return () => { active = false }
+  }, [todayBriefExists, todayStr, generateState, todayBlobUrl])
 
   // Blob URL cleanup on unmount or URL change
   useEffect(() => {
