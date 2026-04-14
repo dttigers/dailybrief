@@ -9,6 +9,7 @@ import { eq, sql } from "drizzle-orm";
 import { createBriefAssemblyService } from "../services/brief-assembly-service.js";
 import { getAIClient, callClaude, parseAIJson } from "../ai/client.js";
 import * as fs from "node:fs";
+import * as path from "node:path";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -111,7 +112,14 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
       }
 
       try {
-        const buffer = await readFile(rows[0].pdfFilename);
+        // T-76-04 / CR-02: re-validate stored path stays inside BRIEFS_DIR to
+        // prevent path-traversal if a row is ever written via a secondary code path.
+        const safeDir = path.resolve(process.env["BRIEFS_DIR"] ?? "/tmp/briefs");
+        const resolved = path.resolve(rows[0].pdfFilename);
+        if (!resolved.startsWith(safeDir + path.sep)) {
+          return c.json({ error: "Brief not found" }, 404);
+        }
+        const buffer = await readFile(resolved);
         return new Response(new Uint8Array(buffer), {
           status: 200,
           headers: {
