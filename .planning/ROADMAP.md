@@ -288,12 +288,12 @@ Plans:
 **Goal:** oauth_tokens table has `scopes jsonb DEFAULT '[]'` and `account_email text` columns; the OAuth callback parses Google's space-separated `tokens.scope` into an array and persists it alongside `account_email` (decoded from id_token); `GET /v1/google/status` reads scopes directly and reports `gmail: 'connected'` when the gmail.readonly scope is present.
 **Requirements**: OAUTH-04
 **Depends on:** Phase 79
-**Plans:** 2/2 plans complete
+**Plans:** 3/3 plans complete
 
 Plans:
 - [x] 79.1-01-PLAN.md — Add scopes + account_email columns to schema.ts, generate + apply drizzle migration 0008
 - [x] 79.1-02-PLAN.md — Callback parses tokens.scope + decodes id_token email, writes both to oauth_tokens; /v1/google/status reads scopes column directly
-- [ ] 79.1-03-PLAN.md — Regression tests covering scope parsing, email decoding, and status read-through
+- [x] 79.1-03-PLAN.md — Regression tests covering scope parsing, email decoding, and status read-through
 
 ### Phase 80: Gmail Server Service & Work Order Extraction
 **Goal**: vigil-core exposes Gmail inbox list, thread read, search, and work order extraction endpoints — all using the existing oauthTokens row, mirroring the calendar-service.ts pattern
@@ -356,7 +356,11 @@ Plans:
   4. `dailybrief setup` runs the interactive setup flow — the old `--setup` flag is removed or shimmed with a deprecation warning
   5. Running `dailybrief complete`, `dailybrief uncomplete`, or `dailybrief list-completed` prints a "use the dashboard" message and exits cleanly — no silent failure
   6. The LaunchAgent plist invokes only commands that still exist after the restructure — verified and committed in the same change
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 82-01-PLAN.md — CLI scaffolding: add Capture/Triage/Doctor/Setup stubs, retire work-order commands
+- [ ] 82-02-PLAN.md — Implement Capture, Triage, Doctor subcommand logic
+- [ ] 82-03-PLAN.md — Plist audit + release build + install + human verify
 
 ## Progress
 
