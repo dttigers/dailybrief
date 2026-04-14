@@ -132,6 +132,85 @@ test("CAL-01-state-mismatch: wrong state value redirects with invalid_state", as
   assert.ok(location.includes("/settings?google_error=invalid_state"), "Wrong state must produce /settings?google_error=invalid_state");
 });
 
+// ── Phase 81-02 — GET /google/status + DELETE /google/tokens ─────────────────
+
+test("81-02-status-404: GET /google/status returns 404 when no oauth row exists", async () => {
+  const router = createCalendarAuthRouter({
+    statusFn: async () => null,
+  });
+  const app = new Hono();
+  app.route("/", router);
+  const res = await app.request("/google/status");
+  assert.equal(res.status, 404, "Missing row must return 404 (D-07 contract)");
+  const body = (await res.json()) as { error?: string };
+  assert.equal(body.error, "not_connected");
+});
+
+test("81-02-status-connected: GET /google/status returns calendar=connected, gmail=needs_auth when pre-scope row exists", async () => {
+  // Pre-Phase-79 back-compat path: row exists but scopes column not populated.
+  const router = createCalendarAuthRouter({
+    statusFn: async () => ({ provider: "google", scopes: undefined, accountEmail: null }),
+  });
+  const app = new Hono();
+  app.route("/", router);
+  const res = await app.request("/google/status");
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { calendar: string; gmail: string; email?: string };
+  assert.equal(body.calendar, "connected", "Row presence implies calendar scope granted pre-Phase-79");
+  assert.equal(body.gmail, "needs_auth", "Gmail requires Phase 79 scope upgrade");
+});
+
+test("81-02-status-both-scopes: GET /google/status returns both connected when scopes include gmail + calendar", async () => {
+  const router = createCalendarAuthRouter({
+    statusFn: async () => ({
+      provider: "google",
+      scopes: [
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/gmail.readonly",
+      ],
+      accountEmail: "user@example.com",
+    }),
+  });
+  const app = new Hono();
+  app.route("/", router);
+  const res = await app.request("/google/status");
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { calendar: string; gmail: string; email?: string };
+  assert.equal(body.calendar, "connected");
+  assert.equal(body.gmail, "connected");
+  assert.equal(body.email, "user@example.com");
+});
+
+test("81-02-delete-ok: DELETE /google/tokens invokes deleteFn and returns { ok: true }", async () => {
+  let deleteCalls = 0;
+  const router = createCalendarAuthRouter({
+    deleteFn: async () => {
+      deleteCalls++;
+    },
+  });
+  const app = new Hono();
+  app.route("/", router);
+  const res = await app.request("/google/tokens", { method: "DELETE" });
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { ok?: boolean };
+  assert.equal(body.ok, true);
+  assert.equal(deleteCalls, 1, "deleteFn must be invoked exactly once");
+});
+
+test("81-02-delete-500: DELETE /google/tokens returns 500 when deleteFn throws", async () => {
+  const router = createCalendarAuthRouter({
+    deleteFn: async () => {
+      throw new Error("boom");
+    },
+  });
+  const app = new Hono();
+  app.route("/", router);
+  const res = await app.request("/google/tokens", { method: "DELETE" });
+  assert.equal(res.status, 500);
+  const body = (await res.json()) as { error?: string };
+  assert.equal(body.error, "boom");
+});
+
 test("81-02-D10: trailing slash on PWA_URL is normalized before /settings concat", async () => {
   const origPwaUrl = process.env["PWA_URL"];
   process.env["PWA_URL"] = "http://localhost:5173/";
