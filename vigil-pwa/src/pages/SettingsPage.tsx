@@ -5,6 +5,16 @@ import { disconnectGoogle, redirectToGoogleAuth } from '../api/client'
 
 type Banner = { kind: 'success' | 'error'; text: string } | null
 
+// WR-03: map raw google_error codes to fixed user-visible strings.
+// Unknown codes get a generic fallback — prevents UI phishing via crafted redirect params.
+const GOOGLE_ERROR_MESSAGES: Record<string, string> = {
+  invalid_state: 'Connection attempt expired. Please try again.',
+  no_refresh_token: 'Google did not issue a refresh token. Revoke access at myaccount.google.com and retry.',
+  server_error: 'Server error during connection. Please try again.',
+  access_denied: 'Access was denied.',
+  no_code: 'Connection attempt failed. Please try again.',
+}
+
 /**
  * Google integration Settings page (Phase 81).
  *
@@ -38,9 +48,10 @@ export default function SettingsPage() {
       setBanner({ kind: 'success', text: 'Google account connected' })
       refetch()
     } else if (err) {
-      // decodeURIComponent is XSS-safe here: React renders the result as a
-      // text node (auto-escaped), never as HTML.
-      setBanner({ kind: 'error', text: `Connection failed: ${decodeURIComponent(err)}` })
+      // WR-03: look up the raw code in the allowlist; unknown codes get a generic message.
+      // This prevents a crafted OAuth redirect from showing arbitrary text in the banner.
+      const text = GOOGLE_ERROR_MESSAGES[err] ?? 'Connection failed. Please try again.'
+      setBanner({ kind: 'error', text })
     }
     window.history.replaceState({}, '', window.location.pathname)
     // eslint-disable-next-line react-hooks/exhaustive-deps
