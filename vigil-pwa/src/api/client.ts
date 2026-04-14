@@ -449,3 +449,29 @@ export async function deleteChatSession(id: number): Promise<void> {
   const res = await vigilFetch(`/v1/chat-sessions/${id}`, { method: 'DELETE' })
   if (!res.ok) throw new Error(`Failed to delete chat session: ${res.status}`)
 }
+
+// ---------------------------------------------------------------------------
+// Google OAuth API (Phase 79 server foundation)
+// ---------------------------------------------------------------------------
+
+export type GoogleScopeStatus = 'connected' | 'needs_auth'
+
+export interface GoogleStatus {
+  calendar: GoogleScopeStatus
+  gmail: GoogleScopeStatus
+  email?: string
+}
+
+/**
+ * Fetch Google OAuth connection status for the current account.
+ *
+ * Returns null when the server responds 404 (no token stored = disconnected).
+ * Throws on any non-ok, non-404 response (500/network) — callers should treat
+ * thrown errors as a separate state from null (disconnected).
+ */
+export async function getGoogleStatus(): Promise<GoogleStatus | null> {
+  const res = await vigilFetch('/v1/google/status')
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`Failed to fetch Google status: ${res.status}`)
+  return res.json() as Promise<GoogleStatus>
+}

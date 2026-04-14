@@ -1,9 +1,14 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  test: {
+    environment: 'jsdom',
+    globals: false,
+  },
   server: {
     proxy: {
       '/v1': {
@@ -22,7 +27,7 @@ export default defineConfig({
         name: 'Vigil Dashboard',
         short_name: 'Vigil',
         description: 'Vigil ambient AI dashboard',
-        theme_color: '#0F6E56',
+        theme_color: '#0f172a',
         background_color: '#0f172a',
         display: 'standalone',
         start_url: '/',

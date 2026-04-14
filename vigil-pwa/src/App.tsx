@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router'
 import { getStoredKey } from './api/client'
+import { GoogleStatusProvider } from './hooks/GoogleStatusContext'
 import Layout from './components/Layout'
 import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
@@ -34,18 +35,20 @@ export default function App() {
         element={
           isAuthenticated
             ? (
-              <Layout>
-                <Routes>
-                  <Route path="/" element={<DashboardPage />} />
-                  <Route path="/work-orders" element={<WorkOrdersPage />} />
-                  <Route path="/projects" element={<ProjectsPage />} />
-                  <Route path="/chat" element={<ChatPage />} />
-                  <Route path="/insights" element={<InsightsPage />} />
-                  <Route path="/therapy" element={<TherapyPage />} />
-                  <Route path="/history" element={<BriefHistoryPage />} />
-                  <Route path="/upload" element={<UploadPage />} />
-                </Routes>
-              </Layout>
+              <GoogleStatusProvider>
+                <Layout>
+                  <Routes>
+                    <Route path="/" element={<DashboardPage />} />
+                    <Route path="/work-orders" element={<WorkOrdersPage />} />
+                    <Route path="/projects" element={<ProjectsPage />} />
+                    <Route path="/chat" element={<ChatPage />} />
+                    <Route path="/insights" element={<InsightsPage />} />
+                    <Route path="/therapy" element={<TherapyPage />} />
+                    <Route path="/history" element={<BriefHistoryPage />} />
+                    <Route path="/upload" element={<UploadPage />} />
+                  </Routes>
+                </Layout>
+              </GoogleStatusProvider>
             )
             : <Navigate to="/auth" replace />
         }
