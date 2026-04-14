@@ -32,7 +32,7 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
 
   function getAssembler() {
     if (deps.assemblerFactory) return deps.assemblerFactory();
-    return createBriefAssemblyService();
+    return createBriefAssemblyService({ dbClient: getDb() });
   }
 
   async function readFile(filePath: string): Promise<Buffer> {
