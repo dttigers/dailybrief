@@ -754,7 +754,8 @@ function drawPageThree(
 
       // Cap to 5 (T-75-05)
       for (const thought of data.recentThoughts.slice(0, 5)) {
-        if (y > contentBottom - layout.bodySize * 2) break;
+        const contentH = doc.heightOfString(thought.content, { width: recentContentMaxWidth });
+        if (y + contentH > contentBottom - layout.bodySize) break;
 
         const catLabel = thought.category ?? "misc";
         doc
@@ -763,7 +764,6 @@ function drawPageThree(
           .fillColor(COLORS.subtext)
           .text(catLabel, leftX, y, { lineBreak: false });
 
-        const contentH = doc.heightOfString(thought.content, { width: recentContentMaxWidth });
         doc
           .font("Inter-Regular")
           .fontSize(layout.bodySize)
@@ -781,6 +781,11 @@ function drawPageThree(
   let insightsEndY = y;
 
   if (layout.enabledSections.has("insights") && data.insights.length > 0) {
+    // If insufficient space to start insights meaningfully, begin on a fresh page
+    if (y > contentBottom - 150) {
+      doc.addPage({ size: [layout.pageW, layout.pageH], margin: 0 });
+      y = layout.margin + 4;
+    }
     y += 4;
     y = drawDivider(doc, leftX, rightEdge, y);
     y = drawSectionHeader(doc, "AI Insights", leftX, y, layout);
