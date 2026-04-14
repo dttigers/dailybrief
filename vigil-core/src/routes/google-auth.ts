@@ -10,7 +10,7 @@ import { oauthTokens } from "../db/schema.js";
 
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
 const GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
-const REQUESTED_SCOPES = [CALENDAR_SCOPE, GMAIL_SCOPE];
+const REQUESTED_SCOPES = ["openid", "email", CALENDAR_SCOPE, GMAIL_SCOPE];
 
 // ── Dependency injection interface (enables unit testing without real Google API / DB) ──
 

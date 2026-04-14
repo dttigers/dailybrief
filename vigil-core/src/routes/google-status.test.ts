@@ -8,7 +8,7 @@ import { createGoogleStatusRouter } from "./google-status.js";
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
 const GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
 
-function buildApp(rows: Array<{ scopes: string[] | null }>) {
+function buildApp(rows: Array<{ scopes: string[] | null; accountEmail?: string | null }>) {
   const router = createGoogleStatusRouter({
     dbSelectFn: async () => rows,
   });
@@ -63,4 +63,27 @@ test("GS-04-null-scopes: returns both needs_auth when scopes is null (legacy tok
   const body = await res.json() as { calendar: string; gmail: string };
   assert.equal(body.calendar, "needs_auth", "calendar must be needs_auth when scopes is null");
   assert.equal(body.gmail, "needs_auth", "gmail must be needs_auth when scopes is null");
+});
+
+test("GS-05-email-in-response: returns email field from accountEmail when both scopes connected", async () => {
+  const app = buildApp([{ scopes: [CALENDAR_SCOPE, GMAIL_SCOPE], accountEmail: "user@example.com" }]);
+
+  const res = await app.request("/google/status");
+  assert.equal(res.status, 200, "Expected 200 OK");
+
+  const body = await res.json() as { calendar: string; gmail: string; email?: string | null };
+  assert.equal(body.calendar, "connected", "calendar must be connected");
+  assert.equal(body.gmail, "connected", "gmail must be connected");
+  assert.equal(body.email, "user@example.com", "email must be returned from accountEmail");
+});
+
+test("GS-06-empty-scopes-backcompat: returns calendar=connected, gmail=needs_auth for legacy empty-scopes row (pre-79.1 auth)", async () => {
+  const app = buildApp([{ scopes: [], accountEmail: null }]);
+
+  const res = await app.request("/google/status");
+  assert.equal(res.status, 200, "Expected 200 OK");
+
+  const body = await res.json() as { calendar: string; gmail: string };
+  assert.equal(body.calendar, "connected", "calendar must be connected for legacy empty-scopes row");
+  assert.equal(body.gmail, "needs_auth", "gmail must be needs_auth for legacy empty-scopes row");
 });
