@@ -21,7 +21,8 @@ export interface GoogleAuthDeps {
     encryptedRefreshToken: string,
     accessToken: string,
     expiresAt: Date | null,
-    scopes: string[]
+    scopes: string[],
+    accountEmail: string | null
   ) => Promise<void>;
   signStateFn?: (nonce: string) => Promise<string>;
   verifyStateFn?: (token: string) => Promise<boolean>;
@@ -32,6 +33,7 @@ interface Tokens {
   access_token?: string | null;
   expiry_date?: number | null;
   scope?: string | null;
+  id_token?: string | null;
 }
 
 // ── Factory ───────────────────────────────────────────────────────────────────
@@ -136,7 +138,20 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
       // Determine granted scopes (defensive per RESEARCH.md)
       const grantedScopes = tokens.scope?.split(" ") ?? [];
 
-      // Upsert into oauth_tokens table with scopes (D-04)
+      // Decode account email from id_token payload (no signature verify — TLS is trust anchor)
+      let accountEmail: string | null = null;
+      if (tokens.id_token) {
+        try {
+          const payload = JSON.parse(
+            Buffer.from(tokens.id_token.split(".")[1], "base64url").toString("utf-8")
+          ) as { email?: string };
+          accountEmail = payload.email ?? null;
+        } catch {
+          // non-fatal — email stays null
+        }
+      }
+
+      // Upsert into oauth_tokens table with scopes and email (D-04)
       const dbUpsertFn =
         deps?.dbUpsertFn ??
         (async (
@@ -144,7 +159,8 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
           encryptedRefreshToken: string,
           storedAccessToken: string,
           storedExpiresAt: Date | null,
-          scopes: string[]
+          scopes: string[],
+          email: string | null
         ) => {
           if (!db) {
             throw new Error("Database not available");
@@ -158,6 +174,7 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
               expiresAt: storedExpiresAt,
               calendarSelections: [],
               scopes,
+              accountEmail: email,
             })
             .onConflictDoUpdate({
               target: oauthTokens.provider,
@@ -166,12 +183,13 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
                 accessToken: storedAccessToken,
                 expiresAt: storedExpiresAt,
                 scopes,
+                accountEmail: email,
                 updatedAt: new Date(),
               },
             });
         });
 
-      await dbUpsertFn("google", encrypted, accessToken, expiresAt, grantedScopes);
+      await dbUpsertFn("google", encrypted, accessToken, expiresAt, grantedScopes, accountEmail);
 
       // Redirect to PWA with success param (per D-07: google_connected not calendar_connected)
       return c.redirect(`${pwaUrl}?google_connected=true`);

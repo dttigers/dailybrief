@@ -14,11 +14,19 @@ process.env["GOOGLE_OAUTH_STATE_SECRET"] = "a]".repeat(16); // 32-char test secr
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
 
+// Minimal id_token payload: base64url(header).base64url({email}).base64url(sig)
+const MOCK_ID_TOKEN = [
+  Buffer.from(JSON.stringify({ alg: "RS256" })).toString("base64url"),
+  Buffer.from(JSON.stringify({ email: "test@example.com", sub: "12345" })).toString("base64url"),
+  "fakesig",
+].join(".");
+
 const MOCK_TOKENS = {
   refresh_token: "mock-refresh-token",
   access_token: "mock-access-token",
   expiry_date: Date.now() + 3_600_000,
   scope: "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/gmail.readonly",
+  id_token: MOCK_ID_TOKEN,
 };
 
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
@@ -28,16 +36,16 @@ const GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
 function buildApp(overrides: {
   signStateFn?: (nonce: string) => Promise<string>;
   verifyStateFn?: (token: string) => Promise<boolean>;
-  dbUpsertCapture?: Array<{ provider: string; scopes: string[] }>;
+  dbUpsertCapture?: Array<{ provider: string; scopes: string[]; accountEmail: string | null }>;
 } = {}) {
-  const dbCalls: Array<{ provider: string; scopes: string[] }> = overrides.dbUpsertCapture ?? [];
+  const dbCalls: Array<{ provider: string; scopes: string[]; accountEmail: string | null }> = overrides.dbUpsertCapture ?? [];
 
   const router = createGoogleAuthRouter({
     signStateFn: overrides.signStateFn ?? (async () => "test-jwt"),
     verifyStateFn: overrides.verifyStateFn ?? (async () => true),
     getTokenFn: async () => ({ tokens: MOCK_TOKENS }),
-    dbUpsertFn: async (provider, _encryptedRefreshToken, _accessToken, _expiresAt, scopes) => {
-      dbCalls.push({ provider, scopes });
+    dbUpsertFn: async (provider, _enc, _access, _expires, scopes, accountEmail) => {
+      dbCalls.push({ provider, scopes, accountEmail });
     },
   });
 
@@ -144,4 +152,14 @@ test("GA-08-missing-state: GET /auth/google/callback with missing state redirect
 
   const location = res.headers.get("location") ?? "";
   assert.ok(location.includes("google_error=invalid_state"), "Missing state must produce google_error=invalid_state");
+});
+
+test("GA-09-account-email-stored: callback decodes id_token and passes accountEmail to dbUpsertFn", async () => {
+  const dbCalls: Array<{ provider: string; scopes: string[]; accountEmail: string | null }> = [];
+  const { app } = buildApp({ dbUpsertCapture: dbCalls, verifyStateFn: async () => true });
+
+  await app.request("/auth/google/callback?code=test_code&state=test-jwt");
+
+  assert.equal(dbCalls.length, 1, "Expected exactly one DB upsert call");
+  assert.equal(dbCalls[0].accountEmail, "test@example.com", "accountEmail must be decoded from id_token payload");
 });
