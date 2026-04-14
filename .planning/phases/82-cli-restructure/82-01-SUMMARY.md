@@ -117,3 +117,9 @@ None - no external service configuration required.
 ---
 *Phase: 82-cli-restructure*
 *Completed: 2026-04-14*
+
+## Self-Check: PASSED
+
+- FOUND: Sources/DailyBrief/DailyBrief.swift
+- FOUND: .planning/phases/82-cli-restructure/82-01-SUMMARY.md
+- FOUND commit: ca88aa8
