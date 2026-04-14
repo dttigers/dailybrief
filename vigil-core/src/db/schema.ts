@@ -181,6 +181,7 @@ export const oauthTokens = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     calendarSelections: jsonb("calendar_selections").$type<string[]>().default([]),
     scopes: jsonb("scopes").$type<string[]>(),
+    accountEmail: text("account_email"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },

@@ -37,6 +37,13 @@ import { testConnection, closeConnection } from "./db/connection.js";
 // Verify database connection at startup
 testConnection();
 
+// Verify required OAuth env vars at startup (WR-03)
+for (const key of ["GOOGLE_OAUTH_STATE_SECRET", "GOOGLE_TOKEN_ENCRYPTION_KEY"]) {
+  if (!process.env[key]) {
+    console.error(`FATAL: required env var ${key} is not set — server will fail on first OAuth request`);
+  }
+}
+
 const app = new Hono();
 
 // CORS middleware — must run before auth so preflight OPTIONS requests are not rejected

@@ -134,7 +134,7 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
       const expiresAt = tokens.expiry_date ? new Date(tokens.expiry_date) : null;
 
       // Determine granted scopes (defensive per RESEARCH.md)
-      const grantedScopes = tokens.scope?.split(" ") ?? REQUESTED_SCOPES;
+      const grantedScopes = tokens.scope?.split(" ") ?? [];
 
       // Upsert into oauth_tokens table with scopes (D-04)
       const dbUpsertFn =
