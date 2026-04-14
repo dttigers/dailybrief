@@ -151,8 +151,8 @@ export default function ThoughtsPage() {
             onClick={() => setShowFilters((v) => !v)}
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 relative ${
               showFilters || hasActiveFilters
-                ? 'bg-teal-600 text-white hover:bg-teal-800'
-                : 'bg-gray-900/80 text-gray-100 hover:bg-gray-400/30'
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             Filters
@@ -164,8 +164,8 @@ export default function ThoughtsPage() {
             onClick={handleToggleSelectMode}
             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 ${
               isSelectable
-                ? 'bg-teal-600 text-white hover:bg-teal-800'
-                : 'bg-gray-900/80 text-gray-100 hover:bg-gray-400/30'
+                ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
             }`}
           >
             {isSelectable ? 'Cancel' : 'Select'}
@@ -189,9 +189,9 @@ export default function ThoughtsPage() {
               type="checkbox"
               checked={allSelected}
               onChange={handleSelectAll}
-              className="w-5 h-5 rounded border-gray-400/30 bg-gray-900/80 accent-teal-600 cursor-pointer"
+              className="w-5 h-5 rounded border-slate-600 bg-slate-800 accent-indigo-500 cursor-pointer"
             />
-            <span className="text-gray-400 text-sm">
+            <span className="text-slate-400 text-sm">
               {allSelected ? 'Deselect all' : 'Select all'}
             </span>
           </div>

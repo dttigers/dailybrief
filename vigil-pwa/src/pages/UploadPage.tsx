@@ -12,8 +12,8 @@ export default function UploadPage() {
           onClick={() => setTab('photo')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             tab === 'photo'
-              ? 'bg-teal-600 text-white'
-              : 'bg-gray-900/80 text-gray-400 hover:text-gray-50'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-slate-800 text-slate-400 hover:text-white'
           }`}
         >
           Photo
@@ -22,8 +22,8 @@ export default function UploadPage() {
           onClick={() => setTab('audio')}
           className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             tab === 'audio'
-              ? 'bg-teal-600 text-white'
-              : 'bg-gray-900/80 text-gray-400 hover:text-gray-50'
+              ? 'bg-indigo-600 text-white'
+              : 'bg-slate-800 text-slate-400 hover:text-white'
           }`}
         >
           Audio

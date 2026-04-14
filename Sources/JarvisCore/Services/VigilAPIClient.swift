@@ -7,7 +7,6 @@ public enum VigilAPIError: Error, LocalizedError {
     case networkError(Error)
     case httpError(statusCode: Int, message: String)
     case decodingError(Error)
-    case encodingError(Error)
     case serverUnavailable
 
     public var errorDescription: String? {
@@ -18,8 +17,6 @@ public enum VigilAPIError: Error, LocalizedError {
             return "HTTP \(statusCode): \(message)"
         case .decodingError(let error):
             return "Decoding error: \(error.localizedDescription)"
-        case .encodingError(let error):
-            return "Encoding error: \(error.localizedDescription)"
         case .serverUnavailable:
             return "Vigil Core API server is unavailable"
         }
@@ -108,17 +105,12 @@ public actor VigilAPIClient {
     ///   - query: Optional query parameters.
     /// - Returns: Decoded response of type `T`.
     public func get<T: Decodable>(path: String, query: [String: String] = [:]) async throws -> T {
-        guard var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
-            throw VigilAPIError.networkError(URLError(.badURL))
-        }
+        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
         if !query.isEmpty {
             components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
 
-        guard let url = components.url else {
-            throw VigilAPIError.networkError(URLError(.badURL))
-        }
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: components.url!)
         request.httpMethod = "GET"
         applyHeaders(&request)
 
@@ -150,16 +142,11 @@ public actor VigilAPIClient {
     ///   - body: Encodable request body.
     /// - Returns: Decoded response of type `T`.
     public func post<T: Decodable, B: Encodable>(path: String, query: [String: String], body: B) async throws -> T {
-        guard var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
-            throw VigilAPIError.networkError(URLError(.badURL))
-        }
+        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
         if !query.isEmpty {
             components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
-        guard let url = components.url else {
-            throw VigilAPIError.networkError(URLError(.badURL))
-        }
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: components.url!)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         applyHeaders(&request)
@@ -242,41 +229,18 @@ public actor VigilAPIClient {
     ///   - accept: Accept header value (e.g., `text/csv`). Defaults to `application/json`.
     /// - Returns: Raw response Data.
     public func getRawData(path: String, query: [String: String] = [:], accept: String = "application/json") async throws -> Data {
-        guard var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false) else {
-            throw VigilAPIError.networkError(URLError(.badURL))
-        }
+        var components = URLComponents(url: baseURL.appendingPathComponent(path), resolvingAgainstBaseURL: false)!
         if !query.isEmpty {
             components.queryItems = query.map { URLQueryItem(name: $0.key, value: $0.value) }
         }
 
-        guard let url = components.url else {
-            throw VigilAPIError.networkError(URLError(.badURL))
-        }
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: components.url!)
         request.httpMethod = "GET"
         request.setValue(accept, forHTTPHeaderField: "Accept")
         if let apiKey, !apiKey.isEmpty {
             request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         }
 
-        let (data, response) = try await executeRequest(request)
-        try validateResponse(data: data, response: response)
-        return data
-    }
-
-    /// Perform a POST request and return raw Data (no JSON decoding).
-    /// Useful for endpoints that return binary data like PDFs.
-    /// - Parameters:
-    ///   - path: API path relative to baseURL (e.g., `/v1/brief/generate`).
-    ///   - accept: Accept header value. Defaults to `application/json`.
-    /// - Returns: Raw response Data.
-    public func postRawData(path: String, accept: String = "application/json") async throws -> Data {
-        var request = URLRequest(url: baseURL.appendingPathComponent(path))
-        request.httpMethod = "POST"
-        request.setValue(accept, forHTTPHeaderField: "Accept")
-        if let apiKey, !apiKey.isEmpty {
-            request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        }
         let (data, response) = try await executeRequest(request)
         try validateResponse(data: data, response: response)
         return data
@@ -324,7 +288,7 @@ public actor VigilAPIClient {
         do {
             return try jsonEncoder.encode(body)
         } catch {
-            throw VigilAPIError.encodingError(error)
+            throw VigilAPIError.decodingError(error)
         }
     }
 }

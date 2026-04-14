@@ -29,7 +29,7 @@ import { workOrdersRouter } from "./routes/work-orders.js";
 import { workOrderStatus } from "./routes/work-order-status.js";
 import { sports } from "./routes/sports.js";
 import { calendar } from "./routes/calendar.js";
-import { calendarAuth } from "./routes/calendar-auth.js";
+import { googleAuth } from "./routes/google-auth.js";
 import { briefGenerate } from "./routes/brief-generate.js";
 import { testConnection, closeConnection } from "./db/connection.js";
 
@@ -68,8 +68,8 @@ app.use("*", rateLimiter);
 // Health route — no auth required (monitoring)
 app.route("/v1", health);
 
-// Calendar OAuth routes — no auth required (browser redirect flow)
-app.route("/v1", calendarAuth);
+// Google OAuth routes — no auth required (browser redirect flow)
+app.route("/v1", googleAuth);
 
 // Auth middleware — all /v1/* routes except /v1/health require a valid API key
 app.use("/v1/*", async (c, next) => {

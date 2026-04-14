@@ -45,13 +45,13 @@ export default function PhotoUploadPage() {
   if (phase === 'idle' || phase === 'selecting') {
     return (
       <div>
-        <h1 className="text-xl font-medium text-gray-50 mb-6">Upload Photo</h1>
+        <h1 className="text-xl font-semibold text-slate-100 mb-6">Upload Photo</h1>
         <label
           htmlFor="photo-input"
-          className="flex flex-col items-center justify-center w-full border-2 border-dashed border-gray-400/30 hover:border-teal-600 rounded-xl px-6 py-12 cursor-pointer transition-colors"
+          className="flex flex-col items-center justify-center w-full border-2 border-dashed border-slate-600 hover:border-indigo-500 rounded-xl px-6 py-12 cursor-pointer transition-colors"
         >
           <svg
-            className="w-12 h-12 text-gray-400 mb-4"
+            className="w-12 h-12 text-slate-500 mb-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -69,8 +69,8 @@ export default function PhotoUploadPage() {
               d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
             />
           </svg>
-          <p className="text-gray-100 font-medium mb-1">Upload a photo of handwritten notes</p>
-          <p className="text-gray-400 text-sm">JPEG, PNG, GIF or WebP — max 5 MB</p>
+          <p className="text-slate-300 font-medium mb-1">Upload a photo of handwritten notes</p>
+          <p className="text-slate-500 text-sm">JPEG, PNG, GIF or WebP — max 5 MB</p>
           <input
             ref={fileInputRef}
             id="photo-input"
@@ -89,7 +89,7 @@ export default function PhotoUploadPage() {
   if (phase === 'previewing' && !previewResult) {
     return (
       <div>
-        <h1 className="text-xl font-medium text-gray-50 mb-6">Upload Photo</h1>
+        <h1 className="text-xl font-semibold text-slate-100 mb-6">Upload Photo</h1>
         {imagePreviewUrl && (
           <img
             src={imagePreviewUrl}
@@ -97,7 +97,7 @@ export default function PhotoUploadPage() {
             className="max-h-48 rounded-lg mb-6 object-contain"
           />
         )}
-        <div className="flex items-center gap-3 text-gray-400">
+        <div className="flex items-center gap-3 text-slate-400">
           <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path
@@ -124,7 +124,7 @@ export default function PhotoUploadPage() {
 
     return (
       <div>
-        <h1 className="text-xl font-medium text-gray-50 mb-6">Review Transcription</h1>
+        <h1 className="text-xl font-semibold text-slate-100 mb-6">Review Transcription</h1>
 
         {/* Photo thumbnail */}
         {imagePreviewUrl && (
@@ -137,21 +137,21 @@ export default function PhotoUploadPage() {
 
         {/* Paper type badge */}
         <div className="flex items-center gap-3 mb-4">
-          <span className="inline-flex items-center gap-1.5 bg-teal-600/20 text-teal-400 rounded-full px-3 py-1 text-sm font-medium">
+          <span className="inline-flex items-center gap-1.5 bg-indigo-500/20 text-indigo-300 rounded-full px-3 py-1 text-sm font-medium">
             {paperLabel}
           </span>
-          <span className="text-gray-400 text-sm">{confidencePct}% confidence</span>
+          <span className="text-slate-400 text-sm">{confidencePct}% confidence</span>
         </div>
 
         {/* Paper type override */}
         <div className="flex items-center gap-2 mb-5">
-          <span className="text-gray-400 text-sm">Override:</span>
+          <span className="text-slate-400 text-sm">Override:</span>
           <button
             onClick={() => setForcePaperType(forcePaperType === 'lined' ? undefined : 'lined')}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
               forcePaperType === 'lined'
-                ? 'bg-teal-600 text-white'
-                : 'bg-gray-900/80 text-gray-400 hover:text-gray-50'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
             Lined
@@ -160,14 +160,14 @@ export default function PhotoUploadPage() {
             onClick={() => setForcePaperType(forcePaperType === 'gridded' ? undefined : 'gridded')}
             className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
               forcePaperType === 'gridded'
-                ? 'bg-teal-600 text-white'
-                : 'bg-gray-900/80 text-gray-400 hover:text-gray-50'
+                ? 'bg-indigo-600 text-white'
+                : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
             Gridded
           </button>
           {forcePaperType && (
-            <span className="text-xs text-gray-400 ml-1">
+            <span className="text-xs text-slate-500 ml-1">
               (will use {forcePaperType} when saving)
             </span>
           )}
@@ -175,19 +175,19 @@ export default function PhotoUploadPage() {
 
         {/* Detected thoughts */}
         <div className="space-y-2 mb-6">
-          <p className="text-sm text-gray-400 mb-2">
+          <p className="text-sm text-slate-400 mb-2">
             {previewResult.thoughts.length} thought{previewResult.thoughts.length !== 1 ? 's' : ''} detected
           </p>
           {previewResult.thoughts.map((thought, i) => (
-            <div key={i} className="bg-gray-900/80 p-3 rounded-lg">
-              <p className="text-gray-100 text-sm">{thought.content}</p>
+            <div key={i} className="bg-slate-800 p-3 rounded-lg">
+              <p className="text-slate-200 text-sm">{thought.content}</p>
             </div>
           ))}
         </div>
 
         {/* Actions */}
         {phase === 'committing' ? (
-          <div className="flex items-center gap-3 text-gray-400">
+          <div className="flex items-center gap-3 text-slate-400">
             <svg className="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path
@@ -202,13 +202,13 @@ export default function PhotoUploadPage() {
           <div className="flex gap-3">
             <button
               onClick={handleCommit}
-              className="bg-teal-600 hover:bg-teal-400 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
             >
               Save Thoughts
             </button>
             <button
               onClick={handleReset}
-              className="bg-gray-900/80 hover:bg-gray-400/30 text-gray-100 px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+              className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-5 py-2 rounded-lg text-sm font-medium transition-colors"
             >
               Cancel
             </button>
@@ -223,7 +223,7 @@ export default function PhotoUploadPage() {
     const count = commitResult.thoughts.length
     return (
       <div>
-        <h1 className="text-xl font-medium text-gray-50 mb-6">Upload Photo</h1>
+        <h1 className="text-xl font-semibold text-slate-100 mb-6">Upload Photo</h1>
         <div className="bg-green-900/30 border border-green-700/40 rounded-xl px-6 py-8 text-center">
           <svg
             className="w-12 h-12 text-green-400 mx-auto mb-3"
@@ -238,15 +238,15 @@ export default function PhotoUploadPage() {
               d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <p className="text-green-300 font-medium text-lg mb-1">
+          <p className="text-green-300 font-semibold text-lg mb-1">
             {count} thought{count !== 1 ? 's' : ''} saved
           </p>
-          <p className="text-gray-400 text-sm mb-6">
+          <p className="text-slate-400 text-sm mb-6">
             Your handwritten notes have been added to Thoughts.
           </p>
           <button
             onClick={handleReset}
-            className="bg-teal-600 hover:bg-teal-400 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             Upload Another
           </button>
@@ -259,7 +259,7 @@ export default function PhotoUploadPage() {
   if (phase === 'error') {
     return (
       <div>
-        <h1 className="text-xl font-medium text-gray-50 mb-6">Upload Photo</h1>
+        <h1 className="text-xl font-semibold text-slate-100 mb-6">Upload Photo</h1>
         <div className="bg-red-900/30 border border-red-700/40 rounded-xl px-6 py-8 text-center">
           <svg
             className="w-12 h-12 text-red-400 mx-auto mb-3"
@@ -274,11 +274,11 @@ export default function PhotoUploadPage() {
               d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
             />
           </svg>
-          <p className="text-red-300 font-medium mb-1">Something went wrong</p>
-          {error && <p className="text-gray-400 text-sm mb-6">{error}</p>}
+          <p className="text-red-300 font-semibold mb-1">Something went wrong</p>
+          {error && <p className="text-slate-400 text-sm mb-6">{error}</p>}
           <button
             onClick={handleReset}
-            className="bg-teal-600 hover:bg-teal-400 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
           >
             Try Again
           </button>

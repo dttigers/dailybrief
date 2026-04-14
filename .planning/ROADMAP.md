@@ -17,8 +17,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.3 Projects & Precision** — Phases 51-53, 55-57 (shipped 2026-04-08; Phase 54 deferred to v2.4)
 - ✅ **v2.4 Capture Without Friction** — Phases 58-62 (shipped 2026-04-10)
 - ✅ **v2.5 Dashboard Everywhere** — Phases 63-72 (shipped 2026-04-12)
-- ✅ **v3.0 Server-Side PDF** — Phases 73-78 (shipped 2026-04-13)
-- 🚧 **v3.1 Gmail & CLI Evolution** — Phases 79-82 (in progress)
+- 🚧 **v3.0 Server-Side PDF** — Phases 73-78 (in progress)
 
 ## Completed Milestones
 
@@ -169,28 +168,18 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
-<details>
-<summary>✅ v3.0 Server-Side PDF (Phases 73-78) — SHIPPED 2026-04-13</summary>
+## 🚧 v3.0 Server-Side PDF (In Progress)
 
-- [x] Phase 73: Sports Proxy (2/2 plans) — completed 2026-04-13
-- [x] Phase 74: Google Calendar Server-Side (2/2 plans) — completed 2026-04-13
-- [x] Phase 75: PDF Generation Engine (2/2 plans) — completed 2026-04-13
-- [x] Phase 76: Brief Assembly Endpoint (2/2 plans) — completed 2026-04-13
-- [x] Phase 77: PWA Brief UI (1/1 plan) — completed 2026-04-13
-- [x] Phase 78: Mac CLI Thin Client (2/2 plans) — completed 2026-04-13
-
-</details>
-
-## 🚧 v3.1 Gmail & CLI Evolution (In Progress)
-
-**Milestone Goal:** Add Gmail reading to vigil-core via Google OAuth integration (reusing Phase 74 token infrastructure), and restructure the Mac CLI to match the Vigil CLI spec (capture, triage, doctor, setup; retire work order commands).
+**Milestone Goal:** Move PDF generation from Mac CLI into vigil-core so any client can generate and receive daily briefs without macOS. Mac CLI becomes a thin client.
 
 ### Phases
 
-- [ ] **Phase 79: Gmail OAuth Server Foundation** — Expand OAuth scope to gmail.readonly, fix JWT nonce, add scope-status endpoint
-- [ ] **Phase 80: Gmail Server Service & Work Order Extraction** — gmail-service.ts, inbox/search/extract routes deployed to Railway
-- [x] **Phase 81: PWA Settings & Google OAuth UI** — Settings/Integrations page with connect/disconnect, scope status display, OAuth callback handling (completed 2026-04-14)
-- [ ] **Phase 82: CLI Restructure** — capture/triage/doctor/setup subcommands; retire complete/uncomplete/list-completed; plist updated atomically
+- [x] **Phase 73: Sports Proxy** — balldontlie.io routes for all 4 leagues with caching and graceful fallback (completed 2026-04-13)
+- [x] **Phase 74: Google Calendar Server-Side** — OAuth token storage in PostgreSQL and server-side event fetch (completed 2026-04-13)
+- [x] **Phase 75: PDF Generation Engine** — PDFKit 3-page brief layout matching current CoreGraphics output (completed 2026-04-13)
+- [x] **Phase 76: Brief Assembly Endpoint** — `/v1/brief/generate` orchestrator with partial-failure tolerance and storage (completed 2026-04-13)
+- [ ] **Phase 77: PWA Brief UI** — generate, preview, and download brief from the PWA
+- [ ] **Phase 78: Mac CLI Thin Client** — replace local rendering with API call, preserve lpr auto-print
 
 ## Phase Details
 
@@ -250,9 +239,8 @@ Plans:
   4. Calling `GET /v1/brief/:storage_key` returns the same PDF that was generated
 **Plans**: 2 plans
 Plans:
-- [x] 76-01-PLAN.md — Brief assembly service with Promise.allSettled orchestration and PDF storage
-- [x] 76-02-PLAN.md — Hono route handlers for POST /brief/generate and GET /brief/:date
-
+- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
+- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
 
 ### Phase 77: PWA Brief UI
 **Goal**: Users can generate, preview, and download their daily brief from the PWA without touching the Mac
@@ -264,7 +252,7 @@ Plans:
   3. A download button saves the PDF to the user's device with a sensible filename
 **Plans**: 1 plan
 Plans:
-- [x] 77-01-PLAN.md — API client binary fetch + Layout tab rename + BriefHistoryPage generate/preview/download
+- [ ] 77-01-PLAN.md — API client binary fetch + Layout tab rename + BriefHistoryPage generate/preview/download
 **UI hint**: yes
 
 ### Phase 78: Mac CLI Thin Client
@@ -450,12 +438,8 @@ Plans:
 | 74. Google Calendar Server-Side | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 75. PDF Generation Engine | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete   | 2026-04-13 |
-| 77. PWA Brief UI | v3.0 | 1/1 | Complete    | 2026-04-13 |
-| 78. Mac CLI Thin Client | v3.0 | 2/2 | Complete    | 2026-04-13 |
-| 79. Gmail OAuth Server Foundation | v3.1 | 0/2 | Not started | - |
-| 80. Gmail Server Service & Work Order Extraction | v3.1 | 0/TBD | Not started | - |
-| 81. PWA Settings & Google OAuth UI | v3.1 | 6/6 | Complete   | 2026-04-14 |
-| 82. CLI Restructure | v3.1 | 0/TBD | Not started | - |
+| 77. PWA Brief UI | v3.0 | 0/TBD | Not started | - |
+| 78. Mac CLI Thin Client | v3.0 | 0/TBD | Not started | - |
 
 ## Backlog
 
