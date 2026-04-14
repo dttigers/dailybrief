@@ -168,7 +168,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
-## 🚧 v3.0 Server-Side PDF (In Progress)
+## ✅ v3.0 Server-Side PDF (SHIPPED 2026-04-14)
 
 **Milestone Goal:** Move PDF generation from Mac CLI into vigil-core so any client can generate and receive daily briefs without macOS. Mac CLI becomes a thin client.
 

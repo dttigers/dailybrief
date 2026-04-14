@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Server-Side PDF
-status: executing
-stopped_at: Phase 77 context gathered
-last_updated: "2026-04-14T20:32:35.494Z"
+milestone: v3.1
+milestone_name: Gmail + OAuth + CLI
+status: planning
+stopped_at: v3.0 milestone complete
+last_updated: "2026-04-14T00:00:00.000Z"
 last_activity: 2026-04-14
 progress:
-  total_phases: 12
-  completed_phases: 10
-  total_plans: 26
-  completed_plans: 26
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-12)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 79 — gmail-oauth-server-foundation
+**Current focus:** v3.1 planning — Gmail work orders, menu bar app redesign
 
 ## Current Position
 
-Phase: 82
-Plan: Not started
-Status: Executing Phase 79
+Phase: none
+Plan: none
+Status: v3.0 complete — awaiting v3.1 scope definition
 Last activity: 2026-04-14
 
 Progress: [░░░░░░░░░░] 0%
