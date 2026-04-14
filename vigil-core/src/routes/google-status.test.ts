@@ -87,3 +87,17 @@ test("GS-06-empty-scopes-backcompat: returns calendar=connected, gmail=needs_aut
   assert.equal(body.calendar, "connected", "calendar must be connected for legacy empty-scopes row");
   assert.equal(body.gmail, "needs_auth", "gmail must be needs_auth for legacy empty-scopes row");
 });
+
+test("GS-07-delete-ok: DELETE /google/tokens calls dbDeleteFn and returns { ok: true }", async () => {
+  let deleted = false;
+  const router = createGoogleStatusRouter({ dbDeleteFn: async () => { deleted = true; } });
+  const app = new Hono();
+  app.route("/", router);
+
+  const res = await app.request("/google/tokens", { method: "DELETE" });
+  assert.equal(res.status, 200, "Expected 200 OK");
+
+  const body = await res.json() as { ok: boolean };
+  assert.equal(body.ok, true, "Response must include ok: true");
+  assert.equal(deleted, true, "dbDeleteFn must have been called");
+});

@@ -17,6 +17,7 @@ interface GoogleStatusResponse {
 // DI interface for testing
 export interface GoogleStatusDeps {
   dbSelectFn?: () => Promise<Array<{ scopes: string[] | null; accountEmail?: string | null }>>;
+  dbDeleteFn?: () => Promise<void>;
 }
 
 export function createGoogleStatusRouter(deps?: GoogleStatusDeps): Hono {
@@ -75,6 +76,24 @@ export function createGoogleStatusRouter(deps?: GoogleStatusDeps): Hono {
       }, 200);
     } catch (err) {
       console.error("[google-status] Error:", err instanceof Error ? err.message : String(err));
+      return c.json({ error: "internal_error" }, 500);
+    }
+  });
+
+  // ── DELETE /google/tokens — disconnect Google account ─────────────────────
+  router.delete("/google/tokens", async (c) => {
+    try {
+      if (deps?.dbDeleteFn) {
+        await deps.dbDeleteFn();
+      } else {
+        if (!db) {
+          return c.json({ error: "database_unavailable" }, 503);
+        }
+        await db.delete(oauthTokens).where(eq(oauthTokens.provider, "google"));
+      }
+      return c.json({ ok: true }, 200);
+    } catch (err) {
+      console.error("[google-status] Delete error:", err instanceof Error ? err.message : String(err));
       return c.json({ error: "internal_error" }, 500);
     }
   });
