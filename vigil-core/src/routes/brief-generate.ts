@@ -7,6 +7,7 @@ import { db as defaultDb } from "../db/connection.js";
 import { briefs } from "../db/schema.js";
 import { eq, sql } from "drizzle-orm";
 import { createBriefAssemblyService } from "../services/brief-assembly-service.js";
+import { getAIClient, callClaude, parseAIJson } from "../ai/client.js";
 import * as fs from "node:fs";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -32,7 +33,12 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
 
   function getAssembler() {
     if (deps.assemblerFactory) return deps.assemblerFactory();
-    return createBriefAssemblyService({ dbClient: getDb() });
+    return createBriefAssemblyService({
+      dbClient: getDb(),
+      getAIClientFn: getAIClient,
+      callClaudeFn: callClaude,
+      parseAIJsonFn: parseAIJson,
+    });
   }
 
   async function readFile(filePath: string): Promise<Buffer> {
