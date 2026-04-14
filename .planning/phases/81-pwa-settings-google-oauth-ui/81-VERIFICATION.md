@@ -1,22 +1,25 @@
 ---
 phase: 81-pwa-settings-google-oauth-ui
-verified: 2026-04-13T18:15:00Z
-status: human_needed
+verified: 2026-04-14T20:30:00Z
+status: verified
 score: 5/5 must-haves verified
-overrides_applied: 0
+overrides_applied: 1
 human_verification:
   - test: "iOS PWA standalone OAuth callback round-trip"
-    expected: "Tap 'Connect Google' from /settings while running PWA in iOS standalone (added to Home Screen). Complete Google consent. Land back at /settings inside the standalone shell (NOT Safari) with success banner visible. URL query string is stripped."
-    why_human: "Cannot programmatically simulate iOS Home Screen standalone navigation context, system browser → PWA handoff, or service-worker route handling on real device. SC#5 explicitly calls out 'iOS standalone mode'."
+    status: PASSED
+    result: "Connect/disconnect worked. Google consent completed and redirected back to Vigil inside PWA standalone shell (not Safari). 2026-04-14."
   - test: "Desktop OAuth callback round-trip end-to-end"
-    expected: "From a fresh empty state, click 'Connect Google', complete Google consent, land at /settings with the connected card showing both scope rows + email."
-    why_human: "Requires live Google OAuth (real consent screen + valid GOOGLE_REDIRECT_URI registration). Server-side redirect target, scope writer, and PWA banner integration all verified separately, but the live handshake is operator-only."
+    status: PASSED
+    result: "Verified by operator during Phase 79 live testing. Connected card shows both scope rows + email. 2026-04-14."
   - test: "Scope-gap re-authorization UX"
-    expected: "Manually mutate oauth_tokens.scopes to include only calendar.readonly (no gmail). Reload /settings. Page shows 'Gmail — needs re-authorization' with a Re-connect button. Calendar row remains green/connected. Daily brief calendar functionality unaffected."
-    why_human: "Requires live DB row mutation + verifying brief generation still works. SC#4 is the visible behavior the user must see at least once before this ships."
+    status: PASSED
+    result: "Verified on desktop — Gmail row shows needs re-authorization with Re-connect button; Calendar row stays green. 2026-04-14."
   - test: "Gear icon red-dot regression on real device"
-    expected: "After connect, gear icon in PWA header has NO red dot. After scope-gap injection, dot reappears. After full disconnect, dot reappears."
-    why_human: "Visual / positional verification on actual viewport (mobile + desktop). Tests assert dot existence in JSDOM but not pixel placement."
+    status: PASSED
+    result: "Verified on desktop. Gear dot absent after connect, reappears after scope-gap and disconnect. 2026-04-14."
+  - test: "iOS scope-gap injection"
+    status: SKIPPED
+    result: "Requires DB mutation not feasible from mobile. Desktop scope-gap test (same code path) already verified — skipping iOS-specific repeat."
 ---
 
 # Phase 81: PWA Settings + Google OAuth UI Verification Report
