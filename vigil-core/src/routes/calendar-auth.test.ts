@@ -13,10 +13,21 @@ process.env["GOOGLE_TOKEN_ENCRYPTION_KEY"] =
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
 
-const MOCK_TOKENS = {
+const MOCK_TOKENS: {
+  refresh_token: string;
+  access_token: string;
+  expiry_date: number;
+  scope: string;
+  id_token: string | null;
+} = {
   refresh_token: "mock-refresh-token",
   access_token: "mock-access-token",
   expiry_date: Date.now() + 3_600_000,
+  scope:
+    "https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/gmail.readonly",
+  // Structural JWT — header.payload.signature. Payload decodes to {"email":"user@example.com"}.
+  id_token:
+    "eyJhbGciOiJIUzI1NiJ9.eyJlbWFpbCI6InVzZXJAZXhhbXBsZS5jb20ifQ.unused-signature",
 };
 
 function buildValidStateStore(stateNonce: string): Map<string, number> {
@@ -33,13 +44,23 @@ function buildExpiredStateStore(stateNonce: string): Map<string, number> {
 }
 
 /** Wrap the router in a /v1 mount so paths match index.ts registration. */
-function buildApp(stateStore?: Map<string, number>): { app: Hono; dbCalls: Array<{ provider: string }> } {
-  const dbCalls: Array<{ provider: string }> = [];
+function buildApp(
+  stateStore?: Map<string, number>,
+  tokenOverrides?: Partial<typeof MOCK_TOKENS>
+): {
+  app: Hono;
+  dbCalls: Array<{ provider: string; scopes: string[]; accountEmail: string | null }>;
+} {
+  const dbCalls: Array<{
+    provider: string;
+    scopes: string[];
+    accountEmail: string | null;
+  }> = [];
 
   const router = createCalendarAuthRouter({
-    getTokenFn: async () => ({ tokens: MOCK_TOKENS }),
-    dbUpsertFn: async (provider) => {
-      dbCalls.push({ provider });
+    getTokenFn: async () => ({ tokens: { ...MOCK_TOKENS, ...tokenOverrides } }),
+    dbUpsertFn: async (provider, _enc, _access, _exp, scopes, accountEmail) => {
+      dbCalls.push({ provider, scopes, accountEmail });
     },
     stateStore,
   });
@@ -226,4 +247,95 @@ test("81-02-D10: trailing slash on PWA_URL is normalized before /settings concat
   } finally {
     process.env["PWA_URL"] = origPwaUrl;
   }
+});
+
+// ── Phase 79.1 — scopes + account_email persistence ─────────────────────────
+
+test("79.1-scopes-parsed: callback splits tokens.scope into array and persists to DB", async () => {
+  const stateNonce = "791scopes001";
+  const { app, dbCalls } = buildApp(buildValidStateStore(stateNonce));
+
+  const res = await app.request(`/auth/google/callback?code=test_code&state=${stateNonce}`);
+  assert.equal(res.status, 302);
+  assert.equal(dbCalls.length, 1);
+
+  const call = dbCalls[0]!;
+  assert.ok(Array.isArray(call.scopes), "scopes arg must be an array");
+  assert.equal(call.scopes.length, 2, "should parse both scopes from space-separated string");
+  assert.ok(
+    call.scopes.includes("https://www.googleapis.com/auth/calendar.readonly"),
+    "scopes must include calendar.readonly"
+  );
+  assert.ok(
+    call.scopes.includes("https://www.googleapis.com/auth/gmail.readonly"),
+    "scopes must include gmail.readonly"
+  );
+});
+
+test("79.1-email-decoded: callback decodes id_token email claim and persists to DB", async () => {
+  const stateNonce = "791email002";
+  const { app, dbCalls } = buildApp(buildValidStateStore(stateNonce));
+
+  const res = await app.request(`/auth/google/callback?code=test_code&state=${stateNonce}`);
+  assert.equal(res.status, 302);
+  assert.equal(dbCalls.length, 1);
+  assert.equal(
+    dbCalls[0]!.accountEmail,
+    "user@example.com",
+    "accountEmail must come from id_token payload"
+  );
+});
+
+test("79.1-email-null-when-idtoken-missing: callback persists accountEmail=null when id_token absent", async () => {
+  const stateNonce = "791noidt003";
+  // Override id_token to null — MOCK_TOKENS default includes one; this removes it.
+  const { app, dbCalls } = buildApp(
+    buildValidStateStore(stateNonce),
+    { id_token: null }
+  );
+
+  const res = await app.request(`/auth/google/callback?code=test_code&state=${stateNonce}`);
+  assert.equal(res.status, 302);
+  assert.equal(dbCalls.length, 1);
+  assert.equal(dbCalls[0]!.accountEmail, null, "accountEmail must be null when id_token missing");
+  // scopes path must still work independently
+  assert.equal(dbCalls[0]!.scopes.length, 2, "scopes still parsed even without id_token");
+});
+
+test("79.1-status-gmail-connected: /google/status returns gmail=connected when scopes contains gmail.readonly (real column read)", async () => {
+  // Simulate a fresh post-79.1 row: scopes column populated with both URLs.
+  const router = createCalendarAuthRouter({
+    statusFn: async () => ({
+      provider: "google",
+      scopes: [
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/gmail.readonly",
+      ],
+      accountEmail: "user@example.com",
+    }),
+  });
+  const app = new Hono();
+  app.route("/", router);
+
+  const res = await app.request("/google/status");
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { calendar: string; gmail: string; email?: string };
+  assert.equal(body.calendar, "connected");
+  assert.equal(body.gmail, "connected", "gmail MUST flip to connected when scope present — UAT Test 4 gap");
+  assert.equal(body.email, "user@example.com");
+});
+
+test("79.1-status-backcompat-preserved: /google/status legacy empty-scopes row still reports calendar=connected, gmail=needs_auth", async () => {
+  // Legacy row: scopes column exists but empty (pre-79.1 rows after Plan 01 default).
+  const router = createCalendarAuthRouter({
+    statusFn: async () => ({ provider: "google", scopes: [], accountEmail: null }),
+  });
+  const app = new Hono();
+  app.route("/", router);
+
+  const res = await app.request("/google/status");
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { calendar: string; gmail: string };
+  assert.equal(body.calendar, "connected", "back-compat: empty scopes implies calendar was granted");
+  assert.equal(body.gmail, "needs_auth", "back-compat: empty scopes means gmail unknown → needs_auth");
 });
