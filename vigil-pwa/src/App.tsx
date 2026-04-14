@@ -12,6 +12,7 @@ import InsightsPage from './pages/InsightsPage'
 import TherapyPage from './pages/TherapyPage'
 import BriefHistoryPage from './pages/BriefHistoryPage'
 import UploadPage from './pages/UploadPage'
+import SettingsPage from './pages/SettingsPage'
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => getStoredKey() !== null)
@@ -46,6 +47,7 @@ export default function App() {
                     <Route path="/therapy" element={<TherapyPage />} />
                     <Route path="/history" element={<BriefHistoryPage />} />
                     <Route path="/upload" element={<UploadPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
                   </Routes>
                 </Layout>
               </GoogleStatusProvider>
