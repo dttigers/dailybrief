@@ -20,7 +20,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import * as crypto from "node:crypto";
-import { workOrders as workOrdersTable, workOrderStatuses as workOrderStatusesTable } from "../db/schema.js";
+import { workOrders as workOrdersTable, workOrderStatuses as workOrderStatusesTable, thoughts as thoughtsTable } from "../db/schema.js";
+import { desc, isNull, eq as drizzleEq } from "drizzle-orm";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -389,21 +390,12 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
 
   // ── Drizzle table references (lazy to avoid import issues in tests) ────
 
-  function getThoughtsTable(): any {
-    try {
-      // Dynamic import would be async; use the db client's schema instead
-      // In test mode, the mock db handles this
-      return { _: "thoughts" };
-    } catch {
-      return {};
-    }
-  }
-
+  function getThoughtsTable() { return thoughtsTable; }
   function getWorkOrdersTable() { return workOrdersTable; }
   function getWorkOrderStatusesTable() { return workOrderStatusesTable; }
-  function taskThoughtsFilter(): any { return {}; }
-  function unprocessedFilter(): any { return {}; }
-  function thoughtsOrderDesc(): any { return {}; }
+  function taskThoughtsFilter() { return drizzleEq(thoughtsTable.category, "task"); }
+  function unprocessedFilter() { return isNull(thoughtsTable.category); }
+  function thoughtsOrderDesc() { return desc(thoughtsTable.createdAt); }
 
   // ── Main orchestration ─────────────────────────────────────────────────
 
