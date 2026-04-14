@@ -189,7 +189,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 - [ ] **Phase 79: Gmail OAuth Server Foundation** — Expand OAuth scope to gmail.readonly, fix JWT nonce, add scope-status endpoint
 - [ ] **Phase 80: Gmail Server Service & Work Order Extraction** — gmail-service.ts, inbox/search/extract routes deployed to Railway
-- [ ] **Phase 81: PWA Settings & Google OAuth UI** — Settings/Integrations page with connect/disconnect, scope status display, OAuth callback handling
+- [x] **Phase 81: PWA Settings & Google OAuth UI** — Settings/Integrations page with connect/disconnect, scope status display, OAuth callback handling (completed 2026-04-14)
 - [ ] **Phase 82: CLI Restructure** — capture/triage/doctor/setup subcommands; retire complete/uncomplete/list-completed; plist updated atomically
 
 ## Phase Details
@@ -341,8 +341,8 @@ Plans:
 - [x] 81-02-PLAN.md — vigil-core callback redirect to /settings + rename calendar_error→google_error + verify/add DELETE /v1/google/tokens and GET /v1/google/status
 - [x] 81-03-PLAN.md — PWA api/client.ts: getGoogleStatus (404→null), disconnectGoogle, redirectToGoogleAuth
 - [x] 81-04-PLAN.md — GoogleStatusContext provider + useGoogleStatus hook; wrap authenticated Layout in App.tsx
-- [ ] 81-05-PLAN.md — Layout.tsx gear icon + red status dot (reads shared context)
-- [ ] 81-06-PLAN.md — SettingsPage.tsx (all 4 states + callback banner + inline disconnect) + route registration
+- [x] 81-05-PLAN.md — Layout.tsx gear icon + red status dot (reads shared context)
+- [x] 81-06-PLAN.md — SettingsPage.tsx (all 4 states + callback banner + inline disconnect) + route registration
 **UI hint**: yes
 
 ### Phase 82: CLI Restructure
@@ -442,7 +442,7 @@ Plans:
 | 78. Mac CLI Thin Client | v3.0 | 2/2 | Complete    | 2026-04-13 |
 | 79. Gmail OAuth Server Foundation | v3.1 | 0/2 | Not started | - |
 | 80. Gmail Server Service & Work Order Extraction | v3.1 | 0/TBD | Not started | - |
-| 81. PWA Settings & Google OAuth UI | v3.1 | 4/6 | In Progress|  |
+| 81. PWA Settings & Google OAuth UI | v3.1 | 6/6 | Complete   | 2026-04-14 |
 | 82. CLI Restructure | v3.1 | 0/TBD | Not started | - |
 
 ## Backlog
