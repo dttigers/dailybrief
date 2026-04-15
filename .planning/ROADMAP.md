@@ -397,8 +397,8 @@ Plans:
   4. Works in Chrome and Safari at minimum
 
 Plans:
-- [ ] 84-01-PLAN.md -- Chrome extension (manifest + popup HTML/CSS/JS + icons + human verify)
-- [ ] 84-02-PLAN.md -- Safari conversion (xcrun + Xcode build + human verify)
+- [x] 84-01-PLAN.md -- Chrome extension (manifest + popup HTML/CSS/JS + icons + human verify)
+- [x] 84-02-PLAN.md -- Safari conversion (xcrun + Xcode build + human verify)
 
 ### Phase 85: iOS Shortcut
 **Goal**: A shareable iOS Shortcut that accepts share-sheet input (text, URL, or selected content) and posts it to Vigil as a thought. Distributed as a .shortcut file — no App Store required.
@@ -504,7 +504,7 @@ Plans:
 | 81. PWA Settings & Google OAuth UI | v3.1 | 3/3 | Complete | 2026-04-14 |
 | 82. CLI Restructure | v3.1 | 3/3 | Complete | 2026-04-14 |
 | 83. Menu Bar Redesign | v3.1 | 4/4 | Complete | 2026-04-15 |
-| 84. Browser Extension | v3.1 | 0/TBD | Not started | - |
+| 84. Browser Extension | v3.1 | 2/2 | Complete | 2026-04-14 |
 | 85. iOS Shortcut | v3.1 | 0/TBD | Not started | - |
 
 ## Backlog
