@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=320">
+  <link rel="stylesheet" href="popup.css">
+  <title>Vigil Capture</title>
+</head>
+<body>
+  <!-- Setup View (first-run: no API key stored) -->
+  <div id="setup-view" class="view" hidden>
+    <div class="header">
+      <h1>Vigil Capture</h1>
+      <p class="subtitle">Connect to your Vigil instance</p>
+    </div>
+    <div class="form-group">
+      <label for="api-key-input">API Key</label>
+      <input type="password" id="api-key-input" placeholder="Paste your Vigil API key" autocomplete="off">
+    </div>
+    <button id="save-key-btn" class="btn btn-primary">Save Key</button>
+    <div id="setup-error" class="error-msg" hidden></div>
+    <div id="setup-loading" class="loading-msg" hidden>Validating...</div>
+  </div>
+
+  <!-- Capture View (API key stored) -->
+  <div id="capture-view" class="view" hidden>
+    <div class="header">
+      <h1>Capture Thought</h1>
+      <button id="settings-btn" class="btn-icon" title="Change API key">&#9881;</button>
+    </div>
+    <div class="form-group">
+      <label for="content-input">Content</label>
+      <textarea id="content-input" rows="6" placeholder="What's on your mind?"></textarea>
+    </div>
+    <button id="capture-btn" class="btn btn-primary">Capture</button>
+    <div id="capture-error" class="error-msg" hidden></div>
+    <div id="capture-success" class="success-msg" hidden>
+      <span class="checkmark">&#10003;</span> Captured!
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
