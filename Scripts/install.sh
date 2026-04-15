@@ -116,6 +116,8 @@ cat > "$MONITOR_APP/Contents/Info.plist" <<INFOPLIST
     <string>1</string>
     <key>CFBundleShortVersionString</key>
     <string>2.4</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>LSUIElement</key>
     <true/>
     <key>LSMinimumSystemVersion</key>
@@ -127,6 +129,15 @@ cat > "$MONITOR_APP/Contents/Info.plist" <<INFOPLIST
 </dict>
 </plist>
 INFOPLIST
+
+# Copy pre-built AppIcon.icns into bundle Resources (Phase 87 D-06/D-07).
+# Must happen BEFORE codesign --deep so signature covers the icon resource.
+if [[ ! -f "$REPO_DIR/brand/mac/AppIcon.icns" ]]; then
+    echo "ERROR: brand/mac/AppIcon.icns missing. Run Plan 87-01 first." >&2
+    exit 1
+fi
+cp -f "$REPO_DIR/brand/mac/AppIcon.icns" "$MONITOR_RESOURCES/AppIcon.icns"
+echo "  AppIcon.icns installed to bundle Resources."
 
 # Sign the .app bundle (signs the entire bundle including binary).
 # --deep signs embedded frameworks/helpers if any exist in future.
