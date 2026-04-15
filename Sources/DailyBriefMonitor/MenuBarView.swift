@@ -6,9 +6,7 @@ struct MenuBarView: View {
     @Bindable var updater: UpdateService
     var scheduler: BriefScheduler?
     var watcherFailedFiles: [(url: URL, reason: String)] = []
-    var onDashboard: () -> Void
     var onCapture: () -> Void
-    var onSettings: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -86,13 +84,6 @@ struct MenuBarView: View {
 
             // Actions
             Button {
-                onDashboard()
-            } label: {
-                Label("Dashboard", systemImage: "rectangle.grid.1x2")
-            }
-            .keyboardShortcut("d", modifiers: .command)
-
-            Button {
                 onCapture()
             } label: {
                 Label("Quick Capture", systemImage: "plus.bubble")
@@ -114,12 +105,12 @@ struct MenuBarView: View {
                 if checker.isRunning {
                     Label("Running...", systemImage: "arrow.triangle.2.circlepath")
                 } else {
-                    Label("Run Now", systemImage: "play.fill")
+                    Label("Print Now", systemImage: "play.fill")
                 }
             }
             .disabled(checker.isRunning)
 
-            // Update Vigil button (D-10 — mirrors Run Now exactly)
+            // Update Vigil button (D-10 — mirrors Print Now exactly)
             Button {
                 updater.updateNow()
             } label: {
@@ -147,12 +138,6 @@ struct MenuBarView: View {
                 NSWorkspace.shared.open(URL(fileURLWithPath: checker.logFilePath))
             } label: {
                 Label("View Log", systemImage: "text.page")
-            }
-
-            Button {
-                onSettings()
-            } label: {
-                Label("Settings", systemImage: "gear")
             }
 
             Divider()

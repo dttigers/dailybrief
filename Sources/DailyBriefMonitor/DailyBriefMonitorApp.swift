@@ -18,9 +18,7 @@ struct DailyBriefMonitorApp: App {
                 updater: updater,
                 scheduler: scheduler,
                 watcherFailedFiles: watcherFailedFiles,
-                onDashboard: { appDelegate.openDashboard() },
-                onCapture: { appDelegate.toggleCapture() },
-                onSettings: { appDelegate.openSettings() }
+                onCapture: { appDelegate.toggleCapture() }
             )
                 .onAppear {
                     if scheduler == nil {

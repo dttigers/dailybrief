@@ -10,11 +10,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     private var captureService: CaptureService?
     private var triageService: (any TriageProviding)?
     private var thoughtStore: (any ThoughtRepository)?
-    private var projectsStore: ProjectsAPIStore?
     private var vigilAPIClient: VigilAPIClient?
     private var globalHotKey: GlobalHotKey?
-    private var dashboardWindow: NSWindow?
-    private var settingsWindow: NSWindow?
 
     // Audio & image services
     private var transcriptionService: TranscriptionService?
@@ -22,16 +19,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
     // Folder watcher (Phase 61)
     private(set) var folderWatcher: FolderWatcherService?
-
-    // Insights
-    private var insightService: (any InsightProviding)?
-
-    // Therapy classification
-    private var therapyClassificationService: (any TherapyClassifyProviding)?
-
-    // Therapy pattern detection & session prep
-    private var therapyPatternService: (any TherapyPatternProviding)?
-    private var therapyPrepService: (any TherapyPrepProviding)?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSLog("DailyBriefMonitor: applicationDidFinishLaunching started")
@@ -53,19 +40,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             NSLog("DailyBriefMonitor: loading API AI services...")
             self.triageService = APITriageService(client: client)
             self.imageDescriptionService = APIImageDescriptionService(client: client)
-            self.insightService = APIInsightService(client: client)
-            self.therapyClassificationService = APITherapyClassificationService(client: client)
-            self.therapyPatternService = APITherapyPatternService(client: client)
-            self.therapyPrepService = APITherapyPrepService(client: client)
 
             // Thought store — API-backed
             let repository: any ThoughtRepository = APIThoughtStore(client: client)
             let thoughtStore = repository
             self.thoughtStore = thoughtStore
-
-            // Projects store — API-backed, reuses the same VigilAPIClient.
-            // Wave 3 (plan 53-03) will inject this into DashboardViewModel.
-            self.projectsStore = ProjectsAPIStore(client: client)
 
             let service = CaptureService(store: thoughtStore)
             captureService = service
@@ -172,129 +151,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     @MainActor
     func toggleCapture() {
         capturePanel?.toggle()
-    }
-
-    /// Opens (or brings to front) the central dashboard window.
-    @MainActor
-    func openDashboard() {
-        // Bring existing window to front if visible
-        if let window = dashboardWindow, window.isVisible {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-
-        guard let store = thoughtStore, let projectsStore = projectsStore else {
-            let alert = NSAlert()
-            alert.messageText = "Dashboard Unavailable"
-            alert.informativeText = "The database failed to initialize. Please check logs and restart."
-            alert.alertStyle = .warning
-            alert.runModal()
-            return
-        }
-
-        let viewModel = DashboardViewModel(
-            store: store,
-            projectsStore: projectsStore,
-            captureService: captureService,
-            transcriptionService: transcriptionService,
-            imageDescriptionService: imageDescriptionService,
-            triageService: triageService,
-            insightService: insightService,
-            therapyClassificationService: therapyClassificationService,
-            therapyPatternService: therapyPatternService,
-            therapyPrepService: therapyPrepService
-        )
-        let briefHistoryVM = vigilAPIClient.map { BriefHistoryViewModel(apiClient: $0) }
-        let chatVM = vigilAPIClient.map { ChatViewModel(chatService: APIChatService(client: $0)) }
-        let dashboardView = DashboardView(viewModel: viewModel, briefHistoryViewModel: briefHistoryVM, chatViewModel: chatVM)
-        let hostingView = NSHostingView(rootView: dashboardView)
-
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-            styleMask: [.titled, .closable, .miniaturizable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "Jarvis Dashboard"
-        window.contentView = hostingView
-        window.minSize = NSSize(width: 600, height: 400)
-        window.center()
-        window.isReleasedWhenClosed = false
-
-        // MenuBarExtra apps are accessory-type by default — promote to regular
-        // so the window can accept keyboard focus (search field, etc.)
-        NSApp.setActivationPolicy(.regular)
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-
-        dashboardWindow = window
-    }
-
-    /// Stops the current folder watcher (if any) and creates a new one with
-    /// freshly-loaded config. Called by SettingsViewModel after a successful save
-    /// that may have changed folder-watching configuration.
-    @MainActor
-    func restartFolderWatcher() {
-        // Stop existing watcher on its actor before discarding.
-        if let watcher = folderWatcher {
-            Task { await watcher.stop() }
-        }
-        folderWatcher = nil
-
-        guard let imgService = self.imageDescriptionService as? APIImageDescriptionService,
-              let transcription = self.transcriptionService,
-              let capture = self.captureService,
-              let config = try? ConfigLoader.load() else {
-            NSLog("DailyBriefMonitor: restartFolderWatcher — dependencies unavailable, skipping")
-            return
-        }
-
-        let watcher = FolderWatcherService(
-            imageService: imgService,
-            transcriptionService: transcription,
-            captureService: capture,
-            triageService: self.triageService,
-            thoughtStore: self.thoughtStore,
-            config: config.folderWatching
-        )
-        self.folderWatcher = watcher
-        Task { await watcher.start() }
-        NSLog("DailyBriefMonitor: folder watcher restarted with updated config")
-    }
-
-    /// Opens (or brings to front) the settings window.
-    @MainActor
-    func openSettings() {
-        if let window = settingsWindow, window.isVisible {
-            window.makeKeyAndOrderFront(nil)
-            NSApp.activate(ignoringOtherApps: true)
-            return
-        }
-
-        let viewModel = SettingsViewModel()
-        viewModel.onConfigSaved = { [weak self] in
-            self?.restartFolderWatcher()
-        }
-        let settingsView = SettingsView(viewModel: viewModel)
-        let hostingView = NSHostingView(rootView: settingsView)
-
-        let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 750, height: 500),
-            styleMask: [.titled, .closable, .resizable],
-            backing: .buffered,
-            defer: false
-        )
-        window.title = "Jarvis Settings"
-        window.contentView = hostingView
-        window.center()
-        window.isReleasedWhenClosed = false
-
-        NSApp.setActivationPolicy(.regular)
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-
-        settingsWindow = window
     }
 
     // MARK: - Private
