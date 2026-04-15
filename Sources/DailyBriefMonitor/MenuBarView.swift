@@ -34,8 +34,9 @@ struct MenuBarView: View {
                     Text("Last run")
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text(checker.lastRunTime)
+                    Text(statusLine)
                         .font(.caption)
+                        .foregroundStyle(statusLineTint)
                 }
             }
 
@@ -215,6 +216,12 @@ struct MenuBarView: View {
         if checker.isRunning {
             Image(systemName: "arrow.triangle.2.circlepath")
                 .foregroundStyle(.blue)
+        } else if checker.isStale {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.orange)
+        } else if checker.didFailNonStale {
+            Image(systemName: "exclamationmark.circle.fill")
+                .foregroundStyle(.red)
         } else if let success = checker.lastRunSuccess {
             Image(systemName: success ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                 .foregroundStyle(success ? .green : .red)
@@ -222,5 +229,18 @@ struct MenuBarView: View {
             Image(systemName: "questionmark.circle")
                 .foregroundStyle(.secondary)
         }
+    }
+
+    // Status line copy + tint derived from CLI exit code (D-18)
+    private var statusLine: String {
+        if checker.isStale { return "No brief today" }
+        if checker.didFailNonStale { return "Print failed" }
+        return checker.lastRunTime
+    }
+
+    private var statusLineTint: Color {
+        if checker.isStale { return .orange }
+        if checker.didFailNonStale { return .red }
+        return .primary
     }
 }

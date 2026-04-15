@@ -7,6 +7,15 @@ final class StatusChecker: @unchecked Sendable {
     var isRunning: Bool = false
     var lastExitCode: Int32? = nil
 
+    /// True when the most recent CLI run exited with the staleness sentinel (code 2).
+    var isStale: Bool { lastExitCode == 2 }
+
+    /// True when the most recent CLI run failed for non-staleness reasons (exit != 0 and != 2).
+    var didFailNonStale: Bool {
+        guard let code = lastExitCode else { return false }
+        return code != 0 && code != 2
+    }
+
     private let logPath = NSString("~/Library/Logs/DailyBrief/dailybrief.log").expandingTildeInPath
     private let pdfDir = NSString("~/Documents/DailyBrief").expandingTildeInPath
     private let configPath = NSString("~/.config/dailybrief/config.json").expandingTildeInPath
