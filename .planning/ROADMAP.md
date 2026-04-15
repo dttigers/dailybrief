@@ -371,6 +371,7 @@ Plans:
 ### Phase 83: Menu Bar Redesign
 **Goal**: DailyBriefMonitor becomes a lean menubar-only print scheduler — no dock presence, no dashboard UI. Schedule config moves to PWA Settings (persisted server-side). Mac app reads schedule from API, triggers generate + lpr at the configured time.
 **Depends on**: Phase 82
+**Plans:** 4 plans
 **Success Criteria** (what must be TRUE):
   1. App has no Dock icon — menubar only
   2. Menu bar shows next scheduled print time and a "Print Now" action
@@ -378,6 +379,12 @@ Plans:
   4. Mac app reads schedule from API on launch and reschedules accordingly
   5. All SwiftUI dashboard views (thoughts, chat, work orders, projects) removed — PWA is the UI
   6. LaunchAgent plist updated; `dailybrief doctor` passes all checks
+
+Plans:
+- [ ] 83-01-PLAN.md — vigil-core app_settings table + GET/PUT /v1/settings/print-schedule endpoint + tests
+- [ ] 83-02-PLAN.md — Delete Dashboard/Settings views, strip AppDelegate, slim MenuBarView
+- [ ] 83-03-PLAN.md — PWA Print Schedule card (time picker + toggle + save) wired to API
+- [ ] 83-04-PLAN.md — Mac app fetches schedule from API on launch + doctor Check 6 + human verify
 
 ### Phase 84: Browser Extension
 **Goal**: A lightweight browser extension (Chrome/Safari/Firefox) that lets the user capture the current page title, URL, and optional note directly to Vigil from any browser tab.
