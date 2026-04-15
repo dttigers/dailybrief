@@ -1,7 +1,17 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router'
 import { useGoogleStatus } from '../hooks/useGoogleStatus'
-import { disconnectGoogle, redirectToGoogleAuth, getPrintSchedule, setPrintSchedule, PrintSchedule } from '../api/client'
+import {
+  disconnectGoogle,
+  redirectToGoogleAuth,
+  getPrintSchedule,
+  setPrintSchedule,
+  getGenerateSchedule,
+  setGenerateSchedule,
+  getTimezone,
+  setTimezone,
+} from '../api/client'
+import { ScheduleCard } from '../components/ScheduleCard'
 
 type Banner = { kind: 'success' | 'error'; text: string } | null
 
@@ -16,13 +26,13 @@ const GOOGLE_ERROR_MESSAGES: Record<string, string> = {
 }
 
 /**
- * Google integration Settings page (Phase 81).
+ * Google integration Settings page (Phase 81) + Phase 86 schedule split.
  *
- * Renders a single "Google" card covering four states:
- *   - EMPTY (status === null): Connect Google button + scope fine-print (D-05).
- *   - CONNECTED (both scopes connected): account row + inline Disconnect (D-04, D-06).
- *   - SCOPE GAP (one scope needs_auth): per-row Re-connect on failing scope (D-04, D-09).
- *   - LOADING / ERROR: lightweight inline state.
+ * Renders:
+ *   - Google card (connect / disconnect / per-scope re-connect)
+ *   - Auto-generate ScheduleCard (server cron — /v1/settings/generate-schedule)
+ *   - Auto-print ScheduleCard (Mac CLI — /v1/settings/print-schedule)
+ *   - Timezone picker (IANA, Intl.DateTimeFormat autofill — D-10)
  *
  * Also handles the OAuth callback query params (`?google_connected=true` /
  * `?google_error=...`) exactly once on mount — surfaces a banner and strips the
@@ -31,6 +41,8 @@ const GOOGLE_ERROR_MESSAGES: Record<string, string> = {
  *
  * Security: `google_error` is rendered as React text (auto-escaped) — no
  * `dangerouslySetInnerHTML` and no `window.confirm()` anywhere (T-81-15).
+ * Timezone text is also rendered via React (T-86-12); invalid IANA rejected
+ * server-side (T-86-11).
  */
 export default function SettingsPage() {
   const { status, isLoading, error, refetch } = useGoogleStatus()
@@ -38,9 +50,9 @@ export default function SettingsPage() {
   const [banner, setBanner] = useState<Banner>(null)
   const [confirming, setConfirming] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
-  const [schedule, setSchedule] = useState<PrintSchedule>({ hour: 6, minute: 0, enabled: true })
-  const [scheduleLoading, setScheduleLoading] = useState(true)
-  const [scheduleSaving, setScheduleSaving] = useState(false)
+  const [timezone, setTimezoneState] = useState<string>('America/New_York')
+  const [timezoneLoading, setTimezoneLoading] = useState(true)
+  const [timezoneSaving, setTimezoneSaving] = useState(false)
 
   // D-11 + Pitfall 4: read callback params ONCE on mount, then strip the URL.
   useEffect(() => {
@@ -60,12 +72,23 @@ export default function SettingsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Load print schedule on mount
+  // D-10: Load timezone from server; if server returns default + browser has a
+  // more specific value, prefill browser's IANA zone. User must still click Save
+  // to persist — we only seed the input.
   useEffect(() => {
-    getPrintSchedule()
-      .then((s) => setSchedule(s))
-      .catch(() => {/* use defaults already set in state */})
-      .finally(() => setScheduleLoading(false))
+    getTimezone()
+      .then((tz) => {
+        const browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone
+        if (tz === 'America/New_York' && browserTz && browserTz !== tz) {
+          setTimezoneState(browserTz)
+        } else {
+          setTimezoneState(tz)
+        }
+      })
+      .catch(() => {
+        /* keep default */
+      })
+      .finally(() => setTimezoneLoading(false))
   }, [])
 
   // D-12: banner auto-dismisses after 5s (no toast library dep).
@@ -99,28 +122,18 @@ export default function SettingsPage() {
     }
   }, [refetch])
 
-  const scheduleTimeValue = String(schedule.hour).padStart(2, '0') + ':' + String(schedule.minute).padStart(2, '0')
+  const onScheduleSaved = useCallback((msg: string) => setBanner({ kind: 'success', text: msg }), [])
+  const onScheduleError = useCallback((msg: string) => setBanner({ kind: 'error', text: msg }), [])
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const [h, m] = e.target.value.split(':').map(Number)
-    if (!isNaN(h) && !isNaN(m)) {
-      setSchedule((prev) => ({ ...prev, hour: h, minute: m }))
-    }
-  }
-
-  const handleEnabledChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSchedule((prev) => ({ ...prev, enabled: e.target.checked }))
-  }
-
-  const handleScheduleSave = async () => {
-    setScheduleSaving(true)
+  const handleTimezoneSave = async () => {
+    setTimezoneSaving(true)
     try {
-      await setPrintSchedule(schedule)
-      setBanner({ kind: 'success', text: 'Print schedule saved' })
+      await setTimezone(timezone)
+      setBanner({ kind: 'success', text: 'Timezone saved' })
     } catch (e) {
-      setBanner({ kind: 'error', text: `Failed to save: ${(e as Error).message}` })
+      setBanner({ kind: 'error', text: `Failed to save timezone: ${(e as Error).message}` })
     } finally {
-      setScheduleSaving(false)
+      setTimezoneSaving(false)
     }
   }
 
@@ -130,6 +143,24 @@ export default function SettingsPage() {
     status !== null && status.calendar === 'connected' && status.gmail === 'connected'
   const hasScopeGap =
     status !== null && (status.calendar === 'needs_auth' || status.gmail === 'needs_auth')
+
+  const tzOptions: string[] =
+    typeof (Intl as unknown as { supportedValuesOf?: (k: string) => string[] }).supportedValuesOf ===
+    'function'
+      ? (Intl as unknown as { supportedValuesOf: (k: string) => string[] }).supportedValuesOf(
+          'timeZone',
+        )
+      : [
+          'America/New_York',
+          'America/Chicago',
+          'America/Denver',
+          'America/Los_Angeles',
+          'Europe/London',
+          'Europe/Paris',
+          'Asia/Tokyo',
+          'Australia/Sydney',
+          'UTC',
+        ]
 
   return (
     <div className="p-4 max-w-2xl mx-auto text-gray-50">
@@ -221,39 +252,57 @@ export default function SettingsPage() {
         )}
       </section>
 
-      <section className="bg-gray-900 border border-gray-900/40 rounded-lg p-5 mt-4">
-        <h2 className="text-lg font-medium mb-4">Print Schedule</h2>
+      <ScheduleCard
+        title="Auto-generate"
+        subtitle="Server generates your brief daily at this time"
+        loadFn={getGenerateSchedule}
+        saveFn={setGenerateSchedule}
+        defaultSchedule={{ hour: 4, minute: 0, enabled: true }}
+        onSaved={onScheduleSaved}
+        onError={onScheduleError}
+      />
 
-        {scheduleLoading ? (
+      <ScheduleCard
+        title="Auto-print"
+        subtitle="Mac prints the latest brief at this time (macOS only)"
+        loadFn={getPrintSchedule}
+        saveFn={setPrintSchedule}
+        defaultSchedule={{ hour: 6, minute: 0, enabled: true }}
+        onSaved={onScheduleSaved}
+        onError={onScheduleError}
+      />
+
+      <section className="bg-gray-900 border border-gray-900/40 rounded-lg p-5 mt-4">
+        <h2 className="text-lg font-medium">Timezone</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          IANA timezone used for scheduling (e.g. America/New_York)
+        </p>
+        {timezoneLoading ? (
           <p className="text-gray-400 text-sm">Loading…</p>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center gap-4">
-              <label className="text-sm text-gray-300 w-24">Print time</label>
+              <label className="text-sm text-gray-300 w-24">Timezone</label>
               <input
-                type="time"
-                value={scheduleTimeValue}
-                onChange={handleTimeChange}
-                className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-gray-100"
+                type="text"
+                value={timezone}
+                onChange={(e) => setTimezoneState(e.target.value)}
+                list="tz-list"
+                className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-gray-100 flex-1"
+                placeholder="America/New_York"
               />
+              <datalist id="tz-list">
+                {tzOptions.map((tz) => (
+                  <option key={tz} value={tz} />
+                ))}
+              </datalist>
             </div>
-
-            <div className="flex items-center gap-4">
-              <label className="text-sm text-gray-300 w-24">Enabled</label>
-              <input
-                type="checkbox"
-                checked={schedule.enabled}
-                onChange={handleEnabledChange}
-                className="w-4 h-4 accent-teal-500"
-              />
-            </div>
-
             <button
-              onClick={handleScheduleSave}
-              disabled={scheduleSaving}
+              onClick={handleTimezoneSave}
+              disabled={timezoneSaving}
               className="px-4 py-2 bg-teal-600 hover:bg-teal-500 rounded text-white text-sm disabled:opacity-50"
             >
-              {scheduleSaving ? 'Saving…' : 'Save'}
+              {timezoneSaving ? 'Saving…' : 'Save'}
             </button>
           </div>
         )}
