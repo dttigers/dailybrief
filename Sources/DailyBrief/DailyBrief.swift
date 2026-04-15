@@ -597,25 +597,42 @@ extension DailyBrief {
                 allPass = false
             }
 
-            // Check 6: print-schedule API returns 200
-            let scheduleUrlStr = apiBaseUrl.hasSuffix("/v1")
-                ? String(apiBaseUrl.dropLast(3)) + "/v1/settings/print-schedule"
-                : apiBaseUrl + "/settings/print-schedule"
+            // Check 6: Settings endpoints reachable — print-schedule + generate-schedule + timezone (D-23)
+            let baseRoot = apiBaseUrl.hasSuffix("/v1") ? String(apiBaseUrl.dropLast(3)) : apiBaseUrl
+            let settingsPaths = ["/v1/settings/print-schedule", "/v1/settings/generate-schedule", "/v1/settings/timezone"]
+            var failedEndpoints: [String] = []
 
-            var scheduleReachable = false
-            if let scheduleUrl = URL(string: scheduleUrlStr),
-               let apiKey = apiKeyEnv, !apiKey.isEmpty {
-                var scheduleReq = URLRequest(url: scheduleUrl, timeoutInterval: 5)
-                scheduleReq.httpMethod = "GET"
-                scheduleReq.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-                if let (_, scheduleResp) = try? await URLSession.shared.data(for: scheduleReq),
-                   let scheduleHttp = scheduleResp as? HTTPURLResponse,
-                   scheduleHttp.statusCode == 200 {
-                    scheduleReachable = true
+            if let apiKey = apiKeyEnv, !apiKey.isEmpty {
+                for path in settingsPaths {
+                    guard let url = URL(string: baseRoot + path) else {
+                        failedEndpoints.append(path + " (bad URL)")
+                        continue
+                    }
+                    var req = URLRequest(url: url, timeoutInterval: 5)
+                    req.httpMethod = "GET"
+                    req.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+                    var ok = false
+                    if let (_, resp) = try? await URLSession.shared.data(for: req),
+                       let http = resp as? HTTPURLResponse,
+                       http.statusCode == 200 {
+                        ok = true
+                    }
+                    if !ok { failedEndpoints.append(path) }
                 }
+            } else {
+                // No API key — mark all as failed so user knows to set VIGIL_API_KEY
+                failedEndpoints = settingsPaths
             }
-            printCheck("print-schedule API reachable (\(scheduleUrlStr))", pass: scheduleReachable)
-            if !scheduleReachable { allPass = false }
+
+            let settingsAllReachable = failedEndpoints.isEmpty
+            let check6Label: String
+            if settingsAllReachable {
+                check6Label = "Settings endpoints reachable (3/3)"
+            } else {
+                check6Label = "Settings endpoints reachable — FAILED: \(failedEndpoints.joined(separator: ", "))"
+            }
+            printCheck(check6Label, pass: settingsAllReachable)
+            if !settingsAllReachable { allPass = false }
 
             print(allPass ? "\n=== All checks passed ===" : "\n=== Some checks FAILED ===")
             if !allPass { throw ExitCode.failure }
