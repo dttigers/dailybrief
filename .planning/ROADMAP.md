@@ -427,12 +427,12 @@ Plans:
   6. Manual "Generate Now" button in PWA still works for off-schedule briefs
   7. `dailybrief doctor` passes with new schedule source (reads print schedule from API, not local config)
 
-**Plans:** 1/5 plans executed
+**Plans:** 4/5 plans executed
 Plans:
 - [x] 86-01-PLAN.md — Server settings endpoints (generate-schedule + timezone) with Intl validation
-- [ ] 86-02-PLAN.md — In-process generate cron + 7d retention sweep + SIGTERM teardown
-- [ ] 86-03-PLAN.md — PWA Settings UI (two ScheduleCards + timezone picker)
-- [ ] 86-04-PLAN.md — Mac CLI pull-only mode + exit code 2 staleness sentinel
+- [x] 86-02-PLAN.md — In-process generate cron + 7d retention sweep + SIGTERM teardown
+- [x] 86-03-PLAN.md — PWA Settings UI (two ScheduleCards + timezone picker)
+- [x] 86-04-PLAN.md — Mac CLI pull-only mode + exit code 2 staleness sentinel
 - [ ] 86-05-PLAN.md — Menubar staleness UI + Doctor Check 6 covering 3 endpoints
 
 ### Phase 87: Vigil App Icons (PWA install + Mac .app bundle)
