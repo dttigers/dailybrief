@@ -33,7 +33,10 @@ import { googleAuth } from "./routes/google-auth.js";
 import { googleStatus } from "./routes/google-status.js";
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
-import { testConnection, closeConnection } from "./db/connection.js";
+import { testConnection, closeConnection, db as mainDb } from "./db/connection.js";
+import { createGenerateScheduler } from "./services/generate-scheduler.js";
+import { createBriefAssemblyService } from "./services/brief-assembly-service.js";
+import { getAIClient, callClaude, parseAIJson } from "./ai/client.js";
 
 // Verify database connection at startup
 testConnection();
@@ -121,15 +124,40 @@ serve({ fetch: app.fetch, port }, () => {
   console.log(`Vigil Core API running on port ${port}`);
 });
 
+// ── Generate scheduler (Phase 86) ──────────────────────────────────────────
+// NOTE: If Railway ever scales to >1 instance, this will double-fire.
+// Current config is single instance (Phase 86 Risk 4). The 10-minute dedupe
+// window blunts damage even if that happens.
+const assembler = createBriefAssemblyService({
+  dbClient: mainDb,
+  getAIClientFn: getAIClient,
+  callClaudeFn: callClaude,
+  parseAIJsonFn: parseAIJson,
+});
+const generateScheduler = createGenerateScheduler({
+  db: mainDb,
+  assemble: (dateStr) => assembler.assembleAndRender(dateStr),
+  logFn: (level, msg, meta) => {
+    const line = `[generate-scheduler] ${msg}`;
+    if (level === "error") console.error(line, meta ?? "");
+    else if (level === "warn") console.warn(line, meta ?? "");
+    else console.log(line, meta ?? "");
+  },
+});
+generateScheduler.start();
+console.log("[generate-scheduler] started (60s tick interval)");
+
 // Graceful shutdown
 process.on("SIGTERM", async () => {
-  console.log("[vigil-core] SIGTERM received, closing connections...");
+  console.log("[vigil-core] SIGTERM received, stopping scheduler + closing connections...");
+  generateScheduler.stop();
   await closeConnection();
   process.exit(0);
 });
 
 process.on("SIGINT", async () => {
-  console.log("[vigil-core] SIGINT received, closing connections...");
+  console.log("[vigil-core] SIGINT received, stopping scheduler + closing connections...");
+  generateScheduler.stop();
   await closeConnection();
   process.exit(0);
 });
