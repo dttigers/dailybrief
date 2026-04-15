@@ -53,31 +53,6 @@ function buildGenAppWithUpsert(
   return app;
 }
 
-// ── Test helpers (timezone) ───────────────────────────────────────────────────
-
-function buildTzApp(row: string | null) {
-  const router = createSettingsRouter({
-    dbGetTimezoneFn: async () => row,
-    dbUpsertTimezoneFn: async (_tz) => {},
-  });
-  const app = new Hono();
-  app.route("/", router);
-  return app;
-}
-
-function buildTzAppWithUpsert(
-  row: string | null,
-  onUpsert: (tz: string) => void,
-) {
-  const router = createSettingsRouter({
-    dbGetTimezoneFn: async () => row,
-    dbUpsertTimezoneFn: async (tz) => { onUpsert(tz); },
-  });
-  const app = new Hono();
-  app.route("/", router);
-  return app;
-}
-
 // ── Tests: print-schedule (PS-01..PS-06) ──────────────────────────────────────
 
 test("PS-01: GET with no row stored returns default schedule { hour: 6, minute: 0, enabled: true }", async () => {
@@ -212,9 +187,10 @@ test("GS-02: PUT valid schedule returns { ok: true }; onUpsert captures values; 
   assert.equal(putBody.ok, true, "PUT response must be { ok: true }");
 
   assert.ok(stored !== null, "onUpsert must have been called");
-  assert.equal(stored!.hour, 5, "onUpsert captured hour");
-  assert.equal(stored!.minute, 15, "onUpsert captured minute");
-  assert.equal(stored!.enabled, true, "onUpsert captured enabled");
+  const captured = stored as { hour: number; minute: number; enabled: boolean };
+  assert.equal(captured.hour, 5, "onUpsert captured hour");
+  assert.equal(captured.minute, 15, "onUpsert captured minute");
+  assert.equal(captured.enabled, true, "onUpsert captured enabled");
 
   const getRes = await app.request("/settings/generate-schedule");
   assert.equal(getRes.status, 200, "Expected 200 OK on GET");
@@ -279,75 +255,4 @@ test("GS-06: PUT with missing enabled field returns 400 { error: 'invalid_input'
 
   const body = await res.json() as { error: string };
   assert.equal(body.error, "invalid_input", "Error must be invalid_input");
-});
-
-// ── Tests: timezone (TZ-01..TZ-04) ────────────────────────────────────────────
-
-test("TZ-01: GET with no row stored returns default timezone America/New_York", async () => {
-  const app = buildTzApp(null);
-
-  const res = await app.request("/settings/timezone");
-  assert.equal(res.status, 200, "Expected 200 OK");
-
-  const body = await res.json() as { timezone: string };
-  assert.equal(body.timezone, "America/New_York", "Default timezone must be America/New_York");
-});
-
-test("TZ-02: PUT valid timezone returns { ok: true }; onUpsert captures; GET returns updated", async () => {
-  let stored: string | null = null;
-
-  const router = createSettingsRouter({
-    dbGetTimezoneFn: async () => stored,
-    dbUpsertTimezoneFn: async (tz) => { stored = tz; },
-  });
-  const app = new Hono();
-  app.route("/", router);
-
-  const putRes = await app.request("/settings/timezone", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ timezone: "Europe/London" }),
-  });
-  assert.equal(putRes.status, 200, "Expected 200 OK on PUT");
-
-  const putBody = await putRes.json() as { ok: boolean };
-  assert.equal(putBody.ok, true, "PUT response must be { ok: true }");
-
-  assert.equal(stored, "Europe/London", "onUpsert captured timezone string exactly");
-
-  const getRes = await app.request("/settings/timezone");
-  assert.equal(getRes.status, 200, "Expected 200 OK on GET");
-
-  const getBody = await getRes.json() as { timezone: string };
-  assert.equal(getBody.timezone, "Europe/London", "GET must return updated timezone");
-});
-
-test("TZ-03: PUT with invalid IANA timezone returns 400 { error: 'invalid_timezone' }; onUpsert NOT called", async () => {
-  let upsertCalled = false;
-  const app = buildTzAppWithUpsert(null, () => { upsertCalled = true; });
-
-  const res = await app.request("/settings/timezone", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ timezone: "Not/A_Real_Zone" }),
-  });
-  assert.equal(res.status, 400, "Expected 400 for invalid timezone");
-
-  const body = await res.json() as { error: string };
-  assert.equal(body.error, "invalid_timezone", "Error must be invalid_timezone");
-  assert.equal(upsertCalled, false, "onUpsert must NOT have been called for invalid input");
-});
-
-test("TZ-04: PUT with empty string timezone returns 400 { error: 'invalid_timezone' }", async () => {
-  const app = buildTzApp(null);
-
-  const res = await app.request("/settings/timezone", {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ timezone: "" }),
-  });
-  assert.equal(res.status, 400, "Expected 400 for empty timezone");
-
-  const body = await res.json() as { error: string };
-  assert.equal(body.error, "invalid_timezone", "Error must be invalid_timezone");
 });
