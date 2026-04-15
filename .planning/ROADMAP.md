@@ -448,8 +448,8 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 87-01-PLAN.md — Extract master SVG from brand PDF + generate brand/pwa/ PNGs + compile brand/mac/AppIcon.icns (asset foundation, Wave 1)
-- [ ] 87-02-PLAN.md — PWA track: copy assets to vigil-pwa/public/, extend VitePWA manifest (5 icons + theme_color #1D9E75), human-verify installed PWA (SC-1, SC-2, SC-3)
-- [ ] 87-03-PLAN.md — Mac track: update install.sh plist + AppIcon.icns copy, add doctor check, preserve LSUIElement (SC-4, SC-5, SC-6)
+- [x] 87-02-PLAN.md — PWA track: copy assets to vigil-pwa/public/, extend VitePWA manifest (5 icons + theme_color #1D9E75), human-verify installed PWA (SC-1, SC-2, SC-3)
+- [x] 87-03-PLAN.md — Mac track: update install.sh plist + AppIcon.icns copy, add doctor check, preserve LSUIElement (SC-4, SC-5, SC-6)
 
 ## Progress
 
