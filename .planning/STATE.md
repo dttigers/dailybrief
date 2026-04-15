@@ -1,16 +1,15 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Server-Side PDF
-status: phase-complete
-stopped_at: Phase 84 complete -- browser extension shipped (Chrome + Safari)
-last_updated: "2026-04-15T03:15:00.000Z"
-last_activity: 2026-04-14 -- Phase 84 verified and committed
+milestone: v3.1
+milestone_name: Gmail + Thin Clients
+status: shipped
+last_milestone_shipped: v3.1 (2026-04-15)
+deferred_to_next_milestone:
+  - Phase 80 (Gmail Server Service — blocked on ServiceNow token)
+  - Phase 85 (iOS Shortcut — Shortcuts.app bugs)
+last_updated: "2026-04-15T22:00:00.000Z"
+last_activity: 2026-04-15 — v3.1 shipped (83, 84, 86, 87); audit tech_debt_accepted
 progress:
-  total_phases: 12
-  completed_phases: 11
-  total_plans: 28
-  completed_plans: 28
   percent: 100
 ---
 
@@ -28,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-12)
 Phase: 84 (browser-extension) — COMPLETE
 Plan: 2 of 2
 Status: Verified, ready for next phase
-Last activity: 2026-04-14 -- Phase 84 verified (VERIFICATION.md passed 4/4 must-haves)
+Last activity: 2026-04-15
 
 Progress: [██████████] 100%
 

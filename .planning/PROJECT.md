@@ -1,24 +1,22 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v3.1 Gmail OAuth foundation complete (2026-04-14)
+## Current State: v3.1 Gmail + Thin Clients shipped (2026-04-15)
 
-**Delivered:** Full PWA at app.vigilhub.io with thoughts dashboard, work order management, projects UI, bulk actions, AI chat, insights/therapy, brief history, and photo upload. 10 phases shipped, 17 plans. Mac Monitor retains menu bar, folder watcher, hotkey capture. Phase 75 complete — PDFKit 3-page brief engine with Vigil branding, Inter fonts, and all configurable sections.
+**Delivered in v3.1:**
+- **Phase 83 Menu Bar Redesign** — DailyBriefMonitor stripped to print-scheduler-only; schedule config lives in PWA Settings persisted via API; Dock-less via LSUIElement
+- **Phase 84 Browser Extension** — Chrome + Safari extension for one-click page-URL capture to POST /v1/thoughts
+- **Phase 86 Split Brief Schedule** — Server generate cron (user TZ, 10-min dedupe, 7d retention, SIGTERM teardown); Mac CLI pull-only with exit-2 staleness sentinel; PWA Settings two-card UI + timezone picker; StatusChecker log-marker inference wires external CLI runs into the menubar
+- **Phase 87 Vigil App Icons** — Full PWA icon set (192/256/384/512/maskable + favicon.svg/ico + apple-touch); Mac AppIcon.icns generated from brand PDF master; LSUIElement regression guard preserved
 
-## Current Milestone: v3.0 Server-Side PDF
+**Deferred to v3.2:**
+- Phase 85 iOS Shortcut — Shortcuts.app bugs (note-input dialog refuses typing on macOS; silent "uploaded" success branch)
+- Phase 80 Gmail Server Service — Blocked on ServiceNow API token from IT
 
-**Goal:** Move daily brief PDF generation from the Mac CLI to vigil-core so any client (PWA, email, Mac) can generate and receive briefs without macOS.
+**Shipped cumulatively:** v1.0–v3.1. Full PWA at app.vigilhub.io. Vigil Core API on Railway (Node/Hono/Drizzle/Postgres) with bearer auth + HTTPS. Server-side PDF generation (PDFKit 3-page). Mac menubar thin client + Even G2 glasses plugin + browser extension. OAuth foundation (Calendar + Gmail scopes, JWT nonce survives rolling deploys).
 
-**Target features:**
-1. **Sports API route** — ESPN proxy in vigil-core (MLB, NFL, NBA, NHL)
-2. **Google Calendar server-side** — OAuth token storage + refresh in vigil-core
-3. **Brief assembly endpoint** — `/v1/brief/generate` orchestrates all data sources, returns PDF binary
-4. **PDF rendering in Node** — Replicate 3-page layout via HTML+CSS to PDF
-5. **PWA brief UI** — Generate button, preview, download, print-from-browser
-6. **Brief history storage** — Save generated PDFs server-side for retrieval by any client
-7. **Mac CLI thin client** — Replace local rendering with API call + `lpr` print (auto-print preserved)
-8. **Optional email delivery** — Send brief as PDF attachment on schedule
+## Next Milestone: v3.2 (to be defined via `/gsd-new-milestone`)
 
-**Architecture shift:** PDF rendering moves from Mac CLI (CoreGraphics) to vigil-core (server-side). Mac CLI becomes a thin client that fetches the PDF and prints. Apple Reminders dropped — Vigil task thoughts are the todo source.
+Starting candidates: re-attempt iOS Shortcut (or alt share-sheet path), Gmail work order extraction (when ServiceNow token lands), anything surfaced through new-milestone scoping.
 
 ## What This Is
 

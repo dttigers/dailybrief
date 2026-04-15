@@ -1,5 +1,37 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v3.1 Gmail + Thin Clients (Shipped: 2026-04-15)
+
+**Phases completed:** 11 phases, 26 plans, 17 tasks
+
+**Key accomplishments:**
+
+- One-liner:
+- One-liner:
+- oauthTokens table
+- calendar-service.ts
+- PDFKit-based rendering engine with Inter font bundling, BriefRenderData contract, and Page 1 layout (work orders, task thoughts, calendar, notes) using Vigil brand colors
+- Complete 3-page daily brief PDF: Page 2 with multi-sport compact layout and affirmation, Page 3+ with paginated AI insights spillover and therapy prep
+- Promise.allSettled orchestration service with per-source timeouts, data mappers for sports/calendar/work orders/thoughts, filesystem PDF persistence, and affirmation/prioritization caching
+- POST /brief/generate and GET /brief/:date Hono route handlers with DI factory, briefs table upsert, date validation, and binary PDF response
+- Generate/preview/download brief UI in React PWA — iframe blob URL rendering, generate state machine, blob cleanup, and Layout tab rename
+- One-liner:
+- GET /v1/google/status endpoint reads oauthTokens.scopes column and returns per-scope calendar/gmail authorization state behind bearer auth
+- Task 1 — Schema update (commit `74b896b`):
+- Task 1 — calendar-auth.ts callback + status wiring (commit `b1d9a9d`):
+- Task 1 — Test harness + 5 new tests (commit `dc73066`):
+- Brand token system:
+- AuthPage.tsx
+- 1. [Rule 3 - Blocking] Added missing `@testing-library/dom` peer dependency
+- 1. [Rule 3 — Blocking] Stale `pwaUrl` variable reference after rename
+- 1. [Rule 3 — Blocking] vitest harness not yet merged from parallel Plan 01
+- One-liner:
+- Files:
+- Four new ArgumentParser subcommands (Capture/Triage/Doctor/Setup) scaffolded with full flag declarations; three WO commands retired to dashboard redirect; --setup flag shimmed with deprecation warning
+- Full implementations for Capture (POST /thoughts + /triage), Triage (batch uncategorized + PUT back), and Doctor (5-check health report) replacing Plan 01 stubs
+
+---
+
 ## v2.5 Dashboard Everywhere (Shipped: 2026-04-12)
 
 **Phases completed:** 10 phases, 16 plans, 11 tasks
