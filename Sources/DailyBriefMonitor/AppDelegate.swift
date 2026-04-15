@@ -30,6 +30,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     let checker = StatusChecker()
     private(set) var scheduler: BriefScheduler?
 
+    // Stored so the wake handler can re-fetch without reloading config
+    private var scheduleAPIURL: URL?
+    private var scheduleAPIKey: String?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSLog("DailyBriefMonitor: applicationDidFinishLaunching started")
 
@@ -46,20 +50,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
             // even if the user never opens the menu bar popover.
             let sched = BriefScheduler(checker: checker)
             self.scheduler = sched
-            Task {
-                guard let url = URL(string: "\(config.apiBaseUrl)/v1/settings/print-schedule") else { return }
-                var req = URLRequest(url: url, timeoutInterval: 5)
-                req.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
-                guard let (data, resp) = try? await URLSession.shared.data(for: req),
-                      let http = resp as? HTTPURLResponse,
-                      http.statusCode == 200,
-                      let decoded = try? JSONDecoder().decode(PrintScheduleResponse.self, from: data)
-                else { return }
-                await MainActor.run {
-                    sched.reschedule(hour: decoded.hour, minute: decoded.minute, enabled: decoded.enabled)
-                }
-                NSLog("DailyBriefMonitor: schedule loaded from API — %02d:%02d enabled=%d", decoded.hour, decoded.minute, decoded.enabled ? 1 : 0)
-            }
+            self.scheduleAPIURL = URL(string: "\(config.apiBaseUrl)/v1/settings/print-schedule")
+            self.scheduleAPIKey = config.apiKey
+            fetchAndApplySchedule()
+
+            // Re-fetch on wake so a schedule change made while the Mac was sleeping takes effect
+            // before the next print time — covers the "never logged off" case.
+            NSWorkspace.shared.notificationCenter.addObserver(
+                self,
+                selector: #selector(handleSystemWake),
+                name: NSWorkspace.didWakeNotification,
+                object: nil
+            )
             let client = VigilAPIClient(
                 baseURL: URL(string: config.apiBaseUrl)!,
                 apiKey: config.apiKey
@@ -184,6 +186,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     }
 
     // MARK: - Private
+
+    @objc private func handleSystemWake() {
+        NSLog("DailyBriefMonitor: system wake — re-fetching print schedule")
+        fetchAndApplySchedule()
+    }
+
+    private func fetchAndApplySchedule() {
+        guard let url = scheduleAPIURL, let key = scheduleAPIKey, let sched = scheduler else { return }
+        Task {
+            var req = URLRequest(url: url, timeoutInterval: 5)
+            req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
+            guard let (data, resp) = try? await URLSession.shared.data(for: req),
+                  let http = resp as? HTTPURLResponse,
+                  http.statusCode == 200,
+                  let decoded = try? JSONDecoder().decode(PrintScheduleResponse.self, from: data)
+            else { return }
+            await MainActor.run {
+                sched.reschedule(hour: decoded.hour, minute: decoded.minute, enabled: decoded.enabled)
+            }
+            NSLog("DailyBriefMonitor: schedule applied — %02d:%02d enabled=%d", decoded.hour, decoded.minute, decoded.enabled ? 1 : 0)
+        }
+    }
 
     private func registerGlobalHotKey() {
         // kVK_ANSI_J = 0x26, Cmd+Shift
