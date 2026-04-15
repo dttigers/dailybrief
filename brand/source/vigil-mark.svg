@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Vigil master app-icon mark (D-01, D-02, D-03).
+  Canvas: 1024x1024. Background: solid teal #1D9E75, macOS squircle radius 229 (~22.37%).
+  Mark: white diamond outline (rotated square) containing a V chevron with a dot at the V apex.
+  Mark bounding box is centered and occupies ~60% of canvas width (614 / 1024).
+  Self-contained — no external references, safe for inline favicon use.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- Rounded-square teal background (macOS Big Sur squircle radius 22.37%) -->
+  <rect x="0" y="0" width="1024" height="1024" rx="229" ry="229" fill="#1D9E75"/>
+
+  <!--
+    Mark group: translate to canvas center (512,512), then draw a 614x614
+    bounding box centered on origin (i.e. -307..+307). All coordinates
+    below are in that local space.
+  -->
+  <g transform="translate(512 512)" fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Diamond outline: rotated square, points at top/right/bottom/left of 614x614 box -->
+    <polygon points="0,-307 307,0 0,307 -307,0" stroke-width="36"/>
+
+    <!-- V chevron inside the diamond. Upper arms end at ~(-130,-100) and (130,-100);
+         apex sits at (0, 70). Proportions mirror the favicon.svg stopgap. -->
+    <polyline points="-130,-100 0,70 130,-100" stroke-width="44"/>
+
+    <!-- Dot at the V apex -->
+    <circle cx="0" cy="85" r="34" fill="#FFFFFF" stroke="none"/>
+  </g>
+</svg>
