@@ -57,21 +57,33 @@ extension DailyBrief {
 
             let apiClient = try DailyBrief.makeAPIClient(config: config)
 
+            // Compute today's date in local timezone (D-12 step 1)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd"
+            formatter.timeZone = TimeZone.current
+            let today = formatter.string(from: Date())
+
             if dryRun {
-                Logger.log("Dry run: would call POST /v1/brief/generate")
+                Logger.log("Dry run: would GET /v1/brief/\(today)")
                 return
             }
 
-            Logger.log("Requesting brief from server...")
+            Logger.log("Fetching brief for \(today) from server...")
 
+            // D-12: GET /v1/brief/:today — pull-only
             let pdfData: Data
             do {
-                pdfData = try await apiClient.postRawData(
-                    path: "/v1/brief/generate",
+                pdfData = try await apiClient.getRawData(
+                    path: "/v1/brief/\(today)",
                     accept: "application/pdf"
                 )
+            } catch let VigilAPIError.httpError(statusCode, _) where statusCode == 404 {
+                // D-12 step 4: 404 => staleness sentinel, exit code 2
+                Logger.log("No brief for today (\(today))")
+                throw ExitCode(rawValue: 2)
             } catch {
-                Logger.error("Brief generation failed: \(error.localizedDescription)")
+                // D-12 step 5: any other error => exit 1
+                Logger.error("Brief fetch failed: \(error.localizedDescription)")
                 throw ExitCode.failure
             }
 
@@ -81,9 +93,7 @@ extension DailyBrief {
             let outputDir = ConfigLoader.expandPath(config.pdf.outputDirectory)
             try ConfigLoader.ensureDirectoryExists(outputDir)
 
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd"
-            let filename = "daily_sheet_\(formatter.string(from: Date())).pdf"
+            let filename = "daily_sheet_\(today).pdf"
             let outputPath = (outputDir as NSString).appendingPathComponent(filename)
 
             try pdfData.write(to: URL(fileURLWithPath: outputPath))
