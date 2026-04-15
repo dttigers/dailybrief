@@ -90,7 +90,38 @@
 
 ## Traceability
 
-*(Populated by roadmapper when phases are created.)*
-
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
+| ROLLOVER-01 | Phase 88 | Pending |
+| ROLLOVER-02 | Phase 88 | Pending |
+| ROLLOVER-03 | Phase 88 | Pending |
+| ROLLOVER-04 | Phase 88 | Pending |
+| SCOPE-01 | Phase 89 | Pending |
+| SCOPE-02 | Phase 89 | Pending |
+| SCOPE-03 | Phase 89 | Pending |
+| SCOPE-04 | Phase 93 | Pending |
+| PERSIST-01 | Phase 90 | Pending |
+| PERSIST-02 | Phase 90 | Pending |
+| PERSIST-03 | Phase 90 | Pending |
+| PERSIST-04 | Phase 90 | Pending |
+| TASKS-01 | Phase 91 | Pending |
+| TASKS-02 | Phase 91 | Pending |
+| TASKS-03 | Phase 91 | Pending |
+| WO-01 | Phase 92 | Pending |
+| WO-02 | Phase 92 | Pending |
+| WO-03 | Phase 92 | Pending |
+| WO-04 | Phase 92 | Pending |
+| WO-05 | Phase 92 | Pending |
+| WO-06 | Phase 92 | Pending |
+| BRIEF-01 | Phase 93 | Pending |
+| BRIEF-02 | Phase 93 | Pending |
+| BRIEF-03 | Phase 93 | Pending |
+| BRIEF-04 | Phase 93 | Pending |
+| EXT-01 | Phase 94 | Pending |
+| EXT-02 | Phase 94 | Pending |
+| EXT-03 | Phase 94 | Pending |
+| EXT-04 | Phase 94 | Pending |
+| EXT-05 | Phase 94 | Pending |
+| UAT-01 | Phase 95 | Pending |
+
+**Coverage:** 30/30 requirements mapped. No orphans.

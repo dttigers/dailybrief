@@ -19,6 +19,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.5 Dashboard Everywhere** — Phases 63-72 (shipped 2026-04-12)
 - ✅ **v3.0 Server-Side PDF** — Phases 73-78 (shipped 2026-04-14)
 - ✅ **v3.1 Gmail + Thin Clients** — Phases 83, 84, 86, 87 (shipped 2026-04-15; Phases 80 + 85 deferred to v3.2)
+- 🚧 **v3.2 Freshness & Capture Parity** — Phases 88-95 (started 2026-04-15)
 
 ## Completed Milestones
 
@@ -169,199 +170,18 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
-## ✅ v3.0 Server-Side PDF (SHIPPED 2026-04-14)
+<details>
+<summary>✅ v3.0 Server-Side PDF (Phases 73-78) — SHIPPED 2026-04-14</summary>
 
-**Milestone Goal:** Move PDF generation from Mac CLI into vigil-core so any client can generate and receive daily briefs without macOS. Mac CLI becomes a thin client.
+- [x] Phase 73: Sports Proxy (2/2 plans) — completed 2026-04-13
+- [x] Phase 74: Google Calendar Server-Side (2/2 plans) — completed 2026-04-13
+- [x] Phase 75: PDF Generation Engine (2/2 plans) — completed 2026-04-13
+- [x] Phase 76: Brief Assembly Endpoint (2/2 plans) — completed 2026-04-13
+- [x] Phase 77: PWA Brief UI (1/1 plan) — completed 2026-04-13
+- [x] Phase 78: Mac CLI Thin Client (2/2 plans) — completed 2026-04-14
 
-### Phases
+</details>
 
-- [x] **Phase 73: Sports Proxy** — balldontlie.io routes for all 4 leagues with caching and graceful fallback (completed 2026-04-13)
-- [x] **Phase 74: Google Calendar Server-Side** — OAuth token storage in PostgreSQL and server-side event fetch (completed 2026-04-13)
-- [x] **Phase 75: PDF Generation Engine** — PDFKit 3-page brief layout matching current CoreGraphics output (completed 2026-04-13)
-- [x] **Phase 76: Brief Assembly Endpoint** — `/v1/brief/generate` orchestrator with partial-failure tolerance and storage (completed 2026-04-13)
-- [ ] **Phase 77: PWA Brief UI** — generate, preview, and download brief from the PWA
-- [ ] **Phase 78: Mac CLI Thin Client** — replace local rendering with API call, preserve lpr auto-print
-
-## Phase Details
-
-### Phase 73: Sports Proxy
-**Goal**: The server can fetch live scores, standings, and schedules for all 4 major leagues from balldontlie.io, with caching and graceful fallback when a league is off-season or the API is unavailable
-**Depends on**: Nothing (first phase of v3.0; proves deploy pipeline)
-**Requirements**: SPORT-01, SPORT-02, SPORT-03, SPORT-04, SPORT-05, SPORT-06
-**Success Criteria** (what must be TRUE):
-  1. Calling the sports proxy endpoint returns MLB, NFL, NBA, and NHL data in a consistent shape
-  2. A second call within the cache window returns data without hitting balldontlie.io again (verified via logs)
-  3. When a league returns an empty or error response, the endpoint still returns data for the remaining leagues with a partial-success flag
-  4. The endpoint is deployed and reachable on the production Railway URL
-**Plans**: 2 plans
-Plans:
-- [x] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
-- [x] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
-
-### Phase 74: Google Calendar Server-Side
-**Goal**: Users can authorize Google Calendar from the PWA, and the server stores, refreshes, and uses OAuth tokens to fetch today's events — no Mac app required
-**Depends on**: Phase 73
-**Requirements**: CAL-01, CAL-02, CAL-03
-**Success Criteria** (what must be TRUE):
-  1. User clicks "Connect Google Calendar" in the PWA and completes the OAuth flow without leaving the browser
-  2. After authorization, the server stores an encrypted refresh token in PostgreSQL
-  3. The server fetches today's calendar events and returns them via API without prompting the user again
-  4. When the access token expires, the server silently refreshes it using the stored refresh token
-**Plans**: 2 plans
-Plans:
-- [x] 74-01-PLAN.md — Schema, token encryption, OAuth auth routes (CAL-01, CAL-02)
-- [x] 74-02-PLAN.md — Calendar service + data routes with token refresh (CAL-02, CAL-03)
-
-**UI hint**: yes
-
-### Phase 75: PDF Generation Engine
-**Goal**: The server renders a faithful 3-page daily brief PDF using PDFKit — matching the existing CoreGraphics layout including all configurable options — deployable on Railway without system dependencies
-**Depends on**: Phase 73
-**Requirements**: PDF-01, PDF-02, PDF-03, PDF-04, PDF-05, PDF-06
-**Success Criteria** (what must be TRUE):
-  1. Calling the PDF render function with sample data returns a valid PDF binary that opens correctly in Preview
-  2. Page 1 contains work orders with status checkboxes and AI priority, Vigil task thoughts, calendar events, and a notes section
-  3. Page 2 contains sports scores and standings for all configured leagues, an AI-generated affirmation, and a notes section
-  4. Page 3 contains captured thoughts paginated with AI insights and therapy prep
-  5. Paper size, margins, font scale, and section toggles from the existing PDFConfig are all respected in the output
-**Plans**: 2 plans
-Plans:
-- [x] 75-01-PLAN.md — Types, fonts, PDFKit scaffold, Page 1 renderer (PDF-01, PDF-02, PDF-03, PDF-04)
-- [x] 75-02-PLAN.md — Page 2 (sports, affirmation) + Page 3+ (thoughts, insights, therapy prep) renderers (PDF-05, PDF-06)
-
-### Phase 76: Brief Assembly Endpoint
-**Goal**: `/v1/brief/generate` orchestrates all data sources concurrently, tolerates partial failures, returns a PDF binary, and saves the generated brief server-side for later retrieval
-**Depends on**: Phase 74, Phase 75
-**Requirements**: BRIEF-01, BRIEF-02, BRIEF-03, BRIEF-04
-**Success Criteria** (what must be TRUE):
-  1. Calling `POST /v1/brief/generate` returns a PDF binary response with the correct content-type header
-  2. If one data source (e.g. sports or calendar) fails, the endpoint still returns a complete PDF — missing sections show a graceful placeholder
-  3. Each generated PDF is saved server-side and assigned a storage_key returned in the response
-  4. Calling `GET /v1/brief/:storage_key` returns the same PDF that was generated
-**Plans**: 2 plans
-Plans:
-- [ ] 73-01-PLAN.md — TDD sports service (types, cache, 4 league fetchers, tests for SPORT-01 through SPORT-05)
-- [ ] 73-02-PLAN.md — Hono routes (aggregate + per-league), SPORT-06 test, index.ts registration
-
-### Phase 77: PWA Brief UI
-**Goal**: Users can generate, preview, and download their daily brief from the PWA without touching the Mac
-**Depends on**: Phase 76
-**Requirements**: PWA-01, PWA-02, PWA-03
-**Success Criteria** (what must be TRUE):
-  1. The PWA has a "Generate Brief" button that calls `/v1/brief/generate` and shows a loading state while it runs
-  2. After generation, the PDF renders inline in the PWA so the user can read it without downloading
-  3. A download button saves the PDF to the user's device with a sensible filename
-**Plans**: 1 plan
-Plans:
-- [ ] 77-01-PLAN.md — API client binary fetch + Layout tab rename + BriefHistoryPage generate/preview/download
-**UI hint**: yes
-
-### Phase 78: Mac CLI Thin Client
-**Goal**: The Mac CLI fetches the brief PDF from the server instead of rendering it locally — auto-print is preserved, and all CoreGraphics rendering code is removed
-**Depends on**: Phase 76
-**Requirements**: CLI-01, CLI-02, CLI-03
-**Success Criteria** (what must be TRUE):
-  1. Running the Mac CLI brief command results in a PDF fetched from `/v1/brief/generate` written to disk — no local PDF rendering occurs
-  2. BriefScheduler's scheduled auto-print still fires at the configured time, calling the API and piping the result to `lpr`
-  3. The CoreGraphics/PDFLayout rendering code is absent from the Mac CLI codebase (no dead code left behind)
-**Plans**: 2 plans
-Plans:
-- [x] 78-01-PLAN.md — Rewrite Generate command as thin client + add postRawData to VigilAPIClient (CLI-01, CLI-02)
-- [x] 78-02-PLAN.md — Delete CoreGraphics PDF rendering code and generate-only services (CLI-03)
-
-### Phase 79: Gmail OAuth Server Foundation
-**Goal**: The server can authorize Gmail API access using the existing Google OAuth infrastructure — scope expanded to include gmail.readonly, CSRF nonce survives Railway rolling deploys, and the server can report per-scope authorization status to any client
-**Depends on**: Phase 78 (continues v3.1 work; OAuth infrastructure from Phase 74)
-**Requirements**: OAUTH-04
-**Success Criteria** (what must be TRUE):
-  1. The OAuth authorization URL includes both `calendar.readonly` and `gmail.readonly` scopes
-  2. After a Railway rolling deploy, the OAuth callback succeeds — the state parameter validates correctly using the JWT-based nonce (no in-memory map dependency)
-  3. `GET /v1/google/status` returns a structured response showing per-scope authorization state (e.g., `{ calendar: 'connected', gmail: 'needs_auth' }`) so the PWA can prompt re-connect when only gmail scope is missing
-  4. Calling the Gmail API with the stored token returns data — not a 403 insufficientPermissions error
-**Plans**: 2 plans
-Plans:
-- [x] 79-01-PLAN.md — Install jose, add scopes column, replace calendar-auth with JWT-based google-auth (dual scopes)
-- [x] 79-02-PLAN.md — GET /v1/google/status endpoint (per-scope authorization state)
-**UI hint**: no
-
-### Phase 79.1: Close OAuth schema gap — scopes + account_email columns, callback writes granted scopes (INSERTED)
-
-**Goal:** oauth_tokens table has `scopes jsonb DEFAULT '[]'` and `account_email text` columns; the OAuth callback parses Google's space-separated `tokens.scope` into an array and persists it alongside `account_email` (decoded from id_token); `GET /v1/google/status` reads scopes directly and reports `gmail: 'connected'` when the gmail.readonly scope is present.
-**Requirements**: OAUTH-04
-**Depends on:** Phase 79
-**Plans:** 3/3 plans complete
-
-Plans:
-- [x] 79.1-01-PLAN.md — Add scopes + account_email columns to schema.ts, generate + apply drizzle migration 0008
-- [x] 79.1-02-PLAN.md — Callback parses tokens.scope + decodes id_token email, writes both to oauth_tokens; /v1/google/status reads scopes column directly
-- [x] 79.1-03-PLAN.md — Regression tests covering scope parsing, email decoding, and status read-through
-
-### Phase 80: Gmail Server Service & Work Order Extraction
-**Goal**: vigil-core exposes Gmail inbox list, thread read, search, and work order extraction endpoints — all using the existing oauthTokens row, mirroring the calendar-service.ts pattern
-**Depends on**: Phase 79
-**Requirements**: GWO-01, GWO-02, GWO-03
-**Success Criteria** (what must be TRUE):
-  1. `GET /v1/gmail/messages` returns a list of recent messages with sender, subject, snippet, and date — fetched with `format: metadata` to avoid N+1 quota burn
-  2. `GET /v1/gmail/messages/:threadId` returns the full thread content
-  3. `GET /v1/gmail/search?q=...` returns messages matching the query using Gmail's native `q:` parameter
-  4. `POST /v1/gmail/extract-work-orders` identifies work order candidate emails using configurable sender/subject patterns, extracts structured work orders, and stores them in the existing workOrders table
-  5. Triggering extraction a second time for already-imported work orders does not create duplicates
-**Plans**: TBD
-
-### Phase 80.1: PWA Brand Token Foundation (INSERTED)
-
-**Goal**: The PWA uses Vigil brand tokens (teal palette, warm neutrals, Inter font, type scale) from a single Tailwind theme config — all existing hardcoded slate/blue colors replaced with brand-compliant values from docs/BRAND-GUIDELINES.md
-**Depends on**: Phase 80 (continues v3.1 work; brand spec in docs/BRAND-GUIDELINES.md)
-**Requirements**: SC-01, SC-02, SC-03, SC-04, SC-05
-**Success Criteria** (what must be TRUE):
-  1. Tailwind config defines Vigil color tokens (teal-50 through teal-800, gray-50 through gray-900, surface, and status accent colors) matching docs/BRAND-GUIDELINES.md hex values
-  2. Inter font is loaded and applied as the default font family across all PWA pages
-  3. Only font weights 400 (Regular) and 500 (Medium) are used — no 600/700 anywhere in the codebase
-  4. All existing hardcoded slate/blue Tailwind classes in PWA components are replaced with brand token classes
-  5. Category tags use rounded pills and routing tags use square badges, matching the tag system spec
-**Plans**: 3 plans
-Plans:
-- [x] 80.1-01-PLAN.md — Define brand tokens in Tailwind v4 @theme and load Inter font
-- [x] 80.1-02-PLAN.md — Migrate 12 component files to brand token classes + fix tag shapes
-- [x] 80.1-03-PLAN.md — Migrate 10 page files to brand token classes
-**UI hint**: yes
-
-### Phase 81: PWA Settings & Google OAuth UI
-**Goal**: Users can connect and disconnect their Google account from the PWA Settings page, see per-scope authorization status, and trigger OAuth re-authorization when gmail scope is missing
-**Depends on**: Phase 79
-**Requirements**: OAUTH-01, OAUTH-02, OAUTH-03
-**Success Criteria** (what must be TRUE):
-  1. The PWA Settings/Integrations page shows a "Connect Google" button when no token is stored
-  2. After clicking connect and completing the OAuth flow, the page shows "Connected" with the authorized scopes listed
-  3. A "Disconnect" button removes the stored token and immediately updates the UI to disconnected state
-  4. When the stored token covers calendar but not gmail (scope gap), the page shows "Gmail: needs re-authorization" and a re-connect button — without breaking calendar functionality
-  5. The OAuth callback URL redirects cleanly back to the PWA Settings page on both desktop and iOS standalone mode
-**Plans**: 6 plans
-Plans:
-- [x] 81-01-PLAN.md — Install vitest + RTL + jsdom; create stub tests for SettingsPage / Layout / api client / useGoogleStatus (Wave 0 Nyquist)
-- [x] 81-02-PLAN.md — vigil-core callback redirect to /settings + rename calendar_error→google_error + verify/add DELETE /v1/google/tokens and GET /v1/google/status
-- [x] 81-03-PLAN.md — PWA api/client.ts: getGoogleStatus (404→null), disconnectGoogle, redirectToGoogleAuth
-- [x] 81-04-PLAN.md — GoogleStatusContext provider + useGoogleStatus hook; wrap authenticated Layout in App.tsx
-- [x] 81-05-PLAN.md — Layout.tsx gear icon + red status dot (reads shared context)
-- [x] 81-06-PLAN.md — SettingsPage.tsx (all 4 states + callback banner + inline disconnect) + route registration
-**UI hint**: yes
-
-### Phase 82: CLI Restructure
-**Goal**: The Mac CLI follows the Vigil CLI spec — capture, triage, doctor, and setup are first-class subcommands; work order management commands are retired; the LaunchAgent plist is updated atomically in the same commit
-**Depends on**: Phase 78 (continues from v3.0 CLI thin client)
-**Requirements**: CLI-04, CLI-05, CLI-06, CLI-07, CLI-08
-**Success Criteria** (what must be TRUE):
-  1. `dailybrief capture "text"` posts a thought to vigil-core and reports back the AI triage result — `--category`, `--no-triage`, and `--source` flags all work
-  2. `dailybrief triage` re-triages uncategorized thoughts in batch — `--limit` and `--force` flags work; progress is printed to stdout
-  3. `dailybrief doctor` prints a pass/fail status for each check: VIGIL_API_KEY present, vigil-core reachable, LaunchAgent plist exists and loaded, plist points to correct binary
-  4. `dailybrief setup` runs the interactive setup flow — the old `--setup` flag is removed or shimmed with a deprecation warning
-  5. Running `dailybrief complete`, `dailybrief uncomplete`, or `dailybrief list-completed` prints a "use the dashboard" message and exits cleanly — no silent failure
-  6. The LaunchAgent plist invokes only commands that still exist after the restructure — verified and committed in the same change
-**Plans**: 3 plans
-Plans:
-- [x] 82-01-PLAN.md — CLI scaffolding: add Capture/Triage/Doctor/Setup stubs, retire work-order commands
-- [x] 82-02-PLAN.md — Implement Capture, Triage, Doctor subcommand logic
-- [x] 82-03-PLAN.md — Plist audit + release build + install + human verify
 <details>
 <summary>✅ v3.1 Gmail + Thin Clients (Phases 83, 84, 86, 87) — SHIPPED 2026-04-15</summary>
 
@@ -369,20 +189,136 @@ Plans:
 
 ### Delivered
 
-- [x] **Phase 83: Menu Bar Redesign** (4/4 plans) — DailyBriefMonitor stripped to menubar-only; schedule config lives in PWA Settings persisted via API; Dock-less via LSUIElement (completed 2026-04-14)
-- [x] **Phase 84: Browser Extension** (2/2 plans) — Chrome + Safari extension for one-click page-URL capture (completed 2026-04-14)
-- [x] **Phase 86: Split Brief Schedule** (6/6 plans) — Server generate cron + Mac CLI pull-only with exit-2 staleness sentinel; PWA Settings two-card UI; StatusChecker log-marker inference (completed 2026-04-15)
-- [x] **Phase 87: Vigil App Icons** (3/3 plans) — Full PWA icon set + Mac AppIcon.icns from brand PDF master (completed 2026-04-15)
+- [x] **Phase 79: Gmail OAuth Server Foundation** (3/3 plans) — completed 2026-04-14
+- [x] **Phase 79.1: OAuth schema gap** (3/3 plans) — completed 2026-04-14
+- [x] **Phase 80.1: PWA Brand Token Foundation** (3/3 plans) — completed 2026-04-14
+- [x] **Phase 81: PWA Settings & Google OAuth UI** (6/6 plans) — completed 2026-04-14
+- [x] **Phase 82: CLI Restructure** (3/3 plans) — completed 2026-04-14
+- [x] **Phase 83: Menu Bar Redesign** (4/4 plans) — completed 2026-04-14
+- [x] **Phase 84: Browser Extension** (2/2 plans) — completed 2026-04-14
+- [x] **Phase 86: Split Brief Schedule** (6/6 plans) — completed 2026-04-15
+- [x] **Phase 87: Vigil App Icons** (3/3 plans) — completed 2026-04-15
 
 ### Deferred to v3.2
 
-- **Phase 85: iOS Shortcut** — Shortcuts.app bugs: note-input dialog refuses typing on macOS; silent "uploaded" success branch with no thought appearing in PWA. Revisit when bugs are fixed.
+- **Phase 85: iOS Shortcut** — Shortcuts.app bugs. Held for v3.3+.
 - **Phase 80: Gmail Server Service & Work Order Extraction** — Blocked on ServiceNow API token from IT.
 
-**Audit:** [v3.1-MILESTONE-AUDIT.md](milestones/v3.1-MILESTONE-AUDIT.md) — status `tech_debt_accepted` · **Archive:** [v3.1-ROADMAP.md](milestones/v3.1-ROADMAP.md) · [v3.1-REQUIREMENTS.md](milestones/v3.1-REQUIREMENTS.md)
+**Audit:** [v3.1-MILESTONE-AUDIT.md](milestones/v3.1-MILESTONE-AUDIT.md) · **Archive:** [v3.1-ROADMAP.md](milestones/v3.1-ROADMAP.md) · [v3.1-REQUIREMENTS.md](milestones/v3.1-REQUIREMENTS.md)
 
 </details>
 
+## 🚧 v3.2 Freshness & Capture Parity (IN PROGRESS)
+
+**Milestone Goal:** Keep Vigil's daily picture accurate by aging out stale data, and bring non-Mac users to capture parity via the browser extension.
+
+### Phases
+
+- [ ] **Phase 88: Date Window Helper & Weekly Rollover** — Shared server-side 7-day / Wed-anchored window helper + Thoughts tab rollover view
+- [ ] **Phase 89: 7-Day Analysis Scope** — Apply window helper to Insights, Therapy patterns, and Therapy session prep
+- [ ] **Phase 90: Server-Side Persistence** — Cache Insights / Therapy / Therapy-prep with Regenerate; Chat auto-resumes last session
+- [ ] **Phase 91: Tasks Tab Status Filter** — Open default, toggle Done/All, per-device persistence + server-synced default
+- [ ] **Phase 92: Work Order Archive** — Auto-archive rules, archived view, unarchive, bulk-clear (PWA + Mac CLI aware)
+- [ ] **Phase 93: Brief PDF Cleanup & 7-Day Scope** — De-dupe Tasks, Affirmation to bottom of Page 1, reflow, respect 7-day window
+- [ ] **Phase 94: Browser Extension Quick-Capture** — Rewrite URL-only → thought capture + triage (URL preserved as option), Chrome + Safari
+- [ ] **Phase 95: iOS PWA OAuth UAT Retest** — Close Phase 81 UAT Test 8 on live Railway
+
+## Phase Details
+
+### Phase 88: Date Window Helper & Weekly Rollover
+**Goal**: The Thoughts tab shows only this-week (Wed–Tue, user-timezone-anchored) thoughts by default; a shared server-side date-window helper becomes the single source of truth for all subsequent scope/rollover work.
+**Depends on**: Phase 87 (v3.1 end)
+**Requirements**: ROLLOVER-01, ROLLOVER-02, ROLLOVER-03, ROLLOVER-04
+**Success Criteria** (what must be TRUE):
+  1. Opening the Thoughts tab shows only thoughts created since the most recent Wednesday 00:00 in the user's configured timezone
+  2. Full-text search from the Thoughts tab returns matches from prior weeks (rollover does not gate search)
+  3. Asking Chat about something from a prior week returns an answer (Chat context window is unchanged by rollover)
+  4. Changing the user's timezone in Settings shifts the Wed–Tue boundary accordingly on next page load
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 89: 7-Day Analysis Scope
+**Goal**: Insights, Therapy pattern recognition, and Therapy session prep all analyze only the last 7 days of thoughts, using the Phase 88 window helper.
+**Depends on**: Phase 88
+**Requirements**: SCOPE-01, SCOPE-02, SCOPE-03
+**Success Criteria** (what must be TRUE):
+  1. Generating Insights returns patterns/connections/actions derived only from the last 7 days of thoughts (verified via logged query scope)
+  2. Therapy pattern recognition output no longer surfaces themes from thoughts older than 7 days
+  3. Therapy session prep output only references thoughts from the last 7 days
+  4. All three endpoints share the same date-window helper (no duplicated window math)
+
+### Phase 90: Server-Side Persistence
+**Goal**: Insights, Therapy patterns, and Therapy session prep persist server-side so revisits are instant; Chat auto-resumes the most recent session when the PWA reopens.
+**Depends on**: Phase 89
+**Requirements**: PERSIST-01, PERSIST-02, PERSIST-03, PERSIST-04
+**Success Criteria** (what must be TRUE):
+  1. Opening Insights a second time displays the last generation instantly (no loading spinner) and shows a Regenerate button
+  2. Opening Therapy patterns a second time displays cached output instantly with a Regenerate button
+  3. Opening Therapy session prep a second time displays cached output instantly with a Regenerate button
+  4. Clicking Regenerate on any of the three triggers a fresh AI run and updates the cached result
+  5. Closing and reopening the PWA lands the user back in their most recently active Chat session with prior messages visible
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 91: Tasks Tab Status Filter
+**Goal**: Tasks tab defaults to Open; users can toggle to Done or All; the selected filter persists per-device for snappy UX while the server holds the last-set value as the default for new devices.
+**Depends on**: Phase 87
+**Requirements**: TASKS-01, TASKS-02, TASKS-03
+**Success Criteria** (what must be TRUE):
+  1. First-ever visit to the Tasks tab on a device shows only Open tasks
+  2. User can toggle between Open / Done / All and the list updates immediately
+  3. Selected filter survives a page reload on the same device (localStorage)
+  4. A brand-new device's first visit shows the filter last set on any other device (server-synced default)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 92: Work Order Archive
+**Goal**: Stale work orders disappear from the active list automatically, but remain viewable via a Show Archived toggle with unarchive and explicit bulk-clear controls.
+**Depends on**: Phase 87
+**Requirements**: WO-01, WO-02, WO-03, WO-04, WO-05, WO-06
+**Success Criteria** (what must be TRUE):
+  1. A Gmail-imported work order older than 7 days from import date no longer appears in the active Work Orders view
+  2. A work order marked completed more than 7 days ago no longer appears in the active view (regardless of source)
+  3. A manually-entered work order never auto-archives, regardless of age or status
+  4. Toggling Show Archived in the PWA reveals archived work orders; unarchiving restores one to active
+  5. Bulk-Clear Archived requires explicit confirmation and permanently removes all archived work orders (only explicit destructive path in v3.2)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 93: Brief PDF Cleanup & 7-Day Scope
+**Goal**: The daily brief PDF drops its duplicate Tasks section, relocates the Affirmation to the bottom of Page 1 with clean reflow, and only includes thoughts from the last 7 days.
+**Depends on**: Phase 89 (needs 7-day window helper)
+**Requirements**: BRIEF-01, BRIEF-02, BRIEF-03, BRIEF-04
+**Success Criteria** (what must be TRUE):
+  1. Generated brief PDF contains exactly one Tasks section (no duplicate)
+  2. Affirmation appears at the bottom of Page 1 in the generated PDF
+  3. Content previously below the old Affirmation slot reflows up to fill freed space with no visual gaps
+  4. Brief PDF thought content only includes thoughts from the last 7 days (OCR noise from older content absent)
+**Plans**: TBD
+
+### Phase 94: Browser Extension Quick-Capture
+**Goal**: The browser extension becomes the primary non-Mac capture surface — free-form thought text with server-side auto-triage and result feedback — while preserving one-click URL capture as a secondary option. Works in Chrome and Safari.
+**Depends on**: Phase 87 (can run in parallel with server work 88–93)
+**Requirements**: EXT-01, EXT-02, EXT-03, EXT-04, EXT-05
+**Success Criteria** (what must be TRUE):
+  1. Clicking the extension icon opens a popup with a freeform text field for thought capture
+  2. Submitting text POSTs to `/v1/thoughts` and triggers server-side auto-triage
+  3. After triage completes, the popup displays the resulting category (success feedback)
+  4. A one-click "Capture this page URL" option remains available inside the popup
+  5. Both Chrome and Safari builds exercise the full flow end-to-end (v3.1 cross-browser coverage preserved)
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 95: iOS PWA OAuth UAT Retest
+**Goal**: Close the Phase 81 UAT gap — iOS PWA in standalone (home-screen) mode completes Google OAuth against the live Railway deployment and lands back in Settings with Connected status.
+**Depends on**: Phase 87
+**Requirements**: UAT-01
+**Success Criteria** (what must be TRUE):
+  1. On a real iPhone with the PWA installed to home screen, clicking Connect Google completes OAuth without leaving standalone mode (or, if standalone mode is incompatible, the recovery path is documented)
+  2. After callback, Settings page shows Connected with the authorized scopes
+  3. Result is recorded in the Phase 81 UAT checklist (Test 8 passed or explicit documented workaround)
+**Plans**: TBD
+**UI hint**: yes
 
 ## Progress
 
@@ -438,43 +374,53 @@ Plans:
 | 48. Export System | v2.2 | 1/1 | Complete | 2026-04-05 |
 | 49. Configurable PDF | v2.2 | 2/2 | Complete | 2026-04-05 |
 | 50. Dashboard AI Chat | v2.2 | 2/2 | Complete | 2026-04-05 |
-| 51. Menu Bar Update Action | v2.3 | 4/4 | Complete   | 2026-04-08 |
-| 52. Projects Backend | v2.3 | 2/2 | Complete    | 2026-04-08 |
-| 53. Projects Dashboard UI | v2.3 | 4/4 | Complete    | 2026-04-08 |
-| 54. Smart Photo Upload | v2.4 | 0/TBD | Deferred → v2.4 | - |
-| 55. Auto-run drizzle migrations on Railway deploy | v2.3 | 1/1 | Complete   | 2026-04-08 |
-| 56. Push origin on phase-complete for backend phases | v2.3 | 1/1 | Complete    | 2026-04-08 |
-| 57. Cross-machine bootstrap script | v2.3 | 2/2 | Complete    | 2026-04-08 |
-| 58. Persistent Code Signing | v2.4 | 2/2 | Complete   | 2026-04-09 |
-| 59. Smart Photo Upload Backend | v2.4 | 2/2 | Complete    | 2026-04-09 |
-| 60. Smart Photo Upload Dashboard UX | v2.4 | 2/2 | Complete    | 2026-04-09 |
-| 61. Folder Watch Feeder | v2.4 | 2/2 | Complete    | 2026-04-10 |
-| 62. Folder Watch Settings UI | v2.4 | 1/1 | Complete    | 2026-04-10 |
-| 63. PWA Foundation | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 64. Thoughts Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 65. Work Order Status API | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 66. Work Orders Dashboard | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 67. Projects UI | v2.5 | 1/1 | Complete    | 2026-04-12 |
-| 68. Bulk Actions & Filters | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 69. AI Chat | v2.5 | 1/1 | Complete    | 2026-04-12 |
-| 70. Insights & Therapy | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 71. Brief History & Photo Upload | v2.5 | 2/2 | Complete    | 2026-04-12 |
-| 72. README | v2.5 | 1/1 | Complete    | 2026-04-12 |
-| 73. Sports Proxy | v3.0 | 2/2 | Complete    | 2026-04-13 |
-| 74. Google Calendar Server-Side | v3.0 | 2/2 | Complete    | 2026-04-13 |
-| 75. PDF Generation Engine | v3.0 | 2/2 | Complete    | 2026-04-13 |
-| 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete   | 2026-04-13 |
+| 51. Menu Bar Update Action | v2.3 | 4/4 | Complete | 2026-04-08 |
+| 52. Projects Backend | v2.3 | 2/2 | Complete | 2026-04-08 |
+| 53. Projects Dashboard UI | v2.3 | 4/4 | Complete | 2026-04-08 |
+| 54. Smart Photo Upload | v2.4 | — | Deferred → v2.4 | - |
+| 55. Auto-run drizzle migrations on Railway deploy | v2.3 | 1/1 | Complete | 2026-04-08 |
+| 56. Push origin on phase-complete for backend phases | v2.3 | 1/1 | Complete | 2026-04-08 |
+| 57. Cross-machine bootstrap script | v2.3 | 2/2 | Complete | 2026-04-08 |
+| 58. Persistent Code Signing | v2.4 | 2/2 | Complete | 2026-04-09 |
+| 59. Smart Photo Upload Backend | v2.4 | 2/2 | Complete | 2026-04-09 |
+| 60. Smart Photo Upload Dashboard UX | v2.4 | 2/2 | Complete | 2026-04-09 |
+| 61. Folder Watch Feeder | v2.4 | 2/2 | Complete | 2026-04-10 |
+| 62. Folder Watch Settings UI | v2.4 | 1/1 | Complete | 2026-04-10 |
+| 63. PWA Foundation | v2.5 | 2/2 | Complete | 2026-04-12 |
+| 64. Thoughts Dashboard | v2.5 | 2/2 | Complete | 2026-04-12 |
+| 65. Work Order Status API | v2.5 | 2/2 | Complete | 2026-04-12 |
+| 66. Work Orders Dashboard | v2.5 | 2/2 | Complete | 2026-04-12 |
+| 67. Projects UI | v2.5 | 1/1 | Complete | 2026-04-12 |
+| 68. Bulk Actions & Filters | v2.5 | 2/2 | Complete | 2026-04-12 |
+| 69. AI Chat | v2.5 | 1/1 | Complete | 2026-04-12 |
+| 70. Insights & Therapy | v2.5 | 2/2 | Complete | 2026-04-12 |
+| 71. Brief History & Photo Upload | v2.5 | 2/2 | Complete | 2026-04-12 |
+| 72. README | v2.5 | 1/1 | Complete | 2026-04-12 |
+| 73. Sports Proxy | v3.0 | 2/2 | Complete | 2026-04-13 |
+| 74. Google Calendar Server-Side | v3.0 | 2/2 | Complete | 2026-04-13 |
+| 75. PDF Generation Engine | v3.0 | 2/2 | Complete | 2026-04-13 |
+| 76. Brief Assembly Endpoint | v3.0 | 2/2 | Complete | 2026-04-13 |
 | 77. PWA Brief UI | v3.0 | 1/1 | Complete | 2026-04-13 |
 | 78. Mac CLI Thin Client | v3.0 | 2/2 | Complete | 2026-04-14 |
 | 79. Gmail OAuth Server Foundation | v3.1 | 3/3 | Complete | 2026-04-14 |
 | 79.1. OAuth schema gap (scopes + account_email) | v3.1 | 3/3 | Complete | 2026-04-14 |
-| 80. Gmail Server Service & Work Order Extraction | v3.1 | 0/TBD | Blocked (ServiceNow token) | - |
+| 80. Gmail Server Service & Work Order Extraction | v3.1 | — | Blocked (ServiceNow token) | - |
 | 80.1. PWA Brand Token Foundation | v3.1 | 3/3 | Complete | 2026-04-14 |
-| 81. PWA Settings & Google OAuth UI | v3.1 | 3/3 | Complete | 2026-04-14 |
+| 81. PWA Settings & Google OAuth UI | v3.1 | 6/6 | Complete | 2026-04-14 |
 | 82. CLI Restructure | v3.1 | 3/3 | Complete | 2026-04-14 |
-| 83. Menu Bar Redesign | v3.1 | 4/4 | Complete | 2026-04-15 |
+| 83. Menu Bar Redesign | v3.1 | 4/4 | Complete | 2026-04-14 |
 | 84. Browser Extension | v3.1 | 2/2 | Complete | 2026-04-14 |
-| 85. iOS Shortcut | v3.1 | 0/TBD | Not started | - |
+| 85. iOS Shortcut | v3.1 | — | Deferred (Shortcuts.app bugs) | - |
+| 86. Split Brief Schedule | v3.1 | 6/6 | Complete | 2026-04-15 |
+| 87. Vigil App Icons | v3.1 | 3/3 | Complete | 2026-04-15 |
+| 88. Date Window Helper & Weekly Rollover | v3.2 | 0/TBD | Not started | - |
+| 89. 7-Day Analysis Scope | v3.2 | 0/TBD | Not started | - |
+| 90. Server-Side Persistence | v3.2 | 0/TBD | Not started | - |
+| 91. Tasks Tab Status Filter | v3.2 | 0/TBD | Not started | - |
+| 92. Work Order Archive | v3.2 | 0/TBD | Not started | - |
+| 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 0/TBD | Not started | - |
+| 94. Browser Extension Quick-Capture | v3.2 | 0/TBD | Not started | - |
+| 95. iOS PWA OAuth UAT Retest | v3.2 | 0/TBD | Not started | - |
 
 ## Backlog
 
