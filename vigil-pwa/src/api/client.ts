@@ -522,3 +522,45 @@ export async function setPrintSchedule(s: PrintSchedule): Promise<void> {
   })
   if (!res.ok) throw new Error(`Failed to save print schedule: ${res.status}`)
 }
+
+// ── Generate schedule (Phase 86) ───────────────────────────────────────
+
+export async function getGenerateSchedule(): Promise<PrintSchedule> {
+  const res = await vigilFetch('/v1/settings/generate-schedule')
+  if (!res.ok) throw new Error(`Failed to fetch generate schedule: ${res.status}`)
+  return res.json() as Promise<PrintSchedule>
+}
+
+export async function setGenerateSchedule(s: PrintSchedule): Promise<void> {
+  const res = await vigilFetch('/v1/settings/generate-schedule', {
+    method: 'PUT',
+    body: JSON.stringify(s),
+  })
+  if (!res.ok) throw new Error(`Failed to save generate schedule: ${res.status}`)
+}
+
+// ── Timezone (Phase 86) ────────────────────────────────────────────────
+
+export interface TimezoneResponse {
+  timezone: string
+}
+
+export async function getTimezone(): Promise<string> {
+  const res = await vigilFetch('/v1/settings/timezone')
+  if (!res.ok) throw new Error(`Failed to fetch timezone: ${res.status}`)
+  const body = (await res.json()) as TimezoneResponse
+  return body.timezone
+}
+
+export async function setTimezone(timezone: string): Promise<void> {
+  const res = await vigilFetch('/v1/settings/timezone', {
+    method: 'PUT',
+    body: JSON.stringify({ timezone }),
+  })
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({ error: 'unknown' }))) as { error: string }
+    throw new Error(
+      err.error === 'invalid_timezone' ? 'Invalid timezone' : `Failed (${res.status})`,
+    )
+  }
+}
