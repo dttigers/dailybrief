@@ -1,4 +1,11 @@
 import SwiftUI
+import JarvisCore
+
+private struct PrintScheduleResponse: Decodable {
+    let hour: Int
+    let minute: Int
+    let enabled: Bool
+}
 
 @main
 struct DailyBriefMonitorApp: App {
@@ -53,6 +60,22 @@ struct DailyBriefMonitorApp: App {
                                 watcherHasFailures = hasF
                             }
                         }
+                    }
+                }
+                .task {
+                    // Fetch schedule from API. Scheduler is already initialized with defaults by .onAppear.
+                    // This task fires once at app launch. Silent fallback on any error.
+                    guard let config = try? ConfigLoader.load() else { return }
+                    guard let url = URL(string: "\(config.apiBaseUrl)/settings/print-schedule") else { return }
+                    var req = URLRequest(url: url, timeoutInterval: 5)
+                    req.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
+                    guard let (data, resp) = try? await URLSession.shared.data(for: req),
+                          let http = resp as? HTTPURLResponse,
+                          http.statusCode == 200,
+                          let decoded = try? JSONDecoder().decode(PrintScheduleResponse.self, from: data)
+                    else { return }
+                    await MainActor.run {
+                        scheduler?.reschedule(hour: decoded.hour, minute: decoded.minute, enabled: decoded.enabled)
                     }
                 }
         } label: {

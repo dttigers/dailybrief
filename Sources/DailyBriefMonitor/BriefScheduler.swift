@@ -37,6 +37,15 @@ final class BriefScheduler: @unchecked Sendable {
         }
     }
 
+    /// Reschedules with new time AND enabled state in one call.
+    /// Used by the on-launch API fetch to apply the server-stored schedule atomically.
+    func reschedule(hour: Int, minute: Int, enabled: Bool) {
+        scheduledHour = hour
+        scheduledMinute = minute
+        // Setting isScheduleEnabled triggers the didSet — either scheduleNextRun() or cancelTimer()
+        isScheduleEnabled = enabled
+    }
+
     // MARK: - Private
 
     private func scheduleNextRun() {
