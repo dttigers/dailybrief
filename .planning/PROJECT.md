@@ -14,9 +14,25 @@
 
 **Shipped cumulatively:** v1.0–v3.1. Full PWA at app.vigilhub.io. Vigil Core API on Railway (Node/Hono/Drizzle/Postgres) with bearer auth + HTTPS. Server-side PDF generation (PDFKit 3-page). Mac menubar thin client + Even G2 glasses plugin + browser extension. OAuth foundation (Calendar + Gmail scopes, JWT nonce survives rolling deploys).
 
-## Next Milestone: v3.2 (to be defined via `/gsd-new-milestone`)
+## Current Milestone: v3.2 Freshness & Capture Parity
 
-Starting candidates: re-attempt iOS Shortcut (or alt share-sheet path), Gmail work order extraction (when ServiceNow token lands), anything surfaced through new-milestone scoping.
+**Goal:** Keep Vigil's daily picture accurate by aging out stale data, and bring non-Mac users to capture parity via the browser extension.
+
+**Target features:**
+- Weekly thought rollover (Wed–Tue view window; older data searchable + Chat-accessible)
+- 7-day scope for Insights + Therapy analysis
+- Server-side persistence for Insights + Therapy; Chat auto-resume last session
+- Tasks tab status filter (Open default; toggle Done/All)
+- Work Order auto-archive (Gmail-imported after 7d; completed after 7d; archived view)
+- Brief PDF cleanup (de-duplicate Tasks section, Affirmation → bottom of Page 1, 7-day scope)
+- Browser extension = full quick-capture (thought + triage, not just URL)
+- Phase 81 UAT retest — iOS PWA standalone OAuth real-device verification
+
+**Key context:**
+- Phase 85 (iOS Shortcut) held — revisit in v3.3+
+- Phase 80 (Gmail Server Service) remains deferred until ServiceNow API token
+- Wednesday is the rollover anchor (ADHD clean-slate rhythm)
+- No hard deletes — aging is view/scope only; everything stays in DB
 
 ## What This Is
 
@@ -96,16 +112,32 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Insights & therapy in PWA — pattern recognition, therapy prep display — v2.5
 - ✓ Brief history & photo upload in PWA — browse past briefs, upload photos — v2.5
 
-### Active (v3.0)
+- ✓ Server-side sports API — ESPN/balldontlie proxy in vigil-core for MLB, NFL, NBA, NHL — v3.0
+- ✓ Server-side Google Calendar — OAuth token storage + refresh in vigil-core — v3.0
+- ✓ Brief assembly endpoint — `/v1/brief/generate` orchestrates all data, returns PDF — v3.0
+- ✓ Server-side PDF rendering — 3-page brief via PDFKit on Railway — v3.0
+- ✓ PWA brief UI — generate, preview, download — v3.0
+- ✓ Server-side brief storage — briefs table, retrievable by any client — v3.0
+- ✓ Mac CLI thin client — replaced local CoreGraphics with API call + lpr — v3.0
+- ✓ Gmail OAuth server foundation — scope expansion, JWT nonce survives rolling deploys — v3.1
+- ✓ PWA brand token foundation — Vigil teal/Inter/brand-compliant theme — v3.1
+- ✓ PWA Settings & Google OAuth UI — connect/disconnect, per-scope status — v3.1
+- ✓ CLI restructure — capture/triage/doctor/setup subcommands — v3.1
+- ✓ Menu bar redesign — print-scheduler-only monitor, LSUIElement — v3.1
+- ✓ Browser extension v1 — Chrome + Safari one-click URL capture — v3.1
+- ✓ Split brief schedule — server cron + Mac pull-only CLI + PWA two-card UI — v3.1
+- ✓ Vigil app icons — PWA icon set + Mac AppIcon.icns from brand master — v3.1
 
-- [ ] Server-side sports API — ESPN proxy in vigil-core for MLB, NFL, NBA, NHL scores/standings
-- [ ] Server-side Google Calendar — OAuth token storage + refresh in vigil-core
-- [ ] Brief assembly endpoint — `/v1/brief/generate` orchestrates all data, returns PDF
-- [ ] Server-side PDF rendering — replicate 3-page brief layout in Node (HTML+CSS to PDF)
-- [ ] PWA brief UI — generate, preview, download, print-from-browser
-- [ ] Server-side brief storage — save generated PDFs for retrieval by any client
-- [ ] Mac CLI thin client — replace local CoreGraphics rendering with API call + lpr
-- [ ] Email delivery — optional scheduled brief delivery as PDF attachment
+### Active (v3.2)
+
+- [ ] Weekly thought rollover — Thoughts tab shows current week (Wed–Tue); older remains searchable + Chat-accessible
+- [ ] 7-day analysis window — Insights + Therapy scoped to last 7 days of thoughts
+- [ ] Server-side persistence — Insights + Therapy cached on server; Chat auto-resumes last session
+- [ ] Tasks tab status filter — default Open; toggle Done / All
+- [ ] Work Order auto-archive — Gmail-imported after 7d; completed after 7d; "Show archived" toggle
+- [ ] Brief PDF cleanup — de-duplicate Tasks section, Affirmation → bottom of Page 1, reflow; brief respects 7-day window
+- [ ] Browser extension quick-capture — rewrite URL-only → thought capture + triage, mirroring Mac menu bar
+- [ ] iOS PWA standalone OAuth real-device retest — close Phase 81 UAT gap on live Railway deploy
 
 ### Out of Scope
 
@@ -181,5 +213,22 @@ API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s 
 | Server-side PDF rendering | Removes Mac dependency for brief generation; any client can get briefs | — Pending |
 | HTML+CSS to PDF over CoreText port | Easier to maintain, iterate on layout; Puppeteer/similar in Node | — Pending |
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd-transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd-complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-04-14 after Phase 79 Gmail OAuth Server Foundation complete — v3.1 Gmail & CLI Evolution in progress*
+*Last updated: 2026-04-15 — v3.2 Freshness & Capture Parity started*
