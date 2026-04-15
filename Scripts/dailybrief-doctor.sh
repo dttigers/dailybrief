@@ -226,6 +226,28 @@ fi
 echo ""
 
 # ----------------------------------------------------------------------------
+# AppIcon.icns presence check (Phase 87 D-10)
+# ----------------------------------------------------------------------------
+# Validates that install.sh dropped the Vigil-branded .icns into the bundle.
+# If missing, Finder falls back to a generic icon — functional but off-brand.
+# ----------------------------------------------------------------------------
+echo "Vigil AppIcon.icns presence check:"
+MONITOR_ICON="$HOME/.local/bin/DailyBriefMonitor.app/Contents/Resources/AppIcon.icns"
+PLIST_ICON_KEY=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconFile" \
+    "$HOME/.local/bin/DailyBriefMonitor.app/Contents/Info.plist" 2>/dev/null || echo "")
+
+if [[ -s "$MONITOR_ICON" && "$PLIST_ICON_KEY" == "AppIcon" ]]; then
+    echo "  ✓ AppIcon.icns present ($(stat -f%z "$MONITOR_ICON") bytes) and plist references AppIcon"
+else
+    echo "  ✗ AppIcon.icns missing or plist CFBundleIconFile not set"
+    [[ ! -s "$MONITOR_ICON" ]] && echo "    - expected file: $MONITOR_ICON"
+    [[ "$PLIST_ICON_KEY" != "AppIcon" ]] && echo "    - plist CFBundleIconFile = '$PLIST_ICON_KEY' (want 'AppIcon')"
+    echo "    Fix: re-run ./Scripts/install.sh (requires brand/mac/AppIcon.icns from Plan 87-01)"
+    DRIFT_COUNT=$((DRIFT_COUNT + 1))
+fi
+echo ""
+
+# ----------------------------------------------------------------------------
 # Exit logic (D-10, D-11)
 # ----------------------------------------------------------------------------
 if [[ "$DRIFT_COUNT" -eq 0 ]]; then
