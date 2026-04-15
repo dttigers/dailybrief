@@ -387,13 +387,18 @@ Plans:
 - [x] 83-04-PLAN.md — Mac app fetches schedule from API on launch + doctor Check 6 + human verify
 
 ### Phase 84: Browser Extension
-**Goal**: A lightweight browser extension (Chrome/Safari/Firefox) that lets the user capture the current page title, URL, and optional note directly to Vigil from any browser tab.
+**Goal**: A lightweight browser extension (Chrome/Safari) that lets the user capture the current page title, URL, and optional note directly to Vigil from any browser tab.
 **Depends on**: Phase 79 (uses existing capture API)
+**Plans:** 2 plans
 **Success Criteria** (what must be TRUE):
   1. Extension popup shows a text field pre-filled with page title/URL
   2. Submitting posts to POST /v1/thoughts and shows confirmation
   3. API key stored in extension storage (not hardcoded)
   4. Works in Chrome and Safari at minimum
+
+Plans:
+- [ ] 84-01-PLAN.md -- Chrome extension (manifest + popup HTML/CSS/JS + icons + human verify)
+- [ ] 84-02-PLAN.md -- Safari conversion (xcrun + Xcode build + human verify)
 
 ### Phase 85: iOS Shortcut
 **Goal**: A shareable iOS Shortcut that accepts share-sheet input (text, URL, or selected content) and posts it to Vigil as a thought. Distributed as a .shortcut file — no App Store required.
