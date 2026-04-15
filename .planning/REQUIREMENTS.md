@@ -36,7 +36,7 @@
 
 - [ ] **TASKS-01**: Tasks tab defaults to showing Open tasks only
 - [ ] **TASKS-02**: User can toggle the Tasks tab view between Open, Done, and All
-- [ ] **TASKS-03**: Selected filter persists across PWA sessions (per-device)
+- [ ] **TASKS-03**: Selected filter persists per-device (localStorage) for snappy UX; server holds last-set value as the default for a new device's first visit
 
 ### Work Order Archive
 
@@ -45,6 +45,7 @@
 - [ ] **WO-03**: Manually-entered work orders never auto-archive (user owns lifecycle)
 - [ ] **WO-04**: User can view archived work orders via a "Show archived" toggle in the Work Orders view
 - [ ] **WO-05**: User can unarchive a work order from the archived view
+- [ ] **WO-06**: User can bulk-clear all archived work orders (permanent delete with confirmation)
 
 ### Brief PDF Cleanup
 
