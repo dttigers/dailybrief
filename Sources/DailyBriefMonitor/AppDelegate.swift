@@ -3,6 +3,12 @@ import Carbon
 import SwiftUI
 import JarvisCore
 
+private struct PrintScheduleResponse: Decodable {
+    let hour: Int
+    let minute: Int
+    let enabled: Bool
+}
+
 /// Application delegate that initializes the JarvisCore data stack and manages the capture panel.
 final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
 
@@ -20,6 +26,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     // Folder watcher (Phase 61)
     private(set) var folderWatcher: FolderWatcherService?
 
+    // Scheduler + status checker — created at launch, exposed to the App struct
+    let checker = StatusChecker()
+    private(set) var scheduler: BriefScheduler?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSLog("DailyBriefMonitor: applicationDidFinishLaunching started")
 
@@ -30,6 +40,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         NSLog("DailyBriefMonitor: initializing data store...")
         do {
             let config = try ConfigLoader.load()
+
+            // Create scheduler immediately with defaults, then fetch the real schedule from the API.
+            // This happens at process launch — before any menu interaction — so the timer is correct
+            // even if the user never opens the menu bar popover.
+            let sched = BriefScheduler(checker: checker)
+            self.scheduler = sched
+            Task {
+                guard let url = URL(string: "\(config.apiBaseUrl)/v1/settings/print-schedule") else { return }
+                var req = URLRequest(url: url, timeoutInterval: 5)
+                req.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
+                guard let (data, resp) = try? await URLSession.shared.data(for: req),
+                      let http = resp as? HTTPURLResponse,
+                      http.statusCode == 200,
+                      let decoded = try? JSONDecoder().decode(PrintScheduleResponse.self, from: data)
+                else { return }
+                await MainActor.run {
+                    sched.reschedule(hour: decoded.hour, minute: decoded.minute, enabled: decoded.enabled)
+                }
+                NSLog("DailyBriefMonitor: schedule loaded from API — %02d:%02d enabled=%d", decoded.hour, decoded.minute, decoded.enabled ? 1 : 0)
+            }
             let client = VigilAPIClient(
                 baseURL: URL(string: config.apiBaseUrl)!,
                 apiKey: config.apiKey
