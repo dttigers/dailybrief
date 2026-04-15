@@ -493,3 +493,32 @@ export async function disconnectGoogle(): Promise<void> {
 export function redirectToGoogleAuth(): void {
   window.location.href = `${API_BASE}/v1/auth/google`
 }
+
+// ── Print schedule ─────────────────────────────────────────────────────────
+
+export interface PrintSchedule {
+  hour: number
+  minute: number
+  enabled: boolean
+}
+
+/**
+ * Fetches the current print schedule from the server.
+ * Returns defaults { hour: 6, minute: 0, enabled: true } if no schedule has been saved.
+ */
+export async function getPrintSchedule(): Promise<PrintSchedule> {
+  const res = await vigilFetch('/v1/settings/print-schedule')
+  if (!res.ok) throw new Error(`Failed to fetch print schedule: ${res.status}`)
+  return res.json() as Promise<PrintSchedule>
+}
+
+/**
+ * Persists the print schedule to the server.
+ */
+export async function setPrintSchedule(s: PrintSchedule): Promise<void> {
+  const res = await vigilFetch('/v1/settings/print-schedule', {
+    method: 'PUT',
+    body: JSON.stringify(s),
+  })
+  if (!res.ok) throw new Error(`Failed to save print schedule: ${res.status}`)
+}

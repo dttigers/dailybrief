@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useSearchParams } from 'react-router'
 import { useGoogleStatus } from '../hooks/useGoogleStatus'
-import { disconnectGoogle, redirectToGoogleAuth } from '../api/client'
+import { disconnectGoogle, redirectToGoogleAuth, getPrintSchedule, setPrintSchedule, PrintSchedule } from '../api/client'
 
 type Banner = { kind: 'success' | 'error'; text: string } | null
 
@@ -38,6 +38,9 @@ export default function SettingsPage() {
   const [banner, setBanner] = useState<Banner>(null)
   const [confirming, setConfirming] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
+  const [schedule, setSchedule] = useState<PrintSchedule>({ hour: 6, minute: 0, enabled: true })
+  const [scheduleLoading, setScheduleLoading] = useState(true)
+  const [scheduleSaving, setScheduleSaving] = useState(false)
 
   // D-11 + Pitfall 4: read callback params ONCE on mount, then strip the URL.
   useEffect(() => {
@@ -55,6 +58,14 @@ export default function SettingsPage() {
     }
     window.history.replaceState({}, '', window.location.pathname)
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Load print schedule on mount
+  useEffect(() => {
+    getPrintSchedule()
+      .then((s) => setSchedule(s))
+      .catch(() => {/* use defaults already set in state */})
+      .finally(() => setScheduleLoading(false))
   }, [])
 
   // D-12: banner auto-dismisses after 5s (no toast library dep).
@@ -87,6 +98,31 @@ export default function SettingsPage() {
       setDisconnecting(false)
     }
   }, [refetch])
+
+  const scheduleTimeValue = String(schedule.hour).padStart(2, '0') + ':' + String(schedule.minute).padStart(2, '0')
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const [h, m] = e.target.value.split(':').map(Number)
+    if (!isNaN(h) && !isNaN(m)) {
+      setSchedule((prev) => ({ ...prev, hour: h, minute: m }))
+    }
+  }
+
+  const handleEnabledChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSchedule((prev) => ({ ...prev, enabled: e.target.checked }))
+  }
+
+  const handleScheduleSave = async () => {
+    setScheduleSaving(true)
+    try {
+      await setPrintSchedule(schedule)
+      setBanner({ kind: 'success', text: 'Print schedule saved' })
+    } catch (e) {
+      setBanner({ kind: 'error', text: `Failed to save: ${(e as Error).message}` })
+    } finally {
+      setScheduleSaving(false)
+    }
+  }
 
   // State matrix (D-04, D-05)
   const isEmpty = !isLoading && !error && status === null
@@ -181,6 +217,44 @@ export default function SettingsPage() {
           <div className="mt-4 space-y-2 border-t border-gray-900/40 pt-4">
             <ScopeRow label="Calendar" state={status.calendar} onReconnect={handleConnect} />
             <ScopeRow label="Gmail" state={status.gmail} onReconnect={handleConnect} />
+          </div>
+        )}
+      </section>
+
+      <section className="bg-gray-900 border border-gray-900/40 rounded-lg p-5 mt-4">
+        <h2 className="text-lg font-medium mb-4">Print Schedule</h2>
+
+        {scheduleLoading ? (
+          <p className="text-gray-400 text-sm">Loading…</p>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <label className="text-sm text-gray-300 w-24">Print time</label>
+              <input
+                type="time"
+                value={scheduleTimeValue}
+                onChange={handleTimeChange}
+                className="bg-gray-800 border border-gray-700 rounded px-2 py-1 text-sm text-gray-100"
+              />
+            </div>
+
+            <div className="flex items-center gap-4">
+              <label className="text-sm text-gray-300 w-24">Enabled</label>
+              <input
+                type="checkbox"
+                checked={schedule.enabled}
+                onChange={handleEnabledChange}
+                className="w-4 h-4 accent-teal-500"
+              />
+            </div>
+
+            <button
+              onClick={handleScheduleSave}
+              disabled={scheduleSaving}
+              className="px-4 py-2 bg-teal-600 hover:bg-teal-500 rounded text-white text-sm disabled:opacity-50"
+            >
+              {scheduleSaving ? 'Saving…' : 'Save'}
+            </button>
           </div>
         )}
       </section>
