@@ -587,6 +587,26 @@ extension DailyBrief {
                 allPass = false
             }
 
+            // Check 6: print-schedule API returns 200
+            let scheduleUrlStr = apiBaseUrl.hasSuffix("/v1")
+                ? String(apiBaseUrl.dropLast(3)) + "/v1/settings/print-schedule"
+                : apiBaseUrl + "/settings/print-schedule"
+
+            var scheduleReachable = false
+            if let scheduleUrl = URL(string: scheduleUrlStr),
+               let apiKey = apiKeyEnv, !apiKey.isEmpty {
+                var scheduleReq = URLRequest(url: scheduleUrl, timeoutInterval: 5)
+                scheduleReq.httpMethod = "GET"
+                scheduleReq.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
+                if let (_, scheduleResp) = try? await URLSession.shared.data(for: scheduleReq),
+                   let scheduleHttp = scheduleResp as? HTTPURLResponse,
+                   scheduleHttp.statusCode == 200 {
+                    scheduleReachable = true
+                }
+            }
+            printCheck("print-schedule API reachable (\(scheduleUrlStr))", pass: scheduleReachable)
+            if !scheduleReachable { allPass = false }
+
             print(allPass ? "\n=== All checks passed ===" : "\n=== Some checks FAILED ===")
             if !allPass { throw ExitCode.failure }
         }
