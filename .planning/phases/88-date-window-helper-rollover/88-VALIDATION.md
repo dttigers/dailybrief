@@ -17,10 +17,10 @@ created: 2026-04-15
 
 | Property | Value |
 |----------|-------|
-| **Framework** | vitest (vigil-core + vigil-pwa) |
-| **Config file** | vigil-core/vitest.config.ts, vigil-pwa/vitest.config.ts |
-| **Quick run command** | `cd vigil-core && npm test -- --run` |
-| **Full suite command** | `cd vigil-core && npm test -- --run && cd ../vigil-pwa && npm test -- --run` |
+| **Framework** | node:test (vigil-core via `tsx --test`), vitest (vigil-pwa) |
+| **Config file** | vigil-core/package.json (test script), vigil-pwa/vitest.config.ts |
+| **Quick run command** | `cd vigil-core && npm test` (node:test) or `cd vigil-pwa && npm test -- --run` (vitest) |
+| **Full suite command** | `cd vigil-core && npm test && cd ../vigil-pwa && npm test -- --run` |
 | **Estimated runtime** | ~45 seconds |
 
 ---
