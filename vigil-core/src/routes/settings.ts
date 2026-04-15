@@ -15,11 +15,13 @@ export interface PrintSchedule {
 
 const PRINT_SCHEDULE_KEY = "print_schedule";
 const GENERATE_SCHEDULE_KEY = "generate_schedule";
+const TIMEZONE_KEY = "user_timezone";
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
 
 const DEFAULT_PRINT: PrintSchedule = { hour: 6, minute: 0, enabled: true };
 const DEFAULT_GENERATE: PrintSchedule = { hour: 4, minute: 0, enabled: true };
+const DEFAULT_TIMEZONE = "America/New_York";
 
 // ── Shared validators ─────────────────────────────────────────────────────────
 
@@ -34,6 +36,16 @@ function isValidSchedule(body: unknown): body is PrintSchedule {
   );
 }
 
+function isValidTimezone(tz: unknown): tz is string {
+  if (typeof tz !== "string" || tz.length === 0) return false;
+  try {
+    const resolved = new Intl.DateTimeFormat("en-US", { timeZone: tz }).resolvedOptions().timeZone;
+    return typeof resolved === "string" && resolved.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 // ── DI interface ──────────────────────────────────────────────────────────────
 
 export interface SettingsDeps {
@@ -43,6 +55,9 @@ export interface SettingsDeps {
   // generate schedule
   dbGetGenerateFn?: () => Promise<PrintSchedule | null>;
   dbUpsertGenerateFn?: (s: PrintSchedule) => Promise<void>;
+  // timezone
+  dbGetTimezoneFn?: () => Promise<string | null>;
+  dbUpsertTimezoneFn?: (tz: string) => Promise<void>;
 }
 
 // ── Router factory ────────────────────────────────────────────────────────────
@@ -148,6 +163,55 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
       return c.json({ ok: true }, 200);
     } catch (err) {
       console.error("[settings] PUT generate-schedule error:", err instanceof Error ? err.message : String(err));
+      return c.json({ error: "internal_error" }, 500);
+    }
+  });
+
+  // ── Timezone ───────────────────────────────────────────────────────────────
+
+  router.get("/settings/timezone", async (c) => {
+    try {
+      let tz: string;
+      if (deps?.dbGetTimezoneFn) {
+        tz = (await deps.dbGetTimezoneFn()) ?? DEFAULT_TIMEZONE;
+      } else {
+        if (!db) return c.json({ error: "database_unavailable" }, 503);
+        const rows = await db
+          .select({ value: appSettings.value })
+          .from(appSettings)
+          .where(eq(appSettings.key, TIMEZONE_KEY))
+          .limit(1);
+        tz = rows.length > 0 ? (rows[0].value as string) : DEFAULT_TIMEZONE;
+      }
+      return c.json({ timezone: tz }, 200);
+    } catch (err) {
+      console.error("[settings] GET timezone error:", err instanceof Error ? err.message : String(err));
+      return c.json({ error: "internal_error" }, 500);
+    }
+  });
+
+  router.put("/settings/timezone", async (c) => {
+    try {
+      const body = await c.req.json<unknown>();
+      const tz = (body as { timezone?: unknown } | null)?.timezone;
+      if (!isValidTimezone(tz)) {
+        return c.json({ error: "invalid_timezone" }, 400);
+      }
+
+      if (deps?.dbUpsertTimezoneFn) {
+        await deps.dbUpsertTimezoneFn(tz);
+      } else {
+        if (!db) return c.json({ error: "database_unavailable" }, 503);
+        await db.insert(appSettings)
+          .values({ key: TIMEZONE_KEY, value: tz })
+          .onConflictDoUpdate({
+            target: appSettings.key,
+            set: { value: tz, updatedAt: new Date() },
+          });
+      }
+      return c.json({ ok: true }, 200);
+    } catch (err) {
+      console.error("[settings] PUT timezone error:", err instanceof Error ? err.message : String(err));
       return c.json({ error: "internal_error" }, 500);
     }
   });
