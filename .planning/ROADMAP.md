@@ -381,10 +381,10 @@ Plans:
   6. LaunchAgent plist updated; `dailybrief doctor` passes all checks
 
 Plans:
-- [ ] 83-01-PLAN.md — vigil-core app_settings table + GET/PUT /v1/settings/print-schedule endpoint + tests
-- [ ] 83-02-PLAN.md — Delete Dashboard/Settings views, strip AppDelegate, slim MenuBarView
-- [ ] 83-03-PLAN.md — PWA Print Schedule card (time picker + toggle + save) wired to API
-- [ ] 83-04-PLAN.md — Mac app fetches schedule from API on launch + doctor Check 6 + human verify
+- [x] 83-01-PLAN.md — vigil-core app_settings table + GET/PUT /v1/settings/print-schedule endpoint + tests
+- [x] 83-02-PLAN.md — Delete Dashboard/Settings views, strip AppDelegate, slim MenuBarView
+- [x] 83-03-PLAN.md — PWA Print Schedule card (time picker + toggle + save) wired to API
+- [x] 83-04-PLAN.md — Mac app fetches schedule from API on launch + doctor Check 6 + human verify
 
 ### Phase 84: Browser Extension
 **Goal**: A lightweight browser extension (Chrome/Safari/Firefox) that lets the user capture the current page title, URL, and optional note directly to Vigil from any browser tab.
@@ -498,7 +498,7 @@ Plans:
 | 80.1. PWA Brand Token Foundation | v3.1 | 3/3 | Complete | 2026-04-14 |
 | 81. PWA Settings & Google OAuth UI | v3.1 | 3/3 | Complete | 2026-04-14 |
 | 82. CLI Restructure | v3.1 | 3/3 | Complete | 2026-04-14 |
-| 83. Menu Bar Redesign | v3.1 | 0/TBD | Not started | - |
+| 83. Menu Bar Redesign | v3.1 | 4/4 | Complete | 2026-04-15 |
 | 84. Browser Extension | v3.1 | 0/TBD | Not started | - |
 | 85. iOS Shortcut | v3.1 | 0/TBD | Not started | - |
 
