@@ -427,7 +427,7 @@ Plans:
   6. Manual "Generate Now" button in PWA still works for off-schedule briefs
   7. `dailybrief doctor` passes with new schedule source (reads print schedule from API, not local config)
 
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 Plans:
 - [x] 86-01-PLAN.md — Server settings endpoints (generate-schedule + timezone) with Intl validation
 - [x] 86-02-PLAN.md — In-process generate cron + 7d retention sweep + SIGTERM teardown
