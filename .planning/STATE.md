@@ -98,7 +98,7 @@ Note: Phase 74 and Phase 75 can execute in parallel — no dependency between th
 
 ## Session Continuity
 
-Last session: 2026-04-13T13:13:02.371Z
-Stopped at: Phase 77 context gathered
-Resume file: .planning/phases/77-pwa-brief-ui/77-CONTEXT.md
-Next action: `/gsd-plan-phase 73`
+Last session: 2026-04-15
+Stopped at: Phase 85 (iOS Shortcut) **DEFERRED** mid task 1 — two Shortcuts.app bugs stacked (note-input dialog refuses typing on macOS, and a silent "uploaded" success branch with no thought appearing in Vigil PWA). Not worth blocking v3.1 close on.
+Resume file: .planning/HANDOFF.json (status=deferred)
+Next action: Pick next work — either close v3.1 without phase 85, start a new phase, or come back to 85 later on an iPhone where share-sheet Shortcuts is better-tested.

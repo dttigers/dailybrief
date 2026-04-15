@@ -415,6 +415,29 @@ Plans:
 **Depends on**: Phase 79, Phase 80.1 (blocked: ServiceNow API token)
 **Status**: Blocked — waiting on ServiceNow token
 
+### Phase 86: Split Brief Schedule (server generate / CLI pull + print)
+**Goal**: Decouple brief generation from printing. Server cron auto-generates tomorrow's brief in the user's timezone every day; Mac CLI runs a separate schedule to pull the latest brief and lpr-print it. Brief is always fresh in the PWA regardless of Mac state; print failures no longer mean "no brief today".
+**Depends on**: Phase 76 (assembly endpoint), Phase 78 (thin-client CLI), Phase 83 (existing print-schedule plumbing)
+**Success Criteria** (what must be TRUE):
+  1. Server cron fires daily at user-configured time (in user's TZ) and generates the brief into storage
+  2. PWA Settings has two schedule cards: "Auto-generate" (server) and "Auto-print" (Mac-only)
+  3. Mac CLI cron pulls latest brief from API and lpr-prints on its own schedule
+  4. CLI staleness check: if today's brief missing or failed, menubar shows "No brief" and skips print (does NOT print yesterday's)
+  5. 7-day retention: storage keeps last 7 briefs, older ones purged
+  6. Manual "Generate Now" button in PWA still works for off-schedule briefs
+  7. `dailybrief doctor` passes with new schedule source (reads print schedule from API, not local config)
+
+### Phase 87: Vigil App Icons (PWA install + Mac .app bundle)
+**Goal**: Replace default icons with the Vigil diamond+V teal mark across installable surfaces.
+**Depends on**: (independent)
+**Success Criteria** (what must be TRUE):
+  1. PWA manifest includes full icon set (192, 256, 384, 512, maskable) using Vigil brand mark
+  2. PWA favicon updated
+  3. PWA installed on iOS/macOS home screen / Dock shows the Vigil mark
+  4. DailyBriefMonitor `.app` bundle has Vigil-branded AppIcon.icns (shown in Finder, Applications, Mission Control)
+  5. Menubar runtime remains Dock-less (no regression of Phase 83)
+  6. Icon assets committed under brand-asset convention, sourced from brand guidelines PDF
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |

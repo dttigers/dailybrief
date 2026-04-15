@@ -1,20 +1,21 @@
 {
   "version": "1.0",
   "timestamp": "2026-04-15T05:05:20.691Z",
+  "updated": "2026-04-15T00:00:00.000Z",
   "phase": "85",
   "phase_name": "ios-shortcut",
   "phase_dir": ".planning/phases/85-ios-shortcut",
   "plan": 1,
   "task": 1,
   "total_tasks": 2,
-  "status": "paused",
+  "status": "deferred",
   "completed_tasks": [],
   "in_progress_tasks": [
     {
       "id": 1,
       "name": "Author Vigil Capture Shortcut in Shortcuts.app",
-      "status": "in_progress",
-      "progress": "Shortcut built on Mac. Share-sheet registration works (via Safari > Share > Shortcuts > Vigil Capture). Auth header bug fixed. Currently stuck debugging: server returns 'content is required and must be non-empty' even when user types a note via share-sheet invocation. Pre-POST debug alert was requested but user paused before adding it."
+      "status": "deferred",
+      "progress": "Shortcut built on Mac. Share-sheet registration works. Auth header bug fixed. Two open bugs: (1) server returned 'content required' on share-sheet invocation; (2) Ask for Input note field would not accept text input on macOS. User chose to defer and revisit later."
     }
   ],
   "remaining_tasks": [
@@ -22,24 +23,30 @@
   ],
   "blockers": [
     {
-      "description": "Server sees empty content field on POST. Either the content variable is wrong before the POST, or the Get Contents of URL JSON body's content field is pointing at a different (empty) variable.",
+      "description": "Ask for Input note dialog rejects text entry on macOS Shortcuts. Likely Input Type != Text, or Default Answer carries a magic variable, or the tiny macOS dialog needs a click-into-field before typing.",
       "type": "technical",
-      "workaround": "Add Show Alert showing content magic variable right before Get Contents of URL. Screenshot reveals whether content is empty (variable bug) or populated (JSON-body bug)."
+      "workaround": "Either fix Ask for Input (Input Type = Text, Default Answer empty, click the field before typing) OR remove the note prompt entirely and set note = empty Text action. Ripping the prompt is the fastest unblock."
+    },
+    {
+      "description": "Even after note is fixed, unresolved: server logged 'content required' on a previous share-sheet run. Need response-body Show Alert right after Get Contents of URL to see what server actually returns on the 'uploaded' success branch — id check may be lying.",
+      "type": "technical",
+      "workaround": "Insert Show Alert on Contents of URL after Action 25; run via Safari share sheet; screenshot alert."
     }
   ],
   "human_actions_pending": [
     {
-      "action": "Add a Show Alert debug action between Set Variable content and Get Contents of URL. Message = content magic variable chip. Run via Safari share sheet with a note. Screenshot the alert.",
-      "context": "Diagnoses whether content variable is populated correctly.",
+      "action": "When resuming: (a) fix or remove Ask for Input note prompt, (b) add Show Alert on Contents of URL after Action 25, (c) run via Safari share sheet with a note, (d) screenshot both the note-prompt behavior and the server response alert.",
+      "context": "Task 1 can't complete until the Shortcut posts successfully and a thought lands in the Vigil PWA under the same account as the API key.",
       "blocking": true
     }
   ],
   "decisions": [
     {"decision": "Pivoted URL-vs-text branch from 'Shortcut Input is URL' to 'Count of URLs from Input > 0'", "rationale": "macOS Shortcuts does not expose type comparison for Shortcut Input magic variable; only has value / does not have value. Get URLs from Input normalizes regardless of input source.", "phase": "85"},
     {"decision": "base_url is https://api.vigilhub.io (not app.vigilhub.io)", "rationale": "User initially typed PWA URL. Fixed to API host.", "phase": "85"},
-    {"decision": "Response-handling If uses Dictionary Value (key=id) has any value", "rationale": "macOS Shortcuts may not expose Status Code on this version. id presence in parsed dictionary is a reliable success proxy.", "phase": "85"}
+    {"decision": "Response-handling If uses Dictionary Value (key=id) has any value", "rationale": "macOS Shortcuts may not expose Status Code on this version. id presence in parsed dictionary is a reliable success proxy — but needs verification via response-body alert, since 'uploaded' notification fired without a thought appearing in PWA.",  "phase": "85"},
+    {"decision": "Defer phase 85 — user paused 2026-04-15 to move on to other work", "rationale": "Two stacked Shortcuts.app bugs (note-input blocked + silent upload failure) need live device debugging; not worth blocking v3.1 close on.", "phase": "85"}
   ],
   "uncommitted_files": [],
-  "next_action": "Add Show Alert debug action between Set Variable content and Get Contents of URL to capture exact content value the shortcut is sending. Run via Safari share > Shortcuts > Vigil Capture with a note. Screenshot the alert. If content is empty: URL-branch Text action is wired wrong. If content is populated: JSON body's content field is pointing at a different (empty) variable.",
-  "context_notes": "Interactive execution of phase 85 plan 01 task 1. This is a human-driven Shortcuts.app authoring task, not code. Progress is real (shortcut exists, compiles, runs, talks to real API server, gets real HTTP responses) but the 'content required' error is the last bug blocking task completion. Once past this, task 2 is easy (blank key, export .shortcut, iCloud link, paste file path back)."
+  "next_action": "DEFERRED. When resuming phase 85: load this HANDOFF, then (1) fix Ask for Input note prompt or remove it, (2) add Show Alert on Contents of URL after Action 25, (3) re-test via Safari share sheet, (4) verify the thought appears in Vigil PWA under the API key's account. Until then, do not treat 85 as complete.",
+  "context_notes": "Phase 85 is a human-driven Shortcuts.app authoring task. Shortcut exists, runs, hits real API, shows a success notification — but nothing lands in Vigil UI, and the note-input dialog refuses text. Two bugs unresolved. User deferred 2026-04-15."
 }
