@@ -21,3 +21,5 @@ DailyBriefMonitor */
 DailyBriefMonitor.dSYM/
 *.dSYM/
 .claude/
+.vercel
+.env*.local

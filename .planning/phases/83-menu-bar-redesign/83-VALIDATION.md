@@ -17,10 +17,10 @@ created: 2026-04-14
 
 | Property | Value |
 |----------|-------|
-| **Framework** | vitest (vigil-core + vigil-pwa); swift build (Swift targets) |
-| **Config file** | vigil-core/vitest.config.ts, vigil-pwa/vite.config.ts |
-| **Quick run command** | `cd vigil-core && npm test -- --run` |
-| **Full suite command** | `cd vigil-core && npm test -- --run && cd ../vigil-pwa && npm run build` |
+| **Framework** | node:test via tsx (vigil-core); vite build (vigil-pwa); swift build (Swift targets) |
+| **Config file** | N/A (node:test via tsx); vigil-pwa/vite.config.ts |
+| **Quick run command** | `cd vigil-core && npm test` |
+| **Full suite command** | `cd vigil-core && npm test && cd ../vigil-pwa && npm run build` |
 | **Estimated runtime** | ~30 seconds |
 
 ---
@@ -39,7 +39,7 @@ created: 2026-04-14
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
 | 83-01-01 | 01 | 1 | SC-1 | — | N/A | manual | `defaults read com.jamesonmorrill.dailybriefmonitor LSUIElement` | ✅ | ⬜ pending |
-| 83-02-01 | 02 | 2 | SC-3 | — | N/A | unit | `cd vigil-core && npm test -- --run --grep print-schedule` | ❌ W0 | ⬜ pending |
+| 83-02-01 | 02 | 2 | SC-3 | — | N/A | unit | `cd vigil-core && node --test src/routes/settings.test.ts 2>&1` | ❌ W0 | ⬜ pending |
 | 83-03-01 | 03 | 3 | SC-4 | — | N/A | manual | Launch app, verify menu shows schedule time | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*

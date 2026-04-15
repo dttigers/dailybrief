@@ -370,20 +370,23 @@ The `app_settings` table stores non-sensitive data (hour, minute, boolean). No e
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Keep or remove Quick Capture panel + global hotkey (Cmd+Shift+J)?**
    - What we know: Capture panel is a separate floating window, not a dashboard. It does NOT call `setActivationPolicy(.regular)`.
    - What's unclear: Is the user still using quick capture, or does the PWA/G2 path replace it?
    - Recommendation: Default to KEEP (it's self-contained, low risk). Flag for user decision during discuss.
+   - **RESOLVED: KEEP** — user confirmed during discuss-phase.
 
 2. **Keep or remove FolderWatcherService?**
    - What we know: It's wired through AppDelegate and requires `imageDescriptionService`, `transcriptionService`, `captureService`, `triageService`, `thoughtStore`.
    - What's unclear: Is folder-drop-to-capture still an active use case?
    - Recommendation: Default to KEEP (deferred to future phase). If removed, the entire AI-services chain in AppDelegate can be deleted.
+   - **RESOLVED: KEEP** — user confirmed during discuss-phase.
 
 3. **Should `dailybrief doctor` Check 6 (schedule API) be added in this phase?**
    - Recommendation: Yes — it's a 10-line addition that validates the new infra is live.
+   - **RESOLVED: YES** — included in Plan 04 Task 2.
 
 ---
 
