@@ -21,13 +21,17 @@ Replace default/generic icons with the Vigil diamond+V teal brand mark across tw
 <decisions>
 ## Implementation Decisions
 
-### D-01: Master artwork source (LOCKED)
-Extract the diamond+V mark from `~/Library/Mobile Documents/com~apple~CloudDocs/vigil-brand-guidelines.pdf`. Save a master SVG + master PDF at `brand/source/`. All sized assets derive from this single source.
+### D-01: Master artwork source (LOCKED — REVISED 2026-04-15)
+**Master is now a user-provided 1024×1024 PNG at `brand/source/vigil-mark.png`** (option B — full-bleed square, no pre-baked corners; OS/platform masks apply).
 
-### D-02: Brand colors (LOCKED)
-- **Primary teal:** `#1D9E75` (per brand guidelines memory)
-- **Mark color:** white (`#FFFFFF`)
-- PWA manifest `theme_color`: update from current `#0F6E56` → `#1D9E75` to match brand
+User dropped two variants (`vigil-mark-1.png` with wordmark, `vigil-mark-2.png` mark-only); mark-only was chosen as canonical — wordmark loses legibility at 16×16 favicon size. Both variants retained in `brand/source/` for reference.
+
+The authored `brand/source/vigil-mark.svg` from Task 1 is now SUPERSEDED by the user PNG. Downstream tasks resize from the PNG via `sips` only (no SVG/ImageMagick dependency). Original brand PDF at `brand/source/vigil-brand-guidelines.pdf` retained as design reference per D-08.
+
+### D-02: Brand colors (LOCKED — REVISED 2026-04-15)
+- **Primary teal:** `#0F6E56` (sampled from user-provided master PNG at brand/source/vigil-mark.png — overrides prior #1D9E75 which was stale memory)
+- **Mark color:** white (`#FFFFFF`) diamond outline + white V + light-teal apex dot (composition baked into master PNG)
+- PWA manifest `theme_color`: keep current `#0F6E56` (NO CHANGE — matches master)
 - PWA manifest `background_color`: keep `#0f172a` (splash bg, unrelated to icon)
 
 ### D-03: Icon composition (LOCKED)
