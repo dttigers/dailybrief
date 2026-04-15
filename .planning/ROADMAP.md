@@ -445,6 +445,11 @@ Plans:
   4. DailyBriefMonitor `.app` bundle has Vigil-branded AppIcon.icns (shown in Finder, Applications, Mission Control)
   5. Menubar runtime remains Dock-less (no regression of Phase 83)
   6. Icon assets committed under brand-asset convention, sourced from brand guidelines PDF
+**Plans**: 3 plans
+Plans:
+- [ ] 87-01-PLAN.md — Extract master SVG from brand PDF + generate brand/pwa/ PNGs + compile brand/mac/AppIcon.icns (asset foundation, Wave 1)
+- [ ] 87-02-PLAN.md — PWA track: copy assets to vigil-pwa/public/, extend VitePWA manifest (5 icons + theme_color #1D9E75), human-verify installed PWA (SC-1, SC-2, SC-3)
+- [ ] 87-03-PLAN.md — Mac track: update install.sh plist + AppIcon.icns copy, add doctor check, preserve LSUIElement (SC-4, SC-5, SC-6)
 
 ## Progress
 
