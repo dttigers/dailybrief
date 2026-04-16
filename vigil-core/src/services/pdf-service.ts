@@ -76,12 +76,7 @@ export function createPdfRenderer(deps: PdfRendererDeps = {}) {
       drawCuttingGuide(doc, layout);
       drawPageOne(doc, data, layout);
 
-      // Page 2: sports + affirmation + notes
-      doc.addPage({ size: [layout.pageW, layout.pageH], margin: 0 });
-      drawCuttingGuide(doc, layout);
-      drawPageTwo(doc, data, layout);
-
-      // Page 3: only if there's content for it
+      // Page 2: only if there's content for it
       const hasThoughts =
         (data.unprocessedThoughts.length > 0 ||
           data.recentThoughts.length > 0) &&
@@ -251,6 +246,21 @@ function drawPageOne(
 
     const textH = doc.heightOfString(data.affirmation, { width: usableWidth - 8 });
     y += textH + 8;
+  }
+
+  // ── Sports section ────────────────────────────────────────────────────────
+
+  if (layout.enabledSections.has("sports") && data.sports.length > 0) {
+    y = drawDivider(doc, leftX, rightEdge, y);
+
+    const isCompact = data.sports.length > 1;
+    const activeSportCount = data.sports.length;
+
+    for (const league of data.sports) {
+      y = drawSportSection(doc, league, layout, y, isCompact, activeSportCount);
+    }
+
+    y += 4;
   }
 
   // ── Calendar section ──────────────────────────────────────────────────────

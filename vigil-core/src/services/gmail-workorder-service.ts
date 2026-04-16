@@ -132,7 +132,7 @@ function extractPlainTextBody(msg: GmailMessageDetail): string {
 // ── Work order parsing ───────────────────────────────────────────────────────
 
 function parseWorkOrderEmail(body: string, subject: string): WorkOrderFromEmail | null {
-  // Extract case number from subject: "Case CS0356295 has been assigned to you"
+  // Extract case number from subject: "Case CS0356295 has been assigned to you" or "Fwd: Case CS0356295..."
   const caseMatch = subject.match(/Case\s+(CS\d+)/i);
   if (!caseMatch) return null;
 
@@ -180,11 +180,12 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
 
     const token = await getValidAccessToken();
 
-    // Search for work order emails from the work address
-    // newer_than:7d limits to recent emails to avoid re-processing old ones
+    // Search for work order emails — matches both direct and forwarded copies
+    // "Case CS" in subject catches originals and "Fwd: Case CS..." forwards
+    // newer_than:30d gives a wide window; processedIds deduplication prevents re-imports
     const messages = await gmailSearch(
       token,
-      "from:jamorrill@afstores.com subject:Case CS newer_than:7d",
+      'subject:"Case CS" newer_than:30d',
       20,
     );
 

@@ -10,6 +10,7 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type * as schema from "../db/schema.js";
 import { createBriefAssemblyService } from "../services/brief-assembly-service.js";
 import { getAIClient, callClaude, parseAIJson } from "../ai/client.js";
+import { createSportsService } from "../services/sports-service.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -39,6 +40,7 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
     if (deps.assemblerFactory) return deps.assemblerFactory();
     return createBriefAssemblyService({
       dbClient: getDb(),
+      sportsService: createSportsService(),
       getAIClientFn: getAIClient,
       callClaudeFn: callClaude,
       parseAIJsonFn: parseAIJson,
