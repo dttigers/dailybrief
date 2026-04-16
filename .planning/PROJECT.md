@@ -1,11 +1,19 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v3.2 Phase 90 shipped — Server-side persistence live (2026-04-16)
+## Current State: v3.2 shipped — Freshness & Capture Parity (2026-04-16)
 
-**v3.2 progress:**
-- **Phase 90 Server-Side Persistence** — ai_cache table (Drizzle/Postgres), GET cache endpoints for Insights/Therapy, POST upsert cache-write, PWA cache-first hooks with Regenerate, Chat auto-resumes last session
-- **Phase 89 7-Day Analysis Scope** — Insights + Therapy routes scoped to 7-day rolling window
-- **Phase 88 Date Window Helper & Weekly Rollover** — Wed-anchored week helper in vigil-core; `GET /thoughts` defaults to current week with `?window=all` opt-out; all 5 PWA hooks + Mac CLI + smoke test migrated; Thoughts tab shows `This week · {range}` header with search→`all time` swap
+**v3.2 delivered:**
+- Wed-anchored weekly rollover (Thoughts tab, Insights, Therapy, Brief PDF all scoped to current week/7 days)
+- Server-side AI cache (Insights, Therapy patterns, Therapy prep persist with Regenerate; Chat auto-resumes)
+- Tasks tab status filter (Open/Done/All toggle with server-synced persistence)
+- Work order archive (lazy auto-archive, Active/Archived/All filter, unarchive, bulk-clear)
+- Brief PDF restructured (Page 1: Work Orders + Affirmation + Sports + Calendar; Page 2: Captured Thoughts + Tasks)
+- Browser extension quick-capture (freeform text + triage feedback + URL checkbox + Cmd+Enter)
+- Gmail work order import service (polling + parsing + change detection + Updated banner)
+- Server-side auto-triage on all capture paths (tags + therapyClassification)
+- Sports on brief with upcoming games
+- iOS PWA standalone OAuth verified
+- 30s polling for real-time PWA updates
 
 
 

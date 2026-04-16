@@ -1,5 +1,28 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v3.2 Freshness & Capture Parity (Shipped: 2026-04-16)
+
+**Phases completed:** 8 phases, 14 plans, 24 tasks
+
+**Key accomplishments:**
+
+- Pure Wed-anchored week window utility using native Intl.DateTimeFormat with 13 passing unit tests covering DST, extreme tz offsets, and injectable now — zero new dependencies
+- GET /thoughts now defaults to current Wed-Wed window in user tz; three bypass rules preserve search, explicit date ranges, and ?window=all; RO-08 sentinel locks Chat's direct-Drizzle path as a regression test
+- Five PWA hooks + Mac CLI triage + smoke test patched with window=all; getThoughts() gains typed window?: 'all' param; useThoughts unchanged as intended week-default consumer
+- Week/search context header wired to ThoughtsPage with client-side tz-aware date bounds and branched empty state in ThoughtList — human-verified in live PWA (Checks A, B, D passed)
+- One-liner:
+- ai_cache Drizzle table with JSONB storage, GET cache endpoints for insights/therapy, and upsert cache-write in all three POST AI handlers
+- Cache-first useInsights/useTherapy hooks with regenerate callbacks, auto-resume useChat, and cache API client functions
+- InsightsPage and TherapyPage show gray Regenerate button + relative timestamp when cached, teal Generate button on first visit
+- Segmented Open/Done/All pill toggle on Tasks tab with localStorage-first persistence and server sync via app_settings
+- Soft-delete archivedAt column with lazy auto-archive on GET, filter param, unarchive endpoint, bulk-delete endpoint, and PWA client functions
+- Active/Archived/All filter tabs with dimmed archived row styling, per-row Unarchive button, and Clear Archived bulk-delete with confirmation dialog
+- Wed-anchored week window applied to all three brief thought queries using Phase 88 date-window helper and app_settings timezone
+- Capture UX with triage polling (category badge feedback), optional URL inclusion, and Cmd/Ctrl+Enter keyboard shortcut
+- iOS PWA standalone mode Google OAuth verified working on real iPhone against live Railway deployment
+
+---
+
 ## v3.1 Gmail + Thin Clients (Shipped: 2026-04-15)
 
 **Phases completed:** 11 phases, 26 plans, 17 tasks

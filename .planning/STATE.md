@@ -4,13 +4,13 @@ milestone: v3.2
 milestone_name: Freshness & Capture Parity
 status: verifying
 stopped_at: Completed 94-01-PLAN.md (Task 2 pending human-verify)
-last_updated: "2026-04-16T19:43:35.698Z"
+last_updated: "2026-04-16T20:12:29.121Z"
 last_activity: 2026-04-16
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 7
   total_plans: 14
-  completed_plans: 14
+  completed_plans: 15
   percent: 100
 ---
 
@@ -25,8 +25,8 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 
 ## Current Position
 
-Phase: 94 (browser-extension-quick-capture) — EXECUTING
-Plan: 1 of 1
+Phase: 95
+Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
