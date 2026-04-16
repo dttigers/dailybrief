@@ -255,6 +255,7 @@ Plans:
 Plans:
 - [x] 89-01-PLAN.md — Server-side 7-day DB query for insights + therapy endpoints
 - [x] 89-02-PLAN.md — PWA client simplification + "Analyzing last 7 days" subheadings
+
 ### Phase 90: Server-Side Persistence
 **Goal**: Insights, Therapy patterns, and Therapy session prep persist server-side so revisits are instant; Chat auto-resumes the most recent session when the PWA reopens.
 **Depends on**: Phase 89
@@ -265,7 +266,11 @@ Plans:
   3. Opening Therapy session prep a second time displays cached output instantly with a Regenerate button
   4. Clicking Regenerate on any of the three triggers a fresh AI run and updates the cached result
   5. Closing and reopening the PWA lands the user back in their most recently active Chat session with prior messages visible
-**Plans**: TBD
+**Plans:** 3 plans
+Plans:
+- [ ] 90-01-PLAN.md — Drizzle ai_cache table + server cache GET/POST endpoints + schema push
+- [ ] 90-02-PLAN.md — PWA API client cache functions + cache-first hooks + Chat auto-resume
+- [ ] 90-03-PLAN.md — UI: Regenerate button + timestamp on Insights/Therapy pages + human verification
 **UI hint**: yes
 
 ### Phase 91: Tasks Tab Status Filter
@@ -423,7 +428,7 @@ Plans:
 | 87. Vigil App Icons | v3.1 | 3/3 | Complete | 2026-04-15 |
 | 88. Date Window Helper & Weekly Rollover | v3.2 | 4/4 | Complete    | 2026-04-16 |
 | 89. 7-Day Analysis Scope | v3.2 | 2/2 | Complete    | 2026-04-16 |
-| 90. Server-Side Persistence | v3.2 | 0/TBD | Not started | - |
+| 90. Server-Side Persistence | v3.2 | 0/3 | Not started | - |
 | 91. Tasks Tab Status Filter | v3.2 | 0/TBD | Not started | - |
 | 92. Work Order Archive | v3.2 | 0/TBD | Not started | - |
 | 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 0/TBD | Not started | - |
