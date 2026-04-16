@@ -170,6 +170,7 @@ export const workOrders = pgTable("work_orders", {
   lastChangeAt: timestamp("last_change_at", { withTimezone: true }),
   lastChangeSummary: text("last_change_summary"),
   syncedAt: timestamp("synced_at", { withTimezone: true }).defaultNow().notNull(),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
 });
 
 // ── oauth_tokens table ─────────────────────────────────────────────────────
