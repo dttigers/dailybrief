@@ -119,18 +119,20 @@ async function gmailGetMessage(token: string, messageId: string): Promise<GmailM
 }
 
 function extractPlainTextBody(msg: GmailMessageDetail): string {
-  // Try body.data first (simple messages)
-  if (msg.payload.body?.data) {
-    return Buffer.from(msg.payload.body.data, "base64url").toString("utf-8");
-  }
-  // Try parts (multipart messages)
-  if (msg.payload.parts) {
-    const textPart = msg.payload.parts.find((p) => p.mimeType === "text/plain");
-    if (textPart?.body?.data) {
-      return Buffer.from(textPart.body.data, "base64url").toString("utf-8");
+  // Recursively search for text/plain in nested multipart structures
+  function findTextPart(part: any): string {
+    if (part.mimeType === "text/plain" && part.body?.data) {
+      return Buffer.from(part.body.data, "base64url").toString("utf-8");
     }
+    if (part.parts) {
+      for (const sub of part.parts) {
+        const result = findTextPart(sub);
+        if (result) return result;
+      }
+    }
+    return "";
   }
-  return "";
+  return findTextPart(msg.payload);
 }
 
 // ── Work order parsing ───────────────────────────────────────────────────────
