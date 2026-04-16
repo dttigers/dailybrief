@@ -1,6 +1,11 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v3.1 Gmail + Thin Clients shipped (2026-04-15)
+## Current State: v3.2 Phase 88 shipped — weekly rollover live (2026-04-16)
+
+**v3.2 progress:**
+- **Phase 88 Date Window Helper & Weekly Rollover** — Wed-anchored week helper in vigil-core; `GET /thoughts` defaults to current week with `?window=all` opt-out; all 5 PWA hooks + Mac CLI + smoke test migrated; Thoughts tab shows `This week · {range}` header with search→`all time` swap
+
+
 
 **Delivered in v3.1:**
 - **Phase 83 Menu Bar Redesign** — DailyBriefMonitor stripped to print-scheduler-only; schedule config lives in PWA Settings persisted via API; Dock-less via LSUIElement
