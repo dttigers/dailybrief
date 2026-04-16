@@ -81,19 +81,9 @@ async function initCaptureView(apiKey) {
   captureError.hidden = true;
   captureSuccess.hidden = true;
 
-  // Read active tab -- must happen during DOMContentLoaded (user gesture context)
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const title = tab.title ?? '';
-    const url = tab.url ?? '';
-    contentInput.value = `${title}\n${url}\n\n`;
-    contentInput.focus();
-    contentInput.selectionStart = contentInput.value.length;
-    contentInput.selectionEnd = contentInput.value.length;
-  } catch {
-    contentInput.value = '';
-    contentInput.focus();
-  }
+  // Start with empty input — matches Mac quick capture behavior
+  contentInput.value = '';
+  contentInput.focus();
 
   captureBtn.onclick = async () => {
     const content = contentInput.value.trim();
