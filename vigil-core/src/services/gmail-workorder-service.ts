@@ -105,7 +105,6 @@ async function gmailSearch(token: string, query: string, maxResults = 20): Promi
     throw new Error(`Gmail search failed: ${res.status} ${body}`);
   }
   const data = await res.json();
-  console.log(`[gmail-workorders] search query="${query}" results=${data.resultSizeEstimate ?? 0} messages=${(data.messages ?? []).length}`);
   return data.messages ?? [];
 }
 
@@ -207,17 +206,6 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
 
     const token = await getValidAccessToken();
 
-    // Log which Gmail account we're searching (debug: identify wrong-account issues)
-    try {
-      const profileRes = await fetch("https://www.googleapis.com/gmail/v1/users/me/profile", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (profileRes.ok) {
-        const profile = await profileRes.json();
-        log("info", `Searching Gmail account: ${profile.emailAddress}`);
-      }
-    } catch { /* non-fatal */ }
-
     // Search for work order emails — matches both direct and forwarded copies
     // "Case CS" in subject catches originals and "Fwd: Case CS..." forwards
     // newer_than:30d gives a wide window; processedIds deduplication prevents re-imports
@@ -241,11 +229,8 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
       const subject = detail.payload.headers.find((h) => h.name === "Subject")?.value ?? "";
       const body = extractPlainTextBody(detail);
 
-      log("info", `Message ${msg.id}: subject="${subject}" bodyLen=${body.length} bodyPreview="${body.slice(0, 200).replace(/\n/g, "\\n")}"`);
-
       const parsed = parseWorkOrderEmail(body, subject);
       if (parsed) {
-        log("info", `Parsed ${parsed.caseNumber}: store="${parsed.store}" desc="${parsed.shortDescription.slice(0, 50)}" trade="${parsed.trade}"`);
         workOrders.push(parsed);
       } else {
         log("warn", `Could not parse work order from message ${msg.id}: ${subject}`);
