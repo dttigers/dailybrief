@@ -40,12 +40,12 @@
 
 ### Work Order Archive
 
-- [ ] **WO-01**: Gmail-imported work orders auto-archive 7 days after import
-- [ ] **WO-02**: Completed work orders (any source) auto-archive 7 days after completion
-- [ ] **WO-03**: Manually-entered work orders never auto-archive (user owns lifecycle)
-- [ ] **WO-04**: User can view archived work orders via a "Show archived" toggle in the Work Orders view
-- [ ] **WO-05**: User can unarchive a work order from the archived view
-- [ ] **WO-06**: User can bulk-clear all archived work orders (permanent delete with confirmation)
+- [x] **WO-01**: Gmail-imported work orders auto-archive 7 days after import
+- [x] **WO-02**: Completed work orders (any source) auto-archive 7 days after completion
+- [x] **WO-03**: Manually-entered work orders never auto-archive (user owns lifecycle)
+- [x] **WO-04**: User can view archived work orders via a "Show archived" toggle in the Work Orders view
+- [x] **WO-05**: User can unarchive a work order from the archived view
+- [x] **WO-06**: User can bulk-clear all archived work orders (permanent delete with confirmation)
 
 ### Brief PDF Cleanup
 
@@ -107,12 +107,12 @@
 | TASKS-01 | Phase 91 | Complete |
 | TASKS-02 | Phase 91 | Complete |
 | TASKS-03 | Phase 91 | Complete |
-| WO-01 | Phase 92 | Pending |
-| WO-02 | Phase 92 | Pending |
-| WO-03 | Phase 92 | Pending |
-| WO-04 | Phase 92 | Pending |
-| WO-05 | Phase 92 | Pending |
-| WO-06 | Phase 92 | Pending |
+| WO-01 | Phase 92 | Complete |
+| WO-02 | Phase 92 | Complete |
+| WO-03 | Phase 92 | Complete |
+| WO-04 | Phase 92 | Complete |
+| WO-05 | Phase 92 | Complete |
+| WO-06 | Phase 92 | Complete |
 | BRIEF-01 | Phase 93 | Pending |
 | BRIEF-02 | Phase 93 | Pending |
 | BRIEF-03 | Phase 93 | Pending |

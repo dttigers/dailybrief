@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Freshness & Capture Parity
-status: verifying
-stopped_at: Phase 92 context gathered
-last_updated: "2026-04-16T19:06:16.441Z"
+status: executing
+stopped_at: Completed 92-01-PLAN.md
+last_updated: "2026-04-16T19:17:49.271Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 5
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
-  percent: 100
+  total_plans: 12
+  completed_plans: 11
+  percent: 92
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-15)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 91 — tasks-tab-status-filter
+**Current focus:** Phase 92 — work-order-archive
 
 ## Current Position
 
-Phase: 91
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 92 (work-order-archive) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -67,6 +67,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 90 P02 | 119 | 2 tasks | 4 files |
 | Phase 90 P03 | 92 | 1 tasks | 3 files |
 | Phase 91 P01 | 131 | 2 tasks | 5 files |
+| Phase 92 P01 | 120 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 90]: Regenerate button uses gray-900/80 (not teal) per UI-SPEC to visually subordinate it to primary Generate action
 - [Phase 91]: Client-side filtering for Open view (open+inProgress) since server lacks compound not-done filter
 - [Phase 91]: localStorage-first read on mount for instant UX; server sync overwrites only if different
+- [Phase 92]: Lazy auto-archive on GET with batched updates; filter param defaults to active with allowlist validation
 
 ### Roadmap Dependency Notes
 
@@ -118,7 +120,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-04-16T19:06:16.436Z
-Stopped at: Phase 92 context gathered
-Resume file: .planning/phases/92-work-order-archive/92-CONTEXT.md
+Last session: 2026-04-16T19:17:49.266Z
+Stopped at: Completed 92-01-PLAN.md
+Resume file: None
 Next action: `/gsd-plan-phase 88` to decompose Date Window Helper & Weekly Rollover
