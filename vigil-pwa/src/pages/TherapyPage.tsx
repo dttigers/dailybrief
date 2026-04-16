@@ -51,15 +51,17 @@ export default function TherapyPage() {
             <h2 className="text-lg font-medium text-gray-50">Therapy Patterns</h2>
             <p className="text-xs text-gray-400 mt-0.5">Analyzing last 7 days</p>
           </div>
-          {isCachedPatterns && patternsGeneratedAt && !isLoadingPatterns ? (
+          {isCachedPatterns || (patternsGeneratedAt && isLoadingPatterns) ? (
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400">Generated {formatRelativeTime(patternsGeneratedAt)}</span>
+              {patternsGeneratedAt && !isLoadingPatterns && (
+                <span className="text-xs text-gray-400">Generated {formatRelativeTime(patternsGeneratedAt)}</span>
+              )}
               <button
                 onClick={regeneratePatterns}
                 disabled={isLoadingPatterns}
                 className="bg-gray-900/80 hover:bg-gray-800 disabled:opacity-40 text-gray-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-gray-400/20"
               >
-                Regenerate
+                {isLoadingPatterns ? 'Regenerating...' : 'Regenerate'}
               </button>
             </div>
           ) : (
@@ -131,15 +133,17 @@ export default function TherapyPage() {
             <h2 className="text-lg font-medium text-gray-50">Session Prep</h2>
             <p className="text-xs text-gray-400 mt-0.5">Analyzing last 7 days</p>
           </div>
-          {isCachedPrep && prepGeneratedAt && !isLoadingPrep ? (
+          {isCachedPrep || (prepGeneratedAt && isLoadingPrep) ? (
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400">Generated {formatRelativeTime(prepGeneratedAt)}</span>
+              {prepGeneratedAt && !isLoadingPrep && (
+                <span className="text-xs text-gray-400">Generated {formatRelativeTime(prepGeneratedAt)}</span>
+              )}
               <button
                 onClick={regeneratePrep}
                 disabled={isLoadingPrep}
                 className="bg-gray-900/80 hover:bg-gray-800 disabled:opacity-40 text-gray-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-gray-400/20"
               >
-                Regenerate
+                {isLoadingPrep ? 'Regenerating...' : 'Regenerate'}
               </button>
             </div>
           ) : (

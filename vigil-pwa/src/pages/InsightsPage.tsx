@@ -20,15 +20,17 @@ export default function InsightsPage() {
           <h1 className="text-lg font-medium text-gray-50">Insights</h1>
           <p className="text-xs text-gray-400 mt-0.5">Analyzing last 7 days</p>
         </div>
-        {isCached && generatedAt && !isLoading ? (
+        {isCached || (generatedAt && isLoading) ? (
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400">Generated {formatRelativeTime(generatedAt)}</span>
+            {generatedAt && !isLoading && (
+              <span className="text-xs text-gray-400">Generated {formatRelativeTime(generatedAt)}</span>
+            )}
             <button
               onClick={() => regenerate()}
               disabled={isLoading}
               className="bg-gray-900/80 hover:bg-gray-800 disabled:opacity-40 text-gray-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-gray-400/20"
             >
-              Regenerate
+              {isLoading ? 'Regenerating...' : 'Regenerate'}
             </button>
           </div>
         ) : (
