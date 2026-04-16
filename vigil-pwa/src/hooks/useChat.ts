@@ -18,12 +18,19 @@ export function useChat() {
   const [error, setError] = useState<string | null>(null)
   const [contextUsed, setContextUsed] = useState(0)
 
-  // Load sessions on mount
+  // Load sessions on mount; D-09: auto-resume most recent session
   useEffect(() => {
     getChatSessions()
-      .then((res) => setSessions(res.data))
+      .then((res) => {
+        setSessions(res.data)
+        // D-09: Auto-resume most recent session on mount
+        // sessions[0] is most recent because server sorts by desc(updatedAt)
+        if (res.data.length > 0) {
+          loadSession(res.data[0].id)
+        }
+      })
       .catch(() => {})
-  }, [])
+  }, [loadSession])
 
   const loadSession = useCallback(async (id: number) => {
     try {
