@@ -52,7 +52,7 @@
 - [ ] **BRIEF-01**: Daily brief PDF no longer contains a duplicate Tasks section on Page 1 (OCR-noise source removed)
 - [ ] **BRIEF-02**: Affirmation section moves to the bottom of Page 1
 - [ ] **BRIEF-03**: Remaining Page 2+ content reflows up to fill the freed space
-- [ ] **BRIEF-04**: Daily brief PDF respects the 7-day thought window (SCOPE-04)
+- [x] **BRIEF-04**: Daily brief PDF respects the 7-day thought window (SCOPE-04)
 
 ### Browser Extension Quick-Capture
 
@@ -116,7 +116,7 @@
 | BRIEF-01 | Phase 93 | Pending |
 | BRIEF-02 | Phase 93 | Pending |
 | BRIEF-03 | Phase 93 | Pending |
-| BRIEF-04 | Phase 93 | Pending |
+| BRIEF-04 | Phase 93 | Complete |
 | EXT-01 | Phase 94 | Pending |
 | EXT-02 | Phase 94 | Pending |
 | EXT-03 | Phase 94 | Pending |

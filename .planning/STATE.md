@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Freshness & Capture Parity
 status: verifying
-stopped_at: Phase 93 context gathered
-last_updated: "2026-04-16T19:25:44.684Z"
+stopped_at: Completed 93-01-PLAN.md
+last_updated: "2026-04-16T19:30:32.502Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 6
-  completed_phases: 5
-  total_plans: 12
-  completed_plans: 12
+  completed_phases: 6
+  total_plans: 13
+  completed_plans: 13
   percent: 100
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-15)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 92 — work-order-archive
+**Current focus:** Phase 93 — brief-pdf-cleanup
 
 ## Current Position
 
-Phase: 92
-Plan: Not started
+Phase: 93 (brief-pdf-cleanup) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
@@ -69,6 +69,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 91 P01 | 131 | 2 tasks | 5 files |
 | Phase 92 P01 | 120 | 2 tasks | 3 files |
 | Phase 92 P02 | 146 | 2 tasks | 3 files |
+| Phase 93 P01 | 76 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 92]: Lazy auto-archive on GET with batched updates; filter param defaults to active with allowlist validation
 - [Phase 92]: Inline filter tabs instead of generalizing StatusFilterTabs (different type, simpler)
 - [Phase 92]: AI prioritization skipped for archived/all filters; only active orders need ranking
+- [Phase 93]: Brief thought queries scoped to Wed-Tue week window via getCurrentWeekWindow; timezone from app_settings with fallback
 
 ### Roadmap Dependency Notes
 
@@ -123,7 +125,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-04-16T19:25:44.679Z
-Stopped at: Phase 93 context gathered
-Resume file: .planning/phases/93-brief-pdf-cleanup/93-CONTEXT.md
+Last session: 2026-04-16T19:30:32.498Z
+Stopped at: Completed 93-01-PLAN.md
+Resume file: None
 Next action: `/gsd-plan-phase 88` to decompose Date Window Helper & Weekly Rollover
