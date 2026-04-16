@@ -184,6 +184,17 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
 
     const token = await getValidAccessToken();
 
+    // Log which Gmail account we're searching (debug: identify wrong-account issues)
+    try {
+      const profileRes = await fetch("https://www.googleapis.com/gmail/v1/users/me/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (profileRes.ok) {
+        const profile = await profileRes.json();
+        log("info", `Searching Gmail account: ${profile.emailAddress}`);
+      }
+    } catch { /* non-fatal */ }
+
     // Search for work order emails — matches both direct and forwarded copies
     // "Case CS" in subject catches originals and "Fwd: Case CS..." forwards
     // newer_than:30d gives a wide window; processedIds deduplication prevents re-imports
