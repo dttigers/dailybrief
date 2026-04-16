@@ -127,7 +127,7 @@ async function testThoughtsCRUD(): Promise<number | null> {
   const thoughtId = created.body.id;
 
   // LIST — verify it includes the created thought
-  const list = await api("/thoughts");
+  const list = await api("/thoughts?window=all");
   if (list.status === 200 && Array.isArray(list.body?.data)) {
     const found = list.body.data.some((t: any) => t.id === thoughtId);
     if (found) {

@@ -457,7 +457,7 @@ extension DailyBrief {
             do {
                 response = try await apiClient.get(
                     path: "/thoughts",
-                    query: ["limit": String(fetchLimit), "offset": "0"]
+                    query: ["limit": String(fetchLimit), "offset": "0", "window": "all"]
                 )
             } catch {
                 Logger.error("Failed to fetch thoughts: \(error.localizedDescription)")
