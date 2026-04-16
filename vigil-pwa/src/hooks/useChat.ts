@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   sendChatMessage,
   getChatSessions,
@@ -14,9 +14,16 @@ export function useChat() {
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  // Ref keeps messages always current — avoids stale closure in sendMessage useCallback
+  const messagesRef = useRef<ChatMessage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [contextUsed, setContextUsed] = useState(0)
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
 
   const loadSession = useCallback(async (id: number) => {
     try {
@@ -71,11 +78,12 @@ export function useChat() {
 
   const sendMessage = useCallback(async (content: string) => {
     const userMessage: ChatMessage = { role: 'user', content }
-    let newMessages: ChatMessage[] = []
-    setMessages((prev) => {
-      newMessages = [...prev, userMessage]
-      return newMessages
-    })
+    // Build newMessages from the ref (always current) rather than relying on the
+    // functional state updater being called synchronously — in React 18 concurrent
+    // mode the updater is called during the commit phase (asynchronously), so
+    // reading o after setMessages(fn) still gives [] and the API gets an empty array.
+    const newMessages = [...messagesRef.current, userMessage]
+    setMessages(newMessages)
     setIsLoading(true)
     setError(null)
 
