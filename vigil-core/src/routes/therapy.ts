@@ -68,7 +68,8 @@ therapy.post("/therapy/classify", async (c) => {
     try {
       result = parseAIJson<TherapyClassificationResult>(raw);
     } catch {
-      return c.json({ error: "AI response parse error", raw }, 502);
+      console.error("[therapy/classify] AI parse error. Raw:", raw);
+      return c.json({ error: "AI response parse error" }, 502);
     }
 
     return c.json(result, 200);
@@ -157,7 +158,8 @@ therapy.post("/therapy/patterns", async (c) => {
     try {
       parsed = parseAIJson(raw);
     } catch {
-      return c.json({ error: "AI response parse error", raw }, 502);
+      console.error("[therapy/patterns] AI parse error. Raw:", raw);
+      return c.json({ error: "AI response parse error" }, 502);
     }
 
     const patterns: TherapyPattern[] = parsed
