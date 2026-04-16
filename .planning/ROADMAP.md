@@ -312,7 +312,9 @@ Plans:
   2. Affirmation appears at the bottom of Page 1 in the generated PDF
   3. Content previously below the old Affirmation slot reflows up to fill freed space with no visual gaps
   4. Brief PDF thought content only includes thoughts from the last 7 days (OCR noise from older content absent)
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 93-01-PLAN.md — Apply Wed-anchored week window to brief thought queries
 
 ### Phase 94: Browser Extension Quick-Capture
 **Goal**: The browser extension becomes the primary non-Mac capture surface — free-form thought text with server-side auto-triage and result feedback — while preserving one-click URL capture as a secondary option. Works in Chrome and Safari.
@@ -435,8 +437,8 @@ Plans:
 | 89. 7-Day Analysis Scope | v3.2 | 2/2 | Complete    | 2026-04-16 |
 | 90. Server-Side Persistence | v3.2 | 3/3 | Complete    | 2026-04-16 |
 | 91. Tasks Tab Status Filter | v3.2 | 1/1 | Complete    | 2026-04-16 |
-| 92. Work Order Archive | v3.2 | 2/2 | Complete   | 2026-04-16 |
-| 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 0/TBD | Not started | - |
+| 92. Work Order Archive | v3.2 | 2/2 | Complete    | 2026-04-16 |
+| 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 0/1 | Not started | - |
 | 94. Browser Extension Quick-Capture | v3.2 | 0/TBD | Not started | - |
 | 95. iOS PWA OAuth UAT Retest | v3.2 | 0/TBD | Not started | - |
 
