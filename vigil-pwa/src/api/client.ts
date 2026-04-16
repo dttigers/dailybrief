@@ -590,3 +590,27 @@ export async function setTimezone(timezone: string): Promise<void> {
     )
   }
 }
+
+// ── Task status filter (Phase 91) ─────────────────────────────────────────
+
+export type TaskStatusFilterValue = 'open' | 'done' | 'all'
+
+export async function getTaskStatusFilter(): Promise<TaskStatusFilterValue> {
+  try {
+    const res = await vigilFetch('/v1/settings/task-status-filter')
+    if (!res.ok) return 'open'
+    const body = (await res.json()) as { filter?: string }
+    const f = body.filter
+    if (f === 'open' || f === 'done' || f === 'all') return f
+    return 'open'
+  } catch {
+    return 'open'
+  }
+}
+
+export async function putTaskStatusFilter(filter: TaskStatusFilterValue): Promise<void> {
+  vigilFetch('/v1/settings/task-status-filter', {
+    method: 'PUT',
+    body: JSON.stringify({ filter }),
+  }).catch(() => { /* fire-and-forget */ })
+}

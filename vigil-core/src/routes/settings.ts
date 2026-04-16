@@ -16,6 +16,7 @@ export interface PrintSchedule {
 const PRINT_SCHEDULE_KEY = "print_schedule";
 const GENERATE_SCHEDULE_KEY = "generate_schedule";
 const TIMEZONE_KEY = "user_timezone";
+const TASK_STATUS_FILTER_KEY = "task_status_filter";
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
 
@@ -212,6 +213,48 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
       return c.json({ ok: true }, 200);
     } catch (err) {
       console.error("[settings] PUT timezone error:", err instanceof Error ? err.message : String(err));
+      return c.json({ error: "internal_error" }, 500);
+    }
+  });
+
+  // ── Task status filter ─────────────────────────────────────────────────────
+
+  const VALID_TASK_FILTERS = ["open", "done", "all"] as const;
+
+  router.get("/settings/task-status-filter", async (c) => {
+    try {
+      if (!db) return c.json({ error: "database_unavailable" }, 503);
+      const rows = await db
+        .select({ value: appSettings.value })
+        .from(appSettings)
+        .where(eq(appSettings.key, TASK_STATUS_FILTER_KEY))
+        .limit(1);
+      const filter = rows.length > 0 ? (rows[0].value as string) : "open";
+      return c.json({ filter }, 200);
+    } catch (err) {
+      console.error("[settings] GET task-status-filter error:", err instanceof Error ? err.message : String(err));
+      return c.json({ error: "internal_error" }, 500);
+    }
+  });
+
+  router.put("/settings/task-status-filter", async (c) => {
+    try {
+      const body = await c.req.json<unknown>();
+      const filter = (body as { filter?: unknown } | null)?.filter;
+      if (typeof filter !== "string" || !VALID_TASK_FILTERS.includes(filter as typeof VALID_TASK_FILTERS[number])) {
+        return c.json({ error: "invalid_filter", valid: VALID_TASK_FILTERS }, 400);
+      }
+
+      if (!db) return c.json({ error: "database_unavailable" }, 503);
+      await db.insert(appSettings)
+        .values({ key: TASK_STATUS_FILTER_KEY, value: filter })
+        .onConflictDoUpdate({
+          target: appSettings.key,
+          set: { value: filter, updatedAt: new Date() },
+        });
+      return c.json({ ok: true }, 200);
+    } catch (err) {
+      console.error("[settings] PUT task-status-filter error:", err instanceof Error ? err.message : String(err));
       return c.json({ error: "internal_error" }, 500);
     }
   });
