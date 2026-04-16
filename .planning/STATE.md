@@ -4,7 +4,7 @@ milestone: v3.2
 milestone_name: Freshness & Capture Parity
 status: verifying
 stopped_at: Completed 91-01-PLAN.md
-last_updated: "2026-04-16T19:01:43.085Z"
+last_updated: "2026-04-16T19:02:46.324Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 4
@@ -25,8 +25,8 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 
 ## Current Position
 
-Phase: 91 (tasks-tab-status-filter) — EXECUTING
-Plan: 1 of 1
+Phase: 91
+Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
