@@ -1,6 +1,6 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v3.2 Phase 88 shipped — weekly rollover live (2026-04-16)
+## Current State: v3.2 Phase 89 shipped — 7-day analysis scope live (2026-04-16)
 
 **v3.2 progress:**
 - **Phase 88 Date Window Helper & Weekly Rollover** — Wed-anchored week helper in vigil-core; `GET /thoughts` defaults to current week with `?window=all` opt-out; all 5 PWA hooks + Mac CLI + smoke test migrated; Thoughts tab shows `This week · {range}` header with search→`all time` swap
@@ -236,4 +236,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-15 — v3.2 Freshness & Capture Parity started*
+*Last updated: 2026-04-16 — Phase 89 (7-day analysis scope) complete*
