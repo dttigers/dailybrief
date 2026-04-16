@@ -63,6 +63,17 @@ export default function WorkOrderRow({ workOrder, priorityRank, onStatusChange }
         {workOrder.trade && <span>{workOrder.trade}</span>}
         {workOrder.location && <span>{workOrder.location}</span>}
       </div>
+      {workOrder.lastChangeAt && workOrder.lastChangeSummary && (
+        <div className="mt-2 px-2.5 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/20">
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <span className="text-xs font-medium text-amber-400">Updated</span>
+            <span className="text-xs text-gray-400">
+              {new Date(workOrder.lastChangeAt).toLocaleDateString()}
+            </span>
+          </div>
+          <p className="text-xs text-gray-300">{workOrder.lastChangeSummary}</p>
+        </div>
+      )}
     </div>
   )
 }

@@ -166,6 +166,9 @@ export const workOrders = pgTable("work_orders", {
   priority: text("priority").notNull().default(""),
   contact: text("contact").notNull().default(""),
   state: text("state").notNull().default(""),
+  notes: text("notes").notNull().default(""),
+  lastChangeAt: timestamp("last_change_at", { withTimezone: true }),
+  lastChangeSummary: text("last_change_summary"),
   syncedAt: timestamp("synced_at", { withTimezone: true }).defaultNow().notNull(),
 });
 

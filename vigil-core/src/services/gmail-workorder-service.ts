@@ -19,6 +19,7 @@ interface WorkOrderFromEmail {
   location: string;
   equipment: string;
   priority: string;
+  notes: string;
 }
 
 interface GmailMessage {
@@ -171,6 +172,13 @@ function parseWorkOrderEmail(body: string, subject: string): WorkOrderFromEmail 
     return value;
   };
 
+  // Extract notes: everything after "Comments and Work notes:" until "Ref:MSG" or end
+  let notes = "";
+  const notesMatch = body.match(/Comments and Work notes:\s*([\s\S]*?)(?:Ref:MSG|$)/i);
+  if (notesMatch) {
+    notes = notesMatch[1].trim();
+  }
+
   return {
     caseNumber,
     shortDescription: field("Short Description"),
@@ -181,6 +189,7 @@ function parseWorkOrderEmail(body: string, subject: string): WorkOrderFromEmail 
     location: field("Location"),
     equipment: field("Equipment"),
     priority: field("Priority"),
+    notes,
   };
 }
 
@@ -244,10 +253,36 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
       return 0;
     }
 
-    // Upsert to database
+    // Upsert to database with change detection
     let synced = 0;
     for (const wo of workOrders) {
       try {
+        // Check for existing row to detect changes
+        const existing = await db
+          .select()
+          .from(workOrdersTable)
+          .where(eq(workOrdersTable.caseNumber, wo.caseNumber))
+          .limit(1);
+
+        let lastChangeSummary: string | null = null;
+        let lastChangeAt: Date | null = null;
+
+        if (existing.length > 0) {
+          const old = existing[0];
+          const changes: string[] = [];
+          if (old.shortDescription !== wo.shortDescription) changes.push(`Description: "${old.shortDescription}" → "${wo.shortDescription}"`);
+          if (old.state !== wo.state) changes.push(`State: ${old.state} → ${wo.state}`);
+          if (old.priority !== wo.priority) changes.push(`Priority: ${old.priority} → ${wo.priority}`);
+          if (old.contact !== wo.contact) changes.push(`Contact: ${old.contact} → ${wo.contact}`);
+          if (wo.notes && wo.notes !== old.notes) changes.push("Notes updated");
+
+          if (changes.length > 0) {
+            lastChangeSummary = changes.join("; ");
+            lastChangeAt = new Date();
+            log("info", `Work order ${wo.caseNumber} updated: ${lastChangeSummary}`);
+          }
+        }
+
         await db
           .insert(workOrdersTable)
           .values({
@@ -260,6 +295,7 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
             priority: wo.priority,
             contact: wo.contact,
             state: wo.state,
+            notes: wo.notes,
             syncedAt: new Date(),
           })
           .onConflictDoUpdate({
@@ -273,6 +309,8 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
               priority: wo.priority,
               contact: wo.contact,
               state: wo.state,
+              notes: wo.notes,
+              ...(lastChangeAt ? { lastChangeAt, lastChangeSummary } : {}),
               syncedAt: new Date(),
             },
           });

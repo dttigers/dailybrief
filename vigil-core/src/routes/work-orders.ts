@@ -94,8 +94,11 @@ workOrdersRouter.get("/work-orders", async (c) => {
     priority: wo.priority,
     contact: wo.contact,
     state: wo.state,
+    notes: wo.notes,
     status: statusMap.get(wo.caseNumber) ?? "open",
     syncedAt: wo.syncedAt.toISOString(),
+    lastChangeAt: wo.lastChangeAt?.toISOString() ?? null,
+    lastChangeSummary: wo.lastChangeSummary ?? null,
   }));
 
   return c.json({ data });

@@ -190,8 +190,11 @@ export interface WorkOrderApiResponse {
   priority: string
   contact: string
   state: string
+  notes: string
   status: string
   syncedAt: string
+  lastChangeAt: string | null
+  lastChangeSummary: string | null
 }
 
 export async function getWorkOrders(): Promise<{ data: WorkOrderApiResponse[] }> {
