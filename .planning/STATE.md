@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Freshness & Capture Parity
 status: Roadmap approved, ready for `/gsd-plan-phase 88`
-stopped_at: Completed 88-02-PLAN.md
-last_updated: "2026-04-16T00:07:55.301Z"
+stopped_at: Completed 88-03-PLAN.md
+last_updated: "2026-04-16T00:13:20.847Z"
 last_activity: 2026-04-15 — v3.2 roadmap written (Phases 88-95, 30 REQs mapped)
 progress:
   total_phases: 1
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
-  percent: 50
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | v3.1 Gmail + Thin Clients | 79-87 | 26 | ~2 days |
 | v3.2 Freshness & Capture Parity | 88-95 | TBD | in progress |
 | Phase 88 P02 | 3 | 2 tasks | 2 files |
+| Phase 88 P03 | 4 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -76,6 +77,8 @@ All decisions logged in PROJECT.md Key Decisions table.
 - Shared server-side date-window helper lands in Phase 88 and is reused by Phases 89 and 93
 - [Phase 88]: Degraded test harness chosen: no shared test-DB in vigil-core; RO-01..05 skipped with test.skip pending harness introduction
 - [Phase 88]: shouldBypassWindow extracted as exported pure function — bypass predicate unit-testable without DB or HTTP server
+- [Phase 88]: useThoughts.ts left intentionally unchanged — week-default consumer per ROLLOVER-01
+- [Phase 88]: window?: 'all' typed as string literal — TypeScript rejects typos at compile time
 
 ### Roadmap Dependency Notes
 
@@ -96,7 +99,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-04-16T00:07:55.297Z
-Stopped at: Completed 88-02-PLAN.md
+Last session: 2026-04-16T00:13:16.549Z
+Stopped at: Completed 88-03-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 88` to decompose Date Window Helper & Weekly Rollover

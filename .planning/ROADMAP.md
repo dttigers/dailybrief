@@ -234,11 +234,11 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   2. Full-text search from the Thoughts tab returns matches from prior weeks (rollover does not gate search)
   3. Asking Chat about something from a prior week returns an answer (Chat context window is unchanged by rollover)
   4. Changing the user's timezone in Settings shifts the Wed–Tue boundary accordingly on next page load
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 Plans:
 - [x] 88-01-PLAN.md — Date-window helper utility + unit tests (pure, no deps)
 - [x] 88-02-PLAN.md — GET /thoughts week-window default + three bypass rules + integration tests
-- [ ] 88-03-PLAN.md — Caller audit: PWA getThoughts window param + 5 hook fixes + Mac CLI triage + smoke test
+- [x] 88-03-PLAN.md — Caller audit: PWA getThoughts window param + 5 hook fixes + Mac CLI triage + smoke test
 - [ ] 88-04-PLAN.md — Thoughts tab UI: week/search header, branched empty state, useTimezone hook
 **UI hint**: yes
 
@@ -418,7 +418,7 @@ Plans:
 | 85. iOS Shortcut | v3.1 | — | Deferred (Shortcuts.app bugs) | - |
 | 86. Split Brief Schedule | v3.1 | 6/6 | Complete | 2026-04-15 |
 | 87. Vigil App Icons | v3.1 | 3/3 | Complete | 2026-04-15 |
-| 88. Date Window Helper & Weekly Rollover | v3.2 | 2/4 | In Progress|  |
+| 88. Date Window Helper & Weekly Rollover | v3.2 | 3/4 | In Progress|  |
 | 89. 7-Day Analysis Scope | v3.2 | 0/TBD | Not started | - |
 | 90. Server-Side Persistence | v3.2 | 0/TBD | Not started | - |
 | 91. Tasks Tab Status Filter | v3.2 | 0/TBD | Not started | - |
