@@ -258,15 +258,14 @@ export interface Insight {
   relatedThoughtIds: number[]
 }
 
-export async function generateInsights(
-  thoughts: { id: number; content: string; category: string; createdAt: string }[],
-  days = 7,
-): Promise<{ insights: Insight[] }> {
+export async function generateInsights(): Promise<{ insights: Insight[] }> {
   const res = await vigilFetch('/v1/insights', {
     method: 'POST',
-    body: JSON.stringify({ thoughts, days }),
   })
-  if (!res.ok) throw new Error(`Insights failed: ${res.status}`)
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error || `Insights failed: ${res.status}`)
+  }
   return res.json()
 }
 
@@ -358,27 +357,25 @@ export interface TherapyPrep {
   suggestedFocus: string
 }
 
-export async function getTherapyPatterns(
-  thoughts: { id: number; content: string; therapyClassification: string; createdAt: string }[],
-  days = 30,
-): Promise<{ patterns: TherapyPattern[] }> {
+export async function getTherapyPatterns(): Promise<{ patterns: TherapyPattern[] }> {
   const res = await vigilFetch('/v1/therapy/patterns', {
     method: 'POST',
-    body: JSON.stringify({ thoughts, days }),
   })
-  if (!res.ok) throw new Error(`Therapy patterns failed: ${res.status}`)
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error || `Therapy patterns failed: ${res.status}`)
+  }
   return res.json()
 }
 
-export async function generateTherapyPrep(
-  thoughts: { id: number; content: string; createdAt: string }[],
-  patterns?: { theme: string; trend: string; confidence: number; description: string }[],
-): Promise<TherapyPrep> {
+export async function generateTherapyPrep(): Promise<TherapyPrep> {
   const res = await vigilFetch('/v1/therapy/prep', {
     method: 'POST',
-    body: JSON.stringify({ thoughts, patterns }),
   })
-  if (!res.ok) throw new Error(`Therapy prep failed: ${res.status}`)
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error || `Therapy prep failed: ${res.status}`)
+  }
   return res.json()
 }
 
