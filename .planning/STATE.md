@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Freshness & Capture Parity
-status: executing
-stopped_at: Completed 92-01-PLAN.md
-last_updated: "2026-04-16T19:17:49.271Z"
+status: verifying
+stopped_at: Completed 92-02-PLAN.md
+last_updated: "2026-04-16T19:21:58.360Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 5
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 12
-  completed_plans: 11
-  percent: 92
+  completed_plans: 12
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 
 Phase: 92 (work-order-archive) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 90 P03 | 92 | 1 tasks | 3 files |
 | Phase 91 P01 | 131 | 2 tasks | 5 files |
 | Phase 92 P01 | 120 | 2 tasks | 3 files |
+| Phase 92 P02 | 146 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,8 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 91]: Client-side filtering for Open view (open+inProgress) since server lacks compound not-done filter
 - [Phase 91]: localStorage-first read on mount for instant UX; server sync overwrites only if different
 - [Phase 92]: Lazy auto-archive on GET with batched updates; filter param defaults to active with allowlist validation
+- [Phase 92]: Inline filter tabs instead of generalizing StatusFilterTabs (different type, simpler)
+- [Phase 92]: AI prioritization skipped for archived/all filters; only active orders need ranking
 
 ### Roadmap Dependency Notes
 
@@ -120,7 +123,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-04-16T19:17:49.266Z
-Stopped at: Completed 92-01-PLAN.md
+Last session: 2026-04-16T19:21:58.355Z
+Stopped at: Completed 92-02-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 88` to decompose Date Window Helper & Weekly Rollover
