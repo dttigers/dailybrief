@@ -7,11 +7,38 @@ import type {
   TherapyPrepItem,
 } from "../ai/types.js";
 import { db } from "../db/connection.js";
-import { thoughts as thoughtsTable, appSettings } from "../db/schema.js";
+import { thoughts as thoughtsTable, appSettings, aiCache } from "../db/schema.js";
 import { eq, and, ne, gte, lt, desc, isNotNull } from "drizzle-orm";
 import { getRollingDayWindow } from "../utils/date-window.js";
 
 export const therapy = new Hono();
+
+// ── Cache ──────────────────────────────────────────────────────────────────
+
+therapy.get("/therapy/cache", async (c) => {
+  if (!db) return c.json({ error: "Database not available" }, 503);
+
+  const type = c.req.query("type");
+  if (type !== "patterns" && type !== "prep") {
+    return c.json({ error: "type must be 'patterns' or 'prep'" }, 400);
+  }
+
+  const rows = await db
+    .select()
+    .from(aiCache)
+    .where(eq(aiCache.type, type))
+    .limit(1);
+
+  if (rows.length === 0) {
+    return c.json({ cached: false }, 404);
+  }
+
+  return c.json({
+    ...(type === "patterns" ? { patterns: rows[0].result } : rows[0].result as Record<string, unknown>),
+    cached: true,
+    generatedAt: rows[0].generatedAt.toISOString(),
+  });
+});
 
 // ── Classify ────────────────────────────────────────────────────────────────
 
@@ -173,7 +200,16 @@ therapy.post("/therapy/patterns", async (c) => {
         confidence: p.confidence,
       }));
 
-    return c.json({ patterns }, 200);
+    // Write to ai_cache (upsert: overwrite on regenerate)
+    await db
+      .insert(aiCache)
+      .values({ type: "patterns", result: patterns, generatedAt: new Date(), updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: aiCache.type,
+        set: { result: patterns, generatedAt: new Date(), updatedAt: new Date() },
+      });
+
+    return c.json({ patterns, cached: false, generatedAt: new Date().toISOString() }, 200);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown AI error";
     return c.json({ error: message }, 500);
@@ -274,7 +310,16 @@ therapy.post("/therapy/prep", async (c) => {
       suggestedFocus: parsed.suggested_focus,
     };
 
-    return c.json(prep, 200);
+    // Write to ai_cache (upsert: overwrite on regenerate)
+    await db
+      .insert(aiCache)
+      .values({ type: "prep", result: prep, generatedAt: new Date(), updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: aiCache.type,
+        set: { result: prep, generatedAt: new Date(), updatedAt: new Date() },
+      });
+
+    return c.json({ ...prep, cached: false, generatedAt: new Date().toISOString() }, 200);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown AI error";
     return c.json({ error: message }, 500);

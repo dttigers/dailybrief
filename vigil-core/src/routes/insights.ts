@@ -2,11 +2,31 @@ import { Hono } from "hono";
 import { callClaude, getAIClient, parseAIJson } from "../ai/client.js";
 import type { Insight } from "../ai/types.js";
 import { db } from "../db/connection.js";
-import { thoughts as thoughtsTable, appSettings } from "../db/schema.js";
+import { thoughts as thoughtsTable, appSettings, aiCache } from "../db/schema.js";
 import { eq, and, ne, gte, lt, desc } from "drizzle-orm";
 import { getRollingDayWindow } from "../utils/date-window.js";
 
 export const insights = new Hono();
+
+insights.get("/insights/cache", async (c) => {
+  if (!db) return c.json({ error: "Database not available" }, 503);
+
+  const rows = await db
+    .select()
+    .from(aiCache)
+    .where(eq(aiCache.type, "insights"))
+    .limit(1);
+
+  if (rows.length === 0) {
+    return c.json({ cached: false }, 404);
+  }
+
+  return c.json({
+    insights: rows[0].result,
+    cached: true,
+    generatedAt: rows[0].generatedAt.toISOString(),
+  });
+});
 
 insights.post("/insights", async (c) => {
   // Check AI client availability
@@ -108,7 +128,16 @@ Return ONLY the JSON array, no other text.`;
       }))
       .filter((insight) => insight.confidence >= 0.5);
 
-    return c.json({ insights: insightsResult });
+    // Write to ai_cache (upsert: overwrite on regenerate)
+    await db
+      .insert(aiCache)
+      .values({ type: "insights", result: insightsResult, generatedAt: new Date(), updatedAt: new Date() })
+      .onConflictDoUpdate({
+        target: aiCache.type,
+        set: { result: insightsResult, generatedAt: new Date(), updatedAt: new Date() },
+      });
+
+    return c.json({ insights: insightsResult, cached: false, generatedAt: new Date().toISOString() });
   } catch {
     return c.json({ error: "AI request failed" }, 502);
   }
