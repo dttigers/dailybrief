@@ -142,11 +142,32 @@ function parseWorkOrderEmail(body: string, subject: string): WorkOrderFromEmail 
 
   const caseNumber = caseMatch[1];
 
-  // Parse key: value pairs from body
+  // Known field names in order — used to detect where one field ends and the next begins
+  const knownFields = [
+    "Case", "Short Description", "State", "Store", "Store Contact",
+    "Trade", "Location", "Equipment", "Problem", "Priority",
+    "Assigned Group", "Owner", "Comments and Work notes",
+  ];
+  const fieldBoundary = new RegExp(`^\\s*(?:${knownFields.join("|")})\\s*:`, "im");
+
+  // Parse key: value pairs from body, handling multi-line values (forwarded emails wrap long text)
   const field = (key: string): string => {
-    const regex = new RegExp(`${key}:\\s*(.+?)(?:\\r?\\n|$)`, "i");
+    const regex = new RegExp(`${key}:\\s*(.+)`, "i");
     const match = body.match(regex);
-    return match ? match[1].trim() : "";
+    if (!match) return "";
+
+    // Get everything after "Key: value" on this line
+    let value = match[1].trim();
+    // Check for continuation lines (indented or not starting with a known field)
+    const startIdx = (match.index ?? 0) + match[0].length;
+    const rest = body.slice(startIdx);
+    const lines = rest.split(/\r?\n/);
+    for (const line of lines) {
+      // Stop at next known field or empty line
+      if (fieldBoundary.test(line) || line.trim() === "") break;
+      value += " " + line.trim();
+    }
+    return value;
   };
 
   return {
@@ -200,7 +221,7 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
     // newer_than:30d gives a wide window; processedIds deduplication prevents re-imports
     const messages = await gmailSearch(
       token,
-      "has been assigned newer_than:30d",
+      "subject:(has been assigned) newer_than:30d",
       20,
     );
 
