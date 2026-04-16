@@ -297,7 +297,10 @@ Plans:
   3. A manually-entered work order never auto-archives, regardless of age or status
   4. Toggling Show Archived in the PWA reveals archived work orders; unarchiving restores one to active
   5. Bulk-Clear Archived requires explicit confirmation and permanently removes all archived work orders (only explicit destructive path in v3.2)
-**Plans**: TBD
+**Plans:** 2 plans
+Plans:
+- [ ] 92-01-PLAN.md — Server: archivedAt column, lazy auto-archive in GET, filter param, unarchive + bulk-delete endpoints, PWA client functions
+- [ ] 92-02-PLAN.md — PWA: Active/Archived/All filter tabs, archived row styling + unarchive button, Clear Archived with confirmation
 **UI hint**: yes
 
 ### Phase 93: Brief PDF Cleanup & 7-Day Scope
@@ -432,7 +435,7 @@ Plans:
 | 89. 7-Day Analysis Scope | v3.2 | 2/2 | Complete    | 2026-04-16 |
 | 90. Server-Side Persistence | v3.2 | 3/3 | Complete    | 2026-04-16 |
 | 91. Tasks Tab Status Filter | v3.2 | 1/1 | Complete    | 2026-04-16 |
-| 92. Work Order Archive | v3.2 | 0/TBD | Not started | - |
+| 92. Work Order Archive | v3.2 | 0/2 | Not started | - |
 | 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 0/TBD | Not started | - |
 | 94. Browser Extension Quick-Capture | v3.2 | 0/TBD | Not started | - |
 | 95. iOS PWA OAuth UAT Retest | v3.2 | 0/TBD | Not started | - |
