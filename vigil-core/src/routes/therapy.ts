@@ -189,7 +189,18 @@ therapy.post("/therapy/patterns", async (c) => {
       return c.json({ error: "AI response parse error" }, 502);
     }
 
-    const patterns: TherapyPattern[] = parsed
+    // Validate shape before processing
+    const validParsed = parsed.filter(
+      (p: Record<string, unknown>) =>
+        typeof p.theme === "string" &&
+        typeof p.description === "string" &&
+        typeof p.confidence === "number"
+    );
+    if (validParsed.length === 0) {
+      return c.json({ error: "AI returned no valid therapy patterns" }, 502);
+    }
+
+    const patterns: TherapyPattern[] = validParsed
       .filter((p) => p.confidence >= 0.5)
       .map((p) => ({
         theme: p.theme,

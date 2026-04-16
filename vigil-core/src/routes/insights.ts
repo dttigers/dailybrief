@@ -117,8 +117,18 @@ Return ONLY the JSON array, no other text.`;
       );
     }
 
-    // Map snake_case to camelCase and filter by confidence
-    const insightsResult: Insight[] = parsed
+    // Validate shape and filter by confidence
+    const validParsed = parsed.filter(
+      (item: Record<string, unknown>) =>
+        typeof item.title === "string" &&
+        typeof item.message === "string" &&
+        typeof item.confidence === "number"
+    );
+    if (validParsed.length === 0) {
+      return c.json({ error: "AI returned no valid insights" }, 502);
+    }
+
+    const insightsResult: Insight[] = validParsed
       .map((item) => ({
         type: item.type as Insight["type"],
         title: item.title,
