@@ -47,33 +47,38 @@ test.skip("RO-05: GET /thoughts?window=all bypasses window — both thoughts ret
 test("RO-06: shouldBypassWindow — window=anything-else does NOT bypass (falls through to default)", () => {
   // Only "all" is special; any other string (including misspellings, "current", "week")
   // must return false so the default window is applied.
-  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, window: "current" }), false);
-  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, window: "week" }), false);
-  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, window: "ALL" }), false, "case-sensitive: 'ALL' must not bypass");
-  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, window: "" }), false, "empty string must not bypass");
-  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, window: undefined }), false, "undefined (absent param) must not bypass");
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: undefined, window: "current" }), false);
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: undefined, window: "week" }), false);
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: undefined, window: "ALL" }), false, "case-sensitive: 'ALL' must not bypass");
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: undefined, window: "" }), false, "empty string must not bypass");
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: undefined, window: undefined }), false, "undefined (absent param) must not bypass");
 });
 
 test("RO-06b: shouldBypassWindow — window=all DOES bypass", () => {
-  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, window: "all" }), true);
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: undefined, window: "all" }), true);
+});
+
+test("RO-06c: shouldBypassWindow — category=idea bypasses window (ideas are open-ended)", () => {
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: "idea", window: undefined }), true);
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: "task", window: undefined }), false, "non-idea categories still use window");
 });
 
 // ── RO-07: shouldBypassWindow — ?q, ?after, ?before each bypass independently ─
 
 test("RO-07: shouldBypassWindow — q bypasses window", () => {
-  assert.equal(shouldBypassWindow({ q: "searchterm", after: undefined, before: undefined, window: undefined }), true);
+  assert.equal(shouldBypassWindow({ q: "searchterm", after: undefined, before: undefined, category: undefined, window: undefined }), true);
 });
 
 test("RO-07b: shouldBypassWindow — after bypasses window", () => {
-  assert.equal(shouldBypassWindow({ q: undefined, after: "2024-01-01T00:00:00Z", before: undefined, window: undefined }), true);
+  assert.equal(shouldBypassWindow({ q: undefined, after: "2024-01-01T00:00:00Z", before: undefined, category: undefined, window: undefined }), true);
 });
 
 test("RO-07c: shouldBypassWindow — before bypasses window", () => {
-  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: "2099-01-01T00:00:00Z", window: undefined }), true);
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: "2099-01-01T00:00:00Z", category: undefined, window: undefined }), true);
 });
 
 test("RO-07d: shouldBypassWindow — no params = no bypass (default window applies)", () => {
-  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, window: undefined }), false);
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: undefined, window: undefined }), false);
 });
 
 // ── RO-08: Chat.ts sentinel — ROLLOVER-03 lock ────────────────────────────────

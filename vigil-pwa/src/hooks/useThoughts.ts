@@ -62,6 +62,17 @@ export function useThoughts(category: string | null, searchQuery: string, filter
     setFetchTick((n) => n + 1)
   }, [])
 
+  // Auto-refresh when PWA returns to foreground
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        refetch()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [refetch])
+
   const removeMany = useCallback((ids: Set<number>) => {
     setThoughts((prev) => prev.filter((t) => !ids.has(t.id)))
     setTotal((prev) => prev - ids.size)

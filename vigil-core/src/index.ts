@@ -37,6 +37,7 @@ import { testConnection, closeConnection, db as mainDb } from "./db/connection.j
 import { createGenerateScheduler } from "./services/generate-scheduler.js";
 import { createBriefAssemblyService } from "./services/brief-assembly-service.js";
 import { getAIClient, callClaude, parseAIJson } from "./ai/client.js";
+import { createSportsService } from "./services/sports-service.js";
 
 // Verify database connection at startup
 testConnection();
@@ -130,6 +131,7 @@ serve({ fetch: app.fetch, port }, () => {
 // window blunts damage even if that happens.
 const assembler = createBriefAssemblyService({
   dbClient: mainDb,
+  sportsService: createSportsService(),
   getAIClientFn: getAIClient,
   callClaudeFn: callClaude,
   parseAIJsonFn: parseAIJson,

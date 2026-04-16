@@ -24,8 +24,9 @@ export function shouldBypassWindow(params: {
   after: string | undefined;
   before: string | undefined;
   window: string | undefined;
+  category: string | undefined;
 }): boolean {
-  return !!params.q || !!params.after || !!params.before || params.window === "all";
+  return !!params.q || !!params.after || !!params.before || params.window === "all" || params.category === "idea";
 }
 
 const VALID_SOURCES = ["text", "voice", "image"] as const;
@@ -166,7 +167,7 @@ thoughts.get("/thoughts", async (c) => {
 
     // ROLLOVER-01..04: default to current-week window in user tz,
     // unless caller explicitly bypasses via ?q=, ?after=, ?before=, or ?window=all.
-    const bypassWindow = shouldBypassWindow({ q, after, before, window: windowParam });
+    const bypassWindow = shouldBypassWindow({ q, after, before, window: windowParam, category });
     if (!bypassWindow) {
       // Inline tz lookup (mirrors settings.ts pattern; extraction to shared util deferred to Phase 89 per CONTEXT.md)
       const tzRows = await db
