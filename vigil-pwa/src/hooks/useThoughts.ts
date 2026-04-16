@@ -72,7 +72,7 @@ export function useThoughts(category: string | null, searchQuery: string, filter
     setFetchTick((n) => n + 1)
   }, [])
 
-  // Auto-refresh when PWA returns to foreground or a thought is created externally
+  // Auto-refresh: visibility change, external thought creation, and 30s polling
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') refetch()
@@ -80,9 +80,11 @@ export function useThoughts(category: string | null, searchQuery: string, filter
     const handleCreated = () => refetch()
     document.addEventListener('visibilitychange', handleVisibility)
     window.addEventListener('vigil:thought-created', handleCreated)
+    const poll = setInterval(refetch, 30_000)
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('vigil:thought-created', handleCreated)
+      clearInterval(poll)
     }
   }, [refetch])
 

@@ -88,7 +88,7 @@ export function useWorkOrders(filter: WorkOrderFilter = 'active') {
     }
   }, [filter, fetchTick])
 
-  // Auto-refresh when PWA returns to foreground
+  // Auto-refresh: visibility change and 30s polling
   useEffect(() => {
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') {
@@ -96,7 +96,11 @@ export function useWorkOrders(filter: WorkOrderFilter = 'active') {
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
-    return () => document.removeEventListener('visibilitychange', handleVisibility)
+    const poll = setInterval(() => setFetchTick((n) => n + 1), 30_000)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      clearInterval(poll)
+    }
   }, [])
 
   const updateLocalStatus = useCallback((caseNumber: string, status: string) => {
