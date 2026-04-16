@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Freshness & Capture Parity
 status: Roadmap approved, ready for `/gsd-plan-phase 88`
-stopped_at: Phase 88 context gathered
-last_updated: "2026-04-15T23:17:41.943Z"
+stopped_at: Completed 88-02-PLAN.md
+last_updated: "2026-04-16T00:07:55.301Z"
 last_activity: 2026-04-15 — v3.2 roadmap written (Phases 88-95, 30 REQs mapped)
 progress:
   total_phases: 1
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 4
+  completed_plans: 2
+  percent: 50
 ---
 
 # Project State
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░] 0%
 | v3.0 Server-Side PDF | 73-78 | 11 | ~1 day |
 | v3.1 Gmail + Thin Clients | 79-87 | 26 | ~2 days |
 | v3.2 Freshness & Capture Parity | 88-95 | TBD | in progress |
+| Phase 88 P02 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,8 @@ All decisions logged in PROJECT.md Key Decisions table.
 - Browser extension becomes the primary non-Mac capture path (URL-only mode retired)
 - Phase 85 (iOS Shortcut) remains held; Phase 80 (Gmail Server Service) remains deferred until ServiceNow token
 - Shared server-side date-window helper lands in Phase 88 and is reused by Phases 89 and 93
+- [Phase 88]: Degraded test harness chosen: no shared test-DB in vigil-core; RO-01..05 skipped with test.skip pending harness introduction
+- [Phase 88]: shouldBypassWindow extracted as exported pure function — bypass predicate unit-testable without DB or HTTP server
 
 ### Roadmap Dependency Notes
 
@@ -93,7 +96,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-04-15T23:17:41.939Z
-Stopped at: Phase 88 context gathered
-Resume file: .planning/phases/88-date-window-helper-rollover/88-CONTEXT.md
+Last session: 2026-04-16T00:07:55.297Z
+Stopped at: Completed 88-02-PLAN.md
+Resume file: None
 Next action: `/gsd-plan-phase 88` to decompose Date Window Helper & Weekly Rollover
