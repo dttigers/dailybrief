@@ -4,6 +4,8 @@ interface WorkOrderRowProps {
   workOrder: WorkOrderApiResponse
   priorityRank: number | null
   onStatusChange: (caseNumber: string, status: string) => void
+  isArchived?: boolean
+  onUnarchive?: () => void
 }
 
 const STATUS_CYCLE = ['open', 'inProgress', 'done'] as const
@@ -18,10 +20,11 @@ const STATUS_STYLES: Record<string, string> = {
   done: 'bg-green-500/20 text-green-400 hover:bg-green-500/30',
 }
 
-export default function WorkOrderRow({ workOrder, priorityRank, onStatusChange }: WorkOrderRowProps) {
+export default function WorkOrderRow({ workOrder, priorityRank, onStatusChange, isArchived, onUnarchive }: WorkOrderRowProps) {
   const isDone = workOrder.status === 'done'
 
   function handleStatusCycle() {
+    if (isArchived) return // Archived orders should not cycle status
     const current = workOrder.status as typeof STATUS_CYCLE[number]
     const idx = STATUS_CYCLE.indexOf(current)
     const next = STATUS_CYCLE[(idx + 1) % STATUS_CYCLE.length]
@@ -30,7 +33,7 @@ export default function WorkOrderRow({ workOrder, priorityRank, onStatusChange }
 
   return (
     <div
-      className={`p-4 border-b border-gray-900/40 hover:bg-gray-900/50 transition-colors ${isDone ? 'opacity-50' : ''}`}
+      className={`p-4 border-b border-gray-900/40 hover:bg-gray-900/50 transition-colors ${isDone || isArchived ? 'opacity-50' : ''}`}
     >
       <div className="flex items-start justify-between gap-3 mb-1.5">
         <span className="flex items-center gap-1.5 flex-wrap">
@@ -48,12 +51,21 @@ export default function WorkOrderRow({ workOrder, priorityRank, onStatusChange }
             </span>
           )}
         </span>
-        <button
-          onClick={handleStatusCycle}
-          className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors shrink-0 ${STATUS_STYLES[workOrder.status] ?? STATUS_STYLES.open}`}
-        >
-          {STATUS_LABELS[workOrder.status] ?? 'Open'}
-        </button>
+        {isArchived ? (
+          <button
+            onClick={onUnarchive}
+            className="border border-teal-600 text-teal-500 hover:bg-teal-600/10 rounded-full px-2 py-0.5 text-xs font-medium cursor-pointer transition-colors shrink-0"
+          >
+            Unarchive
+          </button>
+        ) : (
+          <button
+            onClick={handleStatusCycle}
+            className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors shrink-0 ${STATUS_STYLES[workOrder.status] ?? STATUS_STYLES.open}`}
+          >
+            {STATUS_LABELS[workOrder.status] ?? 'Open'}
+          </button>
+        )}
       </div>
       <p className="text-gray-50 text-sm font-medium leading-snug mb-1">
         {workOrder.shortDescription}
