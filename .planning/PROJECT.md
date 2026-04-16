@@ -1,8 +1,10 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v3.2 Phase 89 shipped — 7-day analysis scope live (2026-04-16)
+## Current State: v3.2 Phase 90 shipped — Server-side persistence live (2026-04-16)
 
 **v3.2 progress:**
+- **Phase 90 Server-Side Persistence** — ai_cache table (Drizzle/Postgres), GET cache endpoints for Insights/Therapy, POST upsert cache-write, PWA cache-first hooks with Regenerate, Chat auto-resumes last session
+- **Phase 89 7-Day Analysis Scope** — Insights + Therapy routes scoped to 7-day rolling window
 - **Phase 88 Date Window Helper & Weekly Rollover** — Wed-anchored week helper in vigil-core; `GET /thoughts` defaults to current week with `?window=all` opt-out; all 5 PWA hooks + Mac CLI + smoke test migrated; Thoughts tab shows `This week · {range}` header with search→`all time` swap
 
 
