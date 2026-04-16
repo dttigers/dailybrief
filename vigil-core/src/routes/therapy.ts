@@ -238,9 +238,7 @@ therapy.post("/therapy/prep", async (c) => {
     .map((t) => `[${t.id}] (${t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt}) ${t.content}`)
     .join("\n");
 
-  const patternSection = "";
-
-  const userMessage = `Here are my recent thoughts marked for discussion with my therapist:\n${thoughtLines}${patternSection}\n\nGenerate a structured therapy session prep. Return a JSON object:\n{"items": [{"topic": "...", "context": "...", "urgency": "high|medium|low", "related_thought_ids": []}], "overall_themes": ["..."], "suggested_focus": "..."}\n\nReturn ONLY the JSON object, no other text.`;
+  const userMessage = `Here are my recent thoughts marked for discussion with my therapist:\n${thoughtLines}\n\nGenerate a structured therapy session prep. Return a JSON object:\n{"items": [{"topic": "...", "context": "...", "urgency": "high|medium|low", "related_thought_ids": []}], "overall_themes": ["..."], "suggested_focus": "..."}\n\nReturn ONLY the JSON object, no other text.`;
 
   try {
     const raw = await callClaude({
