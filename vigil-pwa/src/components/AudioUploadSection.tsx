@@ -50,6 +50,8 @@ export default function AudioUploadSection() {
       const response = await processAudio(base64, derivedMediaType)
       setResult({ id: response.id, transcription: response.transcription })
       setPhase('done')
+      // Signal thoughts list to refetch (new thought created server-side)
+      window.dispatchEvent(new Event('vigil:thought-created'))
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Audio processing failed')
       setPhase('error')

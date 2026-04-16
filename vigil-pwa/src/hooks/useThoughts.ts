@@ -66,15 +66,18 @@ export function useThoughts(category: string | null, searchQuery: string, filter
     setFetchTick((n) => n + 1)
   }, [])
 
-  // Auto-refresh when PWA returns to foreground
+  // Auto-refresh when PWA returns to foreground or a thought is created externally
   useEffect(() => {
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        refetch()
-      }
+      if (document.visibilityState === 'visible') refetch()
     }
+    const handleCreated = () => refetch()
     document.addEventListener('visibilitychange', handleVisibility)
-    return () => document.removeEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('vigil:thought-created', handleCreated)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('vigil:thought-created', handleCreated)
+    }
   }, [refetch])
 
   const removeMany = useCallback((ids: Set<number>) => {
