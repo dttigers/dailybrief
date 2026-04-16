@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import CaptureBar from '../components/CaptureBar'
 import CategoryTabs from '../components/CategoryTabs'
+import StatusFilterTabs from '../components/StatusFilterTabs'
+import type { TaskStatusFilter } from '../components/StatusFilterTabs'
 import FilterBar from '../components/FilterBar'
 import SearchBar from '../components/SearchBar'
 import ThoughtList from '../components/ThoughtList'
 import BulkActionBar from '../components/BulkActionBar'
-import { updateThought, bulkDeleteThoughts, bulkRecategorizeThoughts, triageThought, vigilFetch } from '../api/client'
+import { updateThought, bulkDeleteThoughts, bulkRecategorizeThoughts, triageThought, vigilFetch, getTaskStatusFilter, putTaskStatusFilter } from '../api/client'
 import { useThoughts, type ThoughtFilters } from '../hooks/useThoughts'
 import { getCurrentWeekWindow } from '../utils/date-window-client'
 import { useTimezone } from '../hooks/useTimezone'
@@ -18,6 +20,31 @@ export default function ThoughtsPage() {
   const { tz } = useTimezone()
   const [isSelectable, setIsSelectable] = useState(false)
   const [isBulkProcessing, setIsBulkProcessing] = useState(false)
+
+  // Task status filter state
+  const TASK_FILTER_STORAGE_KEY = 'vigil_task_status_filter'
+  const [taskStatusFilter, setTaskStatusFilter] = useState<TaskStatusFilter>(() => {
+    const cached = localStorage.getItem(TASK_FILTER_STORAGE_KEY)
+    if (cached === 'open' || cached === 'done' || cached === 'all') return cached
+    return 'open'
+  })
+
+  // Sync task status filter from server on mount
+  useEffect(() => {
+    getTaskStatusFilter().then((serverFilter) => {
+      const cached = localStorage.getItem(TASK_FILTER_STORAGE_KEY)
+      if (serverFilter !== cached) {
+        setTaskStatusFilter(serverFilter)
+        localStorage.setItem(TASK_FILTER_STORAGE_KEY, serverFilter)
+      }
+    })
+  }, [])
+
+  const handleTaskStatusFilterChange = useCallback((filter: TaskStatusFilter) => {
+    setTaskStatusFilter(filter)
+    localStorage.setItem(TASK_FILTER_STORAGE_KEY, filter)
+    putTaskStatusFilter(filter)
+  }, [])
 
   // Filter state
   const [showFilters, setShowFilters] = useState(false)
@@ -34,13 +61,14 @@ export default function ThoughtsPage() {
   // Clear selection when filters or category change
   useEffect(() => {
     setSelectedIds(new Set())
-  }, [activeCategory, debouncedQuery, sourceFilter, dateAfter, dateBefore, favoritesOnly])
+  }, [activeCategory, debouncedQuery, sourceFilter, dateAfter, dateBefore, favoritesOnly, taskStatusFilter])
 
   const filters: ThoughtFilters = {
     source: sourceFilter,
     after: dateAfter,
     before: dateBefore,
     favoritesOnly: favoritesOnly || undefined,
+    taskStatusFilter: activeCategory === 'task' ? taskStatusFilter : undefined,
   }
 
   const { thoughts, total, isLoading, error, updateLocal, prependThought, removeMany, updateMany } = useThoughts(
@@ -212,6 +240,9 @@ export default function ThoughtsPage() {
           </div>
         )}
         <CategoryTabs activeCategory={activeCategory} onChange={setActiveCategory} />
+        {activeCategory === 'task' && (
+          <StatusFilterTabs activeFilter={taskStatusFilter} onChange={handleTaskStatusFilterChange} />
+        )}
       </div>
       <div className="flex-1 overflow-y-auto mt-4">
         {/* Week / Search context header */}

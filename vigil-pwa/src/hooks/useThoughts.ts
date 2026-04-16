@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 import { getThoughts, type ThoughtApiResponse } from '../api/client'
+import type { TaskStatusFilter } from '../components/StatusFilterTabs'
 
 export interface ThoughtFilters {
   source?: string
   after?: string
   before?: string
   favoritesOnly?: boolean
+  taskStatusFilter?: TaskStatusFilter
 }
 
 export function useThoughts(category: string | null, searchQuery: string, filters?: ThoughtFilters) {
@@ -33,9 +35,13 @@ export function useThoughts(category: string | null, searchQuery: string, filter
     })
       .then((res) => {
         if (!cancelled) {
-          // Hide done tasks in the task tab (open + inProgress only)
+          // Apply dynamic task status filter (replaces hardcoded done filter)
           const filtered = category === 'task'
-            ? res.data.filter((t) => t.taskStatus !== 'done')
+            ? filters?.taskStatusFilter === 'done'
+              ? res.data.filter((t) => t.taskStatus === 'done')
+              : filters?.taskStatusFilter === 'all'
+                ? res.data
+                : res.data.filter((t) => t.taskStatus !== 'done') // 'open' or default: open + inProgress
             : res.data
           setThoughts(filtered)
           setTotal(category === 'task' ? filtered.length : res.total)
