@@ -40,7 +40,10 @@ export default function TherapyPage() {
       {/* Section 1: Patterns */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium text-gray-50">Therapy Patterns</h2>
+          <div>
+            <h2 className="text-lg font-medium text-gray-50">Therapy Patterns</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Analyzing last 7 days</p>
+          </div>
           <button
             onClick={analyzePatterns}
             disabled={isLoadingPatterns}
@@ -104,7 +107,10 @@ export default function TherapyPage() {
       {/* Section 2: Session Prep */}
       <div className="border-t border-gray-900/40 mt-6 pt-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-medium text-gray-50">Session Prep</h2>
+          <div>
+            <h2 className="text-lg font-medium text-gray-50">Session Prep</h2>
+            <p className="text-xs text-gray-400 mt-0.5">Analyzing last 7 days</p>
+          </div>
           <button
             onClick={generatePrep}
             disabled={isLoadingPrep}

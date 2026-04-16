@@ -15,7 +15,10 @@ export default function InsightsPage() {
     <div>
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-lg font-medium text-gray-50">Insights</h1>
+        <div>
+          <h1 className="text-lg font-medium text-gray-50">Insights</h1>
+          <p className="text-xs text-gray-400 mt-0.5">Analyzing last 7 days</p>
+        </div>
         <button
           onClick={() => generate()}
           disabled={isLoading}
