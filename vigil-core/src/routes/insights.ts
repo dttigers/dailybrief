@@ -138,7 +138,9 @@ Return ONLY the JSON array, no other text.`;
       });
 
     return c.json({ insights: insightsResult, cached: false, generatedAt: new Date().toISOString() });
-  } catch {
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown AI error";
+    console.error("[insights] AI request failed:", message);
     return c.json({ error: "AI request failed" }, 502);
   }
 });
