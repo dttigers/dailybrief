@@ -9,6 +9,7 @@ export function useWorkOrders() {
   const [workOrders, setWorkOrders] = useState<SortedWorkOrder[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fetchTick, setFetchTick] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -70,6 +71,17 @@ export function useWorkOrders() {
     return () => {
       cancelled = true
     }
+  }, [fetchTick])
+
+  // Auto-refresh when PWA returns to foreground
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        setFetchTick((n) => n + 1)
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
   }, [])
 
   const updateLocalStatus = useCallback((caseNumber: string, status: string) => {

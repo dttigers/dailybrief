@@ -33,8 +33,12 @@ export function useThoughts(category: string | null, searchQuery: string, filter
     })
       .then((res) => {
         if (!cancelled) {
-          setThoughts(res.data)
-          setTotal(res.total)
+          // Hide done tasks in the task tab (open + inProgress only)
+          const filtered = category === 'task'
+            ? res.data.filter((t) => t.taskStatus !== 'done')
+            : res.data
+          setThoughts(filtered)
+          setTotal(category === 'task' ? filtered.length : res.total)
         }
       })
       .catch((e: Error) => {
