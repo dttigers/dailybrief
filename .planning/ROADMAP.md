@@ -251,7 +251,10 @@ Plans:
   2. Therapy pattern recognition output no longer surfaces themes from thoughts older than 7 days
   3. Therapy session prep output only references thoughts from the last 7 days
   4. All three endpoints share the same date-window helper (no duplicated window math)
-
+**Plans:** 2 plans
+Plans:
+- [ ] 89-01-PLAN.md — Server-side 7-day DB query for insights + therapy endpoints
+- [ ] 89-02-PLAN.md — PWA client simplification + "Analyzing last 7 days" subheadings
 ### Phase 90: Server-Side Persistence
 **Goal**: Insights, Therapy patterns, and Therapy session prep persist server-side so revisits are instant; Chat auto-resumes the most recent session when the PWA reopens.
 **Depends on**: Phase 89
@@ -419,7 +422,7 @@ Plans:
 | 86. Split Brief Schedule | v3.1 | 6/6 | Complete | 2026-04-15 |
 | 87. Vigil App Icons | v3.1 | 3/3 | Complete | 2026-04-15 |
 | 88. Date Window Helper & Weekly Rollover | v3.2 | 4/4 | Complete    | 2026-04-16 |
-| 89. 7-Day Analysis Scope | v3.2 | 0/TBD | Not started | - |
+| 89. 7-Day Analysis Scope | v3.2 | 0/2 | Not started | - |
 | 90. Server-Side Persistence | v3.2 | 0/TBD | Not started | - |
 | 91. Tasks Tab Status Filter | v3.2 | 0/TBD | Not started | - |
 | 92. Work Order Archive | v3.2 | 0/TBD | Not started | - |
