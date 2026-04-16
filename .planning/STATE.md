@@ -1,36 +1,36 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.2
-milestone_name: Freshness & Capture Parity
-status: verifying
-stopped_at: Completed 94-01-PLAN.md (Task 2 pending human-verify)
-last_updated: "2026-04-16T20:12:29.121Z"
+milestone: v3.3
+milestone_name: TBD
+status: planning
+stopped_at: v3.2 milestone completed — ready for /gsd-new-milestone
+last_updated: "2026-04-16T21:00:00.000Z"
 last_activity: 2026-04-16
 progress:
-  total_phases: 8
-  completed_phases: 7
-  total_plans: 14
-  completed_plans: 15
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-15)
+See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 94 — browser-extension-quick-capture
+**Current focus:** Planning next milestone (v3.3)
 
 ## Current Position
 
-Phase: 95
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: —
+Plan: —
+Status: Milestone v3.2 complete — ready for /gsd-new-milestone
 Last activity: 2026-04-16
 
-Progress: [░░░░░░░░░░] 0%
+Progress: v3.2 shipped ✅
 
 ## Performance Metrics
 
@@ -57,77 +57,28 @@ Progress: [░░░░░░░░░░] 0%
 | v2.5 Dashboard Everywhere | 63-72 | 17 | 2 days |
 | v3.0 Server-Side PDF | 73-78 | 11 | ~1 day |
 | v3.1 Gmail + Thin Clients | 79-87 | 26 | ~2 days |
-| v3.2 Freshness & Capture Parity | 88-95 | TBD | in progress |
-| Phase 88 P02 | 3 | 2 tasks | 2 files |
-| Phase 88 P03 | 4 | 2 tasks | 6 files |
-| Phase 88 P04 | 45 | 3 tasks | 4 files |
-| Phase 89 P01 | 3 | 2 tasks | 2 files |
-| Phase 89 P02 | 139 | 2 tasks | 5 files |
-| Phase 90 P01 | 154 | 3 tasks | 5 files |
-| Phase 90 P02 | 119 | 2 tasks | 4 files |
-| Phase 90 P03 | 92 | 1 tasks | 3 files |
-| Phase 91 P01 | 131 | 2 tasks | 5 files |
-| Phase 92 P01 | 120 | 2 tasks | 3 files |
-| Phase 92 P02 | 146 | 2 tasks | 3 files |
-| Phase 93 P01 | 76 | 1 tasks | 1 files |
-| Phase 94 P01 | 104 | 1 tasks | 3 files |
+| v3.2 Freshness & Capture Parity | 88-95 | 14 | 2 days |
 
 ## Accumulated Context
 
 ### Decisions
 
 All decisions logged in PROJECT.md Key Decisions table.
-
-**v3.2 starting decisions:**
-
-- Wednesday is the weekly rollover anchor (matches ADHD clean-slate rhythm)
-- No hard deletes — aging is view/scope only; all data remains in DB for search + Chat
-- Insights + Therapy: 7-day analysis window (not configurable in v3.2)
-- Browser extension becomes the primary non-Mac capture path (URL-only mode retired)
-- Phase 85 (iOS Shortcut) remains held; Phase 80 (Gmail Server Service) remains deferred until ServiceNow token
-- Shared server-side date-window helper lands in Phase 88 and is reused by Phases 89 and 93
-- [Phase 88]: Degraded test harness chosen: no shared test-DB in vigil-core; RO-01..05 skipped with test.skip pending harness introduction
-- [Phase 88]: shouldBypassWindow extracted as exported pure function — bypass predicate unit-testable without DB or HTTP server
-- [Phase 88]: useThoughts.ts left intentionally unchanged — week-default consumer per ROLLOVER-01
-- [Phase 88]: window?: 'all' typed as string literal — TypeScript rejects typos at compile time
-- [Phase 88]: D-15 compliance enforced: useTimezone fetches once on mount ([] deps), no live recompute on tz change
-- [Phase 88]: Client-side date-window-client.ts is display-only; server remains source of truth for thought filtering
-- [Phase 88]: isSearchActive added as REQUIRED (not optional) prop to ThoughtList to enforce explicit callsite intent
-- [Phase 89]: patternSection dropped from /therapy/prep in this phase; Phase 90 persistence will restore richer server-side context
-- [Phase 89]: Server-side error messages (body.error) propagate to hook error state instead of generic status codes
-- [Phase 89]: therapyThoughtCount removed from useTherapy hook — count communicated via server-side 400 error messages
-- [Phase 90]: Journal backfilled for migrations 0008-0009 applied via push but missing from journal
-- [Phase 90]: ai_cache upsert pattern: insert + onConflictDoUpdate on type column for single-row-per-type caching
-- [Phase 90]: useInsights auto-generates on mount when no cache; useTherapy requires user action; useChat auto-resumes most recent session
-- [Phase 90]: Regenerate button uses gray-900/80 (not teal) per UI-SPEC to visually subordinate it to primary Generate action
-- [Phase 91]: Client-side filtering for Open view (open+inProgress) since server lacks compound not-done filter
-- [Phase 91]: localStorage-first read on mount for instant UX; server sync overwrites only if different
-- [Phase 92]: Lazy auto-archive on GET with batched updates; filter param defaults to active with allowlist validation
-- [Phase 92]: Inline filter tabs instead of generalizing StatusFilterTabs (different type, simpler)
-- [Phase 92]: AI prioritization skipped for archived/all filters; only active orders need ranking
-- [Phase 93]: Brief thought queries scoped to Wed-Tue week window via getCurrentWeekWindow; timezone from app_settings with fallback
-- [Phase 94]: Poll GET /thoughts/:id every 800ms (max 5s) for triage category; URL checkbox unchecked by default
-
-### Roadmap Dependency Notes
-
-- Phase 88 (date-window helper) unblocks Phases 89, 93
-- Phase 89 (7-day scope) must ship before Phase 93 (brief PDF consumes same window)
-- Phase 92 (WO archive) is independent; can run in parallel with any other phase
-- Phase 94 (browser extension rewrite) is independent of server work; parallelizable
-- Phase 95 (iOS UAT) is a small retest; sequence last for clean milestone close
+v3.2 decisions archived to milestones/v3.2-ROADMAP.md.
 
 ### Pending Todos
 
-- `/gsd-plan-phase 88` to begin
+_(None — milestone complete)_
 
 ### Blockers/Concerns
 
-- ServiceNow API token still blocks Phase 80 (unchanged from v3.1)
+- ServiceNow API token still blocks Phase 80 (carried forward from v3.1)
 - G2 hardware retest still pending physical device access
+- Phase 85 (iOS Shortcut) held — Shortcuts.app bugs
 
 ## Session Continuity
 
-Last session: 2026-04-16T19:43:35.692Z
-Stopped at: Completed 94-01-PLAN.md (Task 2 pending human-verify)
+Last session: 2026-04-16
+Stopped at: v3.2 milestone completed
 Resume file: None
-Next action: `/gsd-plan-phase 88` to decompose Date Window Helper & Weekly Rollover
+Next action: `/gsd-new-milestone` to define v3.3

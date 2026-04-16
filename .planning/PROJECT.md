@@ -29,25 +29,14 @@
 
 **Shipped cumulatively:** v1.0–v3.1. Full PWA at app.vigilhub.io. Vigil Core API on Railway (Node/Hono/Drizzle/Postgres) with bearer auth + HTTPS. Server-side PDF generation (PDFKit 3-page). Mac menubar thin client + Even G2 glasses plugin + browser extension. OAuth foundation (Calendar + Gmail scopes, JWT nonce survives rolling deploys).
 
-## Current Milestone: v3.2 Freshness & Capture Parity
+## Current Milestone: Planning next milestone
 
-**Goal:** Keep Vigil's daily picture accurate by aging out stale data, and bring non-Mac users to capture parity via the browser extension.
+Run `/gsd-new-milestone` to define v3.3 scope and requirements.
 
-**Target features:**
-- Weekly thought rollover (Wed–Tue view window; older data searchable + Chat-accessible)
-- 7-day scope for Insights + Therapy analysis
-- Server-side persistence for Insights + Therapy; Chat auto-resume last session
-- Tasks tab status filter (Open default; toggle Done/All)
-- Work Order auto-archive (Gmail-imported after 7d; completed after 7d; archived view)
-- Brief PDF cleanup (de-duplicate Tasks section, Affirmation → bottom of Page 1, 7-day scope)
-- Browser extension = full quick-capture (thought + triage, not just URL)
-- Phase 81 UAT retest — iOS PWA standalone OAuth real-device verification
-
-**Key context:**
+**Carry-forward context:**
 - Phase 85 (iOS Shortcut) held — revisit in v3.3+
-- Phase 80 (Gmail Server Service) remains deferred until ServiceNow API token
-- Wednesday is the rollover anchor (ADHD clean-slate rhythm)
-- No hard deletes — aging is view/scope only; everything stays in DB
+- Phase 80 (Gmail Server Service) deferred until ServiceNow API token from IT
+- G2 hardware retest still pending physical device access
 
 ## What This Is
 
@@ -142,17 +131,18 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Browser extension v1 — Chrome + Safari one-click URL capture — v3.1
 - ✓ Split brief schedule — server cron + Mac pull-only CLI + PWA two-card UI — v3.1
 - ✓ Vigil app icons — PWA icon set + Mac AppIcon.icns from brand master — v3.1
+- ✓ Weekly thought rollover — Wed–Tue view window with search/Chat bypass — v3.2
+- ✓ 7-day analysis window — Insights + Therapy scoped to last 7 days via shared date-window helper — v3.2
+- ✓ Server-side persistence — Insights/Therapy/Therapy-prep cached with Regenerate; Chat auto-resumes — v3.2
+- ✓ Tasks tab status filter — Open/Done/All toggle with localStorage + server-synced persistence — v3.2
+- ✓ Work Order auto-archive — lazy archive on GET, Active/Archived/All filter, unarchive, bulk-clear — v3.2
+- ✓ Brief PDF cleanup — de-duplicated Tasks, Affirmation on Page 1, 7-day thought scope — v3.2
+- ✓ Browser extension quick-capture — freeform text + triage feedback + URL checkbox + Cmd+Enter — v3.2
+- ✓ iOS PWA standalone OAuth — real-device verified on live Railway deploy — v3.2
 
-### Active (v3.2)
+### Active
 
-- [ ] Weekly thought rollover — Thoughts tab shows current week (Wed–Tue); older remains searchable + Chat-accessible
-- [ ] 7-day analysis window — Insights + Therapy scoped to last 7 days of thoughts
-- [ ] Server-side persistence — Insights + Therapy cached on server; Chat auto-resumes last session
-- [ ] Tasks tab status filter — default Open; toggle Done / All
-- [ ] Work Order auto-archive — Gmail-imported after 7d; completed after 7d; "Show archived" toggle
-- [ ] Brief PDF cleanup — de-duplicate Tasks section, Affirmation → bottom of Page 1, reflow; brief respects 7-day window
-- [ ] Browser extension quick-capture — rewrite URL-only → thought capture + triage, mirroring Mac menu bar
-- [ ] iOS PWA standalone OAuth real-device retest — close Phase 81 UAT gap on live Railway deploy
+_(Empty — next milestone not yet defined. Run `/gsd-new-milestone` to start v3.3.)_
 
 ### Out of Scope
 
@@ -167,11 +157,11 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
-Shipped v2.5 Dashboard Everywhere (2026-04-12) — Full PWA at app.vigilhub.io with thoughts, work orders, projects, bulk actions, AI chat, insights/therapy, brief history, photo upload. 10 phases, 17 plans.
-Shipped v2.4 Capture Without Friction (2026-04-10) — Developer ID signing, smart photo upload, folder watch feeder, .app bundle packaging.
-Shipped v2.3 Projects & Precision (2026-04-08) — projects as first-class entities, menu-bar update action, infrastructure wins.
+Shipped v3.2 Freshness & Capture Parity (2026-04-16) — Wed-anchored weekly rollover, 7-day analysis scope, server-side AI cache with Regenerate, task status filter, work order auto-archive, brief PDF restructure, browser extension quick-capture. 8 phases, 14 plans, 133 commits, 44 files changed (+2591/-557 LOC).
+Shipped v3.1 Gmail + Thin Clients (2026-04-15) — Gmail OAuth, PWA brand theme, Settings UI, CLI restructure, menu bar redesign, browser extension, split brief schedule, app icons.
+Shipped v3.0 Server-Side PDF (2026-04-14) — Sports proxy, Google Calendar server-side, PDFKit 3-page brief, brief assembly endpoint, PWA brief UI, Mac CLI thin client.
 Tech stack: Swift 6.2/SwiftUI/SPM (Mac app, ~14,000 LOC), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API), React/Vite/TypeScript (PWA), Vite/TypeScript/Even Hub SDK (G2 plugin).
-4 client surfaces connected to production: Mac app (capture + menu bar + folder watcher + PDF brief), PWA (dashboard + management), Vigil Core API (Railway, 20+ REST endpoints), Even G2 plugin (3 screens + task detail).
+5 client surfaces connected to production: Mac app (capture + menu bar + folder watcher + PDF brief), PWA (dashboard + management + settings), Vigil Core API (Railway, 25+ REST endpoints), Even G2 plugin (3 screens + task detail), Browser extension (Chrome + Safari quick-capture).
 API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s timeouts, security headers, and CORS.
 72 phases and ~165 plans completed across 11 milestones in ~13 days.
 
@@ -246,4 +236,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 — Phase 89 (7-day analysis scope) complete*
+*Last updated: 2026-04-16 after v3.2 milestone*
