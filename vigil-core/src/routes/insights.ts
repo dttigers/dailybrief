@@ -1,13 +1,10 @@
 import { Hono } from "hono";
 import { callClaude, getAIClient, parseAIJson } from "../ai/client.js";
 import type { Insight } from "../ai/types.js";
-
-interface ThoughtInput {
-  id: number;
-  content: string;
-  category: string;
-  createdAt: string;
-}
+import { db } from "../db/connection.js";
+import { thoughts as thoughtsTable, appSettings } from "../db/schema.js";
+import { eq, and, ne, gte, lt, desc } from "drizzle-orm";
+import { getRollingDayWindow } from "../utils/date-window.js";
 
 export const insights = new Hono();
 
@@ -17,38 +14,50 @@ insights.post("/insights", async (c) => {
     return c.json({ error: "AI service unavailable" }, 503);
   }
 
-  // Parse and validate body
-  let thoughts: ThoughtInput[] = [];
-  let days = 7;
+  if (!db) return c.json({ error: "Database not available" }, 503);
 
-  try {
-    const body = await c.req.json();
-    thoughts = body?.thoughts ?? [];
-    if (body?.days && typeof body.days === "number") {
-      days = body.days;
-    }
-  } catch {
-    return c.json({ error: "Invalid JSON body" }, 400);
-  }
+  // Resolve user timezone (same pattern as thoughts.ts)
+  const tzRows = await db
+    .select({ value: appSettings.value })
+    .from(appSettings)
+    .where(eq(appSettings.key, "user_timezone"))
+    .limit(1);
+  const tz = tzRows.length > 0 ? (tzRows[0].value as string) : "America/New_York";
 
-  if (!Array.isArray(thoughts) || thoughts.length < 3) {
+  // 7-day rolling window
+  const { start, end } = getRollingDayWindow(tz, 7);
+
+  const conditions = [
+    ne(thoughtsTable.syncStatus, "pendingDeletion"),
+    gte(thoughtsTable.createdAt, start),
+    lt(thoughtsTable.createdAt, end),
+  ];
+
+  const rows = await db
+    .select()
+    .from(thoughtsTable)
+    .where(and(...conditions))
+    .orderBy(desc(thoughtsTable.createdAt))
+    .limit(200);
+
+  if (rows.length < 3) {
     return c.json(
-      { error: "Minimum 3 thoughts required for insight generation" },
+      { error: `Only ${rows.length} thought${rows.length === 1 ? "" : "s"} this week — need at least 3 for insights`, count: rows.length },
       400
     );
   }
 
   // Build formatted thought list
-  const thoughtList = thoughts
+  const thoughtList = rows
     .map(
-      (t) => `[${t.id}] (${t.category}, ${t.createdAt}) ${t.content}`
+      (t) => `[${t.id}] (${t.category ?? "uncategorized"}, ${t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt}) ${t.content}`
     )
     .join("\n");
 
   const system =
     "You are a personal insight engine for someone with ADHD. Analyze their recent captured thoughts and surface useful patterns, connections between ideas, and actionable suggestions. Focus on being genuinely helpful, not generic. Return a JSON array of insights.";
 
-  const userMessage = `Here are my captured thoughts from the last ${days} days:
+  const userMessage = `Here are my captured thoughts from the last 7 days:
 ${thoughtList}
 
 Analyze these thoughts and return a JSON array of insights. Each insight should be:
