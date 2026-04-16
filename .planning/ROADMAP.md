@@ -248,7 +248,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   4. Tasks tab Open filter (Phase 91) continues to hide done tasks (no regression)
 **Plans**: 2 plans
 Plans:
-- [ ] 96-01-PLAN.md -- Fix chat 400 error
+- [x] 96-01-PLAN.md -- Fix chat 400 error
 - [ ] 96-02-PLAN.md -- Hide done tasks from all views
 **UI hint**: yes
 
@@ -375,7 +375,7 @@ Plans:
 | 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 94. Browser Extension Quick-Capture | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 95. iOS PWA OAuth UAT Retest | v3.2 | 1/1 | Complete | 2026-04-16 |
-| 96. PWA Fixes | v3.3 | 0/2 | Not started | - |
+| 96. PWA Fixes | v3.3 | 1/2 | In Progress|  |
 | 97. Mac CLI Print Reliability | v3.3 | 0/TBD | Not started | - |
 | 98. Thought-Contextual Chat | v3.3 | 0/TBD | Not started | - |
 

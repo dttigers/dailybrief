@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: Stability & Chat Context
-status: planning
-stopped_at: Phase 96 context gathered
-last_updated: "2026-04-16T21:52:17.599Z"
-last_activity: 2026-04-16 — Roadmap created, v3.3 phases 96-98 defined
+status: executing
+stopped_at: Completed 96-01-PLAN.md (chat 400 fix)
+last_updated: "2026-04-16T22:15:01.639Z"
+last_activity: 2026-04-16
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 2
+  completed_plans: 1
+  percent: 50
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v3.3 — Phase 96: PWA Fixes
+**Current focus:** Phase 96 — pwa-fixes
 
 ## Current Position
 
-Phase: 96 of 98 (PWA Fixes)
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-04-16 — Roadmap created, v3.3 phases 96-98 defined
+Phase: 96 (pwa-fixes) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░] 0%
 | v3.0 Server-Side PDF | 73-78 | 11 | ~1 day |
 | v3.1 Gmail + Thin Clients | 79-87 | 26 | ~2 days |
 | v3.2 Freshness & Capture Parity | 88-95 | 14 | 2 days |
+| Phase 96-pwa-fixes P01 | 20 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -65,6 +66,8 @@ Progress: [░░░░░░░░░░] 0%
 
 All decisions logged in PROJECT.md Key Decisions table.
 v3.2 decisions archived to milestones/v3.2-ROADMAP.md.
+
+- [Phase 96-pwa-fixes]: Used messagesRef (useRef synced via useEffect) in sendMessage to avoid React 18 concurrent mode stale closure — setState functional updater is async in concurrent mode, leaving messages=[] at API call time
 
 ### Pending Todos
 
@@ -79,7 +82,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-16T21:52:17.594Z
-Stopped at: Phase 96 context gathered
-Resume file: .planning/phases/96-pwa-fixes/96-CONTEXT.md
+Last session: 2026-04-16T22:15:01.634Z
+Stopped at: Completed 96-01-PLAN.md (chat 400 fix)
+Resume file: None
 Next action: `/gsd-plan-phase 96`
