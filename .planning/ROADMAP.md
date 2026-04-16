@@ -418,7 +418,7 @@ Plans:
 | 85. iOS Shortcut | v3.1 | — | Deferred (Shortcuts.app bugs) | - |
 | 86. Split Brief Schedule | v3.1 | 6/6 | Complete | 2026-04-15 |
 | 87. Vigil App Icons | v3.1 | 3/3 | Complete | 2026-04-15 |
-| 88. Date Window Helper & Weekly Rollover | v3.2 | 4/4 | Complete   | 2026-04-16 |
+| 88. Date Window Helper & Weekly Rollover | v3.2 | 4/4 | Complete    | 2026-04-16 |
 | 89. 7-Day Analysis Scope | v3.2 | 0/TBD | Not started | - |
 | 90. Server-Side Persistence | v3.2 | 0/TBD | Not started | - |
 | 91. Tasks Tab Status Filter | v3.2 | 0/TBD | Not started | - |
