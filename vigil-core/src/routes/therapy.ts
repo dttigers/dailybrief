@@ -296,7 +296,7 @@ therapy.post("/therapy/prep", async (c) => {
     try {
       parsed = parseAIJson(raw);
     } catch {
-      return c.json({ error: "AI response parse error", raw }, 502);
+      return c.json({ error: "AI response parse error" }, 502);
     }
 
     const prep: TherapyPrep = {
