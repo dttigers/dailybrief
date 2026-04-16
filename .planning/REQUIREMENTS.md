@@ -16,7 +16,7 @@
 - [x] **ROLLOVER-01**: User sees only thoughts from the current week (Wed–Tue) in the Thoughts tab by default
 - [x] **ROLLOVER-02**: User can access thoughts from any prior week via full-text search
 - [x] **ROLLOVER-03**: Chat queries have access to all historical thoughts regardless of the rollover window (for context)
-- [ ] **ROLLOVER-04**: Rollover boundary is Wednesday 00:00 in the user's configured timezone
+- [x] **ROLLOVER-04**: Rollover boundary is Wednesday 00:00 in the user's configured timezone
 
 ### Analysis Scope (7-day window)
 
@@ -95,7 +95,7 @@
 | ROLLOVER-01 | Phase 88 | Complete |
 | ROLLOVER-02 | Phase 88 | Complete |
 | ROLLOVER-03 | Phase 88 | Complete |
-| ROLLOVER-04 | Phase 88 | Pending |
+| ROLLOVER-04 | Phase 88 | Complete |
 | SCOPE-01 | Phase 89 | Pending |
 | SCOPE-02 | Phase 89 | Pending |
 | SCOPE-03 | Phase 89 | Pending |

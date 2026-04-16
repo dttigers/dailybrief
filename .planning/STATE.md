@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Freshness & Capture Parity
 status: Roadmap approved, ready for `/gsd-plan-phase 88`
-stopped_at: Completed 88-03-PLAN.md
-last_updated: "2026-04-16T00:13:20.847Z"
+stopped_at: Completed 88-04-PLAN.md
+last_updated: "2026-04-16T00:31:32.986Z"
 last_activity: 2026-04-15 — v3.2 roadmap written (Phases 88-95, 30 REQs mapped)
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
-  percent: 75
+  completed_plans: 4
+  percent: 100
 ---
 
 # Project State
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | v3.2 Freshness & Capture Parity | 88-95 | TBD | in progress |
 | Phase 88 P02 | 3 | 2 tasks | 2 files |
 | Phase 88 P03 | 4 | 2 tasks | 6 files |
+| Phase 88 P04 | 45 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -79,6 +80,9 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 88]: shouldBypassWindow extracted as exported pure function — bypass predicate unit-testable without DB or HTTP server
 - [Phase 88]: useThoughts.ts left intentionally unchanged — week-default consumer per ROLLOVER-01
 - [Phase 88]: window?: 'all' typed as string literal — TypeScript rejects typos at compile time
+- [Phase 88]: D-15 compliance enforced: useTimezone fetches once on mount ([] deps), no live recompute on tz change
+- [Phase 88]: Client-side date-window-client.ts is display-only; server remains source of truth for thought filtering
+- [Phase 88]: isSearchActive added as REQUIRED (not optional) prop to ThoughtList to enforce explicit callsite intent
 
 ### Roadmap Dependency Notes
 
@@ -99,7 +103,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-04-16T00:13:16.549Z
-Stopped at: Completed 88-03-PLAN.md
+Last session: 2026-04-16T00:31:32.982Z
+Stopped at: Completed 88-04-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 88` to decompose Date Window Helper & Weekly Rollover
