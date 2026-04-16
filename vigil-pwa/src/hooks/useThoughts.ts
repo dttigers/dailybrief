@@ -24,6 +24,14 @@ export function useThoughts(category: string | null, searchQuery: string, filter
     let cancelled = false
     setIsLoading(true)
     setError(null)
+    // D-04: Server-side excludeDone defaults to true.
+    // Tasks tab overrides: 'done' uses taskStatus=done, 'all' uses excludeDone=false.
+    const taskStatusParam = category === 'task'
+      ? filters?.taskStatusFilter === 'done' ? 'done' : undefined
+      : undefined
+    const excludeDoneParam = category === 'task' && filters?.taskStatusFilter === 'all'
+      ? false
+      : undefined
     getThoughts({
       category: category ?? undefined,
       q: searchQuery || undefined,
@@ -31,20 +39,14 @@ export function useThoughts(category: string | null, searchQuery: string, filter
       after: filters?.after,
       before: filters?.before,
       favoritesOnly: filters?.favoritesOnly,
+      taskStatus: taskStatusParam,
+      excludeDone: excludeDoneParam,
       limit: 50,
     })
       .then((res) => {
         if (!cancelled) {
-          // Apply dynamic task status filter (replaces hardcoded done filter)
-          const filtered = category === 'task'
-            ? filters?.taskStatusFilter === 'done'
-              ? res.data.filter((t) => t.taskStatus === 'done')
-              : filters?.taskStatusFilter === 'all'
-                ? res.data
-                : res.data.filter((t) => t.taskStatus !== 'done') // 'open' or default: open + inProgress
-            : res.data
-          setThoughts(filtered)
-          setTotal(category === 'task' ? filtered.length : res.total)
+          setThoughts(res.data)
+          setTotal(res.total)
         }
       })
       .catch((e: Error) => {

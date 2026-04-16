@@ -82,6 +82,8 @@ export async function getThoughts(params: {
   before?: string
   favoritesOnly?: boolean
   window?: 'all'
+  taskStatus?: string
+  excludeDone?: boolean
 }): Promise<ThoughtsListResponse> {
   const qs = new URLSearchParams()
   if (params.category) qs.set('category', params.category)
@@ -95,6 +97,8 @@ export async function getThoughts(params: {
   if (params.before) qs.set('before', params.before)
   if (params.favoritesOnly) qs.set('favoritesOnly', 'true')
   if (params.window) qs.set('window', params.window)
+  if (params.taskStatus) qs.set('taskStatus', params.taskStatus)
+  if (params.excludeDone === false) qs.set('excludeDone', 'false')
   const res = await vigilFetch(`/v1/thoughts?${qs}`)
   if (!res.ok) throw new Error(`Failed to fetch thoughts: ${res.status}`)
   return res.json()

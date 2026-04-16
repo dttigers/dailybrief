@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import crypto from "crypto";
 import { db } from "../db/connection.js";
 import { thoughts as thoughtsTable, projects as projectsTable, appSettings } from "../db/schema.js";
-import { eq, and, ne, gte, lte, lt, desc, count, sql, isNull } from "drizzle-orm";
+import { eq, and, ne, gte, lte, lt, desc, count, sql, isNull, or } from "drizzle-orm";
 import { getCurrentWeekWindow } from "../utils/date-window.js";
 import { callClaude, getAIClient, parseAIJson } from "../ai/client.js";
 import type { TriageResult } from "../ai/types.js";
@@ -113,6 +113,7 @@ thoughts.get("/thoughts", async (c) => {
     const projectIdParam = c.req.query("projectId");
     const unassignedParam = c.req.query("unassigned");
     const windowParam = c.req.query("window");
+    const excludeDone = c.req.query("excludeDone");
     const limit = Math.min(Math.max(Number(c.req.query("limit")) || 50, 1), 200);
     const offset = Math.max(Number(c.req.query("offset")) || 0, 0);
 
@@ -157,6 +158,18 @@ thoughts.get("/thoughts", async (c) => {
     }
     if (taskStatus) {
       conditions.push(eq(thoughtsTable.taskStatus, taskStatus));
+    }
+    // D-04: By default, exclude done tasks from all views.
+    // Callers can opt out with excludeDone=false (e.g., Tasks tab Done/All filters).
+    // If taskStatus is explicitly set (e.g., taskStatus=done), skip this filter
+    // since the caller is explicitly requesting a specific task status.
+    if (excludeDone !== "false" && !taskStatus) {
+      conditions.push(
+        or(
+          isNull(thoughtsTable.taskStatus),
+          ne(thoughtsTable.taskStatus, "done"),
+        )!
+      );
     }
     if (therapyClassification) {
       conditions.push(eq(thoughtsTable.therapyClassification, therapyClassification));
