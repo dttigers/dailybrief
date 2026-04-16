@@ -220,7 +220,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 91: Tasks Tab Status Filter** — Open default, toggle Done/All, per-device persistence + server-synced default (completed 2026-04-16)
 - [x] **Phase 92: Work Order Archive** — Auto-archive rules, archived view, unarchive, bulk-clear (PWA + Mac CLI aware) (completed 2026-04-16)
 - [x] **Phase 93: Brief PDF Cleanup & 7-Day Scope** — De-dupe Tasks, Affirmation to bottom of Page 1, reflow, respect 7-day window (completed 2026-04-16)
-- [ ] **Phase 94: Browser Extension Quick-Capture** — Rewrite URL-only → thought capture + triage (URL preserved as option), Chrome + Safari
+- [x] **Phase 94: Browser Extension Quick-Capture** — Rewrite URL-only → thought capture + triage (URL preserved as option), Chrome + Safari (completed 2026-04-16)
 - [ ] **Phase 95: iOS PWA OAuth UAT Retest** — Close Phase 81 UAT Test 8 on live Railway
 
 ## Phase Details
@@ -326,9 +326,9 @@ Plans:
   3. After triage completes, the popup displays the resulting category (success feedback)
   4. A one-click "Capture this page URL" option remains available inside the popup
   5. Both Chrome and Safari builds exercise the full flow end-to-end (v3.1 cross-browser coverage preserved)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 94-01-PLAN.md — Capture UX enhancements (triage feedback, URL checkbox, Cmd+Enter) + Safari verification
+- [x] 94-01-PLAN.md — Capture UX enhancements (triage feedback, URL checkbox, Cmd+Enter) + Safari verification
 **UI hint**: yes
 
 ### Phase 95: iOS PWA OAuth UAT Retest
@@ -441,7 +441,7 @@ Plans:
 | 91. Tasks Tab Status Filter | v3.2 | 1/1 | Complete    | 2026-04-16 |
 | 92. Work Order Archive | v3.2 | 2/2 | Complete    | 2026-04-16 |
 | 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 1/1 | Complete    | 2026-04-16 |
-| 94. Browser Extension Quick-Capture | v3.2 | 0/1 | Not started | - |
+| 94. Browser Extension Quick-Capture | v3.2 | 1/1 | Complete   | 2026-04-16 |
 | 95. iOS PWA OAuth UAT Retest | v3.2 | 0/TBD | Not started | - |
 
 ## Backlog

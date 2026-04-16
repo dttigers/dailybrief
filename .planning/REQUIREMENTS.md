@@ -56,10 +56,10 @@
 
 ### Browser Extension Quick-Capture
 
-- [ ] **EXT-01**: Extension popup accepts freeform thought text (not just page URL)
-- [ ] **EXT-02**: Captured thoughts POST to `/v1/thoughts` and trigger server-side auto-triage
-- [ ] **EXT-03**: Extension shows categorization result after triage completes (success feedback)
-- [ ] **EXT-04**: Extension works in both Chrome and Safari (preserves v3.1 cross-browser coverage)
+- [x] **EXT-01**: Extension popup accepts freeform thought text (not just page URL)
+- [x] **EXT-02**: Captured thoughts POST to `/v1/thoughts` and trigger server-side auto-triage
+- [x] **EXT-03**: Extension shows categorization result after triage completes (success feedback)
+- [x] **EXT-04**: Extension works in both Chrome and Safari (preserves v3.1 cross-browser coverage)
 - [ ] **EXT-05**: Legacy page-URL capture is preserved as a one-click option within the new popup
 
 ### UAT Debt
@@ -117,10 +117,10 @@
 | BRIEF-02 | Phase 93 | Pending |
 | BRIEF-03 | Phase 93 | Pending |
 | BRIEF-04 | Phase 93 | Complete |
-| EXT-01 | Phase 94 | Pending |
-| EXT-02 | Phase 94 | Pending |
-| EXT-03 | Phase 94 | Pending |
-| EXT-04 | Phase 94 | Pending |
+| EXT-01 | Phase 94 | Complete |
+| EXT-02 | Phase 94 | Complete |
+| EXT-03 | Phase 94 | Complete |
+| EXT-04 | Phase 94 | Complete |
 | EXT-05 | Phase 94 | Pending |
 | UAT-01 | Phase 95 | Pending |
 
