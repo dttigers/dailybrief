@@ -4,7 +4,24 @@ import { db } from "../db/connection.js";
 import { thoughts as thoughtsTable, projects as projectsTable, appSettings } from "../db/schema.js";
 import { eq, and, ne, gte, lte, lt, desc, count, sql, isNull } from "drizzle-orm";
 import { getCurrentWeekWindow } from "../utils/date-window.js";
+import { callClaude, getAIClient, parseAIJson } from "../ai/client.js";
+import type { TriageResult } from "../ai/types.js";
 import type { DrizzleThought, PaginatedResponse } from "../db/types.js";
+
+const TRIAGE_SYSTEM_PROMPT = `You are a thought categorizer and tagger. Categorize the user's thought into exactly one of these categories:
+
+- task: actionable to-do item, something to do or buy
+- therapy: feelings, emotions, therapy questions, mental health reflections
+- idea: creative ideas, feature concepts, business ideas, "what if" thoughts
+- reflection: observations, journal entries, life reflections, gratitude
+- project: project notes, technical decisions, work-related context
+
+Also:
+- Add 1-3 short descriptive tags (lowercase, no hashtags) that capture the topic. Examples: "grocery", "work", "health", "parenting", "home repair".
+- If category is "therapy", classify as either "selfLearnable" (can process alone) or "bringToTherapist" (should discuss with therapist). Omit therapyClassification for non-therapy categories.
+
+Respond with ONLY a JSON object, no other text:
+{"category": "<category>", "confidence": <0.0-1.0>, "tags": ["tag1", "tag2"], "therapyClassification": "selfLearnable"|"bringToTherapist"|null}`;
 
 /**
  * Pure predicate: returns true if the caller has explicitly bypassed the
@@ -275,6 +292,34 @@ thoughts.post("/thoughts", async (c) => {
         cloudKitRecordID: crypto.randomUUID(),
       })
       .returning();
+
+    // Fire-and-forget auto-triage when no category provided
+    if (!category && getAIClient()) {
+      const thoughtId = created.id;
+      const thoughtContent = content.trim();
+      (async () => {
+        try {
+          const raw = await callClaude({
+            system: TRIAGE_SYSTEM_PROMPT,
+            userMessage: thoughtContent,
+            maxTokens: 200,
+          });
+          const result = parseAIJson<TriageResult>(raw);
+          await db!
+            .update(thoughtsTable)
+            .set({
+              category: result.category,
+              confidence: result.confidence,
+              ...(result.category === "task" ? { taskStatus: "open" } : {}),
+              ...(result.tags ? { tags: result.tags } : {}),
+              ...(result.therapyClassification ? { therapyClassification: result.therapyClassification } : {}),
+            })
+            .where(eq(thoughtsTable.id, thoughtId));
+        } catch (err) {
+          console.error("[vigil-core] Auto-triage failed (non-fatal):", err);
+        }
+      })();
+    }
 
     return c.json(toResponse(created), 201);
   } catch (err) {
