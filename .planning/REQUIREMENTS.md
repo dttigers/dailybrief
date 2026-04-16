@@ -20,9 +20,9 @@
 
 ### Analysis Scope (7-day window)
 
-- [ ] **SCOPE-01**: Insights generation only considers thoughts from the last 7 days
-- [ ] **SCOPE-02**: Therapy pattern recognition only considers thoughts from the last 7 days
-- [ ] **SCOPE-03**: Therapy session prep only considers thoughts from the last 7 days
+- [x] **SCOPE-01**: Insights generation only considers thoughts from the last 7 days
+- [x] **SCOPE-02**: Therapy pattern recognition only considers thoughts from the last 7 days
+- [x] **SCOPE-03**: Therapy session prep only considers thoughts from the last 7 days
 - [ ] **SCOPE-04**: Daily brief PDF only includes thoughts from the last 7 days (fixes stale OCR noise)
 
 ### Persistence (server-side caching for expensive AI pages)
@@ -96,9 +96,9 @@
 | ROLLOVER-02 | Phase 88 | Complete |
 | ROLLOVER-03 | Phase 88 | Complete |
 | ROLLOVER-04 | Phase 88 | Complete |
-| SCOPE-01 | Phase 89 | Pending |
-| SCOPE-02 | Phase 89 | Pending |
-| SCOPE-03 | Phase 89 | Pending |
+| SCOPE-01 | Phase 89 | Complete |
+| SCOPE-02 | Phase 89 | Complete |
+| SCOPE-03 | Phase 89 | Complete |
 | SCOPE-04 | Phase 93 | Pending |
 | PERSIST-01 | Phase 90 | Pending |
 | PERSIST-02 | Phase 90 | Pending |
