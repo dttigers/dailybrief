@@ -27,9 +27,9 @@
 
 ### Persistence (server-side caching for expensive AI pages)
 
-- [ ] **PERSIST-01**: Insights results persist server-side; revisits show last generation instantly with a "Regenerate" button
-- [ ] **PERSIST-02**: Therapy patterns persist server-side with explicit regenerate
-- [ ] **PERSIST-03**: Therapy session prep persists server-side with explicit regenerate
+- [x] **PERSIST-01**: Insights results persist server-side; revisits show last generation instantly with a "Regenerate" button
+- [x] **PERSIST-02**: Therapy patterns persist server-side with explicit regenerate
+- [x] **PERSIST-03**: Therapy session prep persists server-side with explicit regenerate
 - [ ] **PERSIST-04**: Chat auto-resumes the most recently active session when the PWA is reopened
 
 ### Tasks Tab Filtering
@@ -100,9 +100,9 @@
 | SCOPE-02 | Phase 89 | Complete |
 | SCOPE-03 | Phase 89 | Complete |
 | SCOPE-04 | Phase 93 | Pending |
-| PERSIST-01 | Phase 90 | Pending |
-| PERSIST-02 | Phase 90 | Pending |
-| PERSIST-03 | Phase 90 | Pending |
+| PERSIST-01 | Phase 90 | Complete |
+| PERSIST-02 | Phase 90 | Complete |
+| PERSIST-03 | Phase 90 | Complete |
 | PERSIST-04 | Phase 90 | Pending |
 | TASKS-01 | Phase 91 | Pending |
 | TASKS-02 | Phase 91 | Pending |

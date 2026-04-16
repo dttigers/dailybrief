@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Freshness & Capture Parity
-status: verifying
-stopped_at: Phase 90 context gathered
-last_updated: "2026-04-16T13:58:18.874Z"
+status: executing
+stopped_at: Completed 90-01-PLAN.md
+last_updated: "2026-04-16T14:29:09.029Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 3
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
-  percent: 100
+  total_plans: 9
+  completed_plans: 7
+  percent: 78
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-15)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 89 — 7-day-analysis-scope
+**Current focus:** Phase 90 — server-side-persistence
 
 ## Current Position
 
-Phase: 89
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 90 (server-side-persistence) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 88 P04 | 45 | 3 tasks | 4 files |
 | Phase 89 P01 | 3 | 2 tasks | 2 files |
 | Phase 89 P02 | 139 | 2 tasks | 5 files |
+| Phase 90 P01 | 154 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,8 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 89]: patternSection dropped from /therapy/prep in this phase; Phase 90 persistence will restore richer server-side context
 - [Phase 89]: Server-side error messages (body.error) propagate to hook error state instead of generic status codes
 - [Phase 89]: therapyThoughtCount removed from useTherapy hook — count communicated via server-side 400 error messages
+- [Phase 90]: Journal backfilled for migrations 0008-0009 applied via push but missing from journal
+- [Phase 90]: ai_cache upsert pattern: insert + onConflictDoUpdate on type column for single-row-per-type caching
 
 ### Roadmap Dependency Notes
 
@@ -108,7 +111,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-04-16T13:58:18.870Z
-Stopped at: Phase 90 context gathered
-Resume file: .planning/phases/90-server-side-persistence/90-CONTEXT.md
+Last session: 2026-04-16T14:29:09.024Z
+Stopped at: Completed 90-01-PLAN.md
+Resume file: None
 Next action: `/gsd-plan-phase 88` to decompose Date Window Helper & Weekly Rollover
