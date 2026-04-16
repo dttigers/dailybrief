@@ -282,7 +282,9 @@ Plans:
   2. User can toggle between Open / Done / All and the list updates immediately
   3. Selected filter survives a page reload on the same device (localStorage)
   4. A brand-new device's first visit shows the filter last set on any other device (server-synced default)
-**Plans**: TBD
+**Plans:** 1 plan
+Plans:
+- [ ] 91-01-PLAN.md — StatusFilterTabs UI + server persistence + useThoughts dynamic filter
 **UI hint**: yes
 
 ### Phase 92: Work Order Archive
@@ -429,7 +431,7 @@ Plans:
 | 88. Date Window Helper & Weekly Rollover | v3.2 | 4/4 | Complete    | 2026-04-16 |
 | 89. 7-Day Analysis Scope | v3.2 | 2/2 | Complete    | 2026-04-16 |
 | 90. Server-Side Persistence | v3.2 | 3/3 | Complete    | 2026-04-16 |
-| 91. Tasks Tab Status Filter | v3.2 | 0/TBD | Not started | - |
+| 91. Tasks Tab Status Filter | v3.2 | 0/1 | Not started | - |
 | 92. Work Order Archive | v3.2 | 0/TBD | Not started | - |
 | 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 0/TBD | Not started | - |
 | 94. Browser Extension Quick-Capture | v3.2 | 0/TBD | Not started | - |
