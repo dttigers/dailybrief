@@ -20,8 +20,9 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import * as crypto from "node:crypto";
-import { workOrders as workOrdersTable, workOrderStatuses as workOrderStatusesTable, thoughts as thoughtsTable } from "../db/schema.js";
-import { desc, isNull, eq as drizzleEq } from "drizzle-orm";
+import { workOrders as workOrdersTable, workOrderStatuses as workOrderStatusesTable, thoughts as thoughtsTable, appSettings } from "../db/schema.js";
+import { desc, isNull, eq as drizzleEq, gte, lt, and } from "drizzle-orm";
+import { getCurrentWeekWindow } from "../utils/date-window.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type * as schema from "../db/schema.js";
 
@@ -197,12 +198,12 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
 
   // ── DB query helpers ────────────────────────────────────────────────────
 
-  async function fetchTaskThoughts(db: any): Promise<BriefThought[]> {
+  async function fetchTaskThoughts(db: any, start: Date, end: Date): Promise<BriefThought[]> {
     try {
       const rows = await db
         .select()
         .from(getThoughtsTable())
-        .where(taskThoughtsFilter())
+        .where(and(taskThoughtsFilter(), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
         .orderBy(thoughtsOrderDesc())
         .limit(8);
       return mapThoughts(rows);
@@ -211,11 +212,12 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     }
   }
 
-  async function fetchRecentThoughts(db: any): Promise<BriefThought[]> {
+  async function fetchRecentThoughts(db: any, start: Date, end: Date): Promise<BriefThought[]> {
     try {
       const rows = await db
         .select()
         .from(getThoughtsTable())
+        .where(and(gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
         .orderBy(thoughtsOrderDesc())
         .limit(20);
       return mapThoughts(rows);
@@ -224,12 +226,12 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     }
   }
 
-  async function fetchUnprocessedThoughts(db: any): Promise<BriefThought[]> {
+  async function fetchUnprocessedThoughts(db: any, start: Date, end: Date): Promise<BriefThought[]> {
     try {
       const rows = await db
         .select()
         .from(getThoughtsTable())
-        .where(unprocessedFilter())
+        .where(and(unprocessedFilter(), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
         .orderBy(thoughtsOrderDesc())
         .limit(20);
       return mapThoughts(rows);
@@ -390,6 +392,21 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     }
   }
 
+  // ── Timezone helper ────────────────────────────────────────────────────
+
+  async function getUserTimezone(db: any): Promise<string> {
+    try {
+      const rows = await db
+        .select({ value: appSettings.value })
+        .from(appSettings)
+        .where(drizzleEq(appSettings.key, "user_timezone"))
+        .limit(1);
+      return rows.length > 0 ? (rows[0].value as string) : "America/New_York";
+    } catch {
+      return "America/New_York";
+    }
+  }
+
   // ── Drizzle table references (lazy to avoid import issues in tests) ────
 
   function getThoughtsTable() { return thoughtsTable; }
@@ -409,6 +426,10 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     const startMs = Date.now();
     const db = deps.dbClient;
 
+    // 0. Compute Wed-anchored week window for thought queries
+    const tz = db ? await getUserTimezone(db) : "America/New_York";
+    const { start: weekStart, end: weekEnd } = getCurrentWeekWindow(tz);
+
     // 1. Fetch all sources concurrently via Promise.allSettled with per-source timeouts (T-76-02)
     const [sportsR, calendarR, thoughtsR, workOrdersR, affirmationR] = await Promise.allSettled([
       deps.sportsService
@@ -421,9 +442,9 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
         ? withTimeout(
             (async () => {
               const [task, recent, unprocessed] = await Promise.all([
-                fetchTaskThoughts(db),
-                fetchRecentThoughts(db),
-                fetchUnprocessedThoughts(db),
+                fetchTaskThoughts(db, weekStart, weekEnd),
+                fetchRecentThoughts(db, weekStart, weekEnd),
+                fetchUnprocessedThoughts(db, weekStart, weekEnd),
               ]);
               return { taskThoughts: task, recentThoughts: recent, unprocessedThoughts: unprocessed };
             })(),
