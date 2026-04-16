@@ -29,7 +29,7 @@ export function useTherapy(): {
     setError(null)
 
     try {
-      const result = await getThoughts({ limit: 200 })
+      const result = await getThoughts({ limit: 200, window: 'all' })
       const therapyThoughts = result.data.filter((t) => t.therapyClassification !== null)
 
       setTherapyThoughtCount(therapyThoughts.length)
@@ -60,7 +60,7 @@ export function useTherapy(): {
     setError(null)
 
     try {
-      const result = await getThoughts({ limit: 200 })
+      const result = await getThoughts({ limit: 200, window: 'all' })
       const bringToTherapistThoughts = result.data.filter(
         (t) => t.therapyClassification === 'bringToTherapist',
       )

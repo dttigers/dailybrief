@@ -16,7 +16,7 @@ export function useInsights(): {
     setError(null)
 
     try {
-      const result = await getThoughts({ limit: 200 })
+      const result = await getThoughts({ limit: 200, window: 'all' })
       const thoughts = result.data.map((t) => ({
         id: t.id,
         content: t.content,

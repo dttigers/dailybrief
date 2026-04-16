@@ -23,13 +23,13 @@ export function useProjects() {
       const [thoughtsByProject, unassigned] = await Promise.all([
         Promise.all(
           projectList.map((p) =>
-            getThoughts({ projectId: p.id, limit: 200 }).then((res) => ({
+            getThoughts({ projectId: p.id, limit: 200, window: 'all' }).then((res) => ({
               projectId: p.id,
               thoughts: res.data,
             })),
           ),
         ),
-        getThoughts({ unassigned: true, limit: 200 }).then((res) => res.data),
+        getThoughts({ unassigned: true, limit: 200, window: 'all' }).then((res) => res.data),
       ])
       if (cancelled) return
 
