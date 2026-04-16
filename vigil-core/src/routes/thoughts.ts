@@ -6,6 +6,28 @@ import { eq, and, ne, gte, lte, lt, desc, count, sql, isNull } from "drizzle-orm
 import { getCurrentWeekWindow } from "../utils/date-window.js";
 import type { DrizzleThought, PaginatedResponse } from "../db/types.js";
 
+/**
+ * Pure predicate: returns true if the caller has explicitly bypassed the
+ * default week window. Exported for unit testing (RO-06, RO-07).
+ *
+ * Bypass conditions (D-07):
+ *   - q       : full-text search — results should be all-time
+ *   - after   : caller supplied an explicit start bound
+ *   - before  : caller supplied an explicit end bound
+ *   - window === "all" : explicit escape hatch
+ *
+ * Any other value for window (including undefined, "", "current", typos)
+ * falls through to the default window path.
+ */
+export function shouldBypassWindow(params: {
+  q: string | undefined;
+  after: string | undefined;
+  before: string | undefined;
+  window: string | undefined;
+}): boolean {
+  return !!params.q || !!params.after || !!params.before || params.window === "all";
+}
+
 const VALID_SOURCES = ["text", "voice", "image"] as const;
 const VALID_CATEGORIES = [
   "task",
@@ -144,7 +166,7 @@ thoughts.get("/thoughts", async (c) => {
 
     // ROLLOVER-01..04: default to current-week window in user tz,
     // unless caller explicitly bypasses via ?q=, ?after=, ?before=, or ?window=all.
-    const bypassWindow = !!q || !!after || !!before || windowParam === "all";
+    const bypassWindow = shouldBypassWindow({ q, after, before, window: windowParam });
     if (!bypassWindow) {
       // Inline tz lookup (mirrors settings.ts pattern; extraction to shared util deferred to Phase 89 per CONTEXT.md)
       const tzRows = await db
