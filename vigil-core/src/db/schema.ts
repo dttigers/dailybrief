@@ -196,3 +196,18 @@ export const appSettings = pgTable("app_settings", {
   value: jsonb("value").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// -- ai_cache table --------------------------------------------------------
+export const aiCache = pgTable(
+  "ai_cache",
+  {
+    id: serial("id").primaryKey(),
+    type: text("type").notNull(),
+    result: jsonb("result").notNull(),
+    generatedAt: timestamp("generated_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("uq_ai_cache_type").on(table.type),
+  ],
+);
