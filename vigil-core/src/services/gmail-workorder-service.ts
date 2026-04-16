@@ -239,8 +239,11 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
       const subject = detail.payload.headers.find((h) => h.name === "Subject")?.value ?? "";
       const body = extractPlainTextBody(detail);
 
+      log("info", `Message ${msg.id}: subject="${subject}" bodyLen=${body.length} bodyPreview="${body.slice(0, 200).replace(/\n/g, "\\n")}"`);
+
       const parsed = parseWorkOrderEmail(body, subject);
       if (parsed) {
+        log("info", `Parsed ${parsed.caseNumber}: store="${parsed.store}" desc="${parsed.shortDescription.slice(0, 50)}" trade="${parsed.trade}"`);
         workOrders.push(parsed);
       } else {
         log("warn", `Could not parse work order from message ${msg.id}: ${subject}`);
