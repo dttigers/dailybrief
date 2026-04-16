@@ -27,7 +27,11 @@ export default function CaptureBar({ onCapture, onCategoryUpdate }: CaptureBarPr
       // Fire-and-forget triage: never block capture on triage result
       triageThought(trimmed)
         .then((result) =>
-          updateThought(thought.id, { category: result.category }).then(() =>
+          updateThought(thought.id, {
+            category: result.category,
+            ...(result.tags ? { tags: result.tags } : {}),
+            ...(result.therapyClassification ? { therapyClassification: result.therapyClassification } : {}),
+          }).then(() =>
             onCategoryUpdate(thought.id, result.category),
           ),
         )

@@ -225,76 +225,32 @@ function drawPageOne(
     y += 4;
   }
 
-  // ── Task Thoughts section ─────────────────────────────────────────────────
+  // ── Affirmation section (moved from Page 2) ───────────────────────────────
 
-  if (layout.enabledSections.has("taskThoughts")) {
+  if (layout.enabledSections.has("affirmation") && data.affirmation) {
     doc
-      .font("Inter-Medium")
-      .fontSize(layout.headerSize)
-      .fillColor(COLORS.vigilTeal)
-      .text("Tasks", leftX, y, { lineBreak: false });
+      .moveTo(leftX, y)
+      .lineTo(rightEdge, y)
+      .lineWidth(0.5)
+      .strokeColor(COLORS.divider)
+      .stroke();
+    y += 6;
 
-    y += layout.headerSize + 4;
+    doc
+      .font("Inter-Regular")
+      .fontSize(layout.smallSize)
+      .fillColor(COLORS.subtext)
+      .text("Today's Affirmation", leftX, y, { lineBreak: false });
+    y += layout.bodySize + 4;
 
-    const sortedTasks = sortThoughts(data.taskThoughts);
-    // Cap to 8 items (T-75-01)
-    const visibleTasks = sortedTasks.slice(0, 8);
+    doc
+      .font("Inter-Regular")
+      .fontSize(layout.bodySize)
+      .fillColor(COLORS.bodyText)
+      .text(data.affirmation, leftX + 4, y, { width: usableWidth - 8 });
 
-    if (visibleTasks.length === 0) {
-      doc
-        .font("Inter-Regular")
-        .fontSize(layout.bodySize)
-        .fillColor(COLORS.subtext)
-        .text("No open tasks", leftX, y, { lineBreak: false });
-      y += layout.bodySize + 4;
-    } else {
-      for (const thought of visibleTasks) {
-        if (y > contentBottom - layout.bodySize * 3) break; // safety
-
-        const isDone = thought.taskStatus === "done";
-        const isInProgress = thought.taskStatus === "inProgress";
-        const cbSize = layout.checkboxSize;
-        const cbY = y + (layout.bodySize - cbSize) / 2;
-
-        // Draw checkbox
-        drawCheckbox(
-          doc,
-          leftX,
-          cbY,
-          cbSize,
-          isDone,
-          isInProgress,
-          layout.bodySize
-        );
-
-        const textX = leftX + cbSize + 4;
-        const textW = usableWidth - cbSize - 4;
-        const textColor = isDone ? COLORS.subtext : COLORS.bodyText;
-
-        doc
-          .font("Inter-Regular")
-          .fontSize(layout.bodySize)
-          .fillColor(textColor);
-
-        const textH = doc.heightOfString(thought.content, { width: textW });
-        doc.text(thought.content, textX, y, { width: textW });
-
-        if (isDone) {
-          // Strikethrough line
-          const strikeY = y + textH / 2;
-          doc
-            .moveTo(textX, strikeY)
-            .lineTo(textX + Math.min(doc.widthOfString(thought.content), textW), strikeY)
-            .lineWidth(0.5)
-            .strokeColor(COLORS.subtext)
-            .stroke();
-        }
-
-        y += textH + 3;
-      }
-    }
-
-    y += 4;
+    const textH = doc.heightOfString(data.affirmation, { width: usableWidth - 8 });
+    y += textH + 8;
   }
 
   // ── Calendar section ──────────────────────────────────────────────────────
@@ -413,35 +369,6 @@ function drawPageTwo(
     for (const league of data.sports) {
       y = drawSportSection(doc, league, layout, y, isCompact, activeSportCount);
     }
-  }
-
-  // ── Affirmation section ────────────────────────────────────────────────────
-
-  if (layout.enabledSections.has("affirmation") && data.affirmation) {
-    // Divider before affirmation
-    y = drawDivider(doc, leftX, rightEdge, y);
-
-    // "Today's Affirmation" label
-    doc
-      .font("Inter-Regular")
-      .fontSize(layout.smallSize)
-      .fillColor(COLORS.subtext)
-      .text("Today's Affirmation", leftX, y, { lineBreak: false });
-    y += layout.bodySize + 4;
-
-    // Determine compact mode based on how many sports leagues
-    const hasSports = layout.enabledSections.has("sports") && data.sports.length > 0;
-    const isCompact = hasSports && data.sports.length > 1;
-    const affirmationBoxHeight = isCompact ? 40 : 60;
-
-    // Affirmation text wrapped
-    doc
-      .font("Inter-Regular")
-      .fontSize(layout.bodySize)
-      .fillColor(COLORS.bodyText)
-      .text(data.affirmation, leftX + 4, y, { width: layout.usableWidth - 8 });
-
-    y += affirmationBoxHeight + 4;
   }
 
   // ── Notes section (always, at bottom of page 2) ──────────────────────────

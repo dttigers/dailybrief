@@ -4,7 +4,7 @@ import type { TriageResult } from "../ai/types.js";
 
 export const triage = new Hono();
 
-const TRIAGE_SYSTEM_PROMPT = `You are a thought categorizer. Categorize the user's thought into exactly one of these categories:
+const TRIAGE_SYSTEM_PROMPT = `You are a thought categorizer and tagger. Categorize the user's thought into exactly one of these categories:
 
 - task: actionable to-do item, something to do or buy
 - therapy: feelings, emotions, therapy questions, mental health reflections
@@ -12,8 +12,12 @@ const TRIAGE_SYSTEM_PROMPT = `You are a thought categorizer. Categorize the user
 - reflection: observations, journal entries, life reflections, gratitude
 - project: project notes, technical decisions, work-related context
 
+Also:
+- Add 1-3 short descriptive tags (lowercase, no hashtags) that capture the topic. Examples: "grocery", "work", "health", "parenting", "home repair".
+- If category is "therapy", classify as either "selfLearnable" (can process alone) or "bringToTherapist" (should discuss with therapist). Omit therapyClassification for non-therapy categories.
+
 Respond with ONLY a JSON object, no other text:
-{"category": "<category>", "confidence": <0.0-1.0>}`;
+{"category": "<category>", "confidence": <0.0-1.0>, "tags": ["tag1", "tag2"], "therapyClassification": "selfLearnable"|"bringToTherapist"|null}`;
 
 // POST /triage — Categorize a thought via Claude
 triage.post("/triage", async (c) => {

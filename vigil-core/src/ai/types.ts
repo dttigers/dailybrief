@@ -3,6 +3,8 @@ import type { ThoughtCategory, TherapyClassification } from "../db/types.js";
 export interface TriageResult {
   category: ThoughtCategory;
   confidence: number;
+  tags?: string[];
+  therapyClassification?: TherapyClassification;
 }
 
 export type InsightType = "pattern" | "connection" | "actionPrompt" | "trend";
