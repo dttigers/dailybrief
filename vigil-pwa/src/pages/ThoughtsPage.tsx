@@ -7,12 +7,15 @@ import ThoughtList from '../components/ThoughtList'
 import BulkActionBar from '../components/BulkActionBar'
 import { updateThought, bulkDeleteThoughts, bulkRecategorizeThoughts, triageThought, vigilFetch } from '../api/client'
 import { useThoughts, type ThoughtFilters } from '../hooks/useThoughts'
+import { getCurrentWeekWindow } from '../utils/date-window-client'
+import { useTimezone } from '../hooks/useTimezone'
 
 export default function ThoughtsPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
+  const { tz } = useTimezone()
   const [isSelectable, setIsSelectable] = useState(false)
   const [isBulkProcessing, setIsBulkProcessing] = useState(false)
 
@@ -133,6 +136,18 @@ export default function ThoughtsPage() {
   const allSelected = thoughts.length > 0 && selectedIds.size === thoughts.length
   const hasActiveFilters = !!sourceFilter || !!dateAfter || !!dateBefore || favoritesOnly
 
+  const { formattedStart, formattedEnd } = (() => {
+    const { start, end } = getCurrentWeekWindow(tz)
+    const formatter = new Intl.DateTimeFormat(navigator.language, {
+      weekday: 'short', month: 'short', day: 'numeric', timeZone: tz,
+    })
+    // end is EXCLUSIVE (next Wed 00:00); display end-1ms so range reads Wed..Tue.
+    return {
+      formattedStart: formatter.format(start),
+      formattedEnd: formatter.format(new Date(end.getTime() - 1)),
+    }
+  })()
+
   function handleClearFilters() {
     setSourceFilter(undefined)
     setDateAfter(undefined)
@@ -199,6 +214,26 @@ export default function ThoughtsPage() {
         <CategoryTabs activeCategory={activeCategory} onChange={setActiveCategory} />
       </div>
       <div className="flex-1 overflow-y-auto mt-4">
+        {/* Week / Search context header */}
+        {debouncedQuery === '' ? (
+          <p
+            className="text-xs mb-2 text-left"
+            role="status"
+            aria-live="polite"
+          >
+            <span className="text-teal-400 font-medium">This week</span>
+            <span className="text-gray-400"> · {formattedStart} – {formattedEnd}</span>
+          </p>
+        ) : (
+          <p
+            className="text-xs mb-2 text-left"
+            role="status"
+            aria-live="polite"
+          >
+            <span className="text-teal-400 font-medium">Search</span>
+            <span className="text-gray-400"> · all time</span>
+          </p>
+        )}
         <ThoughtList
           thoughts={thoughts}
           total={total}
@@ -210,6 +245,7 @@ export default function ThoughtsPage() {
           selectedIds={selectedIds}
           onToggleSelect={handleToggleSelect}
           isSelectable={isSelectable}
+          isSearchActive={debouncedQuery !== ''}
         />
       </div>
       <CaptureBar

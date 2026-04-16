@@ -12,9 +12,10 @@ interface ThoughtListProps {
   selectedIds?: Set<number>
   onToggleSelect?: (id: number) => void
   isSelectable?: boolean
+  isSearchActive: boolean
 }
 
-export default function ThoughtList({ thoughts, total, isLoading, error, onUpdate, onToggleFavorite, onRetriage, selectedIds, onToggleSelect, isSelectable }: ThoughtListProps) {
+export default function ThoughtList({ thoughts, total, isLoading, error, onUpdate, onToggleFavorite, onRetriage, selectedIds, onToggleSelect, isSelectable, isSearchActive }: ThoughtListProps) {
   if (isLoading) {
     return (
       <div className="text-gray-400 text-center py-12">
@@ -32,9 +33,18 @@ export default function ThoughtList({ thoughts, total, isLoading, error, onUpdat
   }
 
   if (thoughts.length === 0) {
+    if (isSearchActive) {
+      return (
+        <div className="text-gray-400 text-center py-12">
+          No thoughts found
+        </div>
+      )
+    }
     return (
-      <div className="text-gray-400 text-center py-12">
-        No thoughts found
+      <div className="text-center py-12 space-y-1">
+        <p className="text-gray-400 text-sm">No thoughts this week yet</p>
+        <p className="text-gray-400 text-sm">Capture one above to get started.</p>
+        <p className="text-gray-400/70 text-xs mt-2">Looking for older thoughts? Search above.</p>
       </div>
     )
   }
