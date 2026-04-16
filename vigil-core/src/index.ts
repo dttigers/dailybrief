@@ -38,6 +38,7 @@ import { createGenerateScheduler } from "./services/generate-scheduler.js";
 import { createBriefAssemblyService } from "./services/brief-assembly-service.js";
 import { getAIClient, callClaude, parseAIJson } from "./ai/client.js";
 import { createSportsService } from "./services/sports-service.js";
+import { createGmailWorkOrderService } from "./services/gmail-workorder-service.js";
 
 // Verify database connection at startup
 testConnection();
@@ -149,17 +150,24 @@ const generateScheduler = createGenerateScheduler({
 generateScheduler.start();
 console.log("[generate-scheduler] started (60s tick interval)");
 
+// ── Gmail work order import (Phase 90 polish) ────────────────────────────────
+const gmailWorkOrders = createGmailWorkOrderService();
+gmailWorkOrders.start();
+console.log("[gmail-workorders] started (5m tick interval)");
+
 // Graceful shutdown
 process.on("SIGTERM", async () => {
-  console.log("[vigil-core] SIGTERM received, stopping scheduler + closing connections...");
+  console.log("[vigil-core] SIGTERM received, stopping services + closing connections...");
   generateScheduler.stop();
+  gmailWorkOrders.stop();
   await closeConnection();
   process.exit(0);
 });
 
 process.on("SIGINT", async () => {
-  console.log("[vigil-core] SIGINT received, stopping scheduler + closing connections...");
+  console.log("[vigil-core] SIGINT received, stopping services + closing connections...");
   generateScheduler.stop();
+  gmailWorkOrders.stop();
   await closeConnection();
   process.exit(0);
 });
