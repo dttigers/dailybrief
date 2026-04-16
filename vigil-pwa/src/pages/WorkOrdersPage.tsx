@@ -1,9 +1,17 @@
+import { useState } from 'react'
 import { updateWorkOrderStatus } from '../api/client'
 import WorkOrderRow from '../components/WorkOrderRow'
-import { useWorkOrders } from '../hooks/useWorkOrders'
+import { useWorkOrders, type WorkOrderFilter } from '../hooks/useWorkOrders'
+
+const ARCHIVE_FILTERS: { label: string; value: WorkOrderFilter }[] = [
+  { label: 'Active', value: 'active' },
+  { label: 'Archived', value: 'archived' },
+  { label: 'All', value: 'all' },
+]
 
 export default function WorkOrdersPage() {
-  const { workOrders, isLoading, error, updateLocalStatus } = useWorkOrders()
+  const [filter, setFilter] = useState<WorkOrderFilter>('active')
+  const { workOrders, isLoading, error, updateLocalStatus, unarchive, deleteAllArchived } = useWorkOrders(filter)
 
   async function handleStatusChange(caseNumber: string, status: string) {
     // Optimistic update first
@@ -16,8 +24,22 @@ export default function WorkOrdersPage() {
     }
   }
 
-  const openCount = workOrders.filter((wo) => wo.status !== 'done').length
-  const doneCount = workOrders.filter((wo) => wo.status === 'done').length
+  function getSummaryText(): string {
+    const n = workOrders.length
+    const s = n !== 1 ? 's' : ''
+    if (filter === 'active') {
+      const openCount = workOrders.filter((wo) => wo.status !== 'done').length
+      const doneCount = workOrders.filter((wo) => wo.status === 'done').length
+      return `${n} active work order${s} (${openCount} open, ${doneCount} done)`
+    }
+    if (filter === 'archived') {
+      return `${n} archived work order${s}`
+    }
+    // 'all'
+    const activeCount = workOrders.filter((wo) => wo.archivedAt === null).length
+    const archivedCount = workOrders.filter((wo) => wo.archivedAt !== null).length
+    return `${n} work order${s} (${activeCount} active, ${archivedCount} archived)`
+  }
 
   if (isLoading) {
     return (
@@ -35,32 +57,71 @@ export default function WorkOrdersPage() {
     )
   }
 
-  if (workOrders.length === 0) {
-    return (
-      <div className="py-16 text-center text-gray-400 text-sm">
-        No work orders synced yet. Run the daily brief CLI to sync work orders.
-      </div>
-    )
-  }
-
   return (
     <div className="flex flex-col min-h-[calc(100vh-10rem)]">
-      <div className="mb-3 text-sm text-gray-400">
-        {workOrders.length} work order{workOrders.length !== 1 ? 's' : ''}{' '}
-        <span className="text-gray-400">
-          ({openCount} open, {doneCount} done)
-        </span>
+      {/* Archive filter tabs */}
+      <div className="flex gap-2 pb-1 mb-3">
+        {ARCHIVE_FILTERS.map((f) => {
+          const isActive = f.value === filter
+          return (
+            <button
+              key={f.value}
+              onClick={() => setFilter(f.value)}
+              className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                isActive
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-gray-900/80 text-gray-100 hover:bg-gray-400/30'
+              }`}
+            >
+              {f.label}
+            </button>
+          )
+        })}
       </div>
-      <div className="divide-y divide-gray-900/40 rounded-lg border border-gray-900/40 overflow-hidden">
-        {workOrders.map((wo) => (
-          <WorkOrderRow
-            key={wo.caseNumber}
-            workOrder={wo}
-            priorityRank={wo.priorityRank}
-            onStatusChange={handleStatusChange}
-          />
-        ))}
+
+      {/* Summary line + Clear Archived button */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-sm text-gray-400">
+          {getSummaryText()}
+        </div>
+        {filter === 'archived' && workOrders.length > 0 && (
+          <button
+            onClick={() => {
+              const confirmed = window.confirm(
+                `Delete ${workOrders.length} archived work orders? This cannot be undone.`
+              )
+              if (confirmed) deleteAllArchived()
+            }}
+            className="bg-red-500/20 text-red-400 hover:bg-red-500/30 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors"
+          >
+            Clear Archived
+          </button>
+        )}
       </div>
+
+      {workOrders.length === 0 ? (
+        <div className="py-16 text-center text-gray-400 text-sm">
+          {filter === 'active' && 'No active work orders. Run the daily brief CLI to sync work orders.'}
+          {filter === 'archived' && 'No archived work orders.'}
+          {filter === 'all' && 'No work orders synced yet. Run the daily brief CLI to sync work orders.'}
+        </div>
+      ) : (
+        <div className="divide-y divide-gray-900/40 rounded-lg border border-gray-900/40 overflow-hidden">
+          {workOrders.map((wo) => {
+            const isArchived = wo.archivedAt !== null
+            return (
+              <WorkOrderRow
+                key={wo.caseNumber}
+                workOrder={wo}
+                priorityRank={isArchived ? null : wo.priorityRank}
+                onStatusChange={handleStatusChange}
+                isArchived={isArchived}
+                onUnarchive={() => unarchive(wo.caseNumber)}
+              />
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
