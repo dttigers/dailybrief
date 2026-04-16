@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Freshness & Capture Parity
-status: executing
-stopped_at: Completed 89-01-PLAN.md
-last_updated: "2026-04-16T13:28:24.200Z"
+status: verifying
+stopped_at: Completed 89-02-PLAN.md
+last_updated: "2026-04-16T13:32:25.767Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
-  percent: 83
+  completed_plans: 6
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 
 Phase: 89 (7-day-analysis-scope) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 88 P03 | 4 | 2 tasks | 6 files |
 | Phase 88 P04 | 45 | 3 tasks | 4 files |
 | Phase 89 P01 | 3 | 2 tasks | 2 files |
+| Phase 89 P02 | 139 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,8 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 88]: Client-side date-window-client.ts is display-only; server remains source of truth for thought filtering
 - [Phase 88]: isSearchActive added as REQUIRED (not optional) prop to ThoughtList to enforce explicit callsite intent
 - [Phase 89]: patternSection dropped from /therapy/prep in this phase; Phase 90 persistence will restore richer server-side context
+- [Phase 89]: Server-side error messages (body.error) propagate to hook error state instead of generic status codes
+- [Phase 89]: therapyThoughtCount removed from useTherapy hook — count communicated via server-side 400 error messages
 
 ### Roadmap Dependency Notes
 
@@ -105,7 +108,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-04-16T13:28:24.195Z
-Stopped at: Completed 89-01-PLAN.md
+Last session: 2026-04-16T13:32:25.761Z
+Stopped at: Completed 89-02-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 88` to decompose Date Window Helper & Weekly Rollover

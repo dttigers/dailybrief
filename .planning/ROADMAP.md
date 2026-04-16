@@ -215,7 +215,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 ### Phases
 
 - [x] **Phase 88: Date Window Helper & Weekly Rollover** — Shared server-side 7-day / Wed-anchored window helper + Thoughts tab rollover view (completed 2026-04-16)
-- [ ] **Phase 89: 7-Day Analysis Scope** — Apply window helper to Insights, Therapy patterns, and Therapy session prep
+- [x] **Phase 89: 7-Day Analysis Scope** — Apply window helper to Insights, Therapy patterns, and Therapy session prep (completed 2026-04-16)
 - [ ] **Phase 90: Server-Side Persistence** — Cache Insights / Therapy / Therapy-prep with Regenerate; Chat auto-resumes last session
 - [ ] **Phase 91: Tasks Tab Status Filter** — Open default, toggle Done/All, per-device persistence + server-synced default
 - [ ] **Phase 92: Work Order Archive** — Auto-archive rules, archived view, unarchive, bulk-clear (PWA + Mac CLI aware)
@@ -251,10 +251,10 @@ Plans:
   2. Therapy pattern recognition output no longer surfaces themes from thoughts older than 7 days
   3. Therapy session prep output only references thoughts from the last 7 days
   4. All three endpoints share the same date-window helper (no duplicated window math)
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 Plans:
 - [x] 89-01-PLAN.md — Server-side 7-day DB query for insights + therapy endpoints
-- [ ] 89-02-PLAN.md — PWA client simplification + "Analyzing last 7 days" subheadings
+- [x] 89-02-PLAN.md — PWA client simplification + "Analyzing last 7 days" subheadings
 ### Phase 90: Server-Side Persistence
 **Goal**: Insights, Therapy patterns, and Therapy session prep persist server-side so revisits are instant; Chat auto-resumes the most recent session when the PWA reopens.
 **Depends on**: Phase 89
@@ -422,7 +422,7 @@ Plans:
 | 86. Split Brief Schedule | v3.1 | 6/6 | Complete | 2026-04-15 |
 | 87. Vigil App Icons | v3.1 | 3/3 | Complete | 2026-04-15 |
 | 88. Date Window Helper & Weekly Rollover | v3.2 | 4/4 | Complete    | 2026-04-16 |
-| 89. 7-Day Analysis Scope | v3.2 | 1/2 | In Progress|  |
+| 89. 7-Day Analysis Scope | v3.2 | 2/2 | Complete   | 2026-04-16 |
 | 90. Server-Side Persistence | v3.2 | 0/TBD | Not started | - |
 | 91. Tasks Tab Status Filter | v3.2 | 0/TBD | Not started | - |
 | 92. Work Order Archive | v3.2 | 0/TBD | Not started | - |
