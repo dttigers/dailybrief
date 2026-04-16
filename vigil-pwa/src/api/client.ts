@@ -13,11 +13,14 @@ export const clearKey = (): void => {
 
 export async function vigilFetch(path: string, init?: RequestInit): Promise<Response> {
   const key = getStoredKey()
+  const authHeaders: Record<string, string> = key
+    ? { Authorization: `Bearer ${key}` }
+    : {}
   return fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${key}`,
       'Content-Type': 'application/json',
+      ...authHeaders,
       ...init?.headers,
     },
   })
