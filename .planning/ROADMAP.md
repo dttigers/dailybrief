@@ -19,7 +19,8 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v2.5 Dashboard Everywhere** — Phases 63-72 (shipped 2026-04-12)
 - ✅ **v3.0 Server-Side PDF** — Phases 73-78 (shipped 2026-04-14)
 - ✅ **v3.1 Gmail + Thin Clients** — Phases 83, 84, 86, 87 (shipped 2026-04-15; Phases 80 + 85 deferred to v3.2)
-- 🚧 **v3.2 Freshness & Capture Parity** — Phases 88-95 (started 2026-04-15)
+- ✅ **v3.2 Freshness & Capture Parity** — Phases 88-95 (shipped 2026-04-16)
+- 🚧 **v3.3 Stability & Chat Context** — Phases 96-98 (started 2026-04-16)
 
 ## Completed Milestones
 
@@ -208,137 +209,65 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
-## 🚧 v3.2 Freshness & Capture Parity (IN PROGRESS)
+<details>
+<summary>✅ v3.2 Freshness & Capture Parity (Phases 88-95) — SHIPPED 2026-04-16</summary>
 
 **Milestone Goal:** Keep Vigil's daily picture accurate by aging out stale data, and bring non-Mac users to capture parity via the browser extension.
 
+- [x] **Phase 88: Date Window Helper & Weekly Rollover** — completed 2026-04-16
+- [x] **Phase 89: 7-Day Analysis Scope** — completed 2026-04-16
+- [x] **Phase 90: Server-Side Persistence** — completed 2026-04-16
+- [x] **Phase 91: Tasks Tab Status Filter** — completed 2026-04-16
+- [x] **Phase 92: Work Order Archive** — completed 2026-04-16
+- [x] **Phase 93: Brief PDF Cleanup & 7-Day Scope** — completed 2026-04-16
+- [x] **Phase 94: Browser Extension Quick-Capture** — completed 2026-04-16
+- [x] **Phase 95: iOS PWA OAuth UAT Retest** — completed 2026-04-16
+
+</details>
+
+## 🚧 v3.3 Stability & Chat Context (IN PROGRESS)
+
+**Milestone Goal:** Fix broken daily workflows (chat, print, task visibility) and add contextual chat from individual thoughts.
+
 ### Phases
 
-- [x] **Phase 88: Date Window Helper & Weekly Rollover** — Shared server-side 7-day / Wed-anchored window helper + Thoughts tab rollover view (completed 2026-04-16)
-- [x] **Phase 89: 7-Day Analysis Scope** — Apply window helper to Insights, Therapy patterns, and Therapy session prep (completed 2026-04-16)
-- [x] **Phase 90: Server-Side Persistence** — Cache Insights / Therapy / Therapy-prep with Regenerate; Chat auto-resumes last session (completed 2026-04-16)
-- [x] **Phase 91: Tasks Tab Status Filter** — Open default, toggle Done/All, per-device persistence + server-synced default (completed 2026-04-16)
-- [x] **Phase 92: Work Order Archive** — Auto-archive rules, archived view, unarchive, bulk-clear (PWA + Mac CLI aware) (completed 2026-04-16)
-- [x] **Phase 93: Brief PDF Cleanup & 7-Day Scope** — De-dupe Tasks, Affirmation to bottom of Page 1, reflow, respect 7-day window (completed 2026-04-16)
-- [x] **Phase 94: Browser Extension Quick-Capture** — Rewrite URL-only → thought capture + triage (URL preserved as option), Chrome + Safari (completed 2026-04-16)
-- [x] **Phase 95: iOS PWA OAuth UAT Retest** — Close Phase 81 UAT Test 8 on live Railway (completed 2026-04-16)
+- [ ] **Phase 96: PWA Fixes** — Fix chat 400 error and hide completed tasks from all views
+- [ ] **Phase 97: Mac CLI Print Reliability** — Verify and harden the Mac CLI auto-print path
+- [ ] **Phase 98: Thought-Contextual Chat** — Open chat from any thought with that thought injected as conversation context
 
 ## Phase Details
 
-### Phase 88: Date Window Helper & Weekly Rollover
-**Goal**: The Thoughts tab shows only this-week (Wed–Tue, user-timezone-anchored) thoughts by default; a shared server-side date-window helper becomes the single source of truth for all subsequent scope/rollover work.
-**Depends on**: Phase 87 (v3.1 end)
-**Requirements**: ROLLOVER-01, ROLLOVER-02, ROLLOVER-03, ROLLOVER-04
+### Phase 96: PWA Fixes
+**Goal**: Users can send messages in PWA chat without error, and completed tasks stay out of every thought view
+**Depends on**: Phase 95 (v3.2 end)
+**Requirements**: FIX-01, FIX-02
 **Success Criteria** (what must be TRUE):
-  1. Opening the Thoughts tab shows only thoughts created since the most recent Wednesday 00:00 in the user's configured timezone
-  2. Full-text search from the Thoughts tab returns matches from prior weeks (rollover does not gate search)
-  3. Asking Chat about something from a prior week returns an answer (Chat context window is unchanged by rollover)
-  4. Changing the user's timezone in Settings shifts the Wed–Tue boundary accordingly on next page load
-**Plans:** 4/4 plans complete
-Plans:
-- [x] 88-01-PLAN.md — Date-window helper utility + unit tests (pure, no deps)
-- [x] 88-02-PLAN.md — GET /thoughts week-window default + three bypass rules + integration tests
-- [x] 88-03-PLAN.md — Caller audit: PWA getThoughts window param + 5 hook fixes + Mac CLI triage + smoke test
-- [x] 88-04-PLAN.md — Thoughts tab UI: week/search header, branched empty state, useTimezone hook
+  1. User can type a message in the PWA Chat tab and receive an AI response with no 400 error
+  2. A thought with status=done does not appear in the All Thoughts view
+  3. A thought with status=done does not appear in any category sidebar view
+  4. Tasks tab Open filter (Phase 91) continues to hide done tasks (no regression)
+**Plans**: TBD
 **UI hint**: yes
 
-### Phase 89: 7-Day Analysis Scope
-**Goal**: Insights, Therapy pattern recognition, and Therapy session prep all analyze only the last 7 days of thoughts, using the Phase 88 window helper.
-**Depends on**: Phase 88
-**Requirements**: SCOPE-01, SCOPE-02, SCOPE-03
+### Phase 97: Mac CLI Print Reliability
+**Goal**: The Mac CLI auto-print path is verified working end-to-end so the daily brief prints on schedule without manual intervention
+**Depends on**: Phase 95 (v3.2 end)
+**Requirements**: FIX-03
 **Success Criteria** (what must be TRUE):
-  1. Generating Insights returns patterns/connections/actions derived only from the last 7 days of thoughts (verified via logged query scope)
-  2. Therapy pattern recognition output no longer surfaces themes from thoughts older than 7 days
-  3. Therapy session prep output only references thoughts from the last 7 days
-  4. All three endpoints share the same date-window helper (no duplicated window math)
-**Plans:** 2/2 plans complete
-Plans:
-- [x] 89-01-PLAN.md — Server-side 7-day DB query for insights + therapy endpoints
-- [x] 89-02-PLAN.md — PWA client simplification + "Analyzing last 7 days" subheadings
+  1. Running the Mac CLI print command locally completes without error and sends the brief to the printer
+  2. The LaunchAgent scheduled run executes the print path at the configured time (verified via log output)
+  3. Any identified blockers in the print path are resolved and documented
+**Plans**: TBD
 
-### Phase 90: Server-Side Persistence
-**Goal**: Insights, Therapy patterns, and Therapy session prep persist server-side so revisits are instant; Chat auto-resumes the most recent session when the PWA reopens.
-**Depends on**: Phase 89
-**Requirements**: PERSIST-01, PERSIST-02, PERSIST-03, PERSIST-04
+### Phase 98: Thought-Contextual Chat
+**Goal**: Users can open a chat session pre-loaded with a specific thought so they can discuss, explore, or act on that thought with AI
+**Depends on**: Phase 96 (chat must be working before adding context)
+**Requirements**: CHAT-01
 **Success Criteria** (what must be TRUE):
-  1. Opening Insights a second time displays the last generation instantly (no loading spinner) and shows a Regenerate button
-  2. Opening Therapy patterns a second time displays cached output instantly with a Regenerate button
-  3. Opening Therapy session prep a second time displays cached output instantly with a Regenerate button
-  4. Clicking Regenerate on any of the three triggers a fresh AI run and updates the cached result
-  5. Closing and reopening the PWA lands the user back in their most recently active Chat session with prior messages visible
-**Plans:** 3/3 plans complete
-Plans:
-- [x] 90-01-PLAN.md — Drizzle ai_cache table + server cache GET/POST endpoints + schema push
-- [x] 90-02-PLAN.md — PWA API client cache functions + cache-first hooks + Chat auto-resume
-- [x] 90-03-PLAN.md — UI: Regenerate button + timestamp on Insights/Therapy pages + human verification
-**UI hint**: yes
-
-### Phase 91: Tasks Tab Status Filter
-**Goal**: Tasks tab defaults to Open; users can toggle to Done or All; the selected filter persists per-device for snappy UX while the server holds the last-set value as the default for new devices.
-**Depends on**: Phase 87
-**Requirements**: TASKS-01, TASKS-02, TASKS-03
-**Success Criteria** (what must be TRUE):
-  1. First-ever visit to the Tasks tab on a device shows only Open tasks
-  2. User can toggle between Open / Done / All and the list updates immediately
-  3. Selected filter survives a page reload on the same device (localStorage)
-  4. A brand-new device's first visit shows the filter last set on any other device (server-synced default)
-**Plans:** 1/1 plans complete
-Plans:
-- [x] 91-01-PLAN.md — StatusFilterTabs UI + server persistence + useThoughts dynamic filter
-**UI hint**: yes
-
-### Phase 92: Work Order Archive
-**Goal**: Stale work orders disappear from the active list automatically, but remain viewable via a Show Archived toggle with unarchive and explicit bulk-clear controls.
-**Depends on**: Phase 87
-**Requirements**: WO-01, WO-02, WO-03, WO-04, WO-05, WO-06
-**Success Criteria** (what must be TRUE):
-  1. A Gmail-imported work order older than 7 days from import date no longer appears in the active Work Orders view
-  2. A work order marked completed more than 7 days ago no longer appears in the active view (regardless of source)
-  3. A manually-entered work order never auto-archives, regardless of age or status
-  4. Toggling Show Archived in the PWA reveals archived work orders; unarchiving restores one to active
-  5. Bulk-Clear Archived requires explicit confirmation and permanently removes all archived work orders (only explicit destructive path in v3.2)
-**Plans:** 2/2 plans complete
-Plans:
-- [x] 92-01-PLAN.md — Server: archivedAt column, lazy auto-archive in GET, filter param, unarchive + bulk-delete endpoints, PWA client functions
-- [x] 92-02-PLAN.md — PWA: Active/Archived/All filter tabs, archived row styling + unarchive button, Clear Archived with confirmation
-**UI hint**: yes
-
-### Phase 93: Brief PDF Cleanup & 7-Day Scope
-**Goal**: The daily brief PDF drops its duplicate Tasks section, relocates the Affirmation to the bottom of Page 1 with clean reflow, and only includes thoughts from the last 7 days.
-**Depends on**: Phase 89 (needs 7-day window helper)
-**Requirements**: BRIEF-01, BRIEF-02, BRIEF-03, BRIEF-04
-**Success Criteria** (what must be TRUE):
-  1. Generated brief PDF contains exactly one Tasks section (no duplicate)
-  2. Affirmation appears at the bottom of Page 1 in the generated PDF
-  3. Content previously below the old Affirmation slot reflows up to fill freed space with no visual gaps
-  4. Brief PDF thought content only includes thoughts from the last 7 days (OCR noise from older content absent)
-**Plans:** 1/1 plans complete
-Plans:
-- [x] 93-01-PLAN.md — Apply Wed-anchored week window to brief thought queries
-
-### Phase 94: Browser Extension Quick-Capture
-**Goal**: The browser extension becomes the primary non-Mac capture surface — free-form thought text with server-side auto-triage and result feedback — while preserving one-click URL capture as a secondary option. Works in Chrome and Safari.
-**Depends on**: Phase 87 (can run in parallel with server work 88–93)
-**Requirements**: EXT-01, EXT-02, EXT-03, EXT-04, EXT-05
-**Success Criteria** (what must be TRUE):
-  1. Clicking the extension icon opens a popup with a freeform text field for thought capture
-  2. Submitting text POSTs to `/v1/thoughts` and triggers server-side auto-triage
-  3. After triage completes, the popup displays the resulting category (success feedback)
-  4. A one-click "Capture this page URL" option remains available inside the popup
-  5. Both Chrome and Safari builds exercise the full flow end-to-end (v3.1 cross-browser coverage preserved)
-**Plans:** 1/1 plans complete
-Plans:
-- [x] 94-01-PLAN.md — Capture UX enhancements (triage feedback, URL checkbox, Cmd+Enter) + Safari verification
-**UI hint**: yes
-
-### Phase 95: iOS PWA OAuth UAT Retest
-**Goal**: Close the Phase 81 UAT gap — iOS PWA in standalone (home-screen) mode completes Google OAuth against the live Railway deployment and lands back in Settings with Connected status.
-**Depends on**: Phase 87
-**Requirements**: UAT-01
-**Success Criteria** (what must be TRUE):
-  1. On a real iPhone with the PWA installed to home screen, clicking Connect Google completes OAuth without leaving standalone mode (or, if standalone mode is incompatible, the recovery path is documented)
-  2. After callback, Settings page shows Connected with the authorized scopes
-  3. Result is recorded in the Phase 81 UAT checklist (Test 8 passed or explicit documented workaround)
+  1. Each thought in the PWA has a visible "Chat" action (button or menu item)
+  2. Tapping the Chat action opens the Chat tab with the thought's text injected as the opening context
+  3. The AI's first response acknowledges or engages with the injected thought content
+  4. The chat session continues as a normal multi-turn conversation after the initial context injection
 **Plans**: TBD
 **UI hint**: yes
 
@@ -435,14 +364,17 @@ Plans:
 | 85. iOS Shortcut | v3.1 | — | Deferred (Shortcuts.app bugs) | - |
 | 86. Split Brief Schedule | v3.1 | 6/6 | Complete | 2026-04-15 |
 | 87. Vigil App Icons | v3.1 | 3/3 | Complete | 2026-04-15 |
-| 88. Date Window Helper & Weekly Rollover | v3.2 | 4/4 | Complete    | 2026-04-16 |
-| 89. 7-Day Analysis Scope | v3.2 | 2/2 | Complete    | 2026-04-16 |
-| 90. Server-Side Persistence | v3.2 | 3/3 | Complete    | 2026-04-16 |
-| 91. Tasks Tab Status Filter | v3.2 | 1/1 | Complete    | 2026-04-16 |
-| 92. Work Order Archive | v3.2 | 2/2 | Complete    | 2026-04-16 |
-| 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 1/1 | Complete    | 2026-04-16 |
-| 94. Browser Extension Quick-Capture | v3.2 | 1/1 | Complete    | 2026-04-16 |
-| 95. iOS PWA OAuth UAT Retest | v3.2 | 1/0 | Complete    | 2026-04-16 |
+| 88. Date Window Helper & Weekly Rollover | v3.2 | 4/4 | Complete | 2026-04-16 |
+| 89. 7-Day Analysis Scope | v3.2 | 2/2 | Complete | 2026-04-16 |
+| 90. Server-Side Persistence | v3.2 | 3/3 | Complete | 2026-04-16 |
+| 91. Tasks Tab Status Filter | v3.2 | 1/1 | Complete | 2026-04-16 |
+| 92. Work Order Archive | v3.2 | 2/2 | Complete | 2026-04-16 |
+| 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 1/1 | Complete | 2026-04-16 |
+| 94. Browser Extension Quick-Capture | v3.2 | 1/1 | Complete | 2026-04-16 |
+| 95. iOS PWA OAuth UAT Retest | v3.2 | 1/1 | Complete | 2026-04-16 |
+| 96. PWA Fixes | v3.3 | 0/TBD | Not started | - |
+| 97. Mac CLI Print Reliability | v3.3 | 0/TBD | Not started | - |
+| 98. Thought-Contextual Chat | v3.3 | 0/TBD | Not started | - |
 
 ## Backlog
 

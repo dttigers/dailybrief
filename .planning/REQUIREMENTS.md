@@ -46,16 +46,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FIX-01 | — | Pending |
-| FIX-02 | — | Pending |
-| FIX-03 | — | Pending |
-| CHAT-01 | — | Pending |
+| FIX-01 | Phase 96 | Pending |
+| FIX-02 | Phase 96 | Pending |
+| FIX-03 | Phase 97 | Pending |
+| CHAT-01 | Phase 98 | Pending |
 
 **Coverage:**
 - v3.3 requirements: 4 total
-- Mapped to phases: 0
-- Unmapped: 4 ⚠️
+- Mapped to phases: 4
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-16*
-*Last updated: 2026-04-16 after initial definition*
+*Last updated: 2026-04-16 after roadmap creation*
