@@ -138,7 +138,7 @@ therapy.post("/therapy/patterns", async (c) => {
     .map((t) => `[${t.id}] (${t.therapyClassification}, ${t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt}) ${t.content}`)
     .join("\n");
 
-  const userMessage = `Here are my therapy-related thoughts from the last 7 days:\n${thoughtLines}\n\nAnalyze these thoughts and identify recurring patterns. Return a JSON array:\n[{"theme": "...", "description": "...", "frequency": N, "trend": "increasing|stable|decreasing", "related_thought_ids": [], "confidence": 0.0-1.0}]\n\nReturn ONLY the JSON array, no other text.`;
+  const userMessage = `Here are my classified thoughts from the last 7 days (both self-learnable and therapy-relevant):\n${thoughtLines}\n\nAnalyze these thoughts and identify recurring patterns. Return a JSON array:\n[{"theme": "...", "description": "...", "frequency": N, "trend": "increasing|stable|decreasing", "related_thought_ids": [], "confidence": 0.0-1.0}]\n\nReturn ONLY the JSON array, no other text.`;
 
   try {
     const raw = await callClaude({
