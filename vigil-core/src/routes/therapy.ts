@@ -6,6 +6,10 @@ import type {
   TherapyPrep,
   TherapyPrepItem,
 } from "../ai/types.js";
+import { db } from "../db/connection.js";
+import { thoughts as thoughtsTable, appSettings } from "../db/schema.js";
+import { eq, and, ne, gte, lt, desc, isNotNull } from "drizzle-orm";
+import { getRollingDayWindow } from "../utils/date-window.js";
 
 export const therapy = new Hono();
 
@@ -76,13 +80,6 @@ therapy.post("/therapy/classify", async (c) => {
 
 // ── Patterns ──────────────────────────────────────────────────────────────
 
-interface PatternThought {
-  id: number;
-  content: string;
-  therapyClassification: string;
-  createdAt: string;
-}
-
 const PATTERNS_SYSTEM_PROMPT = `You are a pattern detection tool, NOT a therapist. Your role is to surface observations to help the user prepare for therapy sessions.
 
 Analyze the user's therapy-related thoughts and identify recurring emotional themes, behavioral patterns, and unresolved concerns. For each pattern:
@@ -97,20 +94,6 @@ Focus on genuine patterns. Look for: recurring emotional states or triggers, beh
 
 // POST /therapy/patterns — Detect patterns across therapy thoughts
 therapy.post("/therapy/patterns", async (c) => {
-  let body: { thoughts?: PatternThought[]; days?: number };
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: "Invalid JSON body" }, 400);
-  }
-
-  if (!body.thoughts || !Array.isArray(body.thoughts) || body.thoughts.length < 5) {
-    return c.json(
-      { error: "At least 5 thoughts are required for pattern detection" },
-      400
-    );
-  }
-
   if (!getAIClient()) {
     return c.json(
       { error: "AI service unavailable. ANTHROPIC_API_KEY not configured." },
@@ -118,12 +101,43 @@ therapy.post("/therapy/patterns", async (c) => {
     );
   }
 
-  const days = body.days || 30;
-  const thoughtLines = body.thoughts
-    .map((t) => `[${t.id}] (${t.therapyClassification}, ${t.createdAt}) ${t.content}`)
+  if (!db) return c.json({ error: "Database not available" }, 503);
+
+  const tzRows = await db
+    .select({ value: appSettings.value })
+    .from(appSettings)
+    .where(eq(appSettings.key, "user_timezone"))
+    .limit(1);
+  const tz = tzRows.length > 0 ? (tzRows[0].value as string) : "America/New_York";
+
+  const { start, end } = getRollingDayWindow(tz, 7);
+
+  const conditions = [
+    ne(thoughtsTable.syncStatus, "pendingDeletion"),
+    gte(thoughtsTable.createdAt, start),
+    lt(thoughtsTable.createdAt, end),
+    isNotNull(thoughtsTable.therapyClassification),
+  ];
+
+  const rows = await db
+    .select()
+    .from(thoughtsTable)
+    .where(and(...conditions))
+    .orderBy(desc(thoughtsTable.createdAt))
+    .limit(200);
+
+  if (rows.length < 5) {
+    return c.json(
+      { error: `Only ${rows.length} therapy thought${rows.length === 1 ? "" : "s"} this week — need at least 5 for pattern analysis`, count: rows.length },
+      400
+    );
+  }
+
+  const thoughtLines = rows
+    .map((t) => `[${t.id}] (${t.therapyClassification}, ${t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt}) ${t.content}`)
     .join("\n");
 
-  const userMessage = `Here are my therapy-related thoughts from the last ${days} days:\n${thoughtLines}\n\nAnalyze these thoughts and identify recurring patterns. Return a JSON array:\n[{"theme": "...", "description": "...", "frequency": N, "trend": "increasing|stable|decreasing", "related_thought_ids": [], "confidence": 0.0-1.0}]\n\nReturn ONLY the JSON array, no other text.`;
+  const userMessage = `Here are my therapy-related thoughts from the last 7 days:\n${thoughtLines}\n\nAnalyze these thoughts and identify recurring patterns. Return a JSON array:\n[{"theme": "...", "description": "...", "frequency": N, "trend": "increasing|stable|decreasing", "related_thought_ids": [], "confidence": 0.0-1.0}]\n\nReturn ONLY the JSON array, no other text.`;
 
   try {
     const raw = await callClaude({
@@ -166,26 +180,12 @@ therapy.post("/therapy/patterns", async (c) => {
 
 // ── Prep ──────────────────────────────────────────────────────────────────
 
-interface PrepThought {
-  id: number;
-  content: string;
-  createdAt: string;
-}
-
-interface PrepPattern {
-  theme: string;
-  trend: string;
-  confidence: number;
-  description: string;
-}
-
 const PREP_SYSTEM_PROMPT = `You are organizing the user's own thoughts for their therapy prep, NOT providing therapy or clinical advice.
 
 Generate a structured therapy session preparation from the user's recent thoughts that they marked for therapist discussion. Your job is to:
 - Organize thoughts into clear discussion topics
 - Provide brief context for each topic so the user can reference it quickly
 - Assign urgency levels (high/medium/low) based on emotional intensity and how pressing the topic seems
-- If recurring patterns are provided, use them to add context about themes that keep appearing
 - Identify overall themes across all topics
 - Suggest a session focus based on what seems most pressing or important
 
@@ -193,20 +193,6 @@ Keep topics concise and actionable. The user should be able to glance at this pr
 
 // POST /therapy/prep — Generate structured therapy session prep
 therapy.post("/therapy/prep", async (c) => {
-  let body: { thoughts?: PrepThought[]; patterns?: PrepPattern[] };
-  try {
-    body = await c.req.json();
-  } catch {
-    return c.json({ error: "Invalid JSON body" }, 400);
-  }
-
-  if (!body.thoughts || !Array.isArray(body.thoughts) || body.thoughts.length < 1) {
-    return c.json(
-      { error: "At least 1 thought is required for session prep" },
-      400
-    );
-  }
-
   if (!getAIClient()) {
     return c.json(
       { error: "AI service unavailable. ANTHROPIC_API_KEY not configured." },
@@ -214,17 +200,43 @@ therapy.post("/therapy/prep", async (c) => {
     );
   }
 
-  const thoughtLines = body.thoughts
-    .map((t) => `[${t.id}] (${t.createdAt}) ${t.content}`)
+  if (!db) return c.json({ error: "Database not available" }, 503);
+
+  const tzRows = await db
+    .select({ value: appSettings.value })
+    .from(appSettings)
+    .where(eq(appSettings.key, "user_timezone"))
+    .limit(1);
+  const tz = tzRows.length > 0 ? (tzRows[0].value as string) : "America/New_York";
+
+  const { start, end } = getRollingDayWindow(tz, 7);
+
+  const conditions = [
+    ne(thoughtsTable.syncStatus, "pendingDeletion"),
+    gte(thoughtsTable.createdAt, start),
+    lt(thoughtsTable.createdAt, end),
+    eq(thoughtsTable.therapyClassification, "bringToTherapist"),
+  ];
+
+  const rows = await db
+    .select()
+    .from(thoughtsTable)
+    .where(and(...conditions))
+    .orderBy(desc(thoughtsTable.createdAt))
+    .limit(200);
+
+  if (rows.length < 1) {
+    return c.json(
+      { error: "No thoughts marked for therapist discussion this week", count: 0 },
+      400
+    );
+  }
+
+  const thoughtLines = rows
+    .map((t) => `[${t.id}] (${t.createdAt instanceof Date ? t.createdAt.toISOString() : t.createdAt}) ${t.content}`)
     .join("\n");
 
-  let patternSection = "";
-  if (body.patterns && body.patterns.length > 0) {
-    const patternLines = body.patterns
-      .map((p) => `- ${p.theme} (${p.trend}, confidence: ${p.confidence}): ${p.description}`)
-      .join("\n");
-    patternSection = `\n\nDetected recurring patterns for additional context:\n${patternLines}`;
-  }
+  const patternSection = "";
 
   const userMessage = `Here are my recent thoughts marked for discussion with my therapist:\n${thoughtLines}${patternSection}\n\nGenerate a structured therapy session prep. Return a JSON object:\n{"items": [{"topic": "...", "context": "...", "urgency": "high|medium|low", "related_thought_ids": []}], "overall_themes": ["..."], "suggested_focus": "..."}\n\nReturn ONLY the JSON object, no other text.`;
 
