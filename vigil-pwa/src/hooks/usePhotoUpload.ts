@@ -179,6 +179,7 @@ export function usePhotoUpload(): UsePhotoUploadReturn {
         const result: PhotoCommitResult = await res.json()
         setCommitResult(result)
         setPhase('done')
+        window.dispatchEvent(new Event('vigil:thought-created'))
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to save thoughts. Please try again.')
         setPhase('error')
