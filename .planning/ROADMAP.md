@@ -216,7 +216,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 - [x] **Phase 88: Date Window Helper & Weekly Rollover** — Shared server-side 7-day / Wed-anchored window helper + Thoughts tab rollover view (completed 2026-04-16)
 - [x] **Phase 89: 7-Day Analysis Scope** — Apply window helper to Insights, Therapy patterns, and Therapy session prep (completed 2026-04-16)
-- [ ] **Phase 90: Server-Side Persistence** — Cache Insights / Therapy / Therapy-prep with Regenerate; Chat auto-resumes last session
+- [x] **Phase 90: Server-Side Persistence** — Cache Insights / Therapy / Therapy-prep with Regenerate; Chat auto-resumes last session (completed 2026-04-16)
 - [ ] **Phase 91: Tasks Tab Status Filter** — Open default, toggle Done/All, per-device persistence + server-synced default
 - [ ] **Phase 92: Work Order Archive** — Auto-archive rules, archived view, unarchive, bulk-clear (PWA + Mac CLI aware)
 - [ ] **Phase 93: Brief PDF Cleanup & 7-Day Scope** — De-dupe Tasks, Affirmation to bottom of Page 1, reflow, respect 7-day window
@@ -266,11 +266,11 @@ Plans:
   3. Opening Therapy session prep a second time displays cached output instantly with a Regenerate button
   4. Clicking Regenerate on any of the three triggers a fresh AI run and updates the cached result
   5. Closing and reopening the PWA lands the user back in their most recently active Chat session with prior messages visible
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 Plans:
 - [x] 90-01-PLAN.md — Drizzle ai_cache table + server cache GET/POST endpoints + schema push
 - [x] 90-02-PLAN.md — PWA API client cache functions + cache-first hooks + Chat auto-resume
-- [ ] 90-03-PLAN.md — UI: Regenerate button + timestamp on Insights/Therapy pages + human verification
+- [x] 90-03-PLAN.md — UI: Regenerate button + timestamp on Insights/Therapy pages + human verification
 **UI hint**: yes
 
 ### Phase 91: Tasks Tab Status Filter
@@ -428,7 +428,7 @@ Plans:
 | 87. Vigil App Icons | v3.1 | 3/3 | Complete | 2026-04-15 |
 | 88. Date Window Helper & Weekly Rollover | v3.2 | 4/4 | Complete    | 2026-04-16 |
 | 89. 7-Day Analysis Scope | v3.2 | 2/2 | Complete    | 2026-04-16 |
-| 90. Server-Side Persistence | v3.2 | 2/3 | In Progress|  |
+| 90. Server-Side Persistence | v3.2 | 3/3 | Complete   | 2026-04-16 |
 | 91. Tasks Tab Status Filter | v3.2 | 0/TBD | Not started | - |
 | 92. Work Order Archive | v3.2 | 0/TBD | Not started | - |
 | 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 0/TBD | Not started | - |

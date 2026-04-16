@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Freshness & Capture Parity
-status: executing
-stopped_at: Completed 90-02-PLAN.md
-last_updated: "2026-04-16T14:32:39.034Z"
+status: verifying
+stopped_at: Completed 90-03-PLAN.md
+last_updated: "2026-04-16T14:35:52.622Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 3
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 8
-  percent: 89
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 
 Phase: 90 (server-side-persistence) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -65,6 +65,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 89 P02 | 139 | 2 tasks | 5 files |
 | Phase 90 P01 | 154 | 3 tasks | 5 files |
 | Phase 90 P02 | 119 | 2 tasks | 4 files |
+| Phase 90 P03 | 92 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 90]: Journal backfilled for migrations 0008-0009 applied via push but missing from journal
 - [Phase 90]: ai_cache upsert pattern: insert + onConflictDoUpdate on type column for single-row-per-type caching
 - [Phase 90]: useInsights auto-generates on mount when no cache; useTherapy requires user action; useChat auto-resumes most recent session
+- [Phase 90]: Regenerate button uses gray-900/80 (not teal) per UI-SPEC to visually subordinate it to primary Generate action
 
 ### Roadmap Dependency Notes
 
@@ -113,7 +115,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-04-16T14:32:39.030Z
-Stopped at: Completed 90-02-PLAN.md
+Last session: 2026-04-16T14:35:52.616Z
+Stopped at: Completed 90-03-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 88` to decompose Date Window Helper & Weekly Rollover
