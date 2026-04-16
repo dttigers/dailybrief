@@ -161,3 +161,56 @@ workOrdersRouter.get("/work-orders", async (c) => {
 
   return c.json({ data });
 });
+
+// PUT /work-orders/:caseNumber/unarchive — restore an archived order (D-02)
+workOrdersRouter.put("/work-orders/:caseNumber/unarchive", async (c) => {
+  if (!db) return c.json({ error: "Database not available" }, 503);
+
+  const caseNumber = c.req.param("caseNumber");
+
+  // Validate caseNumber exists (T-92-03)
+  const existing = await db
+    .select({ caseNumber: workOrders.caseNumber })
+    .from(workOrders)
+    .where(eq(workOrders.caseNumber, caseNumber));
+
+  if (existing.length === 0) {
+    return c.json({ error: "Work order not found" }, 404);
+  }
+
+  await db
+    .update(workOrders)
+    .set({ archivedAt: null })
+    .where(eq(workOrders.caseNumber, caseNumber));
+
+  return c.json({ caseNumber, archivedAt: null });
+});
+
+// DELETE /work-orders/archived — hard-delete all archived orders (D-09, D-10)
+workOrdersRouter.delete("/work-orders/archived", async (c) => {
+  if (!db) return c.json({ error: "Database not available" }, 503);
+
+  // Find all archived orders (T-92-01: WHERE clause guarantees only archived are deleted)
+  const archived = await db
+    .select({ caseNumber: workOrders.caseNumber })
+    .from(workOrders)
+    .where(isNotNull(workOrders.archivedAt));
+
+  if (archived.length === 0) {
+    return c.json({ deleted: 0 });
+  }
+
+  const archivedCaseNumbers = archived.map((r) => r.caseNumber);
+
+  // Clean up corresponding statuses first
+  await db
+    .delete(workOrderStatuses)
+    .where(inArray(workOrderStatuses.caseNumber, archivedCaseNumbers));
+
+  // Hard-delete the archived work orders
+  await db
+    .delete(workOrders)
+    .where(isNotNull(workOrders.archivedAt));
+
+  return c.json({ deleted: archived.length });
+});

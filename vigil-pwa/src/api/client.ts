@@ -195,11 +195,25 @@ export interface WorkOrderApiResponse {
   syncedAt: string
   lastChangeAt: string | null
   lastChangeSummary: string | null
+  archivedAt: string | null
 }
 
-export async function getWorkOrders(): Promise<{ data: WorkOrderApiResponse[] }> {
-  const res = await vigilFetch('/v1/work-orders')
+export async function getWorkOrders(filter?: 'active' | 'archived' | 'all'): Promise<{ data: WorkOrderApiResponse[] }> {
+  const params = filter ? `?filter=${filter}` : ''
+  const res = await vigilFetch(`/v1/work-orders${params}`)
   if (!res.ok) throw new Error(`Failed to fetch work orders: ${res.status}`)
+  return res.json()
+}
+
+export async function unarchiveWorkOrder(caseNumber: string): Promise<{ caseNumber: string; archivedAt: null }> {
+  const res = await vigilFetch(`/v1/work-orders/${encodeURIComponent(caseNumber)}/unarchive`, { method: 'PUT' })
+  if (!res.ok) throw new Error(`Failed to unarchive work order: ${res.status}`)
+  return res.json()
+}
+
+export async function deleteArchivedWorkOrders(): Promise<{ deleted: number }> {
+  const res = await vigilFetch('/v1/work-orders/archived', { method: 'DELETE' })
+  if (!res.ok) throw new Error(`Failed to delete archived work orders: ${res.status}`)
   return res.json()
 }
 
