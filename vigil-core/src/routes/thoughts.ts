@@ -1,8 +1,9 @@
 import { Hono } from "hono";
 import crypto from "crypto";
 import { db } from "../db/connection.js";
-import { thoughts as thoughtsTable, projects as projectsTable } from "../db/schema.js";
-import { eq, and, ne, gte, lte, desc, count, sql, isNull } from "drizzle-orm";
+import { thoughts as thoughtsTable, projects as projectsTable, appSettings } from "../db/schema.js";
+import { eq, and, ne, gte, lte, lt, desc, count, sql, isNull } from "drizzle-orm";
+import { getCurrentWeekWindow } from "../utils/date-window.js";
 import type { DrizzleThought, PaginatedResponse } from "../db/types.js";
 
 const VALID_SOURCES = ["text", "voice", "image"] as const;
@@ -71,6 +72,7 @@ thoughts.get("/thoughts", async (c) => {
     const before = c.req.query("before");
     const projectIdParam = c.req.query("projectId");
     const unassignedParam = c.req.query("unassigned");
+    const windowParam = c.req.query("window");
     const limit = Math.min(Math.max(Number(c.req.query("limit")) || 50, 1), 200);
     const offset = Math.max(Number(c.req.query("offset")) || 0, 0);
 
@@ -138,6 +140,22 @@ thoughts.get("/thoughts", async (c) => {
     }
     if (before) {
       conditions.push(lte(thoughtsTable.createdAt, new Date(before)));
+    }
+
+    // ROLLOVER-01..04: default to current-week window in user tz,
+    // unless caller explicitly bypasses via ?q=, ?after=, ?before=, or ?window=all.
+    const bypassWindow = !!q || !!after || !!before || windowParam === "all";
+    if (!bypassWindow) {
+      // Inline tz lookup (mirrors settings.ts pattern; extraction to shared util deferred to Phase 89 per CONTEXT.md)
+      const tzRows = await db
+        .select({ value: appSettings.value })
+        .from(appSettings)
+        .where(eq(appSettings.key, "user_timezone"))
+        .limit(1);
+      const tz = tzRows.length > 0 ? (tzRows[0].value as string) : "America/New_York";
+      const { start, end } = getCurrentWeekWindow(tz);
+      conditions.push(gte(thoughtsTable.createdAt, start));
+      conditions.push(lt(thoughtsTable.createdAt, end));
     }
 
     const whereCondition = and(...conditions);
