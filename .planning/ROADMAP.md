@@ -266,10 +266,10 @@ Plans:
   3. Opening Therapy session prep a second time displays cached output instantly with a Regenerate button
   4. Clicking Regenerate on any of the three triggers a fresh AI run and updates the cached result
   5. Closing and reopening the PWA lands the user back in their most recently active Chat session with prior messages visible
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 Plans:
 - [x] 90-01-PLAN.md — Drizzle ai_cache table + server cache GET/POST endpoints + schema push
-- [ ] 90-02-PLAN.md — PWA API client cache functions + cache-first hooks + Chat auto-resume
+- [x] 90-02-PLAN.md — PWA API client cache functions + cache-first hooks + Chat auto-resume
 - [ ] 90-03-PLAN.md — UI: Regenerate button + timestamp on Insights/Therapy pages + human verification
 **UI hint**: yes
 
@@ -428,7 +428,7 @@ Plans:
 | 87. Vigil App Icons | v3.1 | 3/3 | Complete | 2026-04-15 |
 | 88. Date Window Helper & Weekly Rollover | v3.2 | 4/4 | Complete    | 2026-04-16 |
 | 89. 7-Day Analysis Scope | v3.2 | 2/2 | Complete    | 2026-04-16 |
-| 90. Server-Side Persistence | v3.2 | 1/3 | In Progress|  |
+| 90. Server-Side Persistence | v3.2 | 2/3 | In Progress|  |
 | 91. Tasks Tab Status Filter | v3.2 | 0/TBD | Not started | - |
 | 92. Work Order Archive | v3.2 | 0/TBD | Not started | - |
 | 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 0/TBD | Not started | - |

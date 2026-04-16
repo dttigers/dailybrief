@@ -30,7 +30,7 @@
 - [x] **PERSIST-01**: Insights results persist server-side; revisits show last generation instantly with a "Regenerate" button
 - [x] **PERSIST-02**: Therapy patterns persist server-side with explicit regenerate
 - [x] **PERSIST-03**: Therapy session prep persists server-side with explicit regenerate
-- [ ] **PERSIST-04**: Chat auto-resumes the most recently active session when the PWA is reopened
+- [x] **PERSIST-04**: Chat auto-resumes the most recently active session when the PWA is reopened
 
 ### Tasks Tab Filtering
 
@@ -103,7 +103,7 @@
 | PERSIST-01 | Phase 90 | Complete |
 | PERSIST-02 | Phase 90 | Complete |
 | PERSIST-03 | Phase 90 | Complete |
-| PERSIST-04 | Phase 90 | Pending |
+| PERSIST-04 | Phase 90 | Complete |
 | TASKS-01 | Phase 91 | Pending |
 | TASKS-02 | Phase 91 | Pending |
 | TASKS-03 | Phase 91 | Pending |
