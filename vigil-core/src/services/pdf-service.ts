@@ -131,6 +131,34 @@ function drawSectionHeader(
   return y + layout.headerSize + 4;
 }
 
+function drawNotesSection(
+  doc: PDFKit.PDFDocument,
+  leftX: number,
+  rightEdge: number,
+  contentBottom: number,
+  currentY: number,
+  layout: PdfLayout
+): void {
+  const notesY = Math.max(currentY + 8, contentBottom - layout.noteLineSpacing * 5);
+
+  doc
+    .font("Inter-Regular")
+    .fontSize(layout.smallSize)
+    .fillColor(COLORS.subtext)
+    .text("Notes", leftX, notesY, { lineBreak: false });
+
+  let lineY = notesY + layout.smallSize + 4;
+  for (let i = 0; i < 4; i++) {
+    doc
+      .moveTo(leftX, lineY)
+      .lineTo(rightEdge, lineY)
+      .lineWidth(0.5)
+      .strokeColor(COLORS.divider)
+      .stroke();
+    lineY += layout.noteLineSpacing;
+  }
+}
+
 // ── Cutting guide ─────────────────────────────────────────────────────────────
 
 function drawCuttingGuide(doc: PDFKit.PDFDocument, layout: PdfLayout): void {
@@ -337,72 +365,12 @@ function drawPageOne(
   }
 
   // ── Notes section (always at bottom) ──────────────────────────────────────
-
-  // Place notes near the bottom of the page
-  const notesY = Math.max(y + 8, contentBottom - layout.noteLineSpacing * 5);
-
-  doc
-    .font("Inter-Regular")
-    .fontSize(layout.smallSize)
-    .fillColor(COLORS.subtext)
-    .text("Notes", leftX, notesY, { lineBreak: false });
-
-  // 4 horizontal ruled lines for handwriting
-  let lineY = notesY + layout.smallSize + 4;
-  for (let i = 0; i < 4; i++) {
-    doc
-      .moveTo(leftX, lineY)
-      .lineTo(rightEdge, lineY)
-      .lineWidth(0.5)
-      .strokeColor(COLORS.divider)
-      .stroke();
-    lineY += layout.noteLineSpacing;
-  }
+  drawNotesSection(doc, leftX, rightEdge, contentBottom, y, layout);
 }
 
 // ── Page 2 renderer ───────────────────────────────────────────────────────────
 
-function drawPageTwo(
-  doc: PDFKit.PDFDocument,
-  data: BriefRenderData,
-  layout: PdfLayout
-): void {
-  const { leftX, rightEdge, contentBottom } = layout;
-  let y = layout.margin + 4;
-
-  // ── Sports section ─────────────────────────────────────────────────────────
-
-  if (layout.enabledSections.has("sports") && data.sports.length > 0) {
-    const isCompact = data.sports.length > 1;
-    const activeSportCount = data.sports.length;
-
-    for (const league of data.sports) {
-      y = drawSportSection(doc, league, layout, y, isCompact, activeSportCount);
-    }
-  }
-
-  // ── Notes section (always, at bottom of page 2) ──────────────────────────
-
-  // Position at contentBottom - 70 (matching Swift reference)
-  const notesY = contentBottom - 70;
-
-  doc
-    .font("Inter-Regular")
-    .fontSize(layout.smallSize)
-    .fillColor(COLORS.subtext)
-    .text("Notes", leftX, notesY, { lineBreak: false });
-
-  let lineY = notesY + layout.smallSize + 4;
-  for (let i = 0; i < 4; i++) {
-    doc
-      .moveTo(leftX, lineY)
-      .lineTo(rightEdge, lineY)
-      .lineWidth(0.5)
-      .strokeColor(COLORS.divider)
-      .stroke();
-    lineY += layout.noteLineSpacing;
-  }
-}
+// Page 2 removed — sports moved to Page 1, content consolidated
 
 // ── Sport section helper ──────────────────────────────────────────────────────
 
@@ -833,6 +801,9 @@ function drawPageThree(
       }
     }
   }
+
+  // ── Notes section (always at bottom of captured thoughts page) ────────────
+  drawNotesSection(doc, leftX, rightEdge, contentBottom, y, layout);
 
   // ── Insights spillover pages ──────────────────────────────────────────────
 

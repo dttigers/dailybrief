@@ -249,6 +249,16 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
     return d.toISOString().slice(0, 10);
   }
 
+  function getToday(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function getTomorrow(): string {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+
   async function fetchJSON<T>(url: string): Promise<T> {
     // Authorization: raw key only — NOT "Bearer <key>" (balldontlie.io requirement)
     const apiKey = process.env["BALLDONTLIE_API_KEY"] ?? "";
@@ -265,28 +275,29 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
   async function fetchLeagueMLB(): Promise<LeagueResult> {
     const teamId = getTeamId("mlb");
     const yesterday = getYesterday();
-    const gamesUrl = `${BASE_URLS.mlb}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const today = getToday();
+    const tomorrow = getTomorrow();
+    const recentUrl = `${BASE_URLS.mlb}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const upcomingUrl = `${BASE_URLS.mlb}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.mlb}/standings?season=2026`;
 
-    const [gamesRes, standingsRes] = await Promise.allSettled([
-      fetchJSON<{ data: BDLMLBGame[] }>(gamesUrl),
+    const [gamesRes, upcomingRes, standingsRes] = await Promise.allSettled([
+      fetchJSON<{ data: BDLMLBGame[] }>(recentUrl),
+      fetchJSON<{ data: BDLMLBGame[] }>(upcomingUrl),
       fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
     ]);
 
     const games = gamesRes.status === "fulfilled" ? gamesRes.value.data : [];
+    const upcoming = upcomingRes.status === "fulfilled" ? upcomingRes.value.data : [];
     const standingsData = standingsRes.status === "fulfilled" ? standingsRes.value.data : [];
 
-    if (games.length === 0 && standingsData.length === 0) {
-      // If games failed (not just empty), report error rather than off_season
-      if (gamesRes.status === "rejected") {
-        throw gamesRes.reason;
-      }
+    if (games.length === 0 && upcoming.length === 0 && standingsData.length === 0) {
+      if (gamesRes.status === "rejected") throw gamesRes.reason;
       return { status: "off_season" };
     }
 
-    // Derive team name by matching configured team ID against game data
     const teamIdNum = parseInt(getTeamId("mlb"), 10);
-    const firstGame = games[0];
+    const firstGame = games[0] ?? upcoming[0];
     const configuredTeamEntry = firstGame
       ? (firstGame.home_team.id === teamIdNum ? firstGame.home_team_name : firstGame.away_team_name)
       : standingsData[0]?.team?.full_name ?? "";
@@ -296,13 +307,26 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       ? normalizeMLBGame(finalGames[finalGames.length - 1], configuredTeamEntry)
       : null;
 
+    const nonFinal = upcoming.filter((g) => !isFinalStatus("mlb", g.status));
+    const nextGame = nonFinal[0];
+    const upcomingGame: UpcomingGame | null = nextGame
+      ? {
+          homeTeam: nextGame.home_team_name,
+          awayTeam: nextGame.away_team_name,
+          isHome: nextGame.home_team.id === teamIdNum,
+          venue: "",
+          gameType: "Regular Season",
+          gameDate: nextGame.date.slice(0, 10),
+        }
+      : null;
+
     const standings = normalizeStandings(standingsData);
 
     return {
       status: "ok",
       data: {
         recentGame,
-        upcomingGame: null,
+        upcomingGame,
         standings,
       },
     };
@@ -311,26 +335,29 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
   async function fetchLeagueNFL(): Promise<LeagueResult> {
     const teamId = getTeamId("nfl");
     const yesterday = getYesterday();
-    const gamesUrl = `${BASE_URLS.nfl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const today = getToday();
+    const tomorrow = getTomorrow();
+    const recentUrl = `${BASE_URLS.nfl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const upcomingUrl = `${BASE_URLS.nfl}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nfl}/standings?season=2026`;
 
-    const [gamesRes, standingsRes] = await Promise.allSettled([
-      fetchJSON<{ data: BDLNFLGame[] }>(gamesUrl),
+    const [gamesRes, upcomingRes, standingsRes] = await Promise.allSettled([
+      fetchJSON<{ data: BDLNFLGame[] }>(recentUrl),
+      fetchJSON<{ data: BDLNFLGame[] }>(upcomingUrl),
       fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
     ]);
 
     const games = gamesRes.status === "fulfilled" ? gamesRes.value.data : [];
+    const upcoming = upcomingRes.status === "fulfilled" ? upcomingRes.value.data : [];
     const standingsData = standingsRes.status === "fulfilled" ? standingsRes.value.data : [];
 
-    if (games.length === 0 && standingsData.length === 0) {
-      if (gamesRes.status === "rejected") {
-        throw gamesRes.reason;
-      }
+    if (games.length === 0 && upcoming.length === 0 && standingsData.length === 0) {
+      if (gamesRes.status === "rejected") throw gamesRes.reason;
       return { status: "off_season" };
     }
 
     const nflTeamId = parseInt(getTeamId("nfl"), 10);
-    const nflFirst = games[0];
+    const nflFirst = games[0] ?? upcoming[0];
     const configuredTeamEntry = nflFirst
       ? (nflFirst.home_team.id === nflTeamId ? nflFirst.home_team.full_name : nflFirst.visitor_team.full_name)
       : standingsData[0]?.team?.full_name ?? "";
@@ -340,13 +367,26 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       ? normalizeNFLGame(finalGames[finalGames.length - 1], configuredTeamEntry)
       : null;
 
+    const nonFinal = upcoming.filter((g) => !isFinalStatus("nfl", g.status));
+    const nextGame = nonFinal[0];
+    const upcomingGame: UpcomingGame | null = nextGame
+      ? {
+          homeTeam: nextGame.home_team.full_name,
+          awayTeam: nextGame.visitor_team.full_name,
+          isHome: nextGame.home_team.id === nflTeamId,
+          venue: "",
+          gameType: nextGame.week ? `Week ${nextGame.week}` : "Regular Season",
+          gameDate: nextGame.date.slice(0, 10),
+        }
+      : null;
+
     const standings = normalizeStandings(standingsData);
 
     return {
       status: "ok",
       data: {
         recentGame,
-        upcomingGame: null,
+        upcomingGame,
         standings,
       },
     };
@@ -355,26 +395,29 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
   async function fetchLeagueNBA(): Promise<LeagueResult> {
     const teamId = getTeamId("nba");
     const yesterday = getYesterday();
-    const gamesUrl = `${BASE_URLS.nba}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const today = getToday();
+    const tomorrow = getTomorrow();
+    const recentUrl = `${BASE_URLS.nba}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const upcomingUrl = `${BASE_URLS.nba}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nba}/standings?season=2026`;
 
-    const [gamesRes, standingsRes] = await Promise.allSettled([
-      fetchJSON<{ data: BDLNBAGame[] }>(gamesUrl),
+    const [gamesRes, upcomingRes, standingsRes] = await Promise.allSettled([
+      fetchJSON<{ data: BDLNBAGame[] }>(recentUrl),
+      fetchJSON<{ data: BDLNBAGame[] }>(upcomingUrl),
       fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
     ]);
 
     const games = gamesRes.status === "fulfilled" ? gamesRes.value.data : [];
+    const upcoming = upcomingRes.status === "fulfilled" ? upcomingRes.value.data : [];
     const standingsData = standingsRes.status === "fulfilled" ? standingsRes.value.data : [];
 
-    if (games.length === 0 && standingsData.length === 0) {
-      if (gamesRes.status === "rejected") {
-        throw gamesRes.reason;
-      }
+    if (games.length === 0 && upcoming.length === 0 && standingsData.length === 0) {
+      if (gamesRes.status === "rejected") throw gamesRes.reason;
       return { status: "off_season" };
     }
 
     const nbaTeamId = parseInt(getTeamId("nba"), 10);
-    const nbaFirst = games[0];
+    const nbaFirst = games[0] ?? upcoming[0];
     const configuredTeamEntry = nbaFirst
       ? (nbaFirst.home_team.id === nbaTeamId ? nbaFirst.home_team.full_name : nbaFirst.visitor_team.full_name)
       : standingsData[0]?.team?.full_name ?? "";
@@ -384,13 +427,26 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       ? normalizeNBAGame(finalGames[finalGames.length - 1], configuredTeamEntry)
       : null;
 
+    const nonFinal = upcoming.filter((g) => !isFinalStatus("nba", g.status));
+    const nextGame = nonFinal[0];
+    const upcomingGame: UpcomingGame | null = nextGame
+      ? {
+          homeTeam: nextGame.home_team.full_name,
+          awayTeam: nextGame.visitor_team.full_name,
+          isHome: nextGame.home_team.id === nbaTeamId,
+          venue: "",
+          gameType: "Regular Season",
+          gameDate: nextGame.date.slice(0, 10),
+        }
+      : null;
+
     const standings = normalizeStandings(standingsData);
 
     return {
       status: "ok",
       data: {
         recentGame,
-        upcomingGame: null,
+        upcomingGame,
         standings,
       },
     };
@@ -399,26 +455,29 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
   async function fetchLeagueNHL(): Promise<LeagueResult> {
     const teamId = getTeamId("nhl");
     const yesterday = getYesterday();
-    const gamesUrl = `${BASE_URLS.nhl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const today = getToday();
+    const tomorrow = getTomorrow();
+    const recentUrl = `${BASE_URLS.nhl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
+    const upcomingUrl = `${BASE_URLS.nhl}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nhl}/standings?season=2026`;
 
-    const [gamesRes, standingsRes] = await Promise.allSettled([
-      fetchJSON<{ data: BDLNHLGame[] }>(gamesUrl),
+    const [gamesRes, upcomingRes, standingsRes] = await Promise.allSettled([
+      fetchJSON<{ data: BDLNHLGame[] }>(recentUrl),
+      fetchJSON<{ data: BDLNHLGame[] }>(upcomingUrl),
       fetchJSON<{ data: BDLStandingsEntry[] }>(standingsUrl),
     ]);
 
     const games = gamesRes.status === "fulfilled" ? gamesRes.value.data : [];
+    const upcoming = upcomingRes.status === "fulfilled" ? upcomingRes.value.data : [];
     const standingsData = standingsRes.status === "fulfilled" ? standingsRes.value.data : [];
 
-    if (games.length === 0 && standingsData.length === 0) {
-      if (gamesRes.status === "rejected") {
-        throw gamesRes.reason;
-      }
+    if (games.length === 0 && upcoming.length === 0 && standingsData.length === 0) {
+      if (gamesRes.status === "rejected") throw gamesRes.reason;
       return { status: "off_season" };
     }
 
     const nhlTeamId = parseInt(getTeamId("nhl"), 10);
-    const nhlFirst = games[0];
+    const nhlFirst = games[0] ?? upcoming[0];
     const configuredTeamEntry = nhlFirst
       ? (nhlFirst.home_team.id === nhlTeamId ? nhlFirst.home_team.full_name : nhlFirst.away_team.full_name)
       : standingsData[0]?.team?.full_name ?? "";
@@ -428,13 +487,26 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       ? normalizeNHLGame(finalGames[finalGames.length - 1], configuredTeamEntry)
       : null;
 
+    const nonFinal = upcoming.filter((g) => !isFinalStatus("nhl", g.status));
+    const nextGame = nonFinal[0];
+    const upcomingGame: UpcomingGame | null = nextGame
+      ? {
+          homeTeam: nextGame.home_team.full_name,
+          awayTeam: nextGame.away_team.full_name,
+          isHome: nextGame.home_team.id === nhlTeamId,
+          venue: "",
+          gameType: "Regular Season",
+          gameDate: nextGame.date.slice(0, 10),
+        }
+      : null;
+
     const standings = normalizeStandings(standingsData);
 
     return {
       status: "ok",
       data: {
         recentGame,
-        upcomingGame: null,
+        upcomingGame,
         standings,
       },
     };
