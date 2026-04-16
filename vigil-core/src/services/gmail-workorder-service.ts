@@ -100,8 +100,12 @@ async function gmailSearch(token: string, query: string, maxResults = 20): Promi
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error(`Gmail search failed: ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Gmail search failed: ${res.status} ${body}`);
+  }
   const data = await res.json();
+  console.log(`[gmail-workorders] search query="${query}" results=${data.resultSizeEstimate ?? 0} messages=${(data.messages ?? []).length}`);
   return data.messages ?? [];
 }
 
