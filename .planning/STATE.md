@@ -4,7 +4,7 @@ milestone: v3.2
 milestone_name: Freshness & Capture Parity
 status: verifying
 stopped_at: Completed 90-03-PLAN.md
-last_updated: "2026-04-16T14:35:52.622Z"
+last_updated: "2026-04-16T14:55:23.959Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 3
@@ -25,8 +25,8 @@ See: .planning/PROJECT.md (updated 2026-04-15)
 
 ## Current Position
 
-Phase: 90 (server-side-persistence) — EXECUTING
-Plan: 3 of 3
+Phase: 90
+Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
