@@ -217,7 +217,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 88: Date Window Helper & Weekly Rollover** — Shared server-side 7-day / Wed-anchored window helper + Thoughts tab rollover view (completed 2026-04-16)
 - [x] **Phase 89: 7-Day Analysis Scope** — Apply window helper to Insights, Therapy patterns, and Therapy session prep (completed 2026-04-16)
 - [x] **Phase 90: Server-Side Persistence** — Cache Insights / Therapy / Therapy-prep with Regenerate; Chat auto-resumes last session (completed 2026-04-16)
-- [ ] **Phase 91: Tasks Tab Status Filter** — Open default, toggle Done/All, per-device persistence + server-synced default
+- [x] **Phase 91: Tasks Tab Status Filter** — Open default, toggle Done/All, per-device persistence + server-synced default (completed 2026-04-16)
 - [ ] **Phase 92: Work Order Archive** — Auto-archive rules, archived view, unarchive, bulk-clear (PWA + Mac CLI aware)
 - [ ] **Phase 93: Brief PDF Cleanup & 7-Day Scope** — De-dupe Tasks, Affirmation to bottom of Page 1, reflow, respect 7-day window
 - [ ] **Phase 94: Browser Extension Quick-Capture** — Rewrite URL-only → thought capture + triage (URL preserved as option), Chrome + Safari
@@ -282,9 +282,9 @@ Plans:
   2. User can toggle between Open / Done / All and the list updates immediately
   3. Selected filter survives a page reload on the same device (localStorage)
   4. A brand-new device's first visit shows the filter last set on any other device (server-synced default)
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 Plans:
-- [ ] 91-01-PLAN.md — StatusFilterTabs UI + server persistence + useThoughts dynamic filter
+- [x] 91-01-PLAN.md — StatusFilterTabs UI + server persistence + useThoughts dynamic filter
 **UI hint**: yes
 
 ### Phase 92: Work Order Archive
@@ -431,7 +431,7 @@ Plans:
 | 88. Date Window Helper & Weekly Rollover | v3.2 | 4/4 | Complete    | 2026-04-16 |
 | 89. 7-Day Analysis Scope | v3.2 | 2/2 | Complete    | 2026-04-16 |
 | 90. Server-Side Persistence | v3.2 | 3/3 | Complete    | 2026-04-16 |
-| 91. Tasks Tab Status Filter | v3.2 | 0/1 | Not started | - |
+| 91. Tasks Tab Status Filter | v3.2 | 1/1 | Complete   | 2026-04-16 |
 | 92. Work Order Archive | v3.2 | 0/TBD | Not started | - |
 | 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 0/TBD | Not started | - |
 | 94. Browser Extension Quick-Capture | v3.2 | 0/TBD | Not started | - |

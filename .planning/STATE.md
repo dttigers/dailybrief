@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.2
 milestone_name: Freshness & Capture Parity
 status: verifying
-stopped_at: Phase 91 context gathered
-last_updated: "2026-04-16T18:52:29.333Z"
+stopped_at: Completed 91-01-PLAN.md
+last_updated: "2026-04-16T19:01:43.085Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 4
-  completed_phases: 3
-  total_plans: 9
-  completed_plans: 9
+  completed_phases: 4
+  total_plans: 10
+  completed_plans: 10
   percent: 100
 ---
 
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-15)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 90 — server-side-persistence
+**Current focus:** Phase 91 — tasks-tab-status-filter
 
 ## Current Position
 
-Phase: 90
-Plan: Not started
+Phase: 91 (tasks-tab-status-filter) — EXECUTING
+Plan: 1 of 1
 Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 90 P01 | 154 | 3 tasks | 5 files |
 | Phase 90 P02 | 119 | 2 tasks | 4 files |
 | Phase 90 P03 | 92 | 1 tasks | 3 files |
+| Phase 91 P01 | 131 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -95,6 +96,8 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 90]: ai_cache upsert pattern: insert + onConflictDoUpdate on type column for single-row-per-type caching
 - [Phase 90]: useInsights auto-generates on mount when no cache; useTherapy requires user action; useChat auto-resumes most recent session
 - [Phase 90]: Regenerate button uses gray-900/80 (not teal) per UI-SPEC to visually subordinate it to primary Generate action
+- [Phase 91]: Client-side filtering for Open view (open+inProgress) since server lacks compound not-done filter
+- [Phase 91]: localStorage-first read on mount for instant UX; server sync overwrites only if different
 
 ### Roadmap Dependency Notes
 
@@ -115,7 +118,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 
 ## Session Continuity
 
-Last session: 2026-04-16T18:52:29.328Z
-Stopped at: Phase 91 context gathered
-Resume file: .planning/phases/91-tasks-tab-status-filter/91-CONTEXT.md
+Last session: 2026-04-16T19:01:43.081Z
+Stopped at: Completed 91-01-PLAN.md
+Resume file: None
 Next action: `/gsd-plan-phase 88` to decompose Date Window Helper & Weekly Rollover

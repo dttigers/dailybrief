@@ -34,9 +34,9 @@
 
 ### Tasks Tab Filtering
 
-- [ ] **TASKS-01**: Tasks tab defaults to showing Open tasks only
-- [ ] **TASKS-02**: User can toggle the Tasks tab view between Open, Done, and All
-- [ ] **TASKS-03**: Selected filter persists per-device (localStorage) for snappy UX; server holds last-set value as the default for a new device's first visit
+- [x] **TASKS-01**: Tasks tab defaults to showing Open tasks only
+- [x] **TASKS-02**: User can toggle the Tasks tab view between Open, Done, and All
+- [x] **TASKS-03**: Selected filter persists per-device (localStorage) for snappy UX; server holds last-set value as the default for a new device's first visit
 
 ### Work Order Archive
 
@@ -104,9 +104,9 @@
 | PERSIST-02 | Phase 90 | Complete |
 | PERSIST-03 | Phase 90 | Complete |
 | PERSIST-04 | Phase 90 | Complete |
-| TASKS-01 | Phase 91 | Pending |
-| TASKS-02 | Phase 91 | Pending |
-| TASKS-03 | Phase 91 | Pending |
+| TASKS-01 | Phase 91 | Complete |
+| TASKS-02 | Phase 91 | Complete |
+| TASKS-03 | Phase 91 | Complete |
 | WO-01 | Phase 92 | Pending |
 | WO-02 | Phase 92 | Pending |
 | WO-03 | Phase 92 | Pending |
