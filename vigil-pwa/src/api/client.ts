@@ -261,7 +261,7 @@ export interface Insight {
   relatedThoughtIds: number[]
 }
 
-export async function generateInsights(): Promise<{ insights: Insight[] }> {
+export async function generateInsights(): Promise<{ insights: Insight[]; cached: boolean; generatedAt: string }> {
   const res = await vigilFetch('/v1/insights', {
     method: 'POST',
   })
@@ -269,6 +269,13 @@ export async function generateInsights(): Promise<{ insights: Insight[] }> {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error || `Insights failed: ${res.status}`)
   }
+  return res.json()
+}
+
+export async function getInsightsCache(): Promise<{ insights: Insight[]; cached: boolean; generatedAt: string } | null> {
+  const res = await vigilFetch('/v1/insights/cache')
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`Insights cache fetch failed: ${res.status}`)
   return res.json()
 }
 
@@ -360,7 +367,7 @@ export interface TherapyPrep {
   suggestedFocus: string
 }
 
-export async function getTherapyPatterns(): Promise<{ patterns: TherapyPattern[] }> {
+export async function getTherapyPatterns(): Promise<{ patterns: TherapyPattern[]; cached: boolean; generatedAt: string }> {
   const res = await vigilFetch('/v1/therapy/patterns', {
     method: 'POST',
   })
@@ -371,7 +378,7 @@ export async function getTherapyPatterns(): Promise<{ patterns: TherapyPattern[]
   return res.json()
 }
 
-export async function generateTherapyPrep(): Promise<TherapyPrep> {
+export async function generateTherapyPrep(): Promise<TherapyPrep & { cached: boolean; generatedAt: string }> {
   const res = await vigilFetch('/v1/therapy/prep', {
     method: 'POST',
   })
@@ -379,6 +386,20 @@ export async function generateTherapyPrep(): Promise<TherapyPrep> {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error || `Therapy prep failed: ${res.status}`)
   }
+  return res.json()
+}
+
+export async function getTherapyPatternsCache(): Promise<{ patterns: TherapyPattern[]; cached: boolean; generatedAt: string } | null> {
+  const res = await vigilFetch('/v1/therapy/cache?type=patterns')
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`Therapy patterns cache fetch failed: ${res.status}`)
+  return res.json()
+}
+
+export async function getTherapyPrepCache(): Promise<(TherapyPrep & { cached: boolean; generatedAt: string }) | null> {
+  const res = await vigilFetch('/v1/therapy/cache?type=prep')
+  if (res.status === 404) return null
+  if (!res.ok) throw new Error(`Therapy prep cache fetch failed: ${res.status}`)
   return res.json()
 }
 
