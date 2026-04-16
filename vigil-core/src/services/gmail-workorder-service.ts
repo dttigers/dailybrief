@@ -200,7 +200,7 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
     // newer_than:30d gives a wide window; processedIds deduplication prevents re-imports
     const messages = await gmailSearch(
       token,
-      'subject:"Case CS" newer_than:30d',
+      "CS0356295 OR CS0357180 OR subject:Case newer_than:30d",
       20,
     );
 
