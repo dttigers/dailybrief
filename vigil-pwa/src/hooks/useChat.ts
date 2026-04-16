@@ -71,9 +71,11 @@ export function useChat() {
 
   const sendMessage = useCallback(async (content: string) => {
     const userMessage: ChatMessage = { role: 'user', content }
-    const newMessages = [...messages, userMessage]
-
-    setMessages(newMessages)
+    let newMessages: ChatMessage[] = []
+    setMessages((prev) => {
+      newMessages = [...prev, userMessage]
+      return newMessages
+    })
     setIsLoading(true)
     setError(null)
 
@@ -114,7 +116,7 @@ export function useChat() {
     } finally {
       setIsLoading(false)
     }
-  }, [messages, activeSessionId])
+  }, [activeSessionId])
 
   const clearChat = useCallback(() => {
     setActiveSessionId(null)
