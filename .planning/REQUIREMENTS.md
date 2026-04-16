@@ -23,7 +23,7 @@
 - [x] **SCOPE-01**: Insights generation only considers thoughts from the last 7 days
 - [x] **SCOPE-02**: Therapy pattern recognition only considers thoughts from the last 7 days
 - [x] **SCOPE-03**: Therapy session prep only considers thoughts from the last 7 days
-- [ ] **SCOPE-04**: Daily brief PDF only includes thoughts from the last 7 days (fixes stale OCR noise)
+- [x] **SCOPE-04**: Daily brief PDF only includes thoughts from the last 7 days (fixes stale OCR noise)
 
 ### Persistence (server-side caching for expensive AI pages)
 
@@ -49,9 +49,9 @@
 
 ### Brief PDF Cleanup
 
-- [ ] **BRIEF-01**: Daily brief PDF no longer contains a duplicate Tasks section on Page 1 (OCR-noise source removed)
-- [ ] **BRIEF-02**: Affirmation section moves to the bottom of Page 1
-- [ ] **BRIEF-03**: Remaining Page 2+ content reflows up to fill the freed space
+- [x] **BRIEF-01**: Daily brief PDF no longer contains a duplicate Tasks section on Page 1 (OCR-noise source removed)
+- [x] **BRIEF-02**: Affirmation section moves to the bottom of Page 1
+- [x] **BRIEF-03**: Remaining Page 2+ content reflows up to fill the freed space
 - [x] **BRIEF-04**: Daily brief PDF respects the 7-day thought window (SCOPE-04)
 
 ### Browser Extension Quick-Capture
@@ -60,11 +60,11 @@
 - [x] **EXT-02**: Captured thoughts POST to `/v1/thoughts` and trigger server-side auto-triage
 - [x] **EXT-03**: Extension shows categorization result after triage completes (success feedback)
 - [x] **EXT-04**: Extension works in both Chrome and Safari (preserves v3.1 cross-browser coverage)
-- [ ] **EXT-05**: Legacy page-URL capture is preserved as a one-click option within the new popup
+- [x] **EXT-05**: Legacy page-URL capture is preserved as a one-click option within the new popup
 
 ### UAT Debt
 
-- [ ] **UAT-01**: Phase 81 UAT Test 8 (iOS PWA standalone OAuth real-device) passes on live Railway deployment
+- [x] **UAT-01**: Phase 81 UAT Test 8 (iOS PWA standalone OAuth real-device) passes on live Railway deployment
 
 ---
 
@@ -99,7 +99,7 @@
 | SCOPE-01 | Phase 89 | Complete |
 | SCOPE-02 | Phase 89 | Complete |
 | SCOPE-03 | Phase 89 | Complete |
-| SCOPE-04 | Phase 93 | Pending |
+| SCOPE-04 | Phase 93 | Complete |
 | PERSIST-01 | Phase 90 | Complete |
 | PERSIST-02 | Phase 90 | Complete |
 | PERSIST-03 | Phase 90 | Complete |
@@ -113,15 +113,15 @@
 | WO-04 | Phase 92 | Complete |
 | WO-05 | Phase 92 | Complete |
 | WO-06 | Phase 92 | Complete |
-| BRIEF-01 | Phase 93 | Pending |
-| BRIEF-02 | Phase 93 | Pending |
-| BRIEF-03 | Phase 93 | Pending |
+| BRIEF-01 | Phase 93 | Complete |
+| BRIEF-02 | Phase 93 | Complete |
+| BRIEF-03 | Phase 93 | Complete |
 | BRIEF-04 | Phase 93 | Complete |
 | EXT-01 | Phase 94 | Complete |
 | EXT-02 | Phase 94 | Complete |
 | EXT-03 | Phase 94 | Complete |
 | EXT-04 | Phase 94 | Complete |
-| EXT-05 | Phase 94 | Pending |
-| UAT-01 | Phase 95 | Pending |
+| EXT-05 | Phase 94 | Complete |
+| UAT-01 | Phase 95 | Complete |
 
 **Coverage:** 30/30 requirements mapped. No orphans.
