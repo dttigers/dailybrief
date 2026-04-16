@@ -1,4 +1,5 @@
 import { useTherapy } from '../hooks/useTherapy'
+import { formatRelativeTime } from '../utils/formatRelativeTime'
 import type { TherapyPrepItem } from '../api/client'
 
 const URGENCY_STYLES: Record<TherapyPrepItem['urgency'], { label: string; style: string }> = {
@@ -19,9 +20,15 @@ export default function TherapyPage() {
     prep,
     isLoadingPatterns,
     isLoadingPrep,
+    isCachedPatterns,
+    isCachedPrep,
+    patternsGeneratedAt,
+    prepGeneratedAt,
     error,
     analyzePatterns,
     generatePrep,
+    regeneratePatterns,
+    regeneratePrep,
   } = useTherapy()
 
   const sortedPrepItems = prep
@@ -44,13 +51,26 @@ export default function TherapyPage() {
             <h2 className="text-lg font-medium text-gray-50">Therapy Patterns</h2>
             <p className="text-xs text-gray-400 mt-0.5">Analyzing last 7 days</p>
           </div>
-          <button
-            onClick={analyzePatterns}
-            disabled={isLoadingPatterns}
-            className="bg-teal-600 hover:bg-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            {isLoadingPatterns ? 'Analyzing...' : 'Analyze Patterns'}
-          </button>
+          {isCachedPatterns && patternsGeneratedAt && !isLoadingPatterns ? (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-400">Generated {formatRelativeTime(patternsGeneratedAt)}</span>
+              <button
+                onClick={regeneratePatterns}
+                disabled={isLoadingPatterns}
+                className="bg-gray-900/80 hover:bg-gray-800 disabled:opacity-40 text-gray-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-gray-400/20"
+              >
+                Regenerate
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={analyzePatterns}
+              disabled={isLoadingPatterns}
+              className="bg-teal-600 hover:bg-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              {isLoadingPatterns ? 'Analyzing...' : 'Analyze Patterns'}
+            </button>
+          )}
         </div>
 
         {/* Loading */}
@@ -111,13 +131,26 @@ export default function TherapyPage() {
             <h2 className="text-lg font-medium text-gray-50">Session Prep</h2>
             <p className="text-xs text-gray-400 mt-0.5">Analyzing last 7 days</p>
           </div>
-          <button
-            onClick={generatePrep}
-            disabled={isLoadingPrep}
-            className="bg-teal-600 hover:bg-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-          >
-            {isLoadingPrep ? 'Preparing...' : 'Generate Prep'}
-          </button>
+          {isCachedPrep && prepGeneratedAt && !isLoadingPrep ? (
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-gray-400">Generated {formatRelativeTime(prepGeneratedAt)}</span>
+              <button
+                onClick={regeneratePrep}
+                disabled={isLoadingPrep}
+                className="bg-gray-900/80 hover:bg-gray-800 disabled:opacity-40 text-gray-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-gray-400/20"
+              >
+                Regenerate
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={generatePrep}
+              disabled={isLoadingPrep}
+              className="bg-teal-600 hover:bg-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            >
+              {isLoadingPrep ? 'Preparing...' : 'Generate Prep'}
+            </button>
+          )}
         </div>
 
         {/* Loading */}

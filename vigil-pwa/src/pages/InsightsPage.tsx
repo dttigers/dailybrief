@@ -1,4 +1,5 @@
 import { useInsights } from '../hooks/useInsights'
+import { formatRelativeTime } from '../utils/formatRelativeTime'
 import type { Insight } from '../api/client'
 
 const TYPE_BADGE_STYLES: Record<Insight['type'], { label: string; style: string }> = {
@@ -9,7 +10,7 @@ const TYPE_BADGE_STYLES: Record<Insight['type'], { label: string; style: string 
 }
 
 export default function InsightsPage() {
-  const { insights, isLoading, error, generate } = useInsights()
+  const { insights, isLoading, isCached, generatedAt, error, generate, regenerate } = useInsights()
 
   return (
     <div>
@@ -19,13 +20,26 @@ export default function InsightsPage() {
           <h1 className="text-lg font-medium text-gray-50">Insights</h1>
           <p className="text-xs text-gray-400 mt-0.5">Analyzing last 7 days</p>
         </div>
-        <button
-          onClick={() => generate()}
-          disabled={isLoading}
-          className="bg-teal-600 hover:bg-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          {isLoading ? 'Analyzing...' : 'Generate Insights'}
-        </button>
+        {isCached && generatedAt && !isLoading ? (
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-gray-400">Generated {formatRelativeTime(generatedAt)}</span>
+            <button
+              onClick={() => regenerate()}
+              disabled={isLoading}
+              className="bg-gray-900/80 hover:bg-gray-800 disabled:opacity-40 text-gray-100 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors border border-gray-400/20"
+            >
+              Regenerate
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => generate()}
+            disabled={isLoading}
+            className="bg-teal-600 hover:bg-teal-400 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+          >
+            {isLoading ? 'Analyzing...' : 'Generate Insights'}
+          </button>
+        )}
       </div>
 
       {/* Error banner */}
