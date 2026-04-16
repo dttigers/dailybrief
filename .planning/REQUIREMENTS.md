@@ -10,7 +10,7 @@ Requirements for milestone v3.3 Stability & Chat Context. Each maps to roadmap p
 ### Bug Fixes
 
 - [x] **FIX-01**: PWA chat no longer returns 400 error — user can send messages and receive AI responses
-- [ ] **FIX-02**: Completed tasks (status=done) are hidden from all thought views (All Thoughts, category views), not just the Tasks tab
+- [x] **FIX-02**: Completed tasks (status=done) are hidden from all thought views (All Thoughts, category views), not just the Tasks tab
 - [ ] **FIX-03**: Mac CLI auto-print is verified working and will print tomorrow's brief on schedule
 
 ### Chat
@@ -47,7 +47,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | FIX-01 | Phase 96 | Complete |
-| FIX-02 | Phase 96 | Pending |
+| FIX-02 | Phase 96 | Complete |
 | FIX-03 | Phase 97 | Pending |
 | CHAT-01 | Phase 98 | Pending |
 

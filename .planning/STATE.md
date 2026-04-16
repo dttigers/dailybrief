@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: Stability & Chat Context
-status: executing
-stopped_at: Completed 96-01-PLAN.md (chat 400 fix)
-last_updated: "2026-04-16T22:15:01.639Z"
+status: verifying
+stopped_at: Completed 96-02-PLAN.md
+last_updated: "2026-04-16T23:42:10.626Z"
 last_activity: 2026-04-16
 progress:
   total_phases: 3
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
-  percent: 50
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-16)
 
 Phase: 96 (pwa-fixes) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-16
 
 Progress: [░░░░░░░░░░] 0%
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | v3.1 Gmail + Thin Clients | 79-87 | 26 | ~2 days |
 | v3.2 Freshness & Capture Parity | 88-95 | 14 | 2 days |
 | Phase 96-pwa-fixes P01 | 20 | 2 tasks | 1 files |
+| Phase 96-pwa-fixes P02 | 15 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -68,6 +69,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 v3.2 decisions archived to milestones/v3.2-ROADMAP.md.
 
 - [Phase 96-pwa-fixes]: Used messagesRef (useRef synced via useEffect) in sendMessage to avoid React 18 concurrent mode stale closure — setState functional updater is async in concurrent mode, leaving messages=[] at API call time
+- [Phase 96-pwa-fixes]: Server-side excludeDone filter with fail-safe design: absent or truthy defaults to hiding done tasks; Tasks tab overrides via taskStatus=done and excludeDone=false
 
 ### Pending Todos
 
@@ -82,7 +84,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-16T22:15:01.634Z
-Stopped at: Completed 96-01-PLAN.md (chat 400 fix)
+Last session: 2026-04-16T23:42:10.622Z
+Stopped at: Completed 96-02-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 96`

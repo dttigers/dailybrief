@@ -231,7 +231,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 ### Phases
 
-- [ ] **Phase 96: PWA Fixes** — Fix chat 400 error and hide completed tasks from all views
+- [x] **Phase 96: PWA Fixes** — Fix chat 400 error and hide completed tasks from all views (completed 2026-04-16)
 - [ ] **Phase 97: Mac CLI Print Reliability** — Verify and harden the Mac CLI auto-print path
 - [ ] **Phase 98: Thought-Contextual Chat** — Open chat from any thought with that thought injected as conversation context
 
@@ -249,7 +249,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 **Plans**: 2 plans
 Plans:
 - [x] 96-01-PLAN.md -- Fix chat 400 error
-- [ ] 96-02-PLAN.md -- Hide done tasks from all views
+- [x] 96-02-PLAN.md -- Hide done tasks from all views
 **UI hint**: yes
 
 ### Phase 97: Mac CLI Print Reliability
@@ -375,7 +375,7 @@ Plans:
 | 93. Brief PDF Cleanup & 7-Day Scope | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 94. Browser Extension Quick-Capture | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 95. iOS PWA OAuth UAT Retest | v3.2 | 1/1 | Complete | 2026-04-16 |
-| 96. PWA Fixes | v3.3 | 1/2 | In Progress|  |
+| 96. PWA Fixes | v3.3 | 2/2 | Complete   | 2026-04-16 |
 | 97. Mac CLI Print Reliability | v3.3 | 0/TBD | Not started | - |
 | 98. Thought-Contextual Chat | v3.3 | 0/TBD | Not started | - |
 
