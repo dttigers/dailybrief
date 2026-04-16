@@ -1,6 +1,6 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v3.2 shipped — Freshness & Capture Parity (2026-04-16)
+## Current State: v3.3 in progress — Stability & Chat Context (2026-04-16)
 
 **v3.2 delivered:**
 - Wed-anchored weekly rollover (Thoughts tab, Insights, Therapy, Brief PDF all scoped to current week/7 days)
@@ -29,12 +29,19 @@
 
 **Shipped cumulatively:** v1.0–v3.1. Full PWA at app.vigilhub.io. Vigil Core API on Railway (Node/Hono/Drizzle/Postgres) with bearer auth + HTTPS. Server-side PDF generation (PDFKit 3-page). Mac menubar thin client + Even G2 glasses plugin + browser extension. OAuth foundation (Calendar + Gmail scopes, JWT nonce survives rolling deploys).
 
-## Current Milestone: Planning next milestone
+## Current Milestone: v3.3 Stability & Chat Context
 
-Run `/gsd-new-milestone` to define v3.3 scope and requirements.
+**Goal:** Fix broken daily workflows (chat, print, task visibility) and add contextual chat from individual thoughts.
+
+**Target features:**
+- Fix PWA chat 400 error (broken across multiple builds)
+- Open chat from an individual thought with that thought as context
+- Mac CLI auto-print readiness check (ensure brief prints reliably)
+- Completed tasks hidden from all views, not just Tasks tab
+- Persistent Safari extension (survives restarts without re-enabling)
 
 **Carry-forward context:**
-- Phase 85 (iOS Shortcut) held — revisit in v3.3+
+- Phase 85 (iOS Shortcut) held — revisit in v3.4+
 - Phase 80 (Gmail Server Service) deferred until ServiceNow API token from IT
 - G2 hardware retest still pending physical device access
 
@@ -142,7 +149,11 @@ Capture every thought with zero friction and have the system organize it for you
 
 ### Active
 
-_(Empty — next milestone not yet defined. Run `/gsd-new-milestone` to start v3.3.)_
+- [ ] Fix PWA chat 400 error
+- [ ] Open chat from individual thought with that thought as context
+- [ ] Mac CLI auto-print reliability (ensure brief prints tomorrow)
+- [ ] Completed tasks hidden from all views (not just Tasks tab)
+- [ ] Persistent Safari extension (survives restarts without re-enabling)
 
 ### Out of Scope
 
@@ -157,6 +168,7 @@ _(Empty — next milestone not yet defined. Run `/gsd-new-milestone` to start v3
 
 ## Context
 
+v3.3 Stability & Chat Context started (2026-04-16) — fixing daily-use bugs (chat 400, task visibility, print reliability) and adding contextual chat from thoughts + persistent Safari extension.
 Shipped v3.2 Freshness & Capture Parity (2026-04-16) — Wed-anchored weekly rollover, 7-day analysis scope, server-side AI cache with Regenerate, task status filter, work order auto-archive, brief PDF restructure, browser extension quick-capture. 8 phases, 14 plans, 133 commits, 44 files changed (+2591/-557 LOC).
 Shipped v3.1 Gmail + Thin Clients (2026-04-15) — Gmail OAuth, PWA brand theme, Settings UI, CLI restructure, menu bar redesign, browser extension, split brief schedule, app icons.
 Shipped v3.0 Server-Side PDF (2026-04-14) — Sports proxy, Google Calendar server-side, PDFKit 3-page brief, brief assembly endpoint, PWA brief UI, Mac CLI thin client.
@@ -236,4 +248,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 after v3.2 milestone*
+*Last updated: 2026-04-16 after v3.3 milestone start*
