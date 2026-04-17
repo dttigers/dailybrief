@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.3
 milestone_name: Stability & Chat Context
-status: verifying
-stopped_at: Phase 97 context gathered
-last_updated: "2026-04-17T00:00:25.167Z"
-last_activity: 2026-04-16
+status: executing
+stopped_at: Completed 97-01-PLAN.md
+last_updated: "2026-04-17T00:26:30.355Z"
+last_activity: 2026-04-17
 progress:
   total_phases: 3
   completed_phases: 1
-  total_plans: 2
-  completed_plans: 2
-  percent: 100
+  total_plans: 4
+  completed_plans: 3
+  percent: 75
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-16)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 96 — pwa-fixes
+**Current focus:** Phase 97 — mac-cli-print-reliability
 
 ## Current Position
 
-Phase: 97
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-16
+Phase: 97 (mac-cli-print-reliability) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
+Last activity: 2026-04-17
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | v3.2 Freshness & Capture Parity | 88-95 | 14 | 2 days |
 | Phase 96-pwa-fixes P01 | 20 | 2 tasks | 1 files |
 | Phase 96-pwa-fixes P02 | 15 | 2 tasks | 3 files |
+| Phase 97 P01 | 2min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,7 @@ v3.2 decisions archived to milestones/v3.2-ROADMAP.md.
 
 - [Phase 96-pwa-fixes]: Used messagesRef (useRef synced via useEffect) in sendMessage to avoid React 18 concurrent mode stale closure — setState functional updater is async in concurrent mode, leaving messages=[] at API call time
 - [Phase 96-pwa-fixes]: Server-side excludeDone filter with fail-safe design: absent or truthy defaults to hiding done tasks; Tasks tab overrides via taskStatus=done and excludeDone=false
+- [Phase 97]: Used both fit-to-page=false and scaling=100 for actual-size printing; CLI retries via postRawData on 404 rather than server-side fix
 
 ### Pending Todos
 
@@ -84,7 +86,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-17T00:00:25.163Z
-Stopped at: Phase 97 context gathered
-Resume file: .planning/phases/97-mac-cli-print-reliability/97-CONTEXT.md
+Last session: 2026-04-17T00:26:30.350Z
+Stopped at: Completed 97-01-PLAN.md
+Resume file: None
 Next action: `/gsd-plan-phase 96`

@@ -262,7 +262,7 @@ Plans:
   3. Any identified blockers in the print path are resolved and documented
 **Plans**: 2 plans
 Plans:
-- [ ] 97-01-PLAN.md -- Fix print bugs, add reachability check, 100% scale, 404 fallback, legacy cleanup
+- [x] 97-01-PLAN.md -- Fix print bugs, add reachability check, 100% scale, 404 fallback, legacy cleanup
 - [ ] 97-02-PLAN.md -- Rebuild CLI and verify full print chain end-to-end
 
 ### Phase 98: Thought-Contextual Chat
@@ -382,7 +382,7 @@ Plans:
 | 94. Browser Extension Quick-Capture | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 95. iOS PWA OAuth UAT Retest | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 96. PWA Fixes | v3.3 | 2/2 | Complete    | 2026-04-16 |
-| 97. Mac CLI Print Reliability | v3.3 | 0/2 | Planned | - |
+| 97. Mac CLI Print Reliability | v3.3 | 1/2 | In Progress|  |
 | 98. Thought-Contextual Chat | v3.3 | 0/TBD | Not started | - |
 
 ## Backlog
