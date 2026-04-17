@@ -233,7 +233,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 - [x] **Phase 96: PWA Fixes** — Fix chat 400 error and hide completed tasks from all views (completed 2026-04-16)
 - [x] **Phase 97: Mac CLI Print Reliability** — Verify and harden the Mac CLI auto-print path (completed 2026-04-17)
-- [ ] **Phase 98: Thought-Contextual Chat** — Open chat from any thought with that thought injected as conversation context
+- [x] **Phase 98: Thought-Contextual Chat** — Open chat from any thought with that thought injected as conversation context (completed 2026-04-17)
 
 ## Phase Details
 
@@ -276,7 +276,7 @@ Plans:
   4. The chat session continues as a normal multi-turn conversation after the initial context injection
 **Plans**: 1 plan
 Plans:
-- [ ] 98-01-PLAN.md -- Wire thought-to-chat: chat button on ThoughtRow, navigation, ChatPage auto-send
+- [x] 98-01-PLAN.md -- Wire thought-to-chat: chat button on ThoughtRow, navigation, ChatPage auto-send
 
 **UI hint**: yes
 
@@ -383,7 +383,7 @@ Plans:
 | 95. iOS PWA OAuth UAT Retest | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 96. PWA Fixes | v3.3 | 2/2 | Complete    | 2026-04-16 |
 | 97. Mac CLI Print Reliability | v3.3 | 2/2 | Complete    | 2026-04-17 |
-| 98. Thought-Contextual Chat | v3.3 | 0/TBD | Not started | - |
+| 98. Thought-Contextual Chat | v3.3 | 1/1 | Complete   | 2026-04-17 |
 
 ## Backlog
 

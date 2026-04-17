@@ -15,7 +15,7 @@ Requirements for milestone v3.3 Stability & Chat Context. Each maps to roadmap p
 
 ### Chat
 
-- [ ] **CHAT-01**: User can open chat from an individual thought, with that thought injected as conversation context
+- [x] **CHAT-01**: User can open chat from an individual thought, with that thought injected as conversation context
 
 ## Future Requirements
 
@@ -49,7 +49,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | FIX-01 | Phase 96 | Complete |
 | FIX-02 | Phase 96 | Complete |
 | FIX-03 | Phase 97 | Complete |
-| CHAT-01 | Phase 98 | Pending |
+| CHAT-01 | Phase 98 | Complete |
 
 **Coverage:**
 - v3.3 requirements: 4 total
