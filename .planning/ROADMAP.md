@@ -245,7 +245,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 ### Phases
 
-- [ ] **Phase 99: Brief History Fix** - Make past briefs reliably loadable in the PWA regardless of Railway redeploys
+- [x] **Phase 99: Brief History Fix** - Make past briefs reliably loadable in the PWA regardless of Railway redeploys (completed 2026-04-17)
 - [ ] **Phase 100: Edit-Refresh Pause** - Pause the 30s auto-refresh poll while a thought is being edited in the PWA
 - [ ] **Phase 101: Context Menu** - Right-click (desktop) and long-press (mobile) context menu on every thought row
 - [ ] **Phase 102: Multi-User Foundation** - Users table, JWT auth endpoints, and per-user data scoping in vigil-core
@@ -263,7 +263,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 **Plans**: 3 plans
 - [x] 99-01-PLAN.md — Add brief_pdfs BYTEA table to Drizzle schema + generate migration
 - [x] 99-02-PLAN.md — Rewire POST/GET/scheduler to use brief_pdfs sink; delete /tmp write path
-- [ ] 99-03-PLAN.md — PWA detail-view branches on structured 404; wire Regenerate action (human-verify)
+- [x] 99-03-PLAN.md — PWA detail-view branches on structured 404; wire Regenerate action (human-verify)
 
 ### Phase 100: Edit-Refresh Pause
 **Goal**: Users can edit a thought in the PWA without the 30s poll overwriting their in-progress changes
@@ -403,7 +403,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 | 96. PWA Fixes | v3.3 | 2/2 | Complete | 2026-04-16 |
 | 97. Mac CLI Print Reliability | v3.3 | 2/2 | Complete | 2026-04-17 |
 | 98. Thought-Contextual Chat | v3.3 | 1/1 | Complete | 2026-04-17 |
-| 99. Brief History Fix | v3.4 | 2/3 | In Progress|  |
+| 99. Brief History Fix | v3.4 | 3/3 | Complete   | 2026-04-17 |
 | 100. Edit-Refresh Pause | v3.4 | 0/TBD | Not started | - |
 | 101. Context Menu | v3.4 | 0/TBD | Not started | - |
 | 102. Multi-User Foundation | v3.4 | 0/TBD | Not started | - |
