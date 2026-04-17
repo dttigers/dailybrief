@@ -1,40 +1,30 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router'
 import { useChat } from '../hooks/useChat'
 
 export default function ChatPage() {
+  const location = useLocation()
+  const thoughtState = location.state as { thoughtText?: string; thoughtId?: number } | null
+  const hasThoughtContext = !!thoughtState?.thoughtText
+
   const {
     sessions, activeSessionId, messages, isLoading, error, contextUsed,
     sendMessage, clearChat, loadSession, startNewSession, deleteSession,
-  } = useChat()
+  } = useChat({ skipAutoLoad: hasThoughtContext })
   const [input, setInput] = useState('')
   const [showSessions, setShowSessions] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
-  const location = useLocation()
   const thoughtHandledRef = useRef(false)
-  const skipAutoLoadRef = useRef(false)
-
-  // Signal skip before useChat's auto-resume useEffect fires
-  useLayoutEffect(() => {
-    const state = location.state as { thoughtText?: string; thoughtId?: number } | null
-    if (!state?.thoughtText) return
-    skipAutoLoadRef.current = true
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-send thought when arriving from ThoughtsPage (D-02, D-03, D-04)
   useEffect(() => {
     if (thoughtHandledRef.current) return
-    const state = location.state as { thoughtText?: string; thoughtId?: number } | null
-    if (!state?.thoughtText) return
+    if (!thoughtState?.thoughtText) return
 
     thoughtHandledRef.current = true
 
-    // Clear any auto-resumed session so sendMessage creates a fresh one (D-03)
-    clearChat()
-
-    // Inject thought as first user message and auto-send (D-02, D-04)
-    // sendMessage reads messagesRef.current ([] after clearChat), auto-creates session
-    sendMessage(state.thoughtText)
+    // sendMessage with no activeSession auto-creates a fresh one (D-03)
+    sendMessage(thoughtState.thoughtText)
 
     // Clear location.state to prevent replay on tab switch
     window.history.replaceState({}, '')

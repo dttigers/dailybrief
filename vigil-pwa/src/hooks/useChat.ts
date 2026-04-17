@@ -10,7 +10,7 @@ import {
   type ChatSession,
 } from '../api/client'
 
-export function useChat() {
+export function useChat(options?: { skipAutoLoad?: boolean }) {
   const [sessions, setSessions] = useState<ChatSession[]>([])
   const [activeSessionId, setActiveSessionId] = useState<number | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -42,12 +42,12 @@ export function useChat() {
     getChatSessions()
       .then((res) => {
         setSessions(res.data)
-        if (res.data.length > 0) {
+        if (res.data.length > 0 && !options?.skipAutoLoad) {
           loadSession(res.data[0].id)
         }
       })
       .catch(() => {})
-  }, [loadSession])
+  }, [loadSession]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startNewSession = useCallback(async () => {
     try {
