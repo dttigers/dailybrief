@@ -1,4 +1,4 @@
-import { test, describe, beforeEach, afterEach, mock } from "node:test";
+import { test, describe, beforeEach, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -81,7 +81,6 @@ function makeBaseDeps(overrides: Partial<BriefAssemblyDeps> = {}): BriefAssembly
     parseAIJsonFn: <T>(raw: string) => JSON.parse(raw) as T,
     getAIClientFn: () => ({}), // non-null = AI available
     nowFn: () => new Date("2026-04-12T12:00:00Z"),
-    briefsDir: tmpDir,
     _cacheDir: tmpDir,
     ...overrides,
   };
@@ -104,7 +103,6 @@ describe("assembleAndRender orchestration", () => {
     const result = await service.assembleAndRender(TEST_DATE);
 
     assert.ok(result.buffer.length > 0, "buffer should not be empty");
-    assert.ok(result.filePath.startsWith(tmpDir), "filePath should start with briefsDir");
     assert.equal(result.metadata.dateStr, TEST_DATE);
   });
 
@@ -218,16 +216,19 @@ describe("assembleAndRender orchestration", () => {
     assert.ok(data8.calendarEvents.length > 0);
   });
 
-  test("Test 9: filesystem write — PDF buffer written to BRIEFS_DIR", async () => {
-    const deps = makeBaseDeps();
-    const service = createBriefAssemblyService(deps);
+  test("Test 9: assembleAndRender does NOT write to the filesystem", async (t) => {
+    const mkdirSpy = t.mock.method(fs.promises, "mkdir");
+    const writeFileSpy = t.mock.method(fs.promises, "writeFile");
+    const service = createBriefAssemblyService(makeBaseDeps());
     const result = await service.assembleAndRender(TEST_DATE);
-
-    const expectedPath = path.join(tmpDir, `brief-${TEST_DATE}.pdf`);
-    assert.equal(result.filePath, expectedPath);
-    assert.ok(fs.existsSync(expectedPath), "PDF file should exist on disk");
-    const onDisk = fs.readFileSync(expectedPath);
-    assert.deepEqual(onDisk, MOCK_PDF_BUFFER);
+    // Affirmation cache may still mkdir ~/.cache/dailybrief; assert no /tmp/briefs or /brief-*.pdf writes.
+    const writeFileCalls = writeFileSpy.mock.calls.map((c) => String(c.arguments[0]));
+    assert.ok(
+      !writeFileCalls.some((p) => p.includes("brief-") && p.endsWith(".pdf")),
+      `expected no PDF filesystem writes, got: ${writeFileCalls.join(", ")}`,
+    );
+    assert.ok(Buffer.isBuffer(result.buffer));
+    assert.equal(typeof result.metadata.thoughtCount, "number");
   });
 
   test("Test 10: prioritization included when work orders exist", async () => {

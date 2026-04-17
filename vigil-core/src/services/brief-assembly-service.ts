@@ -1,5 +1,5 @@
 // Brief assembly service — orchestrates all data sources concurrently via Promise.allSettled,
-// maps results to BriefRenderData, renders a PDF, and saves it to the filesystem.
+// maps results to BriefRenderData, renders a PDF, and stores bytes in brief_pdfs (D-03).
 // Security: Never log Authorization headers or API keys (T-76-01).
 
 import type {
@@ -37,7 +37,6 @@ export interface BriefAssemblyDeps {
   parseAIJsonFn?: <T>(raw: string) => T;
   getAIClientFn?: () => any;
   nowFn?: () => Date;
-  briefsDir?: string;
   // Internal: overridable for testing
   _sourceTimeoutMs?: number;
   _workOrderRows?: any[];
@@ -193,7 +192,6 @@ export function mapThoughts(
 
 export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
   const SOURCE_TIMEOUT_MS = deps._sourceTimeoutMs ?? 10_000;
-  const BRIEFS_DIR = deps.briefsDir ?? process.env.BRIEFS_DIR ?? "/tmp/briefs";
   const CACHE_DIR = deps._cacheDir ?? AFFIRMATION_CACHE_DIR;
 
   // ── DB query helpers ────────────────────────────────────────────────────
@@ -420,7 +418,6 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
 
   async function assembleAndRender(dateStr: string): Promise<{
     buffer: Buffer;
-    filePath: string;
     metadata: { thoughtCount: number; taskCount: number; dateStr: string };
   }> {
     const startMs = Date.now();
@@ -520,12 +517,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
       buffer = await renderer.renderBrief(data, DEFAULT_PDF_CONFIG);
     }
 
-    // 7. Save to filesystem
-    await fs.promises.mkdir(BRIEFS_DIR, { recursive: true });
-    const filePath = path.join(BRIEFS_DIR, `brief-${dateStr}.pdf`);
-    await fs.promises.writeFile(filePath, buffer);
-
-    // 8. Log timing
+    // 7. Log timing
     const totalMs = Date.now() - startMs;
     console.log(`[brief-assembly] Total: ${totalMs}ms`);
     if (totalMs > 10_000) {
@@ -537,7 +529,6 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
 
     return {
       buffer,
-      filePath,
       metadata: { thoughtCount, taskCount, dateStr },
     };
   }
