@@ -1,6 +1,6 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v3.3 in progress — Stability & Chat Context (2026-04-16)
+## Current State: v3.3 complete — Stability & Chat Context (2026-04-17)
 
 **v3.2 delivered:**
 - Wed-anchored weekly rollover (Thoughts tab, Insights, Therapy, Brief PDF all scoped to current week/7 days)
