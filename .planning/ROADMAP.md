@@ -274,10 +274,10 @@ Plans:
   2. Tapping the Chat action opens the Chat tab with the thought's text injected as the opening context
   3. The AI's first response acknowledges or engages with the injected thought content
   4. The chat session continues as a normal multi-turn conversation after the initial context injection
-**Plans**: 2 plans
+**Plans**: 1 plan
 Plans:
-- [x] 97-01-PLAN.md -- Fix print bugs, add reachability check, 100% scale, 404 fallback, legacy cleanup
-- [x] 97-02-PLAN.md -- Rebuild CLI and verify full print chain end-to-end
+- [ ] 98-01-PLAN.md -- Wire thought-to-chat: chat button on ThoughtRow, navigation, ChatPage auto-send
+
 **UI hint**: yes
 
 ## Progress
