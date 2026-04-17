@@ -7,7 +7,7 @@ stopped_at: null
 last_updated: "2026-04-17"
 last_activity: 2026-04-17
 progress:
-  total_phases: 0
+  total_phases: 4
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Defining requirements for v3.4
+**Current focus:** Phase 99 — Brief History Fix
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements
-Last activity: 2026-04-17 — Milestone v3.4 started
+Phase: 99 of 102 (Brief History Fix)
+Plan: — (not yet planned)
+Status: Ready to plan
+Last activity: 2026-04-17 — v3.4 roadmap created (4 phases, 14 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
@@ -72,12 +74,13 @@ _(None)_
 ### Blockers/Concerns
 
 - ServiceNow API token still blocks Phase 80 (carried forward from v3.1)
-- G2 hardware retest still pending physical device access
+- G2 hardware retest still pending physical device access (~2026-04-24)
 - Phase 85 (iOS Shortcut) held — Shortcuts.app bugs
+- Brief history fix (Phase 99): root cause is Railway /tmp ephemerality — PDF storage strategy needs investigation before planning
 
 ## Session Continuity
 
 Last session: 2026-04-17
-Stopped at: Milestone v3.3 archived
+Stopped at: v3.4 roadmap created
 Resume file: None
-Next action: `/gsd-new-milestone`
+Next action: `/gsd-plan-phase 99`

@@ -21,6 +21,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v3.1 Gmail + Thin Clients** — Phases 83, 84, 86, 87 (shipped 2026-04-15; Phases 80 + 85 deferred to v3.2)
 - ✅ **v3.2 Freshness & Capture Parity** — Phases 88-95 (shipped 2026-04-16)
 - ✅ **v3.3 Stability & Chat Context** — Phases 96-98 (shipped 2026-04-17)
+- 🚧 **v3.4 Multi-User Foundation & PWA Polish** — Phases 99-102 (in progress)
 
 ## Completed Milestones
 
@@ -238,6 +239,63 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
+## 🚧 v3.4 Multi-User Foundation & PWA Polish (In Progress)
+
+**Milestone Goal:** Fix daily-driver pain points (brief history, edit-refresh collision, right-click actions) and lay the groundwork for multi-user Vigil instances ahead of G2 glasses arriving ~2026-04-24.
+
+### Phases
+
+- [ ] **Phase 99: Brief History Fix** - Make past briefs reliably loadable in the PWA regardless of Railway redeploys
+- [ ] **Phase 100: Edit-Refresh Pause** - Pause the 30s auto-refresh poll while a thought is being edited in the PWA
+- [ ] **Phase 101: Context Menu** - Right-click (desktop) and long-press (mobile) context menu on every thought row
+- [ ] **Phase 102: Multi-User Foundation** - Users table, JWT auth endpoints, and per-user data scoping in vigil-core
+
+## Phase Details
+
+### Phase 99: Brief History Fix
+**Goal**: Past daily briefs are reliably retrievable from the PWA regardless of Railway redeploys
+**Depends on**: Nothing (first phase of milestone)
+**Requirements**: BRIEF-01
+**Success Criteria** (what must be TRUE):
+  1. User can open the Brief History view in the PWA and see a list of all previously generated briefs
+  2. User can click any past brief and view the PDF in the PWA without a loading error
+  3. Briefs generated before a Railway redeploy are still accessible after the redeploy
+**Plans**: TBD
+
+### Phase 100: Edit-Refresh Pause
+**Goal**: Users can edit a thought in the PWA without the 30s poll overwriting their in-progress changes
+**Depends on**: Phase 99
+**Requirements**: EDIT-01
+**Success Criteria** (what must be TRUE):
+  1. When a user clicks into a thought to edit it, the 30s auto-refresh does not fire while the input is active
+  2. After the user saves or dismisses the edit, the auto-refresh resumes on its normal schedule
+  3. A user who types for more than 30 seconds without saving does not lose their draft
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 101: Context Menu
+**Goal**: Users can act on any thought row via right-click (desktop) or long-press (mobile) without navigating away
+**Depends on**: Phase 100
+**Requirements**: CTX-01, CTX-02, CTX-03, CTX-04, CTX-05, CTX-06, CTX-07
+**Success Criteria** (what must be TRUE):
+  1. Right-clicking a thought row on desktop opens a context menu; long-pressing on iOS opens the same menu
+  2. User can delete a thought from the context menu and it disappears from the list immediately
+  3. User can move a thought to a different category from the context menu and it reflects the new category without a full reload
+  4. User can enter inline edit mode, trigger re-triage, or add the thought to a project — all from the context menu
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 102: Multi-User Foundation
+**Goal**: vigil-core has a users table with email/password auth and all data queries are scoped to the authenticated user
+**Depends on**: Phase 101
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04, AUTH-05
+**Success Criteria** (what must be TRUE):
+  1. A POST /v1/auth/register call with email and password creates a new user row in the database
+  2. A POST /v1/auth/login call returns a valid JWT token that can be used to authenticate subsequent requests
+  3. All existing thoughts, briefs, work orders, and projects belong to the seed user and are returned normally for requests authenticated as that user
+  4. A request authenticated as a different user returns only that user's data — never another user's
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -342,6 +400,10 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 | 96. PWA Fixes | v3.3 | 2/2 | Complete | 2026-04-16 |
 | 97. Mac CLI Print Reliability | v3.3 | 2/2 | Complete | 2026-04-17 |
 | 98. Thought-Contextual Chat | v3.3 | 1/1 | Complete | 2026-04-17 |
+| 99. Brief History Fix | v3.4 | 0/TBD | Not started | - |
+| 100. Edit-Refresh Pause | v3.4 | 0/TBD | Not started | - |
+| 101. Context Menu | v3.4 | 0/TBD | Not started | - |
+| 102. Multi-User Foundation | v3.4 | 0/TBD | Not started | - |
 
 ## Backlog
 

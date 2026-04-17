@@ -63,26 +63,26 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BRIEF-01 | TBD | Pending |
-| EDIT-01 | TBD | Pending |
-| CTX-01 | TBD | Pending |
-| CTX-02 | TBD | Pending |
-| CTX-03 | TBD | Pending |
-| CTX-04 | TBD | Pending |
-| CTX-05 | TBD | Pending |
-| CTX-06 | TBD | Pending |
-| CTX-07 | TBD | Pending |
-| AUTH-01 | TBD | Pending |
-| AUTH-02 | TBD | Pending |
-| AUTH-03 | TBD | Pending |
-| AUTH-04 | TBD | Pending |
-| AUTH-05 | TBD | Pending |
+| BRIEF-01 | Phase 99 | Pending |
+| EDIT-01 | Phase 100 | Pending |
+| CTX-01 | Phase 101 | Pending |
+| CTX-02 | Phase 101 | Pending |
+| CTX-03 | Phase 101 | Pending |
+| CTX-04 | Phase 101 | Pending |
+| CTX-05 | Phase 101 | Pending |
+| CTX-06 | Phase 101 | Pending |
+| CTX-07 | Phase 101 | Pending |
+| AUTH-01 | Phase 102 | Pending |
+| AUTH-02 | Phase 102 | Pending |
+| AUTH-03 | Phase 102 | Pending |
+| AUTH-04 | Phase 102 | Pending |
+| AUTH-05 | Phase 102 | Pending |
 
 **Coverage:**
 - v3.4 requirements: 14 total
-- Mapped to phases: 0
-- Unmapped: 14
+- Mapped to phases: 14
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-17*
-*Last updated: 2026-04-17 after initial definition*
+*Last updated: 2026-04-17 after roadmap creation*
