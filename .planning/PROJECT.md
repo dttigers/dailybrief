@@ -1,22 +1,19 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v3.3 shipped — Stability & Chat Context (2026-04-17)
+## Current Milestone: v3.4 Multi-User Foundation & PWA Polish
 
-**v3.3 delivered:**
-- PWA chat 400 error fixed (React 18 concurrent mode stale closure → messagesRef pattern)
-- Completed tasks hidden from all views via server-side excludeDone filter (fail-safe defaults)
-- Mac CLI print chain hardened (lpr error handling, 404 fallback, reachability check, actual-size scaling, legacy LaunchAgent removed)
-- Thought-contextual chat (chat button on every thought, router-state navigation, auto-send with AI response)
-- Race condition guard (useLayoutEffect + useRef double-guard for mount-time operations)
+**Goal:** Fix daily-driver pain points (brief history, edit-refresh collision, right-click actions) and lay the groundwork for multi-user Vigil instances ahead of G2 glasses arriving ~2026-04-24.
 
-**Shipped cumulatively:** v1.0–v3.3. Full PWA at app.vigilhub.io. Vigil Core API on Railway (Node/Hono/Drizzle/Postgres) with bearer auth + HTTPS. Server-side PDF generation (PDFKit 3-page). Mac menubar thin client + Even G2 glasses plugin + browser extension. OAuth foundation (Calendar + Gmail scopes, JWT nonce survives rolling deploys). 98 phases and ~196 plans completed across 15 milestones in ~17 days.
+**Target features:**
+- Fix brief history retrieval (generation works, older briefs fail to load)
+- Right-click context menu on thought rows (Delete, Move to category, Edit, Re-triage, Add to Project)
+- Pause auto-refresh while editing a thought (30s poll blows away in-progress edits)
+- Multi-user foundation — separate accounts, separate data, auth system for multiple Vigil instances
 
-## Next Milestone Goals
-
-Planning next milestone. Carry-forward items:
+**Carry-forward (blocked):**
 - Phase 85 (iOS Shortcut) held — Shortcuts.app bugs
 - Phase 80 (Gmail Server Service) — blocked on ServiceNow API token from IT
-- G2 hardware retest — pending physical device access
+- G2 hardware retest — pending physical device access (~2026-04-24)
 - EXT-01: Persistent Safari extension (survives restarts without re-enabling)
 
 ## What This Is
@@ -127,6 +124,10 @@ Capture every thought with zero friction and have the system organize it for you
 
 ### Active
 
+- [ ] Fix brief history retrieval (older briefs fail to load in PWA)
+- [ ] Right-click context menu on thought rows (Delete, Move, Edit, Re-triage, Add to Project)
+- [ ] Pause auto-refresh while editing a thought
+- [ ] Multi-user foundation (separate accounts, separate data, auth system)
 - [ ] Persistent Safari extension (survives restarts without re-enabling)
 
 ### Out of Scope
@@ -142,6 +143,7 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
+v3.4 in progress: Multi-User Foundation & PWA Polish — brief history fix, right-click context menu, edit-refresh pause, multi-user groundwork.
 Shipped v3.3 Stability & Chat Context (2026-04-17) — PWA chat 400 fix, server-side excludeDone filter, Mac CLI print hardening, thought-contextual chat. 3 phases, 5 plans, 12 files changed (+195/-41 LOC).
 Shipped v3.2 Freshness & Capture Parity (2026-04-16) — Wed-anchored weekly rollover, 7-day analysis scope, server-side AI cache with Regenerate, task status filter, work order auto-archive, brief PDF restructure, browser extension quick-capture. 8 phases, 14 plans.
 Shipped v3.1 Gmail + Thin Clients (2026-04-15) — Gmail OAuth, PWA brand theme, Settings UI, CLI restructure, menu bar redesign, browser extension, split brief schedule, app icons.
@@ -222,4 +224,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-17 after v3.3 milestone completion*
+*Last updated: 2026-04-17 after v3.4 milestone start*

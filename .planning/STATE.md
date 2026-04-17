@@ -1,17 +1,17 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.3
-milestone_name: Stability & Chat Context
-status: complete
-stopped_at: Milestone v3.3 archived
+milestone: v3.4
+milestone_name: Multi-User Foundation & PWA Polish
+status: active
+stopped_at: null
 last_updated: "2026-04-17"
 last_activity: 2026-04-17
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 5
-  completed_plans: 5
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -21,16 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Planning next milestone
+**Current focus:** Defining requirements for v3.4
 
 ## Current Position
 
-Phase: 98 (final phase of v3.3)
-Plan: Complete
-Status: Milestone v3.3 shipped and archived
-Last activity: 2026-04-17
-
-Progress: [██████████] 100%
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-17 — Milestone v3.4 started
 
 ## Performance Metrics
 
