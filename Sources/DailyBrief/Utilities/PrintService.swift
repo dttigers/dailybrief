@@ -58,7 +58,7 @@ enum PrintService {
 
     private static func checkPrinterReachable(_ printerName: String) throws {
         let task = Process()
-        task.executableURL = URL(fileURLWithPath: "/usr/sbin/lpstat")
+        task.executableURL = URL(fileURLWithPath: "/usr/bin/lpstat")
         task.arguments = ["-p", printerName]
         task.standardOutput = Pipe()
         task.standardError = Pipe()

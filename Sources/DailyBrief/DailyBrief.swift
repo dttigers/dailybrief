@@ -580,15 +580,20 @@ extension DailyBrief {
             if !plistExists { allPass = false }
 
             // Check 4: LaunchAgent loaded in launchctl
-            let task = Process()
-            task.executableURL = URL(fileURLWithPath: "/bin/launchctl")
-            task.arguments = ["list", "com.jamesonmorrill.dailybriefmonitor"]
-            let pipe = Pipe()
-            task.standardOutput = pipe
-            task.standardError = pipe
-            try? task.run()
-            task.waitUntilExit()
-            let launchctlLoaded = (task.terminationStatus == 0)
+            var launchctlLoaded = false
+            do {
+                let task = Process()
+                task.executableURL = URL(fileURLWithPath: "/bin/launchctl")
+                task.arguments = ["list", "com.jamesonmorrill.dailybriefmonitor"]
+                let pipe = Pipe()
+                task.standardOutput = pipe
+                task.standardError = pipe
+                try task.run()
+                task.waitUntilExit()
+                launchctlLoaded = (task.terminationStatus == 0)
+            } catch {
+                launchctlLoaded = false
+            }
             printCheck("LaunchAgent loaded (launchctl list dailybriefmonitor)", pass: launchctlLoaded)
             if !launchctlLoaded { allPass = false }
 
@@ -646,14 +651,19 @@ extension DailyBrief {
             // Check 7: Printer reachable (D-08)
             let printerConfig = (try? ConfigLoader.load(from: nil))?.printing
             if let name = printerConfig?.printerName, !name.isEmpty, printerConfig?.enabled == true {
-                let printerTask = Process()
-                printerTask.executableURL = URL(fileURLWithPath: "/usr/sbin/lpstat")
-                printerTask.arguments = ["-p", name]
-                printerTask.standardOutput = Pipe()
-                printerTask.standardError = Pipe()
-                try? printerTask.run()
-                printerTask.waitUntilExit()
-                let printerReachable = printerTask.terminationStatus == 0
+                var printerReachable = false
+                do {
+                    let printerTask = Process()
+                    printerTask.executableURL = URL(fileURLWithPath: "/usr/bin/lpstat")
+                    printerTask.arguments = ["-p", name]
+                    printerTask.standardOutput = Pipe()
+                    printerTask.standardError = Pipe()
+                    try printerTask.run()
+                    printerTask.waitUntilExit()
+                    printerReachable = (printerTask.terminationStatus == 0)
+                } catch {
+                    printerReachable = false
+                }
                 printCheck("Printer reachable (\(name))", pass: printerReachable)
                 if !printerReachable { allPass = false }
             } else {
