@@ -232,7 +232,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 ### Phases
 
 - [x] **Phase 96: PWA Fixes** — Fix chat 400 error and hide completed tasks from all views (completed 2026-04-16)
-- [ ] **Phase 97: Mac CLI Print Reliability** — Verify and harden the Mac CLI auto-print path
+- [x] **Phase 97: Mac CLI Print Reliability** — Verify and harden the Mac CLI auto-print path (completed 2026-04-17)
 - [ ] **Phase 98: Thought-Contextual Chat** — Open chat from any thought with that thought injected as conversation context
 
 ## Phase Details
@@ -263,7 +263,7 @@ Plans:
 **Plans**: 2 plans
 Plans:
 - [x] 97-01-PLAN.md -- Fix print bugs, add reachability check, 100% scale, 404 fallback, legacy cleanup
-- [ ] 97-02-PLAN.md -- Rebuild CLI and verify full print chain end-to-end
+- [x] 97-02-PLAN.md -- Rebuild CLI and verify full print chain end-to-end
 
 ### Phase 98: Thought-Contextual Chat
 **Goal**: Users can open a chat session pre-loaded with a specific thought so they can discuss, explore, or act on that thought with AI
@@ -276,8 +276,8 @@ Plans:
   4. The chat session continues as a normal multi-turn conversation after the initial context injection
 **Plans**: 2 plans
 Plans:
-- [ ] 97-01-PLAN.md -- Fix print bugs, add reachability check, 100% scale, 404 fallback, legacy cleanup
-- [ ] 97-02-PLAN.md -- Rebuild CLI and verify full print chain end-to-end
+- [x] 97-01-PLAN.md -- Fix print bugs, add reachability check, 100% scale, 404 fallback, legacy cleanup
+- [x] 97-02-PLAN.md -- Rebuild CLI and verify full print chain end-to-end
 **UI hint**: yes
 
 ## Progress
@@ -382,7 +382,7 @@ Plans:
 | 94. Browser Extension Quick-Capture | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 95. iOS PWA OAuth UAT Retest | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 96. PWA Fixes | v3.3 | 2/2 | Complete    | 2026-04-16 |
-| 97. Mac CLI Print Reliability | v3.3 | 1/2 | In Progress|  |
+| 97. Mac CLI Print Reliability | v3.3 | 2/2 | Complete    | 2026-04-17 |
 | 98. Thought-Contextual Chat | v3.3 | 0/TBD | Not started | - |
 
 ## Backlog
