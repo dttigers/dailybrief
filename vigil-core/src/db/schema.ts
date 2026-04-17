@@ -11,7 +11,15 @@ import {
   index,
   unique,
   uniqueIndex,
+  customType,
 } from "drizzle-orm/pg-core";
+
+// ── bytea custom type (Drizzle has no built-in bytea helper) ──────────────
+const bytea = customType<{ data: Buffer; driverData: Buffer }>({
+  dataType() {
+    return "bytea";
+  },
+});
 
 // ── projects table ──────────────────────────────────────────────────────────
 
@@ -106,6 +114,22 @@ export const briefs = pgTable(
     uniqueIndex("uq_briefs_date").on(table.date),
     index("idx_briefs_created_at").on(table.createdAt),
   ],
+);
+
+// ── brief_pdfs table (Phase 99 — BYTEA storage for daily brief PDFs) ──────
+export const briefPdfs = pgTable(
+  "brief_pdfs",
+  {
+    briefId: integer("brief_id")
+      .primaryKey()
+      .references(() => briefs.id, { onDelete: "cascade" }),
+    bytes: bytea("bytes").notNull(),
+    contentType: text("content_type").notNull().default("application/pdf"),
+    byteLength: integer("byte_length").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
 );
 
 // ── thought_links table ─────────────────────────────────────────────────────
