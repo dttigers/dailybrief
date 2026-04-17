@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Multi-User Foundation & PWA Polish
 status: executing
-stopped_at: Completed 99-01-PLAN.md
-last_updated: "2026-04-17T23:27:01.952Z"
+stopped_at: Completed 99-02-PLAN.md
+last_updated: "2026-04-17T23:34:32.873Z"
 last_activity: 2026-04-17
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 2
+  percent: 67
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 ## Current Position
 
 Phase: 99 (brief-history-fix) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-17
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | v3.2 Freshness & Capture Parity | 88-95 | 14 | 2 days |
 | v3.3 Stability & Chat Context | 96-98 | 5 | 1 day |
 | Phase 99-brief-history-fix P01 | 20min | 2 tasks | 6 files |
+| Phase 99-brief-history-fix P02 | 5 minutes | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 v3.3 decisions archived to milestones/v3.3-ROADMAP.md.
 
 - [Phase 99-brief-history-fix]: Used Drizzle customType for bytea (no built-in helper); sibling table brief_pdfs keeps SELECT * FROM briefs clean; repaired out-of-sync journal and __drizzle_migrations before generating migration 0011
+- [Phase 99-brief-history-fix]: assembleAndRender drops filePath; GET /brief/:date uses LEFT JOIN brief_pdfs for two-tier 404 (brief_pdf_not_stored vs brief_not_found); retention sweep deleted per D-09
 
 ### Pending Todos
 
@@ -83,7 +85,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-17T23:27:01.948Z
-Stopped at: Completed 99-01-PLAN.md
+Last session: 2026-04-17T23:34:32.869Z
+Stopped at: Completed 99-02-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 99`
