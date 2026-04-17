@@ -26,7 +26,7 @@ Users can open a chat session pre-loaded with a specific thought so they can dis
 - **D-04:** When arriving from a thought, the AI auto-responds immediately. Thought becomes user message, AI responds, user sees both right away. No extra confirmation step.
 
 ### Navigation
-- **D-05:** Navigate from ThoughtRow to ChatPage using React Router with query params (e.g., `/chat?thoughtId=123`). ChatPage reads the param, fetches the thought, creates a new session, injects thought as first message, and auto-sends. The `useSearchParams()` pattern is already established in SettingsPage.
+- **D-05:** Navigate from ThoughtRow to ChatPage using React Router with router state (e.g., `navigate('/chat', { state: { thoughtText, thoughtId } })`). ChatPage reads `useLocation().state` on mount, creates a new session, injects thought as first message, and auto-sends. Router state avoids URL length limits and special character encoding issues with long thought text. *(Updated from query params per research recommendation, approved 2026-04-16.)*
 
 ### Claude's Discretion
 - Icon choice for the chat button (speech bubble variant)
