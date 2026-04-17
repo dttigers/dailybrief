@@ -60,7 +60,12 @@ struct DailyBriefMonitorApp: App {
                     // D-10: title-bar icon swap to rotating arrow.triangle.2.circlepath while updating
                     Image(systemName: "arrow.triangle.2.circlepath")
                 } else if let success = appDelegate.checker.lastRunSuccess {
-                    Image(systemName: success ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                    if success {
+                        Image(systemName: "checkmark.circle.fill")
+                    } else {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundStyle(.red)
+                    }
                 } else if watcherHasFailures {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)

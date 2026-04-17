@@ -78,9 +78,18 @@ extension DailyBrief {
                     accept: "application/pdf"
                 )
             } catch let VigilAPIError.httpError(statusCode, _) where statusCode == 404 {
-                // D-12 step 4: 404 => staleness sentinel, exit code 2
-                Logger.log("No brief for today (\(today))")
-                throw ExitCode(rawValue: 2)
+                // Brief PDF lost (Railway /tmp ephemeral) — regenerate on demand
+                Logger.log("Brief not cached — requesting server-side generation...")
+                do {
+                    pdfData = try await apiClient.postRawData(
+                        path: "/v1/brief/generate",
+                        accept: "application/pdf"
+                    )
+                    Logger.log("Brief generated on demand (\(pdfData.count) bytes)")
+                } catch {
+                    Logger.log("No brief for today (\(today))")
+                    throw ExitCode(rawValue: 2)
+                }
             } catch {
                 // D-12 step 5: any other error => exit 1
                 Logger.error("Brief fetch failed: \(error.localizedDescription)")
@@ -633,6 +642,23 @@ extension DailyBrief {
             }
             printCheck(check6Label, pass: settingsAllReachable)
             if !settingsAllReachable { allPass = false }
+
+            // Check 7: Printer reachable (D-08)
+            let printerConfig = (try? ConfigLoader.load(from: nil))?.printing
+            if let name = printerConfig?.printerName, !name.isEmpty, printerConfig?.enabled == true {
+                let printerTask = Process()
+                printerTask.executableURL = URL(fileURLWithPath: "/usr/sbin/lpstat")
+                printerTask.arguments = ["-p", name]
+                printerTask.standardOutput = Pipe()
+                printerTask.standardError = Pipe()
+                try? printerTask.run()
+                printerTask.waitUntilExit()
+                let printerReachable = printerTask.terminationStatus == 0
+                printCheck("Printer reachable (\(name))", pass: printerReachable)
+                if !printerReachable { allPass = false }
+            } else {
+                printCheck("Printer reachable (printing disabled or no printer_name)", pass: true)
+            }
 
             print(allPass ? "\n=== All checks passed ===" : "\n=== Some checks FAILED ===")
             if !allPass { throw ExitCode.failure }
