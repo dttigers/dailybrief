@@ -260,7 +260,10 @@ Plans:
   1. Running the Mac CLI print command locally completes without error and sends the brief to the printer
   2. The LaunchAgent scheduled run executes the print path at the configured time (verified via log output)
   3. Any identified blockers in the print path are resolved and documented
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 97-01-PLAN.md -- Fix print bugs, add reachability check, 100% scale, 404 fallback, legacy cleanup
+- [ ] 97-02-PLAN.md -- Rebuild CLI and verify full print chain end-to-end
 
 ### Phase 98: Thought-Contextual Chat
 **Goal**: Users can open a chat session pre-loaded with a specific thought so they can discuss, explore, or act on that thought with AI
@@ -271,7 +274,10 @@ Plans:
   2. Tapping the Chat action opens the Chat tab with the thought's text injected as the opening context
   3. The AI's first response acknowledges or engages with the injected thought content
   4. The chat session continues as a normal multi-turn conversation after the initial context injection
-**Plans**: TBD
+**Plans**: 2 plans
+Plans:
+- [ ] 97-01-PLAN.md -- Fix print bugs, add reachability check, 100% scale, 404 fallback, legacy cleanup
+- [ ] 97-02-PLAN.md -- Rebuild CLI and verify full print chain end-to-end
 **UI hint**: yes
 
 ## Progress
@@ -376,7 +382,7 @@ Plans:
 | 94. Browser Extension Quick-Capture | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 95. iOS PWA OAuth UAT Retest | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 96. PWA Fixes | v3.3 | 2/2 | Complete    | 2026-04-16 |
-| 97. Mac CLI Print Reliability | v3.3 | 0/TBD | Not started | - |
+| 97. Mac CLI Print Reliability | v3.3 | 0/2 | Planned | - |
 | 98. Thought-Contextual Chat | v3.3 | 0/TBD | Not started | - |
 
 ## Backlog
