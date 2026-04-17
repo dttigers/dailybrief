@@ -541,10 +541,13 @@ extension DailyBrief {
 
             var allPass = true
 
-            // Check 1: VIGIL_API_KEY env var
+            // Check 1: API key available (env var or config file)
             let apiKeyEnv = ProcessInfo.processInfo.environment["VIGIL_API_KEY"]
-            printCheck("VIGIL_API_KEY env var present", pass: apiKeyEnv != nil && !apiKeyEnv!.isEmpty)
-            if apiKeyEnv == nil || apiKeyEnv!.isEmpty { allPass = false }
+            let configApiKey = (try? ConfigLoader.load(from: nil))?.apiKey
+            let effectiveApiKey = (apiKeyEnv.flatMap { $0.isEmpty ? nil : $0 }) ?? (configApiKey.flatMap { $0.isEmpty ? nil : $0 })
+            let apiKeySource = apiKeyEnv != nil && !apiKeyEnv!.isEmpty ? "env" : (effectiveApiKey != nil ? "config" : "missing")
+            printCheck("API key available (\(apiKeySource))", pass: effectiveApiKey != nil)
+            if effectiveApiKey == nil { allPass = false }
 
             // Check 2: vigil-core reachable (GET /health from config's apiBaseUrl)
             // Load config to get apiBaseUrl (best-effort — if no config, use default)
@@ -616,7 +619,7 @@ extension DailyBrief {
             let settingsPaths = ["/v1/settings/print-schedule", "/v1/settings/generate-schedule", "/v1/settings/timezone"]
             var failedEndpoints: [String] = []
 
-            if let apiKey = apiKeyEnv, !apiKey.isEmpty {
+            if let apiKey = effectiveApiKey {
                 for path in settingsPaths {
                     guard let url = URL(string: baseRoot + path) else {
                         failedEndpoints.append(path + " (bad URL)")
