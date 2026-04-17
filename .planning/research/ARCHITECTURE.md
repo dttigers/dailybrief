@@ -1,425 +1,546 @@
 # Architecture Research
 
-**Domain:** Gmail OAuth + PWA Settings + CLI restructure on existing Vigil platform
-**Researched:** 2026-04-13
-**Confidence:** HIGH (based on direct codebase inspection)
+**Domain:** Multi-user auth + PWA context menu + edit-refresh pause + brief history fix
+**Researched:** 2026-04-17
+**Confidence:** HIGH (all findings based on direct codebase inspection)
 
 ## Standard Architecture
 
-### System Overview
+### System Overview (Current State)
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                         Client Layer                                │
-├──────────────┬──────────────────────┬───────────────────────────────┤
-│  Mac CLI     │   vigil-pwa          │   Even G2 Plugin              │
-│  (Swift/SPM) │   (React 19 / RR7)   │   (Vite + Hub SDK)            │
-│              │                      │                               │
-│  DailyBrief  │  App.tsx Routes:     │   3-screen ambient display    │
-│  (commands)  │   /         Thoughts │                               │
-│  VigilAPI    │   /work-orders       │                               │
-│  Client      │   /projects          │                               │
-│  (actor)     │   /chat              │                               │
-│              │   /insights          │                               │
-│              │   /therapy           │                               │
-│              │   /history           │                               │
-│              │   /upload            │                               │
-│              │   [/settings NEW]    │                               │
-│              │   [/gmail NEW]       │                               │
-└──────┬───────┴──────────┬───────────┴───────────────────────────────┘
-       │ Bearer auth       │ Bearer auth
-       │ (vk_ prefix)      │ (localStorage key)
-       ▼                   ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                  vigil-core  (Hono / Node.js)                       │
-│                  api.vigilhub.io  /  Railway                        │
-├─────────────────────────────────────────────────────────────────────┤
-│  Middleware: CORS → secureHeaders → timeout(30s) → rateLimiter      │
-│  Auth skip: /v1/health, /v1/auth/google*                            │
-│  Auth required: all other /v1/* routes                              │
-├─────────────────────────────────────────────────────────────────────┤
-│  Existing Routes (src/routes/)                                      │
-│  thoughts, projects, work-orders, work-order-status                 │
-│  triage, affirmation, insights, therapy, chat, chat-sessions        │
-│  brief, brief-generate, brief-history                               │
-│  calendar, calendar-auth  ← REUSE for Gmail                        │
-│  sports, export, bulk, tags, links, describe-image                  │
-│  process-photo, process-audio, health, summary                      │
-│                                                                     │
-│  NEW Routes:                                                        │
-│  gmail (src/routes/gmail.ts)                                        │
-│  gmail-extract (src/routes/gmail-extract.ts)  ← WO extraction      │
-├─────────────────────────────────────────────────────────────────────┤
-│  Services (src/services/)                                           │
-│  calendar-service.ts  ← REUSE token management                     │
-│  gmail-service.ts     ← NEW, mirrors calendar-service pattern      │
-├─────────────────────────────────────────────────────────────────────┤
-│  DB (Drizzle ORM / PostgreSQL)                                      │
-│  oauthTokens  ← single row provider='google', add gmail.readonly   │
-│  workOrders   ← existing table, Gmail extraction feeds here        │
-│  workOrderStatuses ← unchanged                                      │
-└─────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                         Clients                                   │
+│  ┌──────────────┐  ┌─────────────┐  ┌────────────┐  ┌────────┐  │
+│  │ vigil-pwa    │  │ Mac CLI     │  │ G2 plugin  │  │ Ext    │  │
+│  │ (React/Vite) │  │ (Swift/Node)│  │ (Even SDK) │  │ (TS)   │  │
+│  └──────┬───────┘  └──────┬──────┘  └─────┬──────┘  └───┬────┘  │
+└─────────┼────────────────┼───────────────┼──────────────┼────────┘
+          │  Bearer vk_*   │               │              │
+          ▼  (SHA-256 hash)▼               ▼              ▼
+┌──────────────────────────────────────────────────────────────────┐
+│               Vigil Core API (Hono/TypeScript, Railway)           │
+│  ┌─────────────────────────────────────────────────────────────┐ │
+│  │ Middleware: CORS → secureHeaders → timeout(30s) → rateLimiter│ │
+│  │             → bearerAuth (all /v1/* except /v1/health)       │ │
+│  └─────────────────────────────────────────────────────────────┘ │
+│  ┌──────────────────────────────────────────────────────────────┐ │
+│  │ Routes: 25+ REST endpoints under /v1/                        │ │
+│  │ thoughts · projects · briefs · brief/generate · chat        │ │
+│  │ insights · therapy · work-orders · sports · calendar · etc.  │ │
+│  └──────────────────────────────────────────────────────────────┘ │
+│  ┌──────────────────────────────────────────────────────────────┐ │
+│  │ Background services: GenerateScheduler · GmailWorkOrders     │ │
+│  └──────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────┬───────────────────────────────────┘
+                               │  Drizzle ORM + postgres-js
+                               ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                  PostgreSQL (Railway managed)                      │
+│  api_keys · thoughts · projects · briefs · chat_sessions          │
+│  work_orders · work_order_statuses · oauth_tokens · app_settings  │
+│  thought_links · ai_cache                                         │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
-### Component Responsibilities
+### Current Auth Model (Single-User)
 
-| Component | Responsibility | Status |
-|-----------|----------------|--------|
-| `calendar-auth.ts` | OAuth2 browser redirect flow, CSRF nonce, token storage | Existing — reuse for Gmail scope |
-| `calendar-service.ts` | Token refresh, getValidAccessToken(), Google API fetch | Existing — pattern to copy |
-| `gmail-service.ts` | Gmail API calls: list messages, get thread, search, WO extraction | NEW |
-| `gmail.ts` (route) | REST endpoints: GET /gmail/messages, GET /gmail/thread/:id, GET /gmail/search | NEW |
-| `gmail-extract.ts` (route) | POST /gmail/extract-work-orders — Claude-powered WO detection | NEW |
-| `SettingsPage.tsx` | OAuth connect/disconnect UI, integration status | NEW PWA page |
-| `GmailPage.tsx` | Inbox list, thread view, search | NEW PWA page |
-| `DailyBrief.Capture` | CLI `capture` subcommand — POST thought, trigger triage | NEW Swift subcommand |
-| `DailyBrief.Triage` | CLI `triage` subcommand — batch re-triage uncategorized | NEW Swift subcommand |
-| `DailyBrief.Doctor` | CLI `doctor` subcommand — API key/env/plist/Railway health check | NEW Swift subcommand |
-| `DailyBrief.Setup` | Promoted from `--setup` flag to proper subcommand | MODIFIED |
+The current auth is flat: one `api_keys` table row per token. The middleware verifies SHA-256(token) against `key_hash`, looks up `isActive`, updates `lastUsedAt`, then calls `next()`. No user context is attached to `c` (Hono context). Every authenticated request sees ALL data in the database. There are no `userId` columns on any table.
 
-## Recommended Project Structure
+---
 
-### vigil-core additions
+## Feature Integration Analysis
+
+### 1. Brief History Fix
+
+**Root cause (confirmed from code):** `GET /brief/:date` reads the PDF from the Railway filesystem at the path stored in `briefs.pdfFilename` (e.g., `/tmp/briefs/brief-2026-04-13.pdf`). Railway's filesystem is ephemeral — it is wiped on every deploy and dyno restart. So any brief older than the most recent deploy returns 404.
+
+**What changes:**
+
+| Layer | Current | New |
+|-------|---------|-----|
+| DB schema | `briefs.pdfFilename text` (path pointer) | Add `pdfData bytea` column |
+| `brief-generate.ts` POST | Writes PDF to `/tmp`, stores path | Also writes buffer to `pdfData` |
+| `brief-generate.ts` GET | Reads file from path | Try `pdfData` column first; file path as fallback |
+| Drizzle schema | No `pdfData` | Add `pdfData: customType('bytea')` |
+| Migration | — | New migration adds `pdf_data bytea` column |
+
+**No PWA changes required.** The fix is entirely in `vigil-core`. The PWA already calls `GET /v1/brief/:date` and handles the blob correctly.
+
+**Recommended approach:** Store the PDF buffer in `pdfData bytea` at generation time. On GET, prefer the in-memory buffer column over the file path. This is simpler than an S3/R2 integration and appropriate at current scale (<50 briefs/year).
+
+**Data flow after fix:**
+
+```
+POST /brief/generate
+  assembler.assembleAndRender() → { buffer, filePath, metadata }
+  db.insert(briefs) with pdfData = buffer           ← NEW
+  return buffer as PDF response
+
+GET /brief/:date
+  row = db.select() from briefs where date = :date
+  if row.pdfData → return pdfData as PDF response   ← NEW primary path
+  elif row.pdfFilename and file exists → return file ← fallback
+  else → 404 "Brief PDF not found — regenerate"
+```
+
+---
+
+### 2. Edit-Refresh Pause
+
+**Root cause (confirmed from code):** `useThoughts.ts` runs `setInterval(refetch, 30_000)` unconditionally. `ThoughtRow.tsx` manages `isEditing` state locally. When the 30s poll fires during an edit, `setThoughts` replaces the list, the `ThoughtRow` component re-renders with the original content from the server, and the in-progress edit is lost.
+
+**What changes:**
+
+| Layer | Current | New |
+|-------|---------|-----|
+| `useThoughts.ts` | Polls every 30s unconditionally | Accepts `isPaused?: boolean` param; skips interval when paused |
+| `ThoughtRow.tsx` | No edit lifecycle callbacks | Calls `onEditStart()` / `onEditEnd()` on edit open/close |
+| Parent pages | Pass `onUpdate` to `ThoughtRow` | Also track `isAnyEditing` state; pass `isPaused` to `useThoughts` |
+
+**No API changes required.** This is a pure PWA state management fix.
+
+**Data flow:**
+
+```
+User clicks thought content → ThoughtRow sets isEditing=true
+ThoughtRow calls onEditStart() → parent sets isAnyEditing=true
+useThoughts sees isPaused=true → interval not created / cleared
+User saves or cancels → ThoughtRow calls onEditEnd()
+Parent sets isAnyEditing=false → useThoughts restarts 30s interval
+```
+
+**Implementation note:** Move the `setInterval` inside a `useEffect` that depends on `isPaused`. When `isPaused` becomes true, the effect cleanup clears the interval. When it returns to false, a fresh interval starts — so the next poll is 30s after the edit ends, not immediately.
+
+---
+
+### 3. Right-Click Context Menu
+
+**What changes:**
+
+| Layer | Current | New |
+|-------|---------|-----|
+| `ThoughtRow.tsx` | No context menu | Add `onContextMenu` handler; passes `{ x, y, thoughtId }` to parent |
+| New: `ThoughtContextMenu.tsx` | — | Portal-rendered floating menu at `{ x, y }` |
+| Parent pages | No context menu state | Track `contextMenu: { x, y, thoughtId } | null` |
+| `api/client.ts` | `updateThought`, `bulkDeleteThoughts` exist | Reused as-is |
+
+**No API changes required.** All menu actions call existing endpoints.
+
+**Implementation pattern:**
+
+```tsx
+// ThoughtRow.tsx — add to existing wrapper div
+<div
+  onContextMenu={(e) => {
+    e.preventDefault()
+    onContextMenu?.(e.clientX, e.clientY, thought.id)
+  }}
+>
+
+// ThoughtContextMenu.tsx — portal at document.body
+// position: fixed at { top: y, left: x } clamped to viewport
+// items: Delete | Move to [category submenu] | Edit | Re-triage | Add to Project [project submenu]
+// dismisses on: Escape, pointerdown outside, any item click
+```
+
+**"Move to category" and "Add to Project" sub-menus:** Render as inline expansion (not a nested flyout) within the same menu container. Categories are a static list. Projects are fetched from `useProjects()` — already available in parent pages.
+
+---
+
+### 4. Multi-User Foundation
+
+**Current state:** Every table is implicitly scoped to "the one user." No `userId` column anywhere. `api_keys` has no user foreign key.
+
+**Target state:** Multiple Vigil instances (users) each have their own thoughts, projects, briefs, etc. The bearer token identifies which user.
+
+**Integration approach: Add `users` table + `userId` FK on data tables via migration; attach `userId` to Hono context in `bearerAuth` middleware.**
+
+#### Schema changes
+
+```
+NEW TABLE: users
+  id          serial PK
+  name        text NOT NULL
+  email       text UNIQUE
+  createdAt   timestamp WITH TIME ZONE DEFAULT now()
+
+MODIFIED TABLE: api_keys
+  + userId    integer NOT NULL REFERENCES users(id)
+
+MODIFIED TABLES (add userId FK, backfill to 1):
+  thoughts       + userId integer NOT NULL REFERENCES users(id)
+  projects       + userId integer NOT NULL REFERENCES users(id)
+  briefs         + userId integer NOT NULL REFERENCES users(id)
+  chat_sessions  + userId integer NOT NULL REFERENCES users(id)
+  ai_cache       + userId integer NOT NULL REFERENCES users(id)
+  app_settings   composite PK becomes (key, userId)
+  oauth_tokens   + userId integer (nullable for global deploy-wide tokens)
+```
+
+**Note on work_orders:** Work orders are pulled from IMAP (not user-generated), so they stay global for v3.4. Do not add userId to work_orders or work_order_statuses in this milestone.
+
+#### Middleware change
+
+`bearerAuth` must attach the resolved `userId` to Hono context so routes can scope queries:
+
+```typescript
+// middleware/auth.ts — modified select
+const [key] = await db
+  .select({ id: apiKeys.id, userId: apiKeys.userId })
+  .from(apiKeys)
+  .where(and(eq(apiKeys.keyHash, keyHash), eq(apiKeys.isActive, true)))
+  .limit(1)
+
+if (!key) return c.json({ error: 'Invalid API key' }, 401)
+
+c.set('userId', key.userId)  // requires Hono typed Variables
+await next()
+```
+
+Hono supports typed context variables via `new Hono<{ Variables: { userId: number } }>()`. Sub-routers created as plain `new Hono()` need `c.get('userId') as number` with explicit cast.
+
+#### Route changes
+
+Every route that queries a data table must add `eq(table.userId, c.get('userId'))` to WHERE clauses. This is the bulk of the implementation work.
+
+**Routes requiring userId scope:**
+- `thoughts.ts` — all handlers (SELECT, INSERT, UPDATE, DELETE)
+- `projects.ts` — all handlers
+- `brief-history.ts` — all handlers
+- `brief-generate.ts` — all handlers
+- `chat.ts`, `chat-sessions.ts` — all handlers
+- `insights.ts`, `therapy.ts` — ai_cache lookups
+- `settings.ts` — app_settings lookups
+- `tags.ts`, `links.ts` — secondary thought lookups
+- `bulk.ts` — verify thought IDs belong to userId before mutation
+- `triage.ts` — INSERT after triage
+- `affirmation.ts`, `summary.ts` — thought context queries
+
+**Routes NOT needing userId scope:**
+- `health.ts` — no auth, no DB
+- `sports.ts` — no user data
+- `google-auth.ts`, `google-status.ts` — keep single-tenant OAuth for now
+- `work-orders.ts`, `work-order-status.ts` — global for v3.4
+- `process-photo.ts`, `process-audio.ts`, `describe-image.ts` — no direct DB queries
+
+#### Migration strategy (zero-downtime for existing user)
+
+1. New migration: create `users` table; insert one row `(id=1, name='Jameson')`.
+2. Add `userId integer DEFAULT 1` columns to all data tables.
+3. Backfill: `UPDATE thoughts SET user_id = 1` etc. (already done by DEFAULT).
+4. Add `NOT NULL` constraint; add FK constraint.
+5. Add `userId` column to `api_keys`; set existing rows to `1`.
+6. Remove DEFAULT clause now that all rows have a value.
+
+Programmatic Drizzle migrate runs automatically on deploy — no manual Railway console step.
+
+#### PWA changes for multi-user
+
+**v3.4 scope: none.** The PWA already stores one API key per browser session in `localStorage`. The `AuthPage.tsx` flow (enter key → validate → store) is correct for multi-user. Each user provides their own key. No registration UI is needed for v3.4 — key provisioning stays manual (admin inserts API key row into DB).
+
+---
+
+## Component Boundaries
+
+| Component | Responsibility | Communicates With |
+|-----------|----------------|-------------------|
+| `bearerAuth` middleware | Resolve token → userId; attach to `c` | All protected routes via `c.get('userId')` |
+| `users` table | Identity record per Vigil instance | `api_keys.userId` FK source |
+| `api_keys` table | Token → userId mapping | bearerAuth reads on every request |
+| `ThoughtRow.tsx` | Edit state; context menu event source | Parent via `onEditStart`, `onEditEnd`, `onContextMenu` callbacks |
+| `ThoughtContextMenu.tsx` (NEW) | Render floating menu at pointer position | ThoughtsPage/DashboardPage context menu state |
+| `useThoughts.ts` | Fetch + poll thoughts | Accepts `isPaused: boolean` new param |
+| `brief-generate.ts` GET | Serve PDF by date | Reads `pdfData bytea` from DB (primary); falls back to file |
+
+---
+
+## Recommended Project Structure Changes
 
 ```
 vigil-core/src/
+├── db/
+│   └── schema.ts              # ADD: users table; userId FKs on data tables
+├── middleware/
+│   └── auth.ts                # MODIFY: attach userId to Hono context variables
 ├── routes/
-│   ├── calendar-auth.ts       # MODIFIED — add gmail.readonly to scope array
-│   ├── calendar.ts            # existing — no changes
-│   ├── gmail.ts               # NEW — list/thread/search endpoints
-│   └── gmail-extract.ts       # NEW — work order extraction endpoint
-├── services/
-│   ├── calendar-service.ts    # existing — pattern reference
-│   └── gmail-service.ts       # NEW — mirrors calendar-service DI factory pattern
-└── index.ts                   # MODIFIED — register gmail routes
-```
+│   ├── thoughts.ts            # MODIFY: scope all queries to userId
+│   ├── projects.ts            # MODIFY: scope all queries to userId
+│   ├── brief-history.ts       # MODIFY: scope briefs queries to userId
+│   ├── brief-generate.ts      # MODIFY: store pdfData; scope queries to userId
+│   ├── chat.ts                # MODIFY: scope to userId
+│   ├── chat-sessions.ts       # MODIFY: scope to userId
+│   ├── insights.ts            # MODIFY: scope ai_cache to userId
+│   ├── therapy.ts             # MODIFY: scope ai_cache to userId
+│   ├── settings.ts            # MODIFY: scope app_settings to userId
+│   ├── bulk.ts                # MODIFY: userId guard before mutation
+│   ├── tags.ts                # MODIFY: scope to userId
+│   ├── links.ts               # MODIFY: scope to userId
+│   ├── triage.ts              # MODIFY: pass userId on INSERT
+│   ├── affirmation.ts         # MODIFY: scope thought context to userId
+│   └── summary.ts             # MODIFY: scope thought context to userId
+└── drizzle/
+    └── 0011_multi_user.sql    # NEW: users table + userId FK migrations
 
-### vigil-pwa additions
-
-```
 vigil-pwa/src/
-├── pages/
-│   ├── SettingsPage.tsx       # NEW — /settings route, Google connect/disconnect
-│   └── GmailPage.tsx          # NEW — /gmail route, inbox + search + thread view
-├── api/
-│   └── client.ts              # MODIFIED — add gmail API functions, google status check
 ├── components/
-│   ├── Layout.tsx             # MODIFIED — add Settings and Gmail tabs
-│   └── GmailMessageRow.tsx    # NEW — message list item component
-└── App.tsx                    # MODIFIED — add /settings and /gmail routes
+│   ├── ThoughtRow.tsx             # MODIFY: onContextMenu handler + onEditStart/onEditEnd
+│   └── ThoughtContextMenu.tsx     # NEW: portal-rendered floating context menu
+├── hooks/
+│   └── useThoughts.ts             # MODIFY: accept isPaused param; gate interval
+├── pages/
+│   ├── ThoughtsPage.tsx           # MODIFY: track isAnyEditing; pass to useThoughts
+│   └── DashboardPage.tsx          # MODIFY: track isAnyEditing; pass to useThoughts
 ```
 
-### Mac CLI additions
-
-```
-Sources/DailyBrief/
-└── DailyBrief.swift           # MODIFIED — add Capture/Triage/Doctor/Setup subcommands;
-                               #            remove Complete/Uncomplete/ListCompleted
-```
+---
 
 ## Architectural Patterns
 
-### Pattern 1: DI Factory Service (existing, replicate for Gmail)
+### Pattern 1: Hono Typed Context Variables
 
-**What:** Services expose a factory function `createXxxService(deps?)` that accepts injectable dependencies for testing, plus a production singleton `export const xxxService = createXxxService()`.
+**What:** Hono allows declaring variables that middleware sets and routes read, with TypeScript type safety.
 
-**When to use:** Any new service that calls external APIs (Google, etc.) — enables unit testing without real HTTP calls.
+**When to use:** Whenever middleware needs to pass resolved data (like userId) to downstream handlers.
 
-**Example** (from calendar-service.ts, apply identically to gmail-service.ts):
-```typescript
-export function createGmailService(deps?: GmailServiceDeps): {
-  listMessages: (query?: string, maxResults?: number) => Promise<GmailMessagesResponse>;
-  getThread: (threadId: string) => Promise<GmailThreadResponse>;
-  searchMessages: (params: GmailSearchParams) => Promise<GmailMessagesResponse>;
-} {
-  const fetchFn = deps?.fetchFn ?? globalThis.fetch.bind(globalThis);
-  // getValidAccessToken() — copy logic from calendar-service, same oauthTokens row
-  return { listMessages, getThread, searchMessages };
-}
-
-export const gmailService = createGmailService();
-```
-
-### Pattern 2: OAuth Scope Extension (no new table row)
-
-**What:** The existing `oauthTokens` table stores one row per provider (`provider='google'`). Adding `gmail.readonly` scope means adding it to the `generateAuthUrl` scope array in `calendar-auth.ts`. The stored tokens then cover both Calendar and Gmail. No schema migration required.
-
-**When to use:** Only when both Calendar and Gmail are scoped under the same Google OAuth app credentials (same `GOOGLE_CLIENT_ID`). This is the correct approach here since both use the same Google account.
-
-**Implementation:**
-```typescript
-// calendar-auth.ts — add gmail.readonly to scope array
-const url = client.generateAuthUrl({
-  access_type: "offline",
-  prompt: "consent",
-  scope: [
-    "https://www.googleapis.com/auth/calendar.readonly",
-    "https://www.googleapis.com/auth/gmail.readonly",  // ADD
-  ],
-  state: stateNonce,
-});
-```
-
-**Critical:** Existing users who already authorized Calendar-only will need to re-authorize because the scope set changed. The PWA Settings page must handle `needs_reauth` from Gmail calls gracefully and prompt re-connect.
-
-### Pattern 3: OAuth Status Check Endpoint
-
-**What:** PWA needs to know if Google is connected before showing Gmail UI. Add `GET /v1/google/status` that returns `{ connected: boolean }` by checking `oauthTokens` table without making a live Google API call. Keep it bearer-protected — the PWA user is already authenticated with their Vigil bearer key; Google OAuth status is a separate concern.
+**Trade-offs:** Requires threading the generic through the Hono instance. Sub-routers created as plain `new Hono()` won't inherit the parent type without explicit generic — use `c.get('userId') as number` with a comment explaining why.
 
 **Example:**
 ```typescript
-router.get("/google/status", async (c) => {
-  const rows = await db.select().from(oauthTokens)
-    .where(eq(oauthTokens.provider, "google")).limit(1);
-  return c.json({
-    connected: rows.length > 0,
-    expiresAt: rows[0]?.expiresAt ?? null,
-  });
-});
+// In index.ts
+const app = new Hono<{ Variables: { userId: number } }>()
+
+// In bearerAuth middleware
+c.set('userId', key.userId)
+
+// In any route
+const userId = c.get('userId') as number
 ```
 
-### Pattern 4: New CLI Subcommand (Swift ArgumentParser)
+---
 
-**What:** Add struct inside `DailyBrief` extension, register in `CommandConfiguration.subcommands`. All new commands use `VigilAPIClient` via `DailyBrief.makeAPIClient(config:)`. Every command takes `@Option var configPath: String?` for consistency with existing subcommands.
+### Pattern 2: Application-Level Row Scoping
 
-**Example structure** for `capture`:
-```swift
-extension DailyBrief {
-    struct Capture: AsyncParsableCommand {
-        static let configuration = CommandConfiguration(
-            abstract: "Capture a thought and trigger AI triage."
-        )
-        @Argument(help: "Thought text to capture")
-        var content: [String]
+**What:** Add `userId` to every WHERE clause in route handlers. Not PostgreSQL RLS — application-level enforcement.
 
-        @Option(help: "Path to config file")
-        var configPath: String?
+**When to use:** Single-instance multi-tenancy at small scale (<100 users). Simpler to implement and test than RLS for a codebase that owns all its queries.
 
-        func run() async throws {
-            let config = try ConfigLoader.load(from: configPath)
-            let apiClient = try DailyBrief.makeAPIClient(config: config)
-            let text = content.joined(separator: " ")
-            // POST /v1/thoughts then POST /v1/triage
-        }
-    }
+**Trade-offs:** Every query must remember to scope. A missed WHERE clause leaks data. Mitigated with an integration test that creates two users and verifies isolation.
+
+**Example:**
+```typescript
+// Before (single-user)
+const rows = await db.select().from(thoughts).where(eq(thoughts.id, id))
+
+// After (multi-user)
+const userId = c.get('userId') as number
+const rows = await db.select().from(thoughts)
+  .where(and(eq(thoughts.id, id), eq(thoughts.userId, userId)))
+```
+
+---
+
+### Pattern 3: Edit-Gate Polling Pause
+
+**What:** A boolean flag pauses the 30s polling interval to protect in-progress edits.
+
+**When to use:** Any polling loop that could overwrite transient UI state.
+
+**Trade-offs:** User misses new thoughts during edit session. Acceptable — they can refetch after saving.
+
+**Example:**
+```typescript
+// useThoughts.ts
+export function useThoughts(category, searchQuery, filters, isPaused = false) {
+  useEffect(() => {
+    if (isPaused) return  // skip interval while editing
+    const poll = setInterval(refetch, 30_000)
+    return () => clearInterval(poll)
+  }, [refetch, isPaused])
 }
 ```
 
-The `subcommands` array in `CommandConfiguration` must be updated to include `Capture.self`, `Triage.self`, `Doctor.self`, `Setup.self` and remove `Complete.self`, `Uncomplete.self`, `ListCompleted.self`.
+---
 
-### Pattern 5: Work Order Extraction from Gmail
+### Pattern 4: Portal-Rendered Context Menu
 
-**What:** A dedicated `POST /v1/gmail/extract-work-orders` endpoint fetches recent Gmail messages matching a subject filter, passes content to Claude, returns structured work order candidates, then the PWA prompts user confirmation before calling the existing `POST /v1/work-orders/sync` to upsert.
+**What:** `ReactDOM.createPortal` renders the context menu at `document.body`, avoiding z-index stacking issues from ancestor `overflow: hidden` containers.
 
-**Design rationale:** Uses Claude AI (same pattern as triage/insights routes) rather than regex parsing, since WO emails vary by sender. Returns candidates for user confirmation before upsert — avoids silent data corruption. Two-step: extract, then confirm-and-sync.
+**When to use:** Any floating UI element (menus, tooltips, modals) that must appear above all content.
+
+**Trade-offs:** Renders outside DOM position but stays inside React tree logically (events bubble correctly). Requires viewport clamping to prevent off-screen rendering.
+
+**Example:**
+```tsx
+import { createPortal } from 'react-dom'
+
+export default function ThoughtContextMenu({ x, y, onClose, ... }) {
+  const clampedX = Math.min(x, window.innerWidth - MENU_WIDTH)
+  const clampedY = Math.min(y, window.innerHeight - MENU_HEIGHT)
+  return createPortal(
+    <div style={{ position: 'fixed', top: clampedY, left: clampedX }}>
+      {/* menu items */}
+    </div>,
+    document.body
+  )
+}
+```
+
+---
 
 ## Data Flow
 
-### Gmail OAuth Connect Flow
+### Multi-User Request Flow
 
 ```
-PWA /settings
-    | click "Connect Google"
-    | navigate to GET /v1/auth/google
-vigil-core calendar-auth.ts
-    | generateAuthUrl (calendar + gmail.readonly scopes)
-    | redirect to accounts.google.com
-Google OAuth consent screen
-    | user approves
-    | redirect to GET /v1/auth/google/callback?code=...
-vigil-core calendar-auth.ts
-    | exchange code for tokens
-    | encryptToken(refresh_token)
-    | upsert into oauthTokens WHERE provider='google'
-    | redirect to $PWA_URL
-PWA /settings (re-mounts on return)
-    | calls GET /v1/google/status to confirm connected state
-    | updates UI: "Connected"
+Client:    Authorization: Bearer vk_abc123
+bearerAuth: SHA-256("vk_abc123") → lookup api_keys.keyHash
+            + api_keys.userId = 7
+            c.set('userId', 7) → next()
+Route:     c.get('userId') → 7
+           db.select().from(thoughts)
+             .where(and(eq(thoughts.userId, 7), eq(thoughts.id, thoughtId)))
+Response:  Only user 7's data returned
 ```
 
-### Gmail Inbox Flow (PWA)
+### Brief PDF Fix Data Flow
 
 ```
-PWA /gmail
-    | GET /v1/gmail/messages?maxResults=50
-vigil-core gmail.ts route
-    | gmailService.listMessages()
-gmail-service.ts
-    | getValidAccessToken()  -- token refresh transparent
-    | GET https://gmail.googleapis.com/gmail/v1/users/me/messages
-    | return normalized list
-    | { status: "ok", messages: [...] }
-        or { status: "needs_reauth" }  -- PWA shows re-connect prompt
-PWA renders message list
-    | click message -> GET /v1/gmail/thread/:threadId
-    | render thread
+POST /brief/generate
+  assembler.assembleAndRender(dateStr) → { buffer: Buffer, filePath: string }
+  db.insert(briefs).values({
+    date, summary, pdfFilename: filePath,
+    pdfData: buffer,          ← NEW
+    thoughtCount, taskCount
+  })
+  return new Response(buffer, { 'Content-Type': 'application/pdf' })
+
+GET /brief/:date
+  row = db.select().from(briefs).where(date = :date, userId = :userId)
+  if row.pdfData:
+    return new Response(row.pdfData, 'application/pdf')  ← primary
+  elif row.pdfFilename && file exists at path:
+    return file contents                                  ← fallback
+  else:
+    return 404 "Brief PDF not found — regenerate"
 ```
 
-### Work Order Extraction Flow
+### Edit-Refresh Pause Flow
 
 ```
-PWA Gmail page -> "Extract Work Orders" button
-    | POST /v1/gmail/extract-work-orders { query: "work order assigned", maxResults: 20 }
-vigil-core gmail-extract.ts
-    | gmailService.searchMessages(query)
-    | fetch full message bodies
-    | Claude prompt: "Identify work order fields from these emails"
-    | return { candidates: [ { caseNumber, store, ... } ] }
-PWA shows candidates for user review
-    | user confirms -> POST /v1/work-orders/sync { workOrders: [...] }
-vigil-core work-orders.ts (existing)
-    | upsert into workOrders table
-    | { synced: N }
+ThoughtRow: user clicks content text
+  → setIsEditing(true)
+  → props.onEditStart()
+Parent page: setIsAnyEditing(true)
+  → isPaused={true} passed to useThoughts
+useThoughts: isPaused=true
+  → useEffect returns early, no interval created
+  → (if interval was running, cleanup function cleared it)
+
+ThoughtRow: user saves (blur or Cmd+Enter)
+  → handleSave() → setIsEditing(false)
+  → props.onEditEnd()
+Parent page: setIsAnyEditing(false)
+  → isPaused={false} passed to useThoughts
+useThoughts: isPaused=false
+  → useEffect runs, new setInterval(refetch, 30_000) created
 ```
 
-### CLI Capture Flow
+---
 
-```
-$ dailybrief capture "remember to check the server logs"
-DailyBrief.Capture
-    | ConfigLoader.load()
-    | VigilAPIClient.post("/v1/thoughts", { content, source: "cli" })
-vigil-core thoughts.ts (existing)
-    | insert into thoughts table
-    | return { id, content, ... }
-DailyBrief.Capture
-    | VigilAPIClient.post("/v1/triage", { content })
-vigil-core triage.ts (existing)
-    | Claude categorizes -> { category, confidence }
-    | VigilAPIClient.put("/v1/thoughts/:id", { category, confidence })
-    | print "Captured: [task] 'remember...' (confidence: 0.91)"
-```
+## Build Order Recommendation
 
-### CLI Doctor Flow
+Dependencies determine order. Multi-user touches every route and is the highest-risk change — it comes last. The three smaller features are independent and can be sequenced by risk ascending.
 
-```
-$ dailybrief doctor
-DailyBrief.Doctor
-    | Check config file exists + parseable
-    | Check apiKey non-empty, matches vk_ prefix
-    | GET /v1/health -> check 200
-    | GET /v1/summary -> check 200 (validates bearer auth)
-    | Check LaunchAgent plist exists at ~/Library/LaunchAgents/
-    | Check plist API key matches config
-    | Print table: PASS/FAIL per check
-```
+| Phase | Feature | Scope | Risk | Rationale |
+|-------|---------|-------|------|-----------|
+| 1 | Brief History Fix | vigil-core only | Low | DB migration + 1 route change; no PWA touch |
+| 2 | Edit-Refresh Pause | vigil-pwa only | Very Low | 3-4 files; pure state management |
+| 3 | Right-Click Context Menu | vigil-pwa only | Low-Med | New component + parent state; reuses existing API |
+| 4 | Multi-User Foundation | vigil-core (schema + all routes) | High | Schema migration + ~15 route files; touches every data query |
+
+Multi-user is last because: (a) it requires a schema migration that touches every table, (b) it has the highest surface area for error, and (c) all other features work without it and can be validated by the existing user first.
+
+---
+
+## Anti-Patterns
+
+### Anti-Pattern 1: Storing PDFs Only on Filesystem
+
+**What people do:** Write PDFs to `/tmp` and store only the file path in the DB.
+
+**Why it's wrong:** Railway (and most PaaS) has ephemeral storage. Files are gone after every restart. The path pointer in the DB becomes a dangling reference.
+
+**Do this instead:** Store the PDF buffer in a `bytea` column. Use object storage (S3/R2) only if PDF sizes become large enough to matter (Vigil briefs are ~100-200KB each).
+
+---
+
+### Anti-Pattern 2: Flat Global Queries After Adding userId
+
+**What people do:** Add a `userId` column but forget to scope it in some routes.
+
+**Why it's wrong:** User A can read or mutate User B's thoughts. Silent data leak.
+
+**Do this instead:** Write a two-user isolation integration test immediately after the migration. Create user A and user B with separate API keys, insert a thought as A, verify B's GET returns 0 results. Run this test after every route change.
+
+---
+
+### Anti-Pattern 3: Polling Without a Pause Gate
+
+**What people do:** Run `setInterval(refetch, 30_000)` unconditionally.
+
+**Why it's wrong:** The interval fires during an active edit, `setThoughts` replaces the list, and the in-progress edit content is overwritten by the server response.
+
+**Do this instead:** Gate the interval on an `isPaused` flag controlled by the parent component's edit state.
+
+---
+
+### Anti-Pattern 4: Context Menu as DOM Child of ThoughtRow
+
+**What people do:** Render the context menu inside the thought row's div.
+
+**Why it's wrong:** The thought list container uses `overflow: hidden` for truncation. The menu clips at the container boundary and is invisible outside it.
+
+**Do this instead:** `ReactDOM.createPortal(menu, document.body)` with `position: fixed` coordinates from the `contextmenu` event. Clamp coordinates to viewport bounds.
+
+---
 
 ## Integration Points
-
-### New vs Existing Components
-
-| Component | New or Modified | Integration Point |
-|-----------|----------------|-------------------|
-| `calendar-auth.ts` | MODIFIED — add `gmail.readonly` to scope | Single line change to scope array |
-| `gmail-service.ts` | NEW | Copy `getValidAccessToken()` logic from calendar-service; queries same `oauthTokens` row |
-| `gmail.ts` route | NEW | Registered in `index.ts` same as `calendar.ts`; behind bearer auth |
-| `gmail-extract.ts` route | NEW | Calls gmail-service + Claude AI service; results confirmed by user then POST to existing `/work-orders/sync` |
-| `index.ts` | MODIFIED — register gmail routes | Two `app.route()` calls after existing calendar routes |
-| `SettingsPage.tsx` | NEW | Calls `GET /v1/google/status`, redirects browser to `/v1/auth/google` |
-| `GmailPage.tsx` | NEW | Calls `/v1/gmail/messages`, `/v1/gmail/thread/:id`, `/v1/gmail/search` |
-| `client.ts` | MODIFIED | Add Gmail API functions, google status check function |
-| `App.tsx` | MODIFIED | Add `/settings` and `/gmail` routes |
-| `Layout.tsx` | MODIFIED | Add Settings and Gmail nav tabs |
-| `DailyBrief.swift` | MODIFIED | Add Capture/Triage/Doctor/Setup subcommands; remove Complete/Uncomplete/ListCompleted |
 
 ### External Services
 
 | Service | Integration Pattern | Notes |
 |---------|---------------------|-------|
-| Gmail API v1 | REST via node fetch in gmail-service.ts | Base URL: `https://gmail.googleapis.com/gmail/v1/users/me/` — bearer token from oauthTokens |
-| Google OAuth 2.0 | Existing calendar-auth.ts redirect flow | Scope addition only; same client ID/secret/redirect URI env vars |
-| Claude AI | Existing AI service pattern in vigil-core | Used for WO extraction — pass email body, return structured fields |
+| PostgreSQL (Railway) | Drizzle ORM via postgres-js | Migration adds `users` table + userId FK columns; `bytea` for PDF storage |
+| Anthropic Claude | Global API key; called by route handlers | No multi-user change needed — API key is server-side env var |
+| Google OAuth | `oauth_tokens` scoped by provider string | Keep deploy-wide (not per-user) for v3.4; defer per-user OAuth |
 
 ### Internal Boundaries
 
 | Boundary | Communication | Notes |
 |----------|---------------|-------|
-| gmail-service ↔ oauthTokens | Drizzle ORM select/update, same as calendar-service | Shares the single `provider='google'` row — both calendar and gmail use same token |
-| gmail-extract ↔ work-orders/sync | Two separate HTTP roundtrips from PWA | Keeps extraction and sync decoupled; user confirmation in between |
-| SettingsPage ↔ calendar-auth | Browser redirect (not fetch) to `/v1/auth/google` | Google returns to `$PWA_URL` — Settings page reads `?calendar_error=` query param on mount to detect failures |
-| CLI Capture ↔ thoughts+triage | Sequential VigilAPIClient calls | POST thought first, get ID, then POST triage, then PUT update with category |
-| CLI Doctor ↔ LaunchAgent plist | FileManager local filesystem reads | No API call for plist check; reads `~/Library/LaunchAgents/` directly |
+| `bearerAuth` middleware → routes | `c.set('userId')` / `c.get('userId') as number` | Requires Hono typed Variables at app level |
+| `ThoughtsPage` → `ThoughtRow` | New props: `onEditStart`, `onEditEnd`, `onContextMenu` | Extend `ThoughtRowProps` interface |
+| `ThoughtsPage` → `useThoughts` | New `isPaused: boolean` param | Defaults to `false`; backward compatible |
+| `ThoughtsPage` → `ThoughtContextMenu` | State: `contextMenu: { x, y, thoughtId } or null` | Controls menu mount/unmount |
+| `brief-generate.ts` GET → DB | `pdfData bytea` column on `briefs` table | Primary PDF source post-fix; replaces filesystem read |
 
-## Scaling Considerations
-
-This is a single-user system. Scaling is not a concern for v3.1. Gmail API quota (1 billion units/day personal) is not a concern at this usage level.
-
-## Anti-Patterns
-
-### Anti-Pattern 1: Creating a Second `oauthTokens` Row for Gmail
-
-**What people do:** Add a second row `provider='gmail'` with separate tokens for Gmail vs Calendar.
-
-**Why it's wrong:** Google issues a single OAuth token set per user authorization. The access token covers all scopes granted during consent. Two rows means two separate Google auth flows, two refresh cycles, and they will diverge when one is revoked.
-
-**Do this instead:** Store one row `provider='google'`. Add `gmail.readonly` to the scope array in `calendar-auth.ts`. Both calendar-service and gmail-service call `getValidAccessToken()` using the same row.
-
-### Anti-Pattern 2: Fetching Full Gmail Message Bodies in the List Endpoint
-
-**What people do:** List messages and immediately fetch full body for each item in the list response.
-
-**Why it's wrong:** Gmail list API returns IDs + snippet only. Fetching full body per message = N+1 requests, slow, API quota waste.
-
-**Do this instead:** List endpoint returns IDs + snippet + metadata (subject, from, date). Full body fetch only on thread/message click.
-
-### Anti-Pattern 3: Auto-Syncing Work Orders from Gmail on Every List Load
-
-**What people do:** Every call to `GET /v1/gmail/messages` also runs WO extraction and syncs automatically.
-
-**Why it's wrong:** Silent data mutation is dangerous. WO extraction uses Claude and is slow (~2-3s). User should explicitly trigger extraction and confirm candidates before they land in work orders.
-
-**Do this instead:** WO extraction is an explicit user action on the Gmail page. Separate endpoint `POST /v1/gmail/extract-work-orders`. Returns candidates for review. User confirms before sync.
-
-### Anti-Pattern 4: Removing Old CLI Subcommands Before New Ones Are Built
-
-**What people do:** Remove `Complete`, `Uncomplete`, `ListCompleted` first, breaking the compiled binary, then add new subcommands.
-
-**Why it's wrong:** The CLI binary may be in use between deployment steps. Removing commands before replacements exist = broken tool during the transition window.
-
-**Do this instead:** Add `Capture`, `Triage`, `Doctor`, `Setup` first. Remove `Complete`, `Uncomplete`, `ListCompleted` in the same commit. Single atomic change.
-
-### Anti-Pattern 5: Putting the OAuth Redirect Target in the PWA
-
-**What people do:** Make the OAuth callback go to a PWA route like `/settings/callback` and handle token exchange in the browser.
-
-**Why it's wrong:** Token exchange (code → tokens) must happen server-side so client secrets are never exposed. The existing `calendar-auth.ts` callback correctly handles exchange on the server and redirects to PWA root on completion.
-
-**Do this instead:** Keep the callback in `calendar-auth.ts`. PWA Settings page detects return by checking `GET /v1/google/status` after mount, or reading `?calendar_error=` query param that the server appends on failure.
-
-## Build Order
-
-Based on component dependencies:
-
-1. **Gmail OAuth scope extension** (calendar-auth.ts) — Must land first. No Gmail API calls work until tokens include `gmail.readonly`. Requires user re-authorization.
-
-2. **gmail-service.ts** — Server-side service using existing token infrastructure. Independently testable.
-
-3. **Gmail routes (gmail.ts) + google/status endpoint** — List/thread/search endpoints. Register in `index.ts`. Deploy to Railway.
-
-4. **PWA: Settings page + client.ts google status functions** — Google connect/disconnect UI. Validates the OAuth flow end-to-end before Gmail inbox is built.
-
-5. **PWA: Gmail page + inbox/search UI** — Depends on gmail routes (step 3) and Settings OAuth state (step 4).
-
-6. **gmail-extract.ts + WO extraction** — Depends on gmail-service (step 2). Can be built after inbox UI is working.
-
-7. **CLI: Capture + Triage subcommands** — Fully independent of Gmail. Can be built in parallel with any of steps 2-6.
-
-8. **CLI: Doctor subcommand** — Independent. Build alongside capture/triage.
-
-9. **CLI: Setup promotion + old command removal** — Final cleanup. Remove `Complete`, `Uncomplete`, `ListCompleted` only after new commands are confirmed working.
+---
 
 ## Sources
 
-- Direct inspection of `vigil-core/src/routes/calendar-auth.ts` — OAuth flow, CSRF nonce, token upsert
-- Direct inspection of `vigil-core/src/services/calendar-service.ts` — token management, DI factory pattern
-- Direct inspection of `vigil-core/src/db/schema.ts` — oauthTokens table structure
-- Direct inspection of `vigil-core/src/utils/token-crypto.ts` — AES-256-GCM token encryption
-- Direct inspection of `vigil-core/src/index.ts` — middleware stack, auth bypass rules, route registration
-- Direct inspection of `vigil-pwa/src/App.tsx`, `Layout.tsx` — routing and nav tab structure
-- Direct inspection of `vigil-pwa/src/api/client.ts` — API client patterns, bearer auth
-- Direct inspection of `Sources/DailyBrief/DailyBrief.swift` — CLI subcommand structure, existing subcommands
-- Direct inspection of `Sources/JarvisCore/Services/VigilAPIClient.swift` — Swift API client actor
+- Direct inspection: `/vigil-core/src/middleware/auth.ts`
+- Direct inspection: `/vigil-core/src/db/schema.ts`
+- Direct inspection: `/vigil-core/src/routes/brief-generate.ts`
+- Direct inspection: `/vigil-core/src/routes/brief-history.ts`
+- Direct inspection: `/vigil-core/src/index.ts`
+- Direct inspection: `/vigil-pwa/src/hooks/useThoughts.ts`
+- Direct inspection: `/vigil-pwa/src/components/ThoughtRow.tsx`
+- Direct inspection: `/vigil-pwa/src/pages/BriefHistoryPage.tsx`
+- Direct inspection: `/vigil-pwa/src/App.tsx`
+- Direct inspection: `/vigil-pwa/src/api/client.ts`
 
 ---
-*Architecture research for: Vigil v3.1 Gmail & CLI Evolution*
-*Researched: 2026-04-13*
+
+*Architecture research for: Vigil v3.4 Multi-User Foundation & PWA Polish*
+*Researched: 2026-04-17*

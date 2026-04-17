@@ -1,189 +1,223 @@
 # Pitfalls Research
 
-**Domain:** Gmail API integration, Google OAuth scope expansion, PWA OAuth UI, work order email detection, CLI restructure — v3.1 Gmail & CLI Evolution
-**Researched:** 2026-04-13
-**Confidence:** HIGH (Google OAuth scope behavior — official docs verified), HIGH (Gmail API quota — official docs verified), MEDIUM (PWA OAuth patterns — multiple community sources), MEDIUM (CLI backward compat — commander.js docs), MEDIUM (work order detection — pattern analysis)
+**Domain:** Multi-user auth migration, React PWA context menus, edit/refresh collision, brief history retrieval
+**Researched:** 2026-04-17
+**Confidence:** HIGH (architecture-specific, verified against live codebase), MEDIUM (mobile browser behavior — WebSearch + known WebKit bugs)
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: gmail.readonly Is a Restricted Scope — Not Sensitive
+### Pitfall 1: Cross-User Data Leak — Missing userId Filter on Every Query
 
 **What goes wrong:**
-Developers add `gmail.readonly` to an existing verified OAuth app's consent screen, assume it's a "sensitive" scope (like Calendar), and ship — then Google's unverified-app warning screen blocks all users. The scope `https://www.googleapis.com/auth/gmail.readonly` is a **restricted** scope, a tier above sensitive, requiring either a formal security assessment (CASA audit) or qualification under the personal-use exception.
+When adding `userId` to the schema, developers correctly add the column to the `users` table and wire up middleware, then forget to add `.where(eq(table.userId, userId))` on 3-5 existing query functions. Every route that was written as single-user passes auth but returns all users' data. The leak is silent — HTTP 200, no error, just wrong data.
 
 **Why it happens:**
-`gmail.readonly` sounds low-risk (read-only, not write), but Google categorizes all Gmail scopes as restricted because mail access exposes the full content of private communications. Calendar scopes (`calendar.readonly`, `calendar.events`) are sensitive, not restricted — so developers assume Gmail is the same tier.
+The system has 30+ route files, each containing their own DB queries. Auth middleware only validates the token and resolves `userId`; it cannot enforce per-row filtering. There is no compiler or lint error. Manual review misses endpoints covered by rarely-exercised code paths (export, brief generation, sports proxy).
 
 **How to avoid:**
-This app qualifies for the **personal-use exception**: the only Google account using it is the owner's, and Vigil is a single-user tool. Confirm in the Cloud Console that the OAuth consent screen's user type is "External" (already done) but only the owner's account is ever used. Do NOT add test users that are strangers — keep the app in "Testing" state or keep the user list to yourself. No CASA audit is needed under the personal-use exception. Document this explicitly in the code so future contributors don't accidentally "open up" registration.
+1. Add `userId` column to ALL data tables in one migration (thoughts, projects, briefs, chat_sessions, ai_cache, app_settings, work_order_statuses, oauth_tokens). Do not add it table-by-table across multiple phases.
+2. Write a grep/audit script immediately after migration that lists every `db.select().from(tableName)` call — confirm each has a userId where clause before shipping.
+3. Consider a Drizzle query-builder helper `userScoped(userId)` that wraps every query — routes call the helper, not bare `db.select()`, making missing userId visible in code review.
 
 **Warning signs:**
-- User sees "Google hasn't verified this app" warning screen when authorizing
-- Authorization fails with a 100-user cap hit
-- Cloud Console shows `gmail.readonly` with a red warning rather than yellow
+- Route handler does not destructure userId from context but calls a DB table that now has a userId column
+- Integration test with two users shows user A can read user B's thoughts
 
-**Phase to address:** Gmail OAuth server phase (phase adding `gmail.readonly` scope to vigil-core)
+**Phase to address:**
+Multi-user foundation phase (schema migration + middleware) — must be done before any other multi-user work. Audit script should be a phase acceptance criterion.
 
 ---
 
-### Pitfall 2: Existing Calendar Token Lacks Gmail Scope — Silent Failure at Runtime
+### Pitfall 2: apiKey-to-User Mapping Is the Wrong Primitive
 
 **What goes wrong:**
-The Phase 74 refresh token stored in PostgreSQL was issued with only `calendar.readonly` scope. When the Gmail service calls `gmail.users.messages.list` using the same token, the API returns `403 insufficientPermissions`. Since the server silently refreshes access tokens from the stored refresh token, there is no consent UI — the user is never prompted to add Gmail permission, and the feature just silently fails or returns a misleading error.
+The current `api_keys` table has no `userId` foreign key. In multi-user mode, looking up a key correctly authenticates the request but still provides no identity. If you add `userId` to tables and try to use the key's `id` as the user discriminator, you end up with api_key-scoped data silos instead of user-scoped silos. Later user management (password reset, profile page) requires a users table anyway, making the api_key shortcut a dead end.
 
 **Why it happens:**
-Google access tokens are scoped to whatever was granted at authorization time. A refresh token only produces access tokens for the scopes that were granted. The token does not gain new scopes automatically when you add them to the OAuth consent screen configuration.
+The SHA-256 bearer token model was designed for API-to-API auth with no human identity concept. Extending it in-place is tempting because the middleware is already proven. The mistake is conflating "authenticated request" with "identified user."
 
 **How to avoid:**
-Design the Google OAuth flow to detect scope gaps. On the server, after the user connects Google, check the scopes present in the stored token against required scopes for each feature. If `gmail.readonly` is absent, expose a `scopeStatus` field in the integrations API response (e.g., `{ calendar: 'connected', gmail: 'needs_auth' }`). The PWA integrations page reads this and shows a "Connect Gmail" button that re-initiates the OAuth flow with the full combined scope list. Use `include_granted_scopes=true` in the new authorization URL so Google accumulates (not replaces) the scopes.
+Add a `users` table with (id, email, created_at). Add `userId` FK to `api_keys`. Auth middleware resolves token → key row → userId, sets `c.set('userId', userId)` on every request. Routes read `c.get('userId')`. This is one migration and a middleware patch, not a full auth overhaul.
 
 **Warning signs:**
-- Gmail API returns 403 even though the user just connected Google
-- User connects and sees calendar events but no Gmail data
-- Server logs show `401 invalid_grant` or `403 insufficientPermissions` on Gmail API calls
+- `api_keys` table has no FK to a users table after multi-user work begins
+- Routes read `c.get('apiKeyId')` instead of `c.get('userId')` to scope queries
 
-**Phase to address:** Gmail OAuth server phase; must be handled before Gmail service reads any messages
+**Phase to address:**
+Multi-user foundation phase — schema must define users → api_keys relationship before any userId columns are added downstream.
 
 ---
 
-### Pitfall 3: prompt: 'consent' Issues a New Refresh Token on Every Re-Auth — Old One Still Valid
+### Pitfall 3: Nullable userId Column Accepted by NOT NULL Constraint Too Early
 
 **What goes wrong:**
-The existing OAuth flow uses `prompt: 'consent'` to guarantee a refresh token is returned. When a user re-authorizes to add Gmail scope, a brand-new refresh token is issued and stored, but the old Calendar refresh token is now a second live token for the same user-app combination. Google silently invalidates the oldest token when a user accumulates more than ~50 refresh tokens for a client. In a multi-reconnect scenario (user disconnects and reconnects repeatedly), old tokens pile up.
+Developer adds `userId integer NOT NULL` to thoughts/projects in one migration. Railway auto-deploys. The migration fails because existing rows have no userId value. Railway rolls back deploy; production is briefly unavailable or stuck on old schema.
 
 **Why it happens:**
-`prompt: 'consent'` forces the consent screen and always returns a new refresh token, even when the user already has a valid one. This is necessary to guarantee token return, but it creates a new token rather than updating the existing one.
+The developer copies the column definition from new tables (where NOT NULL is correct) and forgets that backfill must precede the constraint. Drizzle generates valid SQL; the error is runtime, not compile-time.
 
 **How to avoid:**
-On re-auth to add scopes, detect whether a valid token already exists. If yes, build the authorization URL with `include_granted_scopes=true` and omit `prompt: 'consent'` — Google will return a new refresh token only if needed, otherwise just the new access token. After successful re-auth, overwrite the stored token row rather than inserting a new one. Log the event. Do not allow the database to accumulate multiple token rows per user.
+Three-step sequence, each a separate migration:
+1. `ALTER TABLE thoughts ADD COLUMN user_id integer` (nullable, no default)
+2. Backfill: `UPDATE thoughts SET user_id = 1 WHERE user_id IS NULL` (seed owner user created in step 0)
+3. `ALTER TABLE thoughts ALTER COLUMN user_id SET NOT NULL` + add FK constraint
+
+Do not combine steps 1 and 3 in one migration. Drizzle custom migrations (`drizzle-kit generate` + hand-edit) are required for the backfill step because Drizzle schema doesn't express data backfill.
 
 **Warning signs:**
-- Multiple rows in the `google_tokens` table for the same user
-- Intermittent 401 errors on Calendar after the user re-authenticated for Gmail
-- `invalid_grant` errors months after a seemingly successful re-auth
+- Migration file contains `NOT NULL` on a new column added to a table that already has rows
+- No explicit backfill step between add-column and add-constraint migrations
 
-**Phase to address:** Gmail OAuth server phase
+**Phase to address:**
+Multi-user foundation phase, first task. The migration sequence is the entire risk surface.
 
 ---
 
-### Pitfall 4: In-Memory OAuth Nonce Is Lost During Railway Deploys
+### Pitfall 4: In-Memory Rate Limiter Keyed by IP Instead of userId After Multi-User
 
 **What goes wrong:**
-The existing Calendar OAuth uses an in-memory Map to store the CSRF state nonce with a 5-minute TTL. Railway performs zero-downtime deploys by spinning up a new container before tearing down the old one. If the user starts the OAuth flow against the old container and the callback arrives at the new container, the nonce is not found, the state check fails, and the user sees an authentication error — even though they completed consent successfully.
+The existing rate limiter keys by IP (or a global counter). After adding userId, the "right" behavior is 100 req/60s per user. But in-memory rate limiters don't survive Railway restarts and don't scale across instances. A legitimate user hitting the limit gets blocked; a different user from the same IP is fine.
 
 **Why it happens:**
-In-memory state is container-local. Railway's deploy process does not provide session affinity (sticky routing) by default, so the callback request may hit a different container instance than the one that issued the nonce. Even without a rolling deploy, a redeploy during a user's OAuth flow (common in development) blows away the nonce.
+In-memory rate limiting was the right call for a single-user, single-instance deploy. Multi-user invalidates the assumption but the code works fine so nobody notices until a second Railway instance is spun up or rate limits start mis-firing.
 
 **How to avoid:**
-Move OAuth nonce storage from in-memory Map to the existing PostgreSQL database with a short-lived TTL column (5 minutes), or use a signed, short-lived JWT as the state parameter (the signature proves origin, so no server-side lookup is needed). The JWT approach requires no new schema: encode `{ nonce, userId, exp }` signed with `GOOGLE_OAUTH_STATE_SECRET`, verify the signature and expiry on callback. This is stateless and survives any number of Railway deploys.
+Re-key the rate limiter to userId during the multi-user phase. This is a 5-line change with zero downtime. Add a comment flagging that Redis is required if Railway ever runs 2+ replicas.
 
 **Warning signs:**
-- OAuth callback fails with "state mismatch" error immediately after a Railway deploy
-- Works consistently in local dev but fails occasionally in production
-- Error rate on `/v1/auth/google/callback` spikes around deploy times
+- Rate limit key is still `c.req.header('x-forwarded-for')` after userId middleware is wired
+- No comment in rate-limit.ts about single-instance assumption
 
-**Phase to address:** Gmail OAuth server phase — fix before shipping any OAuth flow to production
+**Phase to address:**
+Multi-user foundation phase — update rate limiter key at the same time auth middleware is patched.
 
 ---
 
-### Pitfall 5: messages.list Returns Only IDs — N+1 Quota Burn for Any Inbox View
+### Pitfall 5: onContextMenu Does Not Fire on iOS Safari / PWA
 
 **What goes wrong:**
-`gmail.users.messages.list` returns only `{id, threadId}` per message. To display a useful inbox (subject, sender, snippet, date), the server must call `messages.get` for each message — a classic N+1 pattern. For a page of 20 messages, that is 1 list call + 20 get calls = 21 API calls, consuming at least 105 quota units per page load. Inbox pages that auto-refresh or poll will burn through the 250 quota-units-per-second per-user limit quickly.
+Right-click context menu implemented with `onContextMenu` handler works on desktop browsers and Android Chrome. On iOS Safari (and iOS Chrome, which uses WebKit), the `contextmenu` event does not fire on long press. The feature is silently absent on iPhone — no error, no fallback, just missing.
 
 **Why it happens:**
-Gmail's API design separates listing (cheap, indexed) from fetching (expensive, full message). Many tutorials show the N+1 pattern without noting its quota cost. Developers implement it for simplicity and discover the quota problem in production.
+iOS WebKit has never reliably dispatched `contextmenu` on long press for arbitrary elements. This is a documented WebKit bug tracked since iOS 13 (React issue #17596, Leaflet issue #6817, Apple Developer Forums). The React synthetic event `onContextMenu` wraps the native event — if the browser never fires it, React never sees it.
 
 **How to avoid:**
-Use the `format: 'metadata'` parameter on `messages.get` with `metadataHeaders: ['Subject', 'From', 'Date']` to fetch only the fields needed for the inbox list view — this avoids downloading the full message body for every row. Use Gmail's **batch API** to send up to 100 `messages.get` calls in a single HTTP request (the batch counts as N requests quota-wise but reduces latency significantly). For the work order detection use case, only fetch full body (`format: 'full'`) for messages that pass a first-pass subject-line filter.
+Implement a dual-trigger system:
+- Desktop: `onContextMenu` handler (works everywhere except iOS)
+- Mobile: `onTouchStart` + `onTouchEnd` with a 500ms timer to detect long press
+
+Use `user-select: none` + `-webkit-touch-callout: none` on the trigger element to suppress native iOS selection handles during long press. Do NOT use these CSS properties globally — they break text selection in other components.
+
+Wrap in a custom hook `useContextMenu(ref, onOpen)` that abstracts both triggers. ThoughtRow gets one callback prop; the hook wires both event types internally.
 
 **Warning signs:**
-- API returns 429 quota exceeded errors under normal browsing
-- Server response time for inbox list exceeds 3 seconds
-- Cloud Console quota dashboard shows spikes proportional to inbox page size
+- Context menu only wired via `onContextMenu={handler}` with no touch fallback
+- Testing only done on desktop Chrome or desktop Safari
+- No real iOS device test (simulator does not reproduce this bug)
 
-**Phase to address:** Gmail server API phase (inbox routes); Gmail search phase
+**Phase to address:**
+Right-click context menu phase — mobile handling must be part of the initial implementation, not a follow-up fix.
 
 ---
 
-### Pitfall 6: OAuth Popup Flow Breaks on iOS PWA Installed to Home Screen
+### Pitfall 6: Context Menu Stays Open When It Should Not — No Global Dismiss
 
 **What goes wrong:**
-The recommended Google OAuth pattern for SPAs/PWAs — opening a popup window with the Google consent URL and using `window.postMessage` to communicate the auth result back to the parent — does not work when the PWA is installed to the iOS home screen (standalone mode). iOS Safari in standalone mode blocks `window.open()` entirely or fails to relay `postMessage` across the popup boundary, leaving the OAuth flow stranded.
+User right-clicks a thought, menu opens. User then clicks anywhere else on the page — menu stays open. Second right-click on a different thought opens a second menu or leaves the old one floating. Scroll events leave the menu at the wrong position. The 30s auto-refresh remounts the thought list while the menu is open, causing stale state or duplicate menus.
 
 **Why it happens:**
-iOS PWA standalone mode runs in a separate browser process with stricter security policies. `window.open()` in standalone mode opens a new tab in Safari, not a popup in the PWA's process. The `window.opener` reference is null, so `postMessage` never reaches the PWA.
+React's synthetic event system doesn't expose a "click outside component" primitive. Developers add an `onClick` on the menu's backdrop but forget: (a) the menu is a sibling in the DOM tree, so bubbling doesn't work cleanly; (b) the 30s auto-refresh can remount the thought list while the menu is open; (c) scroll repositioning is not automatic.
 
 **How to avoid:**
-For iOS PWA compatibility, use a full-page redirect flow rather than a popup: store pre-auth state (current route, pending action) in `sessionStorage`, redirect the top-level window to the Google auth URL, and on callback redirect back to the PWA with the auth code in the URL hash or query string. The server exchanges the code for tokens as usual. This is less visually seamless but works universally. Detect `navigator.standalone` and choose the appropriate flow at runtime.
+1. Render the menu in a React portal (`document.body`) so it's outside the thought list's stacking context.
+2. Add a single `document.addEventListener('mousedown', dismiss)` + `document.addEventListener('touchstart', dismiss)` when the menu is open; remove it on dismiss.
+3. Add `document.addEventListener('scroll', dismiss, { capture: true })` to close on scroll.
+4. Capture `{ x, y }` at the time of the right-click event into state; render menu at fixed coordinates. Do not compute position at render time from element bounding rect.
+5. Close before the 30s poll fires: the `useThoughts` refetch callback should call `closeContextMenu()` if menu is open.
 
 **Warning signs:**
-- OAuth works in browser but fails after "Add to Home Screen"
-- Console shows `window.open() failed` or popup appears in Safari instead of the PWA
-- Auth callback URL opens in Safari, not the PWA
+- Menu is rendered inline inside ThoughtRow JSX rather than in a portal
+- No document-level click-outside listener
+- No scroll close handler
+- Menu position computed from element bounding rect at render time
 
-**Phase to address:** PWA OAuth settings UI phase
+**Phase to address:**
+Right-click context menu phase — portal + dismiss system must be built first, before adding menu items.
 
 ---
 
-### Pitfall 7: Work Order Regex Has High False Positive Rate on Normal Email
+### Pitfall 7: 30-Second Poll Overwrites In-Progress Edit
 
 **What goes wrong:**
-Simple regex patterns like `/WO[-#]?\d{4,}/i` or `/work order/i` match order confirmation emails from retailers ("Your order #12345"), calendar invites with agenda items, and notification emails from project management tools. The WO extractor floods the work order list with noise, destroying trust in the feature.
+User clicks a thought to edit it. ThoughtRow enters `isEditing` state, textarea is focused. 30 seconds later, `setInterval(refetch, 30_000)` fires in `useThoughts`. `refetch()` increments `fetchTick`, triggering a re-fetch. The response updates `thoughts` state. If React reconciliation unmounts and remounts ThoughtRow (e.g., if list sort order shifts, or if the thought's key changes), all local state — `isEditing`, `draft` — is destroyed. The user's in-progress edit is gone silently.
+
+Even without unmount: if `draft` is initialized from `thought.content` on mount and the parent passes a new `thought` prop whose content differs (e.g., another client edited the same thought), the `draft` shows stale content from the original mount, not the current server value.
 
 **Why it happens:**
-Work order numbers follow patterns that overlap with many other business document identifiers. Regex matching on subject lines alone has no context awareness — it cannot distinguish an IT work order from an Amazon order confirmation.
+Edit state (`draft`, `isEditing`) lives inside ThoughtRow as local state, while the authoritative thought data lives in the parent via `useThoughts`. A poll-triggered re-render replaces the `thoughts` array. React reconciles by key (thought id) — stable id means no unmount. But list sort, category filter changes, or id collisions can trigger unmount.
 
 **How to avoid:**
-Layer the detection: first filter by sender domain/email (must be from known work-order-issuing systems — in Vigil's case, the IT ticketing domain). Then check the subject for WO indicators. Only fall back to body scanning if the sender passes the filter. For the MVP, hardcode the known sender domain(s) in the config rather than trying to be generic. Use Claude for ambiguous cases — pass the email subject + sender + first 200 characters of body to Claude with the question "Is this an IT work order? Reply with YES or NO and the work order number if yes." This provides the context that regex cannot.
+Minimal approach: pause the poll when any thought is being edited.
+1. Add `onEditStart(id: number)` and `onEditEnd(id: number)` callbacks to ThoughtRow props.
+2. Track `editingIds: Set<number>` in the parent (ThoughtsPage or ThoughtList).
+3. In the `setInterval` callback, skip `refetch()` when `editingIds.size > 0`.
+4. Resume automatically when the set becomes empty (save, cancel, blur).
+5. Safety valve: auto-resume the poll if edit has been open more than 5 minutes (catches crashed/abandoned edits).
 
 **Warning signs:**
-- Work order list fills with Amazon/eBay/Slack notifications after first sync
-- User manually deletes false-positive work orders repeatedly
-- WO detection confidence drops below 50% on real inbox
+- `setInterval(refetch, 30_000)` in useThoughts.ts with no check for in-progress edits
+- No `onEditStart`/`onEditEnd` props on ThoughtRow
+- Edit state entirely local to ThoughtRow with no parent awareness
 
-**Phase to address:** Work order email detection phase
+**Phase to address:**
+Edit-refresh pause phase — this bug exists in production today. Must be fixed before v3.4 ships.
 
 ---
 
-### Pitfall 8: CLI Restructure Silently Breaks LaunchAgent and Scripts Without Warning
+### Pitfall 8: Brief History — Date Timezone Mismatch Between Server and Client
 
 **What goes wrong:**
-The LaunchAgent plist (`com.jamesonmorrill.dailybrief`) currently calls the CLI with specific flags like `--brief` or similar arguments. Renaming or retiring CLI commands as part of the v3.1 restructure without updating the plist causes silent failures: the brief stops printing in the morning, but there is no error notification because LaunchAgent just exits with a non-zero code that nobody reads.
+The briefs table stores date as a `date` column (YYYY-MM-DD, no timezone). The server generates the date using UTC. The client generates "today" using local time. If the user is in UTC-6 and generates a brief at 11pm local (5am UTC next day), the server stores tomorrow's UTC date. The client, checking `b.date === todayStr` with local date, never finds a match — brief appears absent even though it exists.
 
 **Why it happens:**
-CLI users (human or automated) have muscle memory and scripts they don't think to update. The LaunchAgent runs headlessly at 4am — there is no interactive console to show an error. By the time the user notices the brief hasn't been printing, it's been a week.
+Server is on UTC (Railway). Client is on local time. Both compute "today" independently with no coordination. BriefHistoryPage.tsx has a comment acknowledging this problem on the client side, but the server-side `brief-generate.ts` may still compute date using UTC.
 
 **How to avoid:**
-Before removing any argument or command, add a shim that prints a clear deprecation message and exits with code 1: e.g., `vigil --setup` should print `"--setup is deprecated. Use: vigil setup"` then call the new subcommand. Audit the LaunchAgent plist, cron entries, and any shell scripts that invoke the CLI before retiring arguments. Update them in the same phase as the deprecation. Add an integration test that invokes all launchd-relevant CLI paths and asserts exit 0.
+Pass client's local date as a parameter when generating the brief. `POST /v1/brief/generate` accepts `{ date: "2026-04-17" }` in the request body. Server uses the provided date instead of computing its own. This is a 2-line server change and a 1-line client change.
 
 **Warning signs:**
-- Morning brief stops appearing after CLI restructure
-- `launchctl list | grep dailybrief` shows a nonzero last-exit-code
-- User reports the brief hasn't printed in N days
+- Server brief-generate route calls `new Date().toISOString().split('T')[0]` without accepting a client-provided date override
+- No test covering brief generation at 11pm in a UTC-6 timezone
 
-**Phase to address:** CLI capture/triage/doctor phase; CLI retire work order commands phase
+**Phase to address:**
+Brief history fix phase — verify the generate endpoint first; this may already be partially addressed by the comment in BriefHistoryPage.tsx.
 
 ---
 
-### Pitfall 9: Google OAuth Consent Screen Re-Verification Blocks Production While Pending
+### Pitfall 9: Brief History PDF Served from Railway's Ephemeral Filesystem
 
 **What goes wrong:**
-When `gmail.readonly` (a restricted scope) is added to an existing Production-mode OAuth consent screen, Google requires the app to be re-submitted for verification before the new scope is available to users. During the review period (days to weeks), users attempting to authorize Gmail see the "unverified app" warning. If the Calendar auth flow also now requests `gmail.readonly`, existing Calendar users who re-auth are blocked too.
+Railway's filesystem resets on every deploy. PDFs written during brief generation are gone after the next Railway deploy. The briefs table stores `pdfFilename` (a local path) and `summary` (a JSONB blob of all brief data). The route that serves historical PDFs reads `pdfFilename` from the row, then tries `fs.readFile(pdfFilename)` from disk. After a Railway deploy, all those files are gone — every historical brief returns 404.
+
+This is almost certainly the root cause of the known "older briefs fail to load" bug.
 
 **Why it happens:**
-Adding any restricted scope to an existing verified app triggers re-verification. The review queue is not instant, and Google does not provide a "grandfathered" transition window.
+PDF generation writes to Railway's writable filesystem as a convenience. The `pdfFilename` column was added to track where the file is, but nobody verified survival across deploys. Railway's managed Postgres persists, but the local disk does not.
 
 **How to avoid:**
-Use incremental authorization: keep the initial Google authorization URL requesting only `calendar.readonly` (or whatever the existing verified scope is). Add a separate "Connect Gmail" button in the integrations UI that triggers a second authorization with `gmail.readonly` and `include_granted_scopes=true`. This way, the Gmail auth only runs through the unverified-app warning during the review period — Calendar users are unaffected. Submit the re-verification request at the start of the phase so review can complete before the Gmail feature is widely used. Given Vigil is a personal app, the personal-use exception means verification is never strictly required as long as the app user count stays at 1.
+The brief history PDF endpoint must regenerate the PDF from the stored `summary` JSONB on every request, not serve a file from disk. The `summary` JSONB already contains all the data needed for PDFKit rendering. Add or modify `/v1/brief/:date/pdf` to: (1) read the brief row by date, (2) call the same PDFKit render function used during generation with `summary` as input, (3) stream the result back as `application/pdf`.
+
+Do not store PDFs to Railway disk at all — generate on demand from the persisted summary. Add a short-lived in-memory cache (5 minutes by date key) to avoid re-rendering on repeated views.
 
 **Warning signs:**
-- After adding `gmail.readonly` to the consent screen, Calendar users see the warning on next auth
-- `invalid_scope` errors when requesting Gmail on an app still pending review
+- `/v1/brief/:date/pdf` route reads from `pdfFilename` path on disk via `fs.readFile`
+- No test confirms brief PDF is retrievable after a Railway re-deploy
+- `pdfFilename` is `null` for many brief rows in production (already observable)
 
-**Phase to address:** Gmail OAuth server phase — decide exception vs. re-verify before writing any OAuth route code
+**Phase to address:**
+Brief history fix phase — this is the root cause. Fix before any other brief history work.
 
 ---
 
@@ -191,12 +225,11 @@ Use incremental authorization: keep the initial Google authorization URL request
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| Store raw OAuth tokens in DB without versioning the encryption key | Simpler schema | Cannot rotate AES key without decrypting all rows first | Never — add a `key_version` column from the start |
-| Inline work order detection regex in route handler | Fast to write | Untestable, hard to tune without re-deploying | Never — extract to a `WorkOrderDetector` class with unit tests |
-| Re-use same PostgreSQL token row for both Calendar and Gmail | One row = simple | Scope list stored as a string becomes a parsing problem; adding scopes requires schema awareness | Acceptable if the column is `scopes TEXT[]` (Postgres array), not a comma-delimited string |
-| Poll Gmail inbox every N minutes for new work orders | No webhook setup | Quota burns continuously; detection latency grows with poll interval | Only if Gmail push notifications (Pub/Sub) are deferred to a future phase |
-| Keep `--setup` flag working via shim indefinitely | No user disruption | CLI codebase accumulates dead-weight shim code | Acceptable for one milestone, then remove in the next major CLI cleanup |
-| Skip full-body fetch and rely only on subject for WO detection | Cheaper quota | Misses WOs from ticketing systems that put the WO number in the body, not the subject | Acceptable for MVP if sender-domain filter is applied first |
+| userId nullable with no backfill deadline | Faster migration | Orphaned rows with no user owner permanently | Never — backfill must run in same deploy window |
+| Skipping users table, using apiKeyId as identity | Avoids new table | No email, no profile, no password reset, no user listing | Only in strictly single-token-per-person model — not for real multi-user |
+| Context menu rendered inline in ThoughtRow (not portal) | Simpler code | Z-index fights, scroll positioning bugs, stacking context corruption | Never in a scrollable PWA |
+| Poll pause with local-state-only check in ThoughtRow | Avoids prop drilling | Race condition: refetch fires between edit-start and state propagation | Acceptable with 0ms debounce guard |
+| Regenerating PDF from summary on every history request | No disk storage needed | PDFKit adds ~100-200ms per request | Acceptable at single/few-user scale; cache when load increases |
 
 ---
 
@@ -204,13 +237,11 @@ Use incremental authorization: keep the initial Google authorization URL request
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| Gmail API `messages.list` | Iterating nextPageToken until null without a page cap, consuming all quota | Set `maxResults: 50` and stop at 2 pages for inbox list; use `q:` filter for targeted queries |
-| Google OAuth token refresh | Calling the refresh endpoint on every request because you don't cache the expiry | Store `access_token_expires_at` in the DB row; only refresh when within 60 seconds of expiry |
-| Google OAuth `prompt: 'consent'` | Using it on every auth (forces new refresh token every time user connects) | Only use on first-time connect or when scopes are being expanded; use `prompt: 'select_account'` or omit for silent re-auth |
-| `include_granted_scopes` | Omitting it when requesting an additional scope, getting only the new scope on the new token | Always include `include_granted_scopes=true` when doing incremental authorization |
-| Gmail search query `q:` parameter | Using raw user input without sanitizing operator syntax, causing 400 errors | Validate/escape special operators; wrap free-text in quotes |
-| PWA `window.open` for OAuth popup | Unconditionally using popup; fails on iOS standalone | Check `navigator.standalone` and `window.open` capability; fall back to redirect flow |
-| Commander.js command aliases | Adding alias but forgetting to register it before the `.action()` call | Register `.alias('old-name')` immediately after `.command('new-name')`, before any options or actions |
+| Drizzle + Railway auto-deploy migrations | Migration runs on boot via `migrate()`; if it fails, server crashes but Railway infra reports "deploy success" | Watch Railway logs directly for migration errors; add a startup log message confirming migration completed cleanly |
+| Hono context variables + TypeScript | `c.get('userId')` returns `unknown` without type registration; casting to `number` silently passes `undefined` through if middleware was skipped | Register typed context variable map via Hono's `createFactory<{userId: number}>()` so TypeScript enforces presence |
+| vigilFetch + binary PDF response | `vigilFetch` adds `Content-Type: application/json` to every request; `getBriefPdf` must call `res.blob()` not `res.json()` | Verify `getBriefPdf` uses `res.blob()`; pass `Accept: application/pdf` header in the PDF-specific fetch |
+| iOS Safari + iframe PDF | `<iframe src={blobUrl}>` does not reliably render PDFs in iOS Safari PWA installed to home screen (multi-page PDFs may show only page 1) | Keep iframe for desktop; add prominent Download PDF button as the primary action on mobile |
+| React portal + Tailwind z-index | Portal renders at `document.body` but `z-50` can lose to a parent with CSS `transform` or `isolation: isolate` | Use `style={{ zIndex: 9999 }}` inline on the portal root; document the reason |
 
 ---
 
@@ -218,10 +249,10 @@ Use incremental authorization: keep the initial Google authorization URL request
 
 | Trap | Symptoms | Prevention | When It Breaks |
 |------|----------|------------|----------------|
-| Fetching full message body for all messages during work order scan | Inbox sync takes 30+ seconds; quota 429 on first scan | Two-pass: list + subject filter → only fetch body for candidates | >20 messages in inbox |
-| Fetching all message IDs without pagination limit for initial sync | Memory spike on first load; server timeout | Cap at 100 messages maximum; implement cursor-based pagination | >100 messages in inbox |
-| Parallel `messages.get` without concurrency limit | Rate limit 429 on per-user-per-second limit (250 units/s) | Use `p-limit` or similar to cap concurrent Gmail API calls at 10 | >50 messages per batch |
-| Running full work-order scan on every inbox load | Redundant Claude API calls; high latency UI | Cache scan results with a `last_scanned_at` timestamp; re-scan only new messages | On every page reload if not cached |
+| userId WHERE clause missing on thoughts query | All users' data returned in one request; load time grows with user count | Grep audit + two-user integration test | At 2nd user onboarding |
+| PDF regenerated on every brief history click, no cache | Slow loads (PDFKit runtime); Railway CPU spike on frequent views | 5-minute in-memory cache keyed by brief date | At 10+ brief history clicks per day |
+| Context menu position computed at re-render time | Menu jumps on 30s poll re-render while open | Capture x,y at event time into a ref; render at fixed coordinates | On every 30s poll tick while menu is open |
+| In-memory rate limiter per process | Rate limit resets on Railway deploy; not shared across instances | Key by userId now; note Redis needed for multi-instance | At 2+ Railway instances |
 
 ---
 
@@ -229,11 +260,10 @@ Use incremental authorization: keep the initial Google authorization URL request
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Storing raw (unencrypted) refresh tokens in PostgreSQL | If DB is compromised, attacker has persistent Google access for all users | Already using AES-256-GCM — ensure the IV is unique per-row and stored alongside the ciphertext, not hardcoded |
-| Returning the full token object to the PWA in the `/v1/auth/google/callback` redirect | Token exposed in browser history, logs, and referrer headers | Never send token material to the browser; store server-side and return only a `{ connected: true, scopes: [...] }` status |
-| Trusting `redirect_uri` parameter from the client request | Open redirect attack allows attacker to capture auth codes | Hardcode the allowed redirect URIs in the server; reject any `redirect_uri` not matching exactly |
-| Logging `Authorization` headers when debugging Gmail API errors | Refresh token captured in Railway log drain | Redact the `Authorization` header in all server-side API call logs; use `[REDACTED]` |
-| Exposing the full Gmail message body in the Vigil API response without sanitization | XSS via malicious HTML email rendered in PWA | Strip HTML from message body before returning; or return plaintext-only content |
+| Existing single-user endpoints not updated with userId filter | Cross-user data exposure — any valid token reads any user's data | Audit every route; add two-user integration test as a phase exit criterion |
+| api_keys table missing userId FK | Orphaned keys with no owner; cannot revoke by user; no audit trail | Add FK before any multi-user data is written |
+| Context menu Delete action with no confirmation | Accidental delete on false-positive long press on mobile | Require explicit confirm for destructive menu actions; undo toast is better than confirm dialog for ADHD UX |
+| Hono middleware order: rate limiter before auth middleware resolves userId | Cannot key rate limiter by userId if userId is not yet resolved | Place userId-keyed rate limiter middleware after the bearerAuth middleware |
 
 ---
 
@@ -241,25 +271,26 @@ Use incremental authorization: keep the initial Google authorization URL request
 
 | Pitfall | User Impact | Better Approach |
 |---------|-------------|-----------------|
-| Showing raw Google error messages when OAuth fails | "invalid_grant" and "access_denied" are meaningless to users | Map known error codes to plain-English messages; "Google authorization expired — reconnect in Settings" |
-| Requiring user to re-authorize every time they visit the integrations page | Friction; makes the connection feel unreliable | Show persistent "Connected as user@gmail.com" status; only show re-auth button when the token is actually invalid |
-| Auto-importing all emails as work orders on first sync | Inbox floods the WO list with irrelevant items | Show a preview of detected WOs before importing; require explicit "Import" confirmation on first sync |
-| No loading state while Gmail inbox list loads | User thinks the app is broken during 2-5 second API round-trip | Show skeleton rows immediately; stream results progressively if possible |
-| Retiring CLI `complete` command without telling users what to use instead | Users type a command they used yesterday and get "command not found" | Print a deprecation message with the alternative: "Use the PWA dashboard at app.vigilhub.io to complete work orders" |
-| OAuth connection state lost on PWA refresh because it's only in React state | User connects, refreshes, sees "Not connected" | Persist connection status in the API (`GET /v1/auth/google/status`) and load on mount |
+| Context menu includes "Edit" — but inline edit already works via click | Confusing double entry point; two ways to start the same action | Remove "Edit" from context menu; keep click-to-edit as primary; menu = Delete, Move, Re-triage, Add to Project |
+| Context menu on mobile has no visual affordance for long press | Feature is invisible on touch devices | Show a "..." action button always-visible on mobile (touch) viewports, hover-visible on desktop |
+| Poll paused indefinitely if edit never cleaned up (navigate away, crash) | Thoughts stop refreshing silently until page reload | Auto-resume poll if edit open > 5 minutes; also call `onEditEnd` in ThoughtRow's useEffect cleanup on unmount |
+| Multi-user login page with no user creation flow | New users blocked with 401 until manually added to DB | Define explicitly: is this invite-only (seed users in migration) or self-serve? First-run experience must not be an unexplained 401 |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **Gmail OAuth connect flow:** Often missing the scope-gap detection — verify that an existing Calendar token correctly shows Gmail as "needs_auth" rather than silently failing at the Gmail API call
-- [ ] **Token refresh on 401:** Often missing the retry-after-refresh logic — verify that a 401 from Gmail API triggers a token refresh and retries the original request once
-- [ ] **OAuth nonce migration:** Often left as in-memory Map — verify the nonce is stored in PostgreSQL (or signed JWT) before any deploy to production
-- [ ] **PWA OAuth on iOS standalone:** Often tested only in browser — verify the connect flow works when the PWA is installed to the iOS home screen via "Add to Home Screen"
-- [ ] **LaunchAgent plist updated:** Often forgotten when renaming CLI commands — verify `launchctl list com.jamesonmorrill.dailybrief` exits 0 after CLI restructure
-- [ ] **Work order false positive test:** Often skipped — verify that a sample Amazon order confirmation email is NOT imported as a work order
-- [ ] **Disconnect flow removes token from DB:** Often missing — verify `DELETE /v1/auth/google` actually clears the encrypted token row and revokes the token with Google's revoke endpoint
-- [ ] **CLI shim exits with code 0:** Often shims exit 1 (error) — verify deprecated flag shims print the deprecation message and still perform the underlying action, not just error out
+- [ ] **Multi-user auth:** `userId` column added to ALL data tables — thoughts, projects, briefs, chat_sessions, ai_cache, app_settings, oauth_tokens, work_order_statuses. Not just thoughts.
+- [ ] **Multi-user auth:** Every route handler reads `c.get('userId')` and filters queries — including existing routes, not just new ones.
+- [ ] **Multi-user auth:** Two-user integration test confirms data isolation (user A's token cannot retrieve user B's thoughts via GET /v1/thoughts).
+- [ ] **Multi-user auth:** `api_keys` table has a `userId` FK to a `users` table.
+- [ ] **Context menu:** Long-press works on iOS Safari (real device test, not simulator).
+- [ ] **Context menu:** Menu closes on outside click, scroll, Escape key press, and 30s poll refetch.
+- [ ] **Context menu:** Menu position is correct when triggered on a row near the bottom of the viewport (no overflow below fold).
+- [ ] **Edit-refresh pause:** After saving or canceling an edit, the poll resumes automatically (no stuck-paused state).
+- [ ] **Edit-refresh pause:** Navigating to another route mid-edit calls `onEditEnd` via useEffect cleanup.
+- [ ] **Brief history:** Older briefs (before the current Railway deploy) load successfully — PDF is regenerated from DB, not served from ephemeral disk.
+- [ ] **Brief history:** Brief generated at 11pm local time in UTC-6 appears under the correct local date.
 
 ---
 
@@ -267,13 +298,11 @@ Use incremental authorization: keep the initial Google authorization URL request
 
 | Pitfall | Recovery Cost | Recovery Steps |
 |---------|---------------|----------------|
-| Deployed with unverified gmail.readonly scope, users see warning screen | LOW (single-user app) | Confirm personal-use exception applies; document it; no action needed beyond not adding other users |
-| Old Calendar refresh token stopped working after re-auth added Gmail scope | LOW | Force re-auth: set token row to null, PWA shows "reconnect" prompt, user re-authorizes |
-| In-memory nonce lost during deploy, users get state-mismatch errors | MEDIUM | Immediate: deploy the JWT-state fix; temporary: document "if OAuth fails, retry once" in error UI |
-| N+1 quota exhaustion hits 429 in production | MEDIUM | Add `p-limit` concurrency cap and `metadata`-format optimization; deploy; quota resets at midnight |
-| LaunchAgent silent failure after CLI restructure | LOW | Check plist args, update to new command name, `launchctl unload && launchctl load` the plist |
-| Work order list flooded with false positives | LOW | Add sender-domain allowlist in config; trigger re-scan; bulk-delete existing false positives via API |
-| AES key rotation needed after key exposure | HIGH | Requires reading all tokens, decrypting with old key, re-encrypting with new key; add `key_version` column upfront to enable this |
+| Cross-user data leak discovered in production | HIGH | Audit Railway logs for cross-user requests; add userId filters; redeploy immediately; assess if any user data was exposed |
+| NOT NULL migration fails on prod Railway deploy | MEDIUM | Railway rolls back failed deploy automatically; schema stays on previous version; fix migration to nullable + backfill before retry |
+| Brief history PDFs all return 404 after deploy | LOW | This is the known bug — add PDF-from-summary regeneration endpoint; no data loss since summary JSONB is persisted in Postgres |
+| Context menu stays open on every 30s poll | LOW | Add `closeContextMenu()` call in the refetch path; one-line fix |
+| User's edit lost due to unmount during poll | MEDIUM | Partially protected by stable React keys on thought id; full fix is poll-pause feature being built in this milestone |
 
 ---
 
@@ -281,37 +310,32 @@ Use incremental authorization: keep the initial Google authorization URL request
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| gmail.readonly restricted scope / personal-use exception | Gmail OAuth server phase (first phase of milestone) | Confirm personal-use exception before writing any OAuth route; document in code comments |
-| Existing Calendar token missing Gmail scope | Gmail OAuth server phase | Integration test: request `/v1/auth/google/status` with a Calendar-only token; assert `gmail: 'needs_auth'` |
-| prompt: 'consent' refresh token accumulation | Gmail OAuth server phase | Assert: only one token row per user in `google_tokens` table after multiple re-auths |
-| In-memory OAuth nonce lost on deploy | Gmail OAuth server phase | Chaos test: start OAuth flow, redeploy server mid-flow, verify callback succeeds |
-| Gmail N+1 quota burn | Gmail server API routes phase | Load test: list 50 messages; assert total API calls ≤ 3 (1 list + 1 batch get + 1 buffer) |
-| OAuth popup broken on iOS standalone PWA | PWA OAuth settings UI phase | Manual test on iPhone with PWA installed to home screen |
-| Work order false positive regex | Work order extraction phase | Unit test suite with 20 sample emails (10 real WOs, 10 false-positive candidates) |
-| CLI restructure breaks LaunchAgent | CLI capture/triage/doctor phase | After CLI restructure, run `launchctl start com.jamesonmorrill.dailybrief` and verify exit 0 |
-| Consent screen re-verification blocks production | Gmail OAuth server phase (decision point before code) | Decide exception vs. re-verify; record decision in phase plan |
+| Cross-user data leak (missing userId filter) | Multi-user foundation | Two-user integration test: user A cannot read user B's data |
+| apiKey missing userId FK | Multi-user foundation | Schema check: `api_keys.user_id` column exists with FK to users table |
+| Nullable → NOT NULL migration crash | Multi-user foundation | Staging migration dry-run before Railway push |
+| In-memory rate limiter wrong key | Multi-user foundation | Verify rate-limit.ts keys by userId after middleware patch |
+| onContextMenu silent failure on iOS | Context menu phase | Manual test on physical iOS device |
+| Context menu no global dismiss | Context menu phase | Outside click, scroll, Escape all close the menu |
+| 30s poll overwrites in-progress edit | Edit-refresh pause phase | Edit a thought, wait 35s with no save, confirm draft is still intact |
+| Brief date timezone mismatch | Brief history fix phase | Verify generate endpoint accepts client-provided date parameter |
+| PDF served from ephemeral Railway disk | Brief history fix phase | Deploy to Railway, generate brief, re-deploy, confirm old brief still loads |
 
 ---
 
 ## Sources
 
-- [Gmail API — Choose Scopes (restricted scope classification)](https://developers.google.com/workspace/gmail/api/auth/scopes) — HIGH confidence
-- [Restricted Scope Verification (personal-use exception)](https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification) — HIGH confidence
-- [Gmail API — Usage Limits (quota units per method)](https://developers.google.com/workspace/gmail/api/reference/quota) — HIGH confidence
-- [Gmail API — List Messages (N+1 pattern documentation)](https://developers.google.com/workspace/gmail/api/guides/list-messages) — HIGH confidence
-- [Gmail API — Batch Requests](https://developers.google.com/gmail/api/guides/batch) — HIGH confidence
-- [Google OAuth — Web Server Applications (incremental auth, include_granted_scopes)](https://developers.google.com/identity/protocols/oauth2/web-server) — HIGH confidence
-- [Google OAuth — Best Practices](https://developers.google.com/identity/protocols/oauth2/resources/best-practices) — HIGH confidence
-- [OAuth 2.0 Changes to Approved App (re-verification on scope addition)](https://support.google.com/cloud/answer/13464018) — HIGH confidence
-- [Debugging OAuth: missing scopes on refresh tokens (scope mismatch issue)](https://www.jmwhite.co.uk/blog/debugging-oauth-the-mysterious-case-of-missing-scopes-on-refresh-tokens) — MEDIUM confidence
-- [Five annoying issues with Google OAuth Scope Verification (gmass.co)](https://www.gmass.co/blog/five-annoying-issues-google-oauth-scope-verification/) — MEDIUM confidence
-- [OAuth Incremental Authorization is Useless (gmass.co — prompt:consent behavior)](https://www.gmass.co/blog/oauth-incremental-authorization-is-useless/) — MEDIUM confidence
-- [Progressive Web Apps with OAuth — popup pitfall on iOS](https://medium.com/@jonnykalambay/progressive-web-apps-with-oauth-dont-repeat-my-mistake-16a4063ce113) — MEDIUM confidence
-- [PWA OAuth popup pattern — how major apps implement it](https://dev.to/dinkydani21/how-we-use-a-popup-for-google-and-outlook-oauth-oci) — MEDIUM confidence
-- [Concurrency with OAuth token refreshes (nango.dev)](https://nango.dev/blog/concurrency-with-oauth-token-refreshes) — MEDIUM confidence
-- [Commander.js alias and deprecated features documentation](https://github.com/tj/commander.js/blob/master/docs/deprecated.md) — HIGH confidence
-- [Auth0 — Best practices for storing access tokens in the browser](https://curity.medium.com/best-practices-for-storing-access-tokens-in-the-browser-6b3d515d9814) — MEDIUM confidence
+- Codebase: `vigil-core/src/middleware/auth.ts` — existing bearer token model has no userId field
+- Codebase: `vigil-core/src/db/schema.ts` — no userId column on any table; briefs.pdfFilename is nullable
+- Codebase: `vigil-pwa/src/hooks/useThoughts.ts` — `setInterval(refetch, 30_000)` with no edit guard (line 85)
+- Codebase: `vigil-pwa/src/components/ThoughtRow.tsx` — edit state local to component, no parent callbacks
+- Codebase: `vigil-pwa/src/pages/BriefHistoryPage.tsx` — calls `getBriefPdf(date)` which depends on disk-stored file
+- WebKit bug: contextmenu not fired on iOS — React issue #17596, Leaflet issue #6817, Apple Developer Forums thread/699834
+- Radix UI primitives discussion #930 — long press context menu on iOS requires custom touch event handler
+- Railway docs — filesystem is ephemeral per deploy; PostgreSQL managed addon persists
+- Drizzle ORM custom migrations — three-step nullable → backfill → NOT NULL pattern
+- Hono context docs — `c.set`/`c.get` are per-request scoped; use `createFactory` for typed context variables
+- Zero-downtime DB migrations: hoop.dev — add nullable column first, backfill in batches, add NOT NULL constraint last
 
 ---
-*Pitfalls research for: Gmail API integration, PWA OAuth UI, work order detection, CLI restructure — Vigil v3.1*
-*Researched: 2026-04-13*
+*Pitfalls research for: Vigil v3.4 — multi-user auth migration, PWA context menu, edit-refresh pause, brief history fix*
+*Researched: 2026-04-17*
