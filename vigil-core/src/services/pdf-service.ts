@@ -689,6 +689,7 @@ function drawPageThree(
     // If insufficient space to start insights meaningfully, begin on a fresh page
     if (y > contentBottom - 150) {
       doc.addPage({ size: [layout.pageW, layout.pageH], margin: 0 });
+      drawCuttingGuide(doc, layout);
       y = layout.margin + 4;
     }
     y += 4;
@@ -815,6 +816,7 @@ function drawPageThree(
 
     while (spilloverIndex !== null && spilloverCount < MAX_SPILLOVER) {
       doc.addPage({ size: [layout.pageW, layout.pageH], margin: 0 });
+      drawCuttingGuide(doc, layout);
       let spillY = layout.margin + 4;
 
       doc
