@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vigil — The assistant your brain has been asking for</title>
+  <meta name="description" content="Capture every thought with zero friction. Vigil organizes it, prioritizes it, and hands you a clear daily brief — so your brain doesn't have to hold it all." />
+  <meta property="og:title" content="Vigil — The assistant your brain has been asking for" />
+  <meta property="og:description" content="Everything captured. Nothing forgotten." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://vigilhub.io" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 36 36'%3E%3Crect width='36' height='36' rx='8' fill='%230F6E56'/%3E%3Cpath d='M18 7L29 18L18 29L7 18Z' stroke='%239FE1CB' stroke-width='1.2' fill='none'/%3E%3Cpath d='M13 15L18 23L23 15' stroke='white' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='18' cy='23' r='1.8' fill='%239FE1CB'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --teal-800: #085041;
+      --teal-600: #0F6E56;
+      --teal-400: #1D9E75;
+      --teal-100: #9FE1CB;
+      --teal-50:  #E1F5EE;
+      --gray-900: #2C2C2A;
+      --gray-400: #888780;
+      --gray-100: #D3D1C7;
+      --gray-50:  #F1EFE8;
+      --surface:  #F9F9F8;
+      --white:    #ffffff;
+      --blue-50:  #E6F1FB;
+      --blue-400: #378ADD;
+      --amber-50: #FAEEDA;
+      --amber-400:#BA7517;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--surface);
+      color: var(--gray-900);
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+    }
+
+    /* ── Nav ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      height: 52px;
+      background: rgba(249,249,248,0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 0.5px solid var(--gray-100);
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      text-decoration: none;
+    }
+
+    .nav-logo svg { width: 28px; height: 28px; }
+
+    .nav-wordmark {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--gray-900);
+      letter-spacing: -0.3px;
+    }
+
+    .nav-badge {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--teal-800);
+      background: var(--teal-50);
+      border-radius: 999px;
+      padding: 3px 10px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 100px 1.5rem 60px;
+      background:
+        radial-gradient(ellipse 60% 40% at 50% 0%, rgba(29,158,117,0.08) 0%, transparent 70%);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--teal-800);
+      background: var(--teal-50);
+      border-radius: 999px;
+      padding: 5px 14px;
+      margin-bottom: 1.75rem;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.1s;
+    }
+
+    .eyebrow-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--teal-400);
+    }
+
+    h1 {
+      font-size: clamp(36px, 6vw, 60px);
+      font-weight: 500;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      color: var(--gray-900);
+      margin-bottom: 0.6rem;
+      max-width: 680px;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.2s;
+    }
+
+    .hero-sub {
+      font-size: clamp(18px, 3vw, 24px);
+      font-weight: 400;
+      color: var(--teal-400);
+      letter-spacing: -0.3px;
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.3s;
+    }
+
+    .hero-desc {
+      font-size: 17px;
+      color: var(--gray-400);
+      line-height: 1.7;
+      max-width: 480px;
+      margin-bottom: 2.5rem;
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.4s;
+    }
+
+    /* ── Waitlist form ── */
+    .waitlist-wrap {
+      opacity: 0;
+      animation: fadeUp 0.6s ease forwards 0.5s;
+    }
+
+    .waitlist-form {
+      display: flex;
+      gap: 8px;
+      max-width: 420px;
+      width: 100%;
+      margin: 0 auto 0.875rem;
+    }
+
+    .waitlist-input {
+      flex: 1;
+      height: 44px;
+      border: 0.5px solid var(--gray-100);
+      border-radius: 10px;
+      background: var(--white);
+      padding: 0 16px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--gray-900);
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .waitlist-input:focus {
+      border-color: var(--teal-400);
+      box-shadow: 0 0 0 3px rgba(29,158,117,0.1);
+    }
+
+    .waitlist-input::placeholder { color: var(--gray-400); }
+
+    .waitlist-btn {
+      height: 44px;
+      padding: 0 22px;
+      background: var(--teal-600);
+      color: var(--teal-50);
+      border: none;
+      border-radius: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .waitlist-btn:hover { background: var(--teal-400); }
+    .waitlist-btn:active { transform: scale(0.98); }
+
+    .waitlist-btn.loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .waitlist-note {
+      font-size: 12px;
+      color: var(--gray-400);
+    }
+
+    .success-msg {
+      display: none;
+      font-size: 14px;
+      color: var(--teal-600);
+      font-weight: 500;
+      padding: 12px 20px;
+      background: var(--teal-50);
+      border-radius: 10px;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    /* ── Tiles ── */
+    .tiles-section {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 1.5rem 6rem;
+    }
+
+    .tiles-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--gray-400);
+      letter-spacing: 0.5px;
+      text-align: center;
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+    }
+
+    .tiles {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .tile {
+      background: var(--white);
+      border: 0.5px solid var(--gray-100);
+      border-radius: 14px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 150px;
+      opacity: 0;
+      transform: translateY(16px);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .tile:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+
+    .tile.wide { grid-column: span 2; }
+
+    .tile-icon {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--teal-50);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 0.875rem;
+      flex-shrink: 0;
+    }
+
+    .tile-icon svg {
+      width: 15px; height: 15px;
+      stroke: var(--teal-600);
+      fill: none;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .tile h3 {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--gray-900);
+      margin-bottom: 5px;
+    }
+
+    .tile p {
+      font-size: 13px;
+      color: var(--gray-400);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .tile-stat {
+      font-size: 30px;
+      font-weight: 500;
+      color: var(--teal-400);
+      letter-spacing: -1px;
+      margin-top: 0.5rem;
+    }
+
+    .tile-stat-note {
+      font-size: 11px;
+      color: var(--gray-400);
+      margin-top: 3px;
+    }
+
+    .capture-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 0.875rem;
+    }
+
+    .pill {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--gray-50);
+      border: 0.5px solid var(--gray-100);
+      color: var(--gray-400);
+    }
+
+    .brief-lines {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-top: 0.875rem;
+    }
+
+    .brief-line {
+      height: 7px;
+      border-radius: 999px;
+      background: var(--gray-50);
+    }
+
+    .brief-line.accent { background: var(--teal-100); width: 45%; }
+    .brief-line.long   { width: 92%; }
+    .brief-line.med    { width: 72%; }
+    .brief-line.short  { width: 50%; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 0.5px solid var(--gray-100);
+      padding: 2rem 1.5rem;
+      text-align: center;
+    }
+
+    footer p {
+      font-size: 13px;
+      color: var(--gray-400);
+    }
+
+    /* ── Scroll reveal ── */
+    .tile.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Animations ── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Mobile ── */
+    @media (max-width: 640px) {
+      nav { padding: 0 1rem; }
+      .nav-badge { display: none; }
+      .waitlist-form { flex-direction: column; }
+      .waitlist-btn { width: 100%; }
+      .tiles { grid-template-columns: 1fr; }
+      .tile.wide { grid-column: span 1; }
+    }
+
+    @media (max-width: 480px) {
+      h1 { font-size: 32px; letter-spacing: -1px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav>
+    <a href="/" class="nav-logo" aria-label="Vigil home">
+      <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M18 5L31 18L18 31L5 18Z" stroke="#9FE1CB" stroke-width="1.4" fill="none" stroke-linejoin="round"/>
+        <path d="M12 14L18 23L24 14" stroke="#0F6E56" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="18" cy="23" r="2.2" fill="#1D9E75"/>
+        <circle cx="18" cy="23" r="0.9" fill="#E1F5EE"/>
+      </svg>
+      <span class="nav-wordmark">Vigil</span>
+    </a>
+    <span class="nav-badge">Early access</span>
+  </nav>
+
+  <!-- Hero -->
+  <section class="hero" aria-labelledby="hero-heading">
+    <div class="eyebrow">
+      <span class="eyebrow-dot" aria-hidden="true"></span>
+      Built for ADHD brains
+    </div>
+    <h1 id="hero-heading">The assistant your brain<br>has been asking for.</h1>
+    <p class="hero-sub">Everything captured. Nothing forgotten.</p>
+    <p class="hero-desc">Capture anything in seconds. Vigil organizes it, prioritizes it, and hands you a clear daily brief — so your brain doesn't have to hold it all.</p>
+
+    <div class="waitlist-wrap">
+      <form class="waitlist-form" id="waitlist-form" action="https://formspree.io/f/xyklwjzn" method="POST" novalidate>
+        <input
+          class="waitlist-input"
+          type="email"
+          name="email"
+          placeholder="your@email.com"
+          required
+          aria-label="Email address"
+        />
+        <button class="waitlist-btn" type="submit" id="submit-btn">Join waitlist</button>
+      </form>
+      <p class="success-msg" id="success-msg" role="status">
+        You're on the list. We'll be in touch soon.
+      </p>
+      <p class="waitlist-note">No spam. Just a ping when it's ready.</p>
+    </div>
+  </section>
+
+  <!-- Feature tiles -->
+  <section class="tiles-section" aria-label="Features">
+    <p class="tiles-label">What Vigil does</p>
+    <div class="tiles">
+
+      <div class="tile wide">
+        <div>
+          <div class="tile-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 2a3 3 0 0 1 3 3v7a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3M8 22h8"/></svg>
+          </div>
+          <h3>Capture in any format</h3>
+          <p>Type, speak, or photograph. A keyboard shortcut, watched folder, or web dashboard — whichever has the least friction right now.</p>
+        </div>
+        <div class="capture-pills" aria-label="Supported capture formats">
+          <span class="pill">Text</span>
+          <span class="pill">Voice</span>
+          <span class="pill">Photo</span>
+          <span class="pill">Handwritten notes</span>
+          <span class="pill">Watched folder</span>
+          <span class="pill">Browser extension</span>
+        </div>
+      </div>
+
+      <div class="tile">
+        <div>
+          <div class="tile-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <h3>AI triage</h3>
+          <p>Every thought gets categorized automatically — tasks, ideas, projects, reflections.</p>
+        </div>
+        <div class="tile-stat" aria-label="100% auto-sorted">100%</div>
+        <div class="tile-stat-note">auto-sorted, nothing manual</div>
+      </div>
+
+      <div class="tile">
+        <div>
+          <div class="tile-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+          </div>
+          <h3>Projects</h3>
+          <p>Group thoughts into named projects. Filter, assign, and track status from the dashboard.</p>
+        </div>
+      </div>
+
+      <div class="tile">
+        <div>
+          <div class="tile-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8"/></svg>
+          </div>
+          <h3>Daily brief</h3>
+          <p>Printed every morning. Todos, work orders, calendar, sports, and an AI insight.</p>
+        </div>
+        <div class="brief-lines" aria-hidden="true">
+          <div class="brief-line accent"></div>
+          <div class="brief-line long"></div>
+          <div class="brief-line med"></div>
+          <div class="brief-line short"></div>
+          <div class="brief-line long"></div>
+        </div>
+      </div>
+
+      <div class="tile">
+        <div>
+          <div class="tile-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          </div>
+          <h3>Full-text search</h3>
+          <p>Find anything instantly across every thought, note, and work order you've ever captured.</p>
+        </div>
+      </div>
+
+      <div class="tile">
+        <div>
+          <div class="tile-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+          </div>
+          <h3>Works everywhere</h3>
+          <p>Mac app, web dashboard, smart glasses, browser extension — same data, every device.</p>
+        </div>
+      </div>
+
+      <div class="tile wide">
+        <div>
+          <div class="tile-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+          </div>
+          <h3>Work order tracking</h3>
+          <p>Pulls work orders from your email automatically. AI prioritizes them by urgency. Track completion status across every client surface.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <p>Built by someone with ADHD, for everyone whose brain won't stop. &nbsp;·&nbsp; <a href="mailto:hello@vigilhub.io" style="color: var(--teal-600); text-decoration: none;">hello@vigilhub.io</a></p>
+  </footer>
+
+  <script>
+    // Scroll reveal for tiles
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry, i) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => entry.target.classList.add('visible'), i * 60);
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.1 });
+
+    document.querySelectorAll('.tile').forEach(tile => observer.observe(tile));
+
+    // Waitlist form
+    const form = document.getElementById('waitlist-form');
+    const btn = document.getElementById('submit-btn');
+    const successMsg = document.getElementById('success-msg');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = form.querySelector('input[type="email"]').value;
+      if (!email) return;
+
+      btn.textContent = 'Joining...';
+      btn.classList.add('loading');
+
+      try {
+        const res = await fetch(form.action, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+
+        if (res.ok) {
+          form.style.display = 'none';
+          successMsg.style.display = 'block';
+        } else {
+          btn.textContent = 'Try again';
+          btn.classList.remove('loading');
+        }
+      } catch {
+        btn.textContent = 'Try again';
+        btn.classList.remove('loading');
+      }
+    });
+  </script>
+
+</body>
+</html>
