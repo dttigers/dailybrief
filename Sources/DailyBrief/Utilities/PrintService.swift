@@ -38,7 +38,8 @@ enum PrintService {
             args += ["-#", String(config.copies)]
         }
         args += ["-o", "sides=one-sided"]
-        // D-07: 100% actual-size printing
+        // D-07: 100% actual-size printing on Letter paper
+        args += ["-o", "media=Letter"]
         args += ["-o", "fit-to-page=false"]
         args += ["-o", "scaling=100"]
         args.append(path)

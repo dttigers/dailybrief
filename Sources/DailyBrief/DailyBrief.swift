@@ -74,7 +74,7 @@ extension DailyBrief {
             let pdfData: Data
             do {
                 pdfData = try await apiClient.getRawData(
-                    path: "/v1/brief/\(today)",
+                    path: "/brief/\(today)",
                     accept: "application/pdf"
                 )
             } catch let VigilAPIError.httpError(statusCode, _) where statusCode == 404 {
@@ -82,7 +82,7 @@ extension DailyBrief {
                 Logger.log("Brief not cached — requesting server-side generation...")
                 do {
                     pdfData = try await apiClient.postRawData(
-                        path: "/v1/brief/generate",
+                        path: "/brief/generate",
                         accept: "application/pdf"
                     )
                     Logger.log("Brief generated on demand (\(pdfData.count) bytes)")
