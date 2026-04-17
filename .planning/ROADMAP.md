@@ -260,7 +260,10 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   1. User can open the Brief History view in the PWA and see a list of all previously generated briefs
   2. User can click any past brief and view the PDF in the PWA without a loading error
   3. Briefs generated before a Railway redeploy are still accessible after the redeploy
-**Plans**: TBD
+**Plans**: 3 plans
+- [x] 99-01-PLAN.md — Add brief_pdfs BYTEA table to Drizzle schema + generate migration
+- [ ] 99-02-PLAN.md — Rewire POST/GET/scheduler to use brief_pdfs sink; delete /tmp write path
+- [ ] 99-03-PLAN.md — PWA detail-view branches on structured 404; wire Regenerate action (human-verify)
 
 ### Phase 100: Edit-Refresh Pause
 **Goal**: Users can edit a thought in the PWA without the 30s poll overwriting their in-progress changes
@@ -400,7 +403,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 | 96. PWA Fixes | v3.3 | 2/2 | Complete | 2026-04-16 |
 | 97. Mac CLI Print Reliability | v3.3 | 2/2 | Complete | 2026-04-17 |
 | 98. Thought-Contextual Chat | v3.3 | 1/1 | Complete | 2026-04-17 |
-| 99. Brief History Fix | v3.4 | 0/TBD | Not started | - |
+| 99. Brief History Fix | v3.4 | 1/3 | In Progress|  |
 | 100. Edit-Refresh Pause | v3.4 | 0/TBD | Not started | - |
 | 101. Context Menu | v3.4 | 0/TBD | Not started | - |
 | 102. Multi-User Foundation | v3.4 | 0/TBD | Not started | - |

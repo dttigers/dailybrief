@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Multi-User Foundation & PWA Polish
-status: planning
-stopped_at: Phase 99 context gathered
-last_updated: "2026-04-17T23:01:40.653Z"
-last_activity: 2026-04-17 — v3.4 roadmap created (4 phases, 14 requirements mapped)
+status: executing
+stopped_at: Completed 99-01-PLAN.md
+last_updated: "2026-04-17T23:27:01.952Z"
+last_activity: 2026-04-17
 progress:
   total_phases: 4
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_plans: 3
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 99 — Brief History Fix
+**Current focus:** Phase 99 — brief-history-fix
 
 ## Current Position
 
-Phase: 99 of 102 (Brief History Fix)
-Plan: — (not yet planned)
-Status: Ready to plan
-Last activity: 2026-04-17 — v3.4 roadmap created (4 phases, 14 requirements mapped)
+Phase: 99 (brief-history-fix) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-17
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -59,6 +59,7 @@ Progress: [░░░░░░░░░░] 0%
 | v3.1 Gmail + Thin Clients | 79-87 | 26 | ~2 days |
 | v3.2 Freshness & Capture Parity | 88-95 | 14 | 2 days |
 | v3.3 Stability & Chat Context | 96-98 | 5 | 1 day |
+| Phase 99-brief-history-fix P01 | 20min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,8 @@ Progress: [░░░░░░░░░░] 0%
 
 All decisions logged in PROJECT.md Key Decisions table.
 v3.3 decisions archived to milestones/v3.3-ROADMAP.md.
+
+- [Phase 99-brief-history-fix]: Used Drizzle customType for bytea (no built-in helper); sibling table brief_pdfs keeps SELECT * FROM briefs clean; repaired out-of-sync journal and __drizzle_migrations before generating migration 0011
 
 ### Pending Todos
 
@@ -80,7 +83,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-17T23:01:40.642Z
-Stopped at: Phase 99 context gathered
-Resume file: .planning/phases/99-brief-history-fix/99-CONTEXT.md
+Last session: 2026-04-17T23:27:01.948Z
+Stopped at: Completed 99-01-PLAN.md
+Resume file: None
 Next action: `/gsd-plan-phase 99`

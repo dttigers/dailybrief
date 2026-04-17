@@ -9,7 +9,7 @@ Requirements for Multi-User Foundation & PWA Polish. Each maps to roadmap phases
 
 ### Brief Reliability
 
-- [ ] **BRIEF-01**: User can view previously generated briefs in the PWA brief history (PDFs survive Railway redeploys)
+- [x] **BRIEF-01**: User can view previously generated briefs in the PWA brief history (PDFs survive Railway redeploys)
 
 ### PWA Editing
 
@@ -63,7 +63,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| BRIEF-01 | Phase 99 | Pending |
+| BRIEF-01 | Phase 99 | Complete |
 | EDIT-01 | Phase 100 | Pending |
 | CTX-01 | Phase 101 | Pending |
 | CTX-02 | Phase 101 | Pending |
