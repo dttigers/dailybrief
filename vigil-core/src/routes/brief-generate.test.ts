@@ -13,37 +13,46 @@ function makePdfBuffer(): Buffer {
 function makeSuccessResult() {
   return {
     buffer: makePdfBuffer(),
-    filePath: "/tmp/briefs/brief-2026-04-13.pdf",
     metadata: { thoughtCount: 5, taskCount: 3, dateStr: "2026-04-13" },
   };
 }
 
-/** Mock DB that captures insert calls and returns configurable select results */
+/** Mock DB that captures both briefs and brief_pdfs insert calls, and supports configurable select results */
 function makeMockDb(opts: {
   selectRows?: any[];
-  captureInsert?: { called: boolean; values: any };
+  captureInserts?: { briefs?: any; briefPdfs?: any };
 } = {}) {
-  const capture = opts.captureInsert ?? { called: false, values: null };
-  // Cast to the Drizzle type — the mock only implements the subset used by the router.
+  const captures = opts.captureInserts ?? {};
+  let insertTarget: "briefs" | "briefPdfs" | null = null;
   return {
     select: () => ({
       from: () => ({
+        leftJoin: () => ({
+          where: () => ({
+            limit: () => Promise.resolve(opts.selectRows ?? []),
+          }),
+        }),
         where: () => ({
           limit: () => Promise.resolve(opts.selectRows ?? []),
         }),
       }),
     }),
-    insert: () => ({
-      values: (vals: any) => {
-        capture.called = true;
-        capture.values = vals;
-        return {
-          onConflictDoUpdate: () => ({
-            returning: () => Promise.resolve([{ id: 1 }]),
-          }),
-        };
-      },
-    }),
+    insert: (table: any) => {
+      // Identify table by the exported symbol — best-effort for mock purposes.
+      const tableName = table?.[Symbol.for("drizzle:Name")] ?? "";
+      insertTarget = tableName === "brief_pdfs" ? "briefPdfs" : "briefs";
+      return {
+        values: (vals: any) => {
+          if (insertTarget === "briefs") captures.briefs = vals;
+          if (insertTarget === "briefPdfs") captures.briefPdfs = vals;
+          return {
+            onConflictDoUpdate: () => ({
+              returning: () => Promise.resolve(insertTarget === "briefs" ? [{ id: 1 }] : [{ briefId: 1 }]),
+            }),
+          };
+        },
+      };
+    },
   } as unknown as PostgresJsDatabase<typeof schema>;
 }
 
@@ -68,10 +77,10 @@ test("Test 1: POST /brief/generate returns 200 with PDF and X-Brief-Storage-Key 
   assert.ok(body.byteLength > 0, "response body should contain PDF bytes");
 });
 
-test("Test 2: POST /brief/generate upserts briefs table with metadata", async () => {
-  const capture = { called: false, values: null as any };
+test("Test 2: POST /brief/generate upserts briefs table with metadata and brief_pdfs with bytes", async () => {
+  const captures: { briefs?: any; briefPdfs?: any } = {};
   const app = createBriefGenerateRouter({
-    db: makeMockDb({ captureInsert: capture }),
+    db: makeMockDb({ captureInserts: captures }),
     assemblerFactory: () => ({
       assembleAndRender: async () => makeSuccessResult(),
     }),
@@ -80,11 +89,14 @@ test("Test 2: POST /brief/generate upserts briefs table with metadata", async ()
   const res = await app.request("/brief/generate", { method: "POST" });
 
   assert.equal(res.status, 200);
-  assert.ok(capture.called, "insert should have been called on briefs table");
-  assert.ok(capture.values, "should have captured inserted values");
-  assert.equal(capture.values.pdfFilename, "/tmp/briefs/brief-2026-04-13.pdf");
-  assert.equal(capture.values.thoughtCount, 5);
-  assert.equal(capture.values.taskCount, 3);
+  assert.ok(captures.briefs, "briefs should have been upserted");
+  assert.equal(captures.briefs.pdfFilename, null);
+  assert.equal(captures.briefs.thoughtCount, 5);
+  assert.equal(captures.briefs.taskCount, 3);
+  assert.ok(captures.briefPdfs, "brief_pdfs should have been upserted");
+  assert.ok(Buffer.isBuffer(captures.briefPdfs.bytes));
+  assert.equal(captures.briefPdfs.contentType, "application/pdf");
+  assert.equal(captures.briefPdfs.byteLength, captures.briefPdfs.bytes.length);
 });
 
 test("Test 3: POST /brief/generate returns 503 when db is null", async () => {
@@ -114,56 +126,49 @@ test("Test 4: POST /brief/generate returns 500 when assembleAndRender throws", a
   assert.equal(json.error, "Brief generation failed");
 });
 
-test("Test 5: GET /brief/2026-04-12 returns 200 with PDF when row exists and file readable", async () => {
+test("Test 5: GET /brief/:date returns 200 + PDF bytes when brief_pdfs row exists", async () => {
+  const pdfBytes = Buffer.from("%PDF-1.4 stored bytes");
   const app = createBriefGenerateRouter({
     db: makeMockDb({
-      selectRows: [{ pdfFilename: "/tmp/briefs/brief-2026-04-12.pdf" }],
+      selectRows: [{ briefId: 1, bytes: pdfBytes, contentType: "application/pdf" }],
     }),
-    readFileFn: async () => makePdfBuffer(),
   });
-
-  const res = await app.request("/brief/2026-04-12");
-
+  const res = await app.request("/brief/2026-04-13");
   assert.equal(res.status, 200);
   assert.equal(res.headers.get("content-type"), "application/pdf");
-  const body = await res.arrayBuffer();
-  assert.ok(body.byteLength > 0, "should return PDF bytes");
+  const body = Buffer.from(await res.arrayBuffer());
+  assert.deepEqual(body, pdfBytes);
 });
 
-test("Test 6: GET /brief/2026-04-12 returns 404 when no briefs row exists", async () => {
+test("Test 6: GET /brief/:date returns 404 brief_pdf_not_stored when briefs row has no matching brief_pdfs row", async () => {
+  const app = createBriefGenerateRouter({
+    db: makeMockDb({
+      selectRows: [{ briefId: 1, bytes: null, contentType: null }],
+    }),
+  });
+  const res = await app.request("/brief/2026-04-13");
+  assert.equal(res.status, 404);
+  const body = await res.json() as { error: string; date: string; regenerable: boolean };
+  assert.equal(body.error, "brief_pdf_not_stored");
+  assert.equal(body.date, "2026-04-13");
+  assert.equal(body.regenerable, true);
+});
+
+test("Test 7: GET /brief/:date returns 404 brief_not_found when no briefs row exists", async () => {
   const app = createBriefGenerateRouter({
     db: makeMockDb({ selectRows: [] }),
   });
-
-  const res = await app.request("/brief/2026-04-12");
-
+  const res = await app.request("/brief/2026-04-13");
   assert.equal(res.status, 404);
-  const json = await res.json() as { error: string };
-  assert.equal(json.error, "Brief not found");
+  const body = await res.json() as { error: string; date: string; regenerable: boolean };
+  assert.equal(body.error, "brief_not_found");
+  assert.equal(body.date, "2026-04-13");
+  assert.equal(body.regenerable, false);
 });
 
-test("Test 7: GET /brief/2026-04-12 returns 404 when row exists but file is gone", async () => {
-  const app = createBriefGenerateRouter({
-    db: makeMockDb({
-      selectRows: [{ pdfFilename: "/tmp/briefs/brief-2026-04-12.pdf" }],
-    }),
-    readFileFn: async () => { throw new Error("ENOENT: no such file"); },
-  });
-
-  const res = await app.request("/brief/2026-04-12");
-
-  assert.equal(res.status, 404);
-  const json = await res.json() as { error: string };
-  assert.match(json.error, /regenerate/i);
-});
-
-test("Test 8: GET /brief/not-a-date returns 400 with format error", async () => {
-  const app = createBriefGenerateRouter({
-    db: makeMockDb(),
-  });
-
+test("Test 8: GET /brief/:date returns 400 for malformed date", async () => {
+  const app = createBriefGenerateRouter({ db: makeMockDb() });
   const res = await app.request("/brief/not-a-date");
-
   assert.equal(res.status, 400);
   const json = await res.json() as { error: string };
   assert.equal(json.error, "date must be YYYY-MM-DD format");
