@@ -6,6 +6,7 @@ interface ThoughtRowProps {
   onUpdate: (id: number, patch: { content?: string; category?: string; taskStatus?: string }) => void
   onToggleFavorite?: (id: number, isFavorited: boolean) => void
   onRetriage?: (id: number) => void
+  onChat?: () => void
   isSelectable?: boolean
   isSelected?: boolean
   onToggleSelect?: (id: number) => void
@@ -51,7 +52,7 @@ function relativeTime(isoString: string): string {
   return new Date(isoString).toLocaleDateString()
 }
 
-export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetriage, isSelectable, isSelected, onToggleSelect }: ThoughtRowProps) {
+export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetriage, onChat, isSelectable, isSelected, onToggleSelect }: ThoughtRowProps) {
   const [isTriaging, setIsTriaging] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(thought.content)
@@ -175,6 +176,15 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
               title="Re-triage with AI"
             >
               {isTriaging ? '...' : '↻'}
+            </button>
+          )}
+          {onChat && (
+            <button
+              onClick={onChat}
+              className="text-gray-400/50 hover:text-teal-400 transition-colors cursor-pointer"
+              title="Chat about this thought"
+            >
+              💬
             </button>
           )}
           {relativeTime(thought.createdAt)}

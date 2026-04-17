@@ -7,12 +7,15 @@ import FilterBar from '../components/FilterBar'
 import SearchBar from '../components/SearchBar'
 import ThoughtList from '../components/ThoughtList'
 import BulkActionBar from '../components/BulkActionBar'
+import { useNavigate } from 'react-router'
 import { updateThought, bulkDeleteThoughts, bulkRecategorizeThoughts, triageThought, vigilFetch, getTaskStatusFilter, putTaskStatusFilter } from '../api/client'
+import type { ThoughtApiResponse } from '../api/client'
 import { useThoughts, type ThoughtFilters } from '../hooks/useThoughts'
 import { getCurrentWeekWindow } from '../utils/date-window-client'
 import { useTimezone } from '../hooks/useTimezone'
 
 export default function ThoughtsPage() {
+  const navigate = useNavigate()
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
   const [searchInput, setSearchInput] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -108,6 +111,12 @@ export default function ThoughtsPage() {
         }
       } catch { /* therapy classification is non-fatal */ }
     }
+  }
+
+  function handleChat(thought: ThoughtApiResponse) {
+    navigate('/chat', {
+      state: { thoughtText: thought.content, thoughtId: thought.id },
+    })
   }
 
   function handleToggleSelect(id: number) {
@@ -273,6 +282,7 @@ export default function ThoughtsPage() {
           onUpdate={handleUpdate}
           onToggleFavorite={handleToggleFavorite}
           onRetriage={handleRetriage}
+          onChat={handleChat}
           selectedIds={selectedIds}
           onToggleSelect={handleToggleSelect}
           isSelectable={isSelectable}

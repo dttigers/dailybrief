@@ -9,13 +9,14 @@ interface ThoughtListProps {
   onUpdate: (id: number, patch: { content?: string; category?: string }) => void
   onToggleFavorite?: (id: number, isFavorited: boolean) => void
   onRetriage?: (id: number) => void
+  onChat?: (thought: ThoughtApiResponse) => void
   selectedIds?: Set<number>
   onToggleSelect?: (id: number) => void
   isSelectable?: boolean
   isSearchActive: boolean
 }
 
-export default function ThoughtList({ thoughts, total, isLoading, error, onUpdate, onToggleFavorite, onRetriage, selectedIds, onToggleSelect, isSelectable, isSearchActive }: ThoughtListProps) {
+export default function ThoughtList({ thoughts, total, isLoading, error, onUpdate, onToggleFavorite, onRetriage, onChat, selectedIds, onToggleSelect, isSelectable, isSearchActive }: ThoughtListProps) {
   if (isLoading) {
     return (
       <div className="text-gray-400 text-center py-12">
@@ -59,6 +60,7 @@ export default function ThoughtList({ thoughts, total, isLoading, error, onUpdat
             onUpdate={onUpdate}
             onToggleFavorite={onToggleFavorite}
             onRetriage={onRetriage}
+            onChat={onChat ? () => onChat(thought) : undefined}
             isSelectable={isSelectable}
             isSelected={selectedIds?.has(thought.id)}
             onToggleSelect={onToggleSelect}
