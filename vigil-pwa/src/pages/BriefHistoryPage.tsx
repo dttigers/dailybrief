@@ -1,6 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import { useBriefs } from '../hooks/useBriefs'
-import { generateBrief, getBriefPdf, type BriefApiResponse } from '../api/client'
+import {
+  generateBrief,
+  getBriefPdf,
+  type BriefApiResponse,
+  BriefPdfFetchError,
+  type BriefPdfFetchErrorCode,
+} from '../api/client'
 
 function formatDate(dateStr: string): string {
   // dateStr is YYYY-MM-DD
@@ -15,6 +21,8 @@ export default function BriefHistoryPage() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState<string | null>(null)
   const [detailBlobUrl, setDetailBlobUrl] = useState<string | null>(null)
+  const [detailErrorCode, setDetailErrorCode] = useState<BriefPdfFetchErrorCode | null>(null)
+  const [regenerating, setRegenerating] = useState(false)
   // WR-02: ref tracks the live detail blob URL so rapid selection clicks always
   // revoke the correct previous URL, even when the async callback is still in-flight.
   const detailBlobUrlRef = useRef<string | null>(null)
@@ -87,6 +95,7 @@ export default function BriefHistoryPage() {
     setSelectedDate(date)
     setDetailBlobUrl(null)
     setDetailError(null)
+    setDetailErrorCode(null)
     setDetailLoading(true)
     try {
       const blob = await getBriefPdf(date)
@@ -94,7 +103,13 @@ export default function BriefHistoryPage() {
       detailBlobUrlRef.current = url
       setDetailBlobUrl(url)
     } catch (e: unknown) {
-      setDetailError(e instanceof Error ? e.message : 'Failed to load brief. Try again.')
+      if (e instanceof BriefPdfFetchError) {
+        setDetailErrorCode(e.code)
+        setDetailError(e.message)
+      } else {
+        setDetailErrorCode('http_error')
+        setDetailError(e instanceof Error ? e.message : 'Failed to load brief. Try again.')
+      }
     } finally {
       setDetailLoading(false)
     }
@@ -108,6 +123,37 @@ export default function BriefHistoryPage() {
     setSelectedDate(null)
     setDetailBlobUrl(null)
     setDetailError(null)
+    setDetailErrorCode(null)
+  }
+
+  async function handleRegenerateDetail() {
+    setRegenerating(true)
+    setDetailError(null)
+    try {
+      const blob = await generateBrief()
+      // Revoke any stale detail blob URL.
+      if (detailBlobUrlRef.current) {
+        URL.revokeObjectURL(detailBlobUrlRef.current)
+        detailBlobUrlRef.current = null
+      }
+      // POST /brief/generate always generates TODAY's brief. Navigate back to the
+      // list so the user sees today's freshly-generated brief in its correct slot,
+      // and so useBriefs re-fetches on next mount. Revoke any stale blob URL for today.
+      if (todayBlobUrl) URL.revokeObjectURL(todayBlobUrl)
+      const url = URL.createObjectURL(blob)
+      setTodayBlobUrl(url)
+      setGenerateState('done')
+      setSelectedDate(null)
+      setDetailBlobUrl(null)
+      setDetailErrorCode(null)
+      // Trigger history re-fetch by reloading the page in-place — useBriefs
+      // only fetches on mount. Simplest safe reload: window.location.reload().
+      window.location.reload()
+    } catch (e: unknown) {
+      setDetailError(e instanceof Error ? e.message : 'Regenerate failed. Try again.')
+    } finally {
+      setRegenerating(false)
+    }
   }
 
   // Detail view
@@ -131,13 +177,45 @@ export default function BriefHistoryPage() {
           </div>
         )}
 
-        {detailError && (
+        {!detailLoading && detailErrorCode === 'brief_pdf_not_stored' && (
+          <div className="bg-gray-900/50 border border-gray-900/40 px-4 py-4 rounded-lg">
+            <p className="text-sm font-medium text-gray-50 mb-1">
+              {formatDate(selectedDate)}
+            </p>
+            <p className="text-sm text-gray-400 mb-3">
+              This brief's PDF isn't stored — regenerate to rebuild it.
+            </p>
+            <button
+              onClick={handleRegenerateDetail}
+              disabled={regenerating}
+              className="px-4 py-2 bg-teal-600 hover:bg-teal-400 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors min-h-[44px]"
+            >
+              {regenerating ? 'Regenerating...' : 'Regenerate Brief'}
+            </button>
+            {detailError && regenerating === false && (
+              <p className="mt-3 text-xs text-red-300">{detailError}</p>
+            )}
+          </div>
+        )}
+
+        {!detailLoading && detailErrorCode === 'brief_not_found' && (
+          <div className="bg-gray-900/50 border border-gray-900/40 px-4 py-4 rounded-lg">
+            <p className="text-sm font-medium text-gray-50 mb-1">
+              {formatDate(selectedDate)}
+            </p>
+            <p className="text-sm text-gray-400">
+              Brief not found for this date.
+            </p>
+          </div>
+        )}
+
+        {!detailLoading && detailErrorCode === 'http_error' && (
           <div className="bg-red-900/50 text-red-300 px-4 py-3 rounded-lg text-sm">
             Failed to load brief. Try again.
           </div>
         )}
 
-        {detailBlobUrl && !detailLoading && (
+        {detailBlobUrl && !detailLoading && detailErrorCode === null && (
           <div>
             <iframe
               src={detailBlobUrl}
