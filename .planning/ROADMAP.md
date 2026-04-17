@@ -383,7 +383,7 @@ Plans:
 | 95. iOS PWA OAuth UAT Retest | v3.2 | 1/1 | Complete | 2026-04-16 |
 | 96. PWA Fixes | v3.3 | 2/2 | Complete    | 2026-04-16 |
 | 97. Mac CLI Print Reliability | v3.3 | 2/2 | Complete    | 2026-04-17 |
-| 98. Thought-Contextual Chat | v3.3 | 1/1 | Complete   | 2026-04-17 |
+| 98. Thought-Contextual Chat | v3.3 | 1/1 | Complete    | 2026-04-17 |
 
 ## Backlog
 
