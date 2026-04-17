@@ -1,49 +1,23 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current State: v3.3 complete — Stability & Chat Context (2026-04-17)
+## Current State: v3.3 shipped — Stability & Chat Context (2026-04-17)
 
-**v3.2 delivered:**
-- Wed-anchored weekly rollover (Thoughts tab, Insights, Therapy, Brief PDF all scoped to current week/7 days)
-- Server-side AI cache (Insights, Therapy patterns, Therapy prep persist with Regenerate; Chat auto-resumes)
-- Tasks tab status filter (Open/Done/All toggle with server-synced persistence)
-- Work order archive (lazy auto-archive, Active/Archived/All filter, unarchive, bulk-clear)
-- Brief PDF restructured (Page 1: Work Orders + Affirmation + Sports + Calendar; Page 2: Captured Thoughts + Tasks)
-- Browser extension quick-capture (freeform text + triage feedback + URL checkbox + Cmd+Enter)
-- Gmail work order import service (polling + parsing + change detection + Updated banner)
-- Server-side auto-triage on all capture paths (tags + therapyClassification)
-- Sports on brief with upcoming games
-- iOS PWA standalone OAuth verified
-- 30s polling for real-time PWA updates
+**v3.3 delivered:**
+- PWA chat 400 error fixed (React 18 concurrent mode stale closure → messagesRef pattern)
+- Completed tasks hidden from all views via server-side excludeDone filter (fail-safe defaults)
+- Mac CLI print chain hardened (lpr error handling, 404 fallback, reachability check, actual-size scaling, legacy LaunchAgent removed)
+- Thought-contextual chat (chat button on every thought, router-state navigation, auto-send with AI response)
+- Race condition guard (useLayoutEffect + useRef double-guard for mount-time operations)
 
+**Shipped cumulatively:** v1.0–v3.3. Full PWA at app.vigilhub.io. Vigil Core API on Railway (Node/Hono/Drizzle/Postgres) with bearer auth + HTTPS. Server-side PDF generation (PDFKit 3-page). Mac menubar thin client + Even G2 glasses plugin + browser extension. OAuth foundation (Calendar + Gmail scopes, JWT nonce survives rolling deploys). 98 phases and ~196 plans completed across 15 milestones in ~17 days.
 
+## Next Milestone Goals
 
-**Delivered in v3.1:**
-- **Phase 83 Menu Bar Redesign** — DailyBriefMonitor stripped to print-scheduler-only; schedule config lives in PWA Settings persisted via API; Dock-less via LSUIElement
-- **Phase 84 Browser Extension** — Chrome + Safari extension for one-click page-URL capture to POST /v1/thoughts
-- **Phase 86 Split Brief Schedule** — Server generate cron (user TZ, 10-min dedupe, 7d retention, SIGTERM teardown); Mac CLI pull-only with exit-2 staleness sentinel; PWA Settings two-card UI + timezone picker; StatusChecker log-marker inference wires external CLI runs into the menubar
-- **Phase 87 Vigil App Icons** — Full PWA icon set (192/256/384/512/maskable + favicon.svg/ico + apple-touch); Mac AppIcon.icns generated from brand PDF master; LSUIElement regression guard preserved
-
-**Deferred to v3.2:**
-- Phase 85 iOS Shortcut — Shortcuts.app bugs (note-input dialog refuses typing on macOS; silent "uploaded" success branch)
-- Phase 80 Gmail Server Service — Blocked on ServiceNow API token from IT
-
-**Shipped cumulatively:** v1.0–v3.1. Full PWA at app.vigilhub.io. Vigil Core API on Railway (Node/Hono/Drizzle/Postgres) with bearer auth + HTTPS. Server-side PDF generation (PDFKit 3-page). Mac menubar thin client + Even G2 glasses plugin + browser extension. OAuth foundation (Calendar + Gmail scopes, JWT nonce survives rolling deploys).
-
-## Current Milestone: v3.3 Stability & Chat Context
-
-**Goal:** Fix broken daily workflows (chat, print, task visibility) and add contextual chat from individual thoughts.
-
-**Target features:**
-- Fix PWA chat 400 error (broken across multiple builds)
-- Open chat from an individual thought with that thought as context
-- Mac CLI auto-print readiness check (ensure brief prints reliably)
-- Completed tasks hidden from all views, not just Tasks tab
-- Persistent Safari extension (survives restarts without re-enabling)
-
-**Carry-forward context:**
-- Phase 85 (iOS Shortcut) held — revisit in v3.4+
-- Phase 80 (Gmail Server Service) deferred until ServiceNow API token from IT
-- G2 hardware retest still pending physical device access
+Planning next milestone. Carry-forward items:
+- Phase 85 (iOS Shortcut) held — Shortcuts.app bugs
+- Phase 80 (Gmail Server Service) — blocked on ServiceNow API token from IT
+- G2 hardware retest — pending physical device access
+- EXT-01: Persistent Safari extension (survives restarts without re-enabling)
 
 ## What This Is
 
@@ -146,13 +120,13 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Brief PDF cleanup — de-duplicated Tasks, Affirmation on Page 1, 7-day thought scope — v3.2
 - ✓ Browser extension quick-capture — freeform text + triage feedback + URL checkbox + Cmd+Enter — v3.2
 - ✓ iOS PWA standalone OAuth — real-device verified on live Railway deploy — v3.2
+- ✓ PWA chat 400 fix — messagesRef pattern for React 18 concurrent mode — v3.3
+- ✓ Completed tasks hidden from all views — server-side excludeDone filter — v3.3
+- ✓ Mac CLI print reliability — lpr error handling, 404 fallback, reachability check — v3.3
+- ✓ Thought-contextual chat — chat button on every thought with auto-send — v3.3
 
 ### Active
 
-- [ ] Fix PWA chat 400 error
-- [ ] Open chat from individual thought with that thought as context
-- [ ] Mac CLI auto-print reliability (ensure brief prints tomorrow)
-- [ ] Completed tasks hidden from all views (not just Tasks tab)
 - [ ] Persistent Safari extension (survives restarts without re-enabling)
 
 ### Out of Scope
@@ -168,14 +142,14 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
-v3.3 Stability & Chat Context started (2026-04-16) — fixing daily-use bugs (chat 400, task visibility, print reliability) and adding contextual chat from thoughts + persistent Safari extension.
-Shipped v3.2 Freshness & Capture Parity (2026-04-16) — Wed-anchored weekly rollover, 7-day analysis scope, server-side AI cache with Regenerate, task status filter, work order auto-archive, brief PDF restructure, browser extension quick-capture. 8 phases, 14 plans, 133 commits, 44 files changed (+2591/-557 LOC).
+Shipped v3.3 Stability & Chat Context (2026-04-17) — PWA chat 400 fix, server-side excludeDone filter, Mac CLI print hardening, thought-contextual chat. 3 phases, 5 plans, 12 files changed (+195/-41 LOC).
+Shipped v3.2 Freshness & Capture Parity (2026-04-16) — Wed-anchored weekly rollover, 7-day analysis scope, server-side AI cache with Regenerate, task status filter, work order auto-archive, brief PDF restructure, browser extension quick-capture. 8 phases, 14 plans.
 Shipped v3.1 Gmail + Thin Clients (2026-04-15) — Gmail OAuth, PWA brand theme, Settings UI, CLI restructure, menu bar redesign, browser extension, split brief schedule, app icons.
 Shipped v3.0 Server-Side PDF (2026-04-14) — Sports proxy, Google Calendar server-side, PDFKit 3-page brief, brief assembly endpoint, PWA brief UI, Mac CLI thin client.
 Tech stack: Swift 6.2/SwiftUI/SPM (Mac app, ~14,000 LOC), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API), React/Vite/TypeScript (PWA), Vite/TypeScript/Even Hub SDK (G2 plugin).
 5 client surfaces connected to production: Mac app (capture + menu bar + folder watcher + PDF brief), PWA (dashboard + management + settings), Vigil Core API (Railway, 25+ REST endpoints), Even G2 plugin (3 screens + task detail), Browser extension (Chrome + Safari quick-capture).
 API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s timeouts, security headers, and CORS.
-72 phases and ~165 plans completed across 11 milestones in ~13 days.
+98 phases and ~196 plans completed across 15 milestones in ~17 days.
 
 ## Constraints
 
@@ -248,4 +222,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-16 after v3.3 milestone start*
+*Last updated: 2026-04-17 after v3.3 milestone completion*

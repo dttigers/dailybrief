@@ -1,5 +1,19 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v3.3 Stability & Chat Context (Shipped: 2026-04-17)
+
+**Phases completed:** 3 phases, 5 plans, 11 tasks
+
+**Key accomplishments:**
+
+- Fixed PWA chat 400 error by replacing setState functional updater with messagesRef — React 18 concurrent mode does not call the updater synchronously, so newMessages was always [] at the time sendChatMessage was called
+- Server-side excludeDone filter on GET /v1/thoughts hides done tasks from all views by default, with Tasks tab Done/All overrides preserved
+- PrintService throws on lpr failure with reachability guard, CLI recovers from Railway /tmp 404 via POST generate, Monitor shows red badge on failure
+- Full print chain verified: PDF generation, 404 fallback, actual-size printing, Doctor all-pass, legacy agent removed
+- Chat button on every thought row with one-tap navigation to ChatPage that auto-sends the thought and gets an AI response
+
+---
+
 ## v3.2 Freshness & Capture Parity (Shipped: 2026-04-16)
 
 **Phases completed:** 8 phases, 14 plans, 24 tasks
