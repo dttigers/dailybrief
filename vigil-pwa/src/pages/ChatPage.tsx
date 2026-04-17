@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useLocation } from 'react-router'
 import { useChat } from '../hooks/useChat'
 
 export default function ChatPage() {
@@ -9,6 +10,36 @@ export default function ChatPage() {
   const [input, setInput] = useState('')
   const [showSessions, setShowSessions] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const location = useLocation()
+  const thoughtHandledRef = useRef(false)
+  const skipAutoLoadRef = useRef(false)
+
+  // Signal skip before useChat's auto-resume useEffect fires
+  useLayoutEffect(() => {
+    const state = location.state as { thoughtText?: string; thoughtId?: number } | null
+    if (!state?.thoughtText) return
+    skipAutoLoadRef.current = true
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-send thought when arriving from ThoughtsPage (D-02, D-03, D-04)
+  useEffect(() => {
+    if (thoughtHandledRef.current) return
+    const state = location.state as { thoughtText?: string; thoughtId?: number } | null
+    if (!state?.thoughtText) return
+
+    thoughtHandledRef.current = true
+
+    // Clear any auto-resumed session so sendMessage creates a fresh one (D-03)
+    clearChat()
+
+    // Inject thought as first user message and auto-send (D-02, D-04)
+    // sendMessage reads messagesRef.current ([] after clearChat), auto-creates session
+    sendMessage(state.thoughtText)
+
+    // Clear location.state to prevent replay on tab switch
+    window.history.replaceState({}, '')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
