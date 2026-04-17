@@ -24,7 +24,6 @@ function makeAssembler() {
     calls.push(dateStr);
     return {
       buffer: Buffer.from("fake"),
-      filePath: `/tmp/briefs/brief-${dateStr}.pdf`,
       metadata: { thoughtCount: 1, taskCount: 2, dateStr },
     };
   };
@@ -57,8 +56,6 @@ test("SCH-01: tick() with generate_schedule.enabled=false does NOT invoke assemb
     }),
     getRecentBriefFn: async () => null,
     upsertBriefFn: async () => {},
-    selectExpiredBriefsFn: async () => [],
-    deleteExpiredBriefsFn: async () => 0,
   });
   await scheduler.tick();
   assert.equal(calls.length, 0);
@@ -81,8 +78,6 @@ test("SCH-02: tick() with non-matching hour/minute does NOT invoke assembler", a
     }),
     getRecentBriefFn: async () => null,
     upsertBriefFn: async () => {},
-    selectExpiredBriefsFn: async () => [],
-    deleteExpiredBriefsFn: async () => 0,
   });
   await scheduler.tick();
   assert.equal(calls.length, 0);
@@ -106,8 +101,6 @@ test("SCH-03: tick() with matching hour/minute invokes assembler and upserts", a
     }),
     getRecentBriefFn: async () => null,
     upsertBriefFn: async (b) => { upserts.push({ date: b.date }); },
-    selectExpiredBriefsFn: async () => [],
-    deleteExpiredBriefsFn: async () => 0,
   });
   await scheduler.tick();
   assert.equal(calls.length, 1);
@@ -137,62 +130,47 @@ test("SCH-04: tick() dedupe — existing brief row within 10min window skips", a
       return { createdAt: new Date(nowDate.getTime() - 2 * 60 * 1000) };
     },
     upsertBriefFn: async () => {},
-    selectExpiredBriefsFn: async () => [],
-    deleteExpiredBriefsFn: async () => 0,
   });
   await scheduler.tick();
   assert.equal(calls.length, 0, "assembler must not be invoked during dedupe window");
   assert.ok(lines.some((l) => l.msg.includes("dedupe")), "should log dedupe skip");
 });
 
-// ── SCH-05: retention sweep after successful generate ──────────────────────
+// ── SCH-05: scheduler upsert passes buffer bytes, not a filename ───────────
 
-test("SCH-05: retention sweep deletes rows older than 7 days and unlinks files", async () => {
-  const { assemble } = makeAssembler();
-  const { logFn } = makeLog();
-  const unlinked: string[] = [];
-  let selectedCutoff: string | null = null;
-  let deletedCutoff: string | null = null;
-
+test("SCH-05: scheduler upsert passes buffer bytes, not a filename", async () => {
+  const captured: any = {};
   const scheduler = createGenerateScheduler({
     db: null,
-    assemble,
-    logFn,
-    now: () => new Date("2026-04-15T08:00:00Z"),
-    unlinkFn: async (p) => { unlinked.push(p); },
-    getSettingFn: makeFakeSettings({
-      schedule: { hour: 4, minute: 0, enabled: true },
-      timezone: "America/New_York",
+    assemble: async (dateStr) => ({
+      buffer: Buffer.from("%PDF-1.4 fake"),
+      metadata: { thoughtCount: 1, taskCount: 1, dateStr },
     }),
-    getRecentBriefFn: async () => null,
-    upsertBriefFn: async () => {},
-    selectExpiredBriefsFn: async (cutoff) => {
-      selectedCutoff = cutoff;
-      return [
-        { id: 1, pdfFilename: "/tmp/briefs/brief-2026-04-01.pdf" },
-        { id: 2, pdfFilename: "/tmp/briefs/brief-2026-04-02.pdf" },
-        { id: 3, pdfFilename: null },
-      ];
+    getSettingFn: async (key) => {
+      if (key === "user_timezone") return "America/New_York";
+      if (key === "generate_schedule") return { hour: 4, minute: 0, enabled: true };
+      return null;
     },
-    deleteExpiredBriefsFn: async (cutoff) => {
-      deletedCutoff = cutoff;
-      return 3;
+    getRecentBriefFn: async () => null,
+    upsertBriefFn: async (b) => { Object.assign(captured, b); },
+    now: () => {
+      // 04:00 EDT = 08:00 UTC on 2026-04-13 (DST active).
+      return new Date("2026-04-13T08:00:00Z");
     },
   });
   await scheduler.tick();
-  assert.equal(selectedCutoff, "2026-04-08", "cutoff should be todayInTz - 7d");
-  assert.equal(deletedCutoff, "2026-04-08");
-  assert.deepEqual(unlinked.sort(), [
-    "/tmp/briefs/brief-2026-04-01.pdf",
-    "/tmp/briefs/brief-2026-04-02.pdf",
-  ]);
+  assert.ok(Buffer.isBuffer(captured.bytes));
+  assert.ok(captured.bytes.length > 0);
+  assert.equal(typeof captured.date, "string");
+  assert.match(captured.date, /^\d{4}-\d{2}-\d{2}$/);
+  // Should NOT have pdfFilename — that's the old contract.
+  assert.equal(captured.pdfFilename, undefined);
 });
 
-// ── SCH-06: assembler throws — tick swallows, no retention ─────────────────
+// ── SCH-06: assembler throws — tick swallows ───────────────────────────────
 
-test("SCH-06: assembler throws — logged as error, tick does not throw, retention not run", async () => {
+test("SCH-06: assembler throws — logged as error, tick does not throw", async () => {
   const { logFn, lines } = makeLog();
-  let retentionCalled = false;
   const scheduler = createGenerateScheduler({
     db: null,
     assemble: async () => { throw new Error("boom"); },
@@ -204,11 +182,8 @@ test("SCH-06: assembler throws — logged as error, tick does not throw, retenti
     }),
     getRecentBriefFn: async () => null,
     upsertBriefFn: async () => {},
-    selectExpiredBriefsFn: async () => { retentionCalled = true; return []; },
-    deleteExpiredBriefsFn: async () => { retentionCalled = true; return 0; },
   });
   await scheduler.tick(); // must NOT throw
-  assert.equal(retentionCalled, false, "retention must not run on failed generate");
   assert.ok(lines.some((l) => l.level === "error"), "should log error");
 });
 
@@ -226,8 +201,6 @@ test("SCH-07: start() begins interval; stop() clears it", async () => {
     getSettingFn: makeFakeSettings({ schedule: { hour: 4, minute: 0, enabled: false } }),
     getRecentBriefFn: async () => null,
     upsertBriefFn: async () => {},
-    selectExpiredBriefsFn: async () => [],
-    deleteExpiredBriefsFn: async () => 0,
   });
   scheduler.start();
   // Count active timers indirectly: start() creates a handle; stop() must call clearInterval.
@@ -257,8 +230,6 @@ test("SCH-08: matches schedule in user TZ (04:00 NYC) when UTC is 09:00 (EST) / 
     }),
     getRecentBriefFn: async () => null,
     upsertBriefFn: async () => {},
-    selectExpiredBriefsFn: async () => [],
-    deleteExpiredBriefsFn: async () => 0,
   });
   await schedulerEST.tick();
   assert.equal(calls.length, 1);
