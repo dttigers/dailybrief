@@ -304,6 +304,26 @@ export async function getInsightsCache(): Promise<{ insights: Insight[]; cached:
 // Brief History API
 // ---------------------------------------------------------------------------
 
+// --- Typed error for brief PDF fetch (Phase 99) ---------------------------
+
+export type BriefPdfFetchErrorCode =
+  | 'brief_pdf_not_stored'   // briefs row exists, no brief_pdfs bytes — regenerable
+  | 'brief_not_found'        // no briefs row for this date — not regenerable
+  | 'http_error'             // any other non-ok (500, 503, network)
+
+export class BriefPdfFetchError extends Error {
+  readonly code: BriefPdfFetchErrorCode
+  readonly regenerable: boolean
+  readonly status: number
+  constructor(code: BriefPdfFetchErrorCode, regenerable: boolean, status: number, message: string) {
+    super(message)
+    this.name = 'BriefPdfFetchError'
+    this.code = code
+    this.regenerable = regenerable
+    this.status = status
+  }
+}
+
 export interface BriefApiResponse {
   id: number
   date: string
@@ -352,8 +372,47 @@ export async function getBriefPdf(date: string): Promise<Blob> {
   const res = await vigilFetch(`/v1/brief/${date}`, {
     headers: { 'Content-Type': '' },
   })
-  if (!res.ok) throw new Error(`Failed to load brief PDF: ${res.status}`)
-  return res.blob()
+
+  if (res.ok) {
+    return res.blob()
+  }
+
+  // Non-OK: try to parse the structured error body locked by Phase 99 Plan 02.
+  // Only 404 bodies are guaranteed to have { error, date, regenerable }; other
+  // statuses fall through to the generic http_error path.
+  if (res.status === 404) {
+    let body: { error?: string; regenerable?: boolean } = {}
+    try {
+      body = await res.json()
+    } catch {
+      // Malformed 404 body — treat as generic not-found, not regenerable.
+    }
+    if (body.error === 'brief_pdf_not_stored') {
+      throw new BriefPdfFetchError(
+        'brief_pdf_not_stored',
+        body.regenerable === true,
+        404,
+        "This brief's PDF isn't stored — regenerate to rebuild it",
+      )
+    }
+    if (body.error === 'brief_not_found') {
+      throw new BriefPdfFetchError(
+        'brief_not_found',
+        false,
+        404,
+        'Brief not found for this date',
+      )
+    }
+    // Fallback for 404 without the expected shape.
+    throw new BriefPdfFetchError('brief_not_found', false, 404, 'Brief not found')
+  }
+
+  throw new BriefPdfFetchError(
+    'http_error',
+    false,
+    res.status,
+    `Failed to load brief PDF: ${res.status}`,
+  )
 }
 
 // ---------------------------------------------------------------------------
