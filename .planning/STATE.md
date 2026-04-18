@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Multi-User Foundation & PWA Polish
 status: executing
-stopped_at: Completed 102-00-PLAN.md Wave-0 scaffolds — 6 test files, 5 RED (npm test exit 1), zero regression. Ready for user review before Waves 1-4.
-last_updated: "2026-04-18T20:48:35.308Z"
+stopped_at: "Completed 102-01 — users table + 11 userId FK + backfill migrated on Railway live (508 thoughts scoped to seed user id=1); Plan 00 migrate.test.ts 6/6 GREEN; idempotency proven. Next: Plan 02 (utils/password.ts + utils/jwt.ts)"
+last_updated: "2026-04-18T21:17:56.589Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 15
-  completed_plans: 10
-  percent: 67
+  completed_plans: 11
+  percent: 73
 ---
 
 # Project State
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 101 P03 | 9min | 3 tasks | 5 files |
 | Phase 101 P04 | 7min | 2 tasks | 4 files |
 | Phase 102 P00 | 15min | 3 tasks | 6 files |
+| Phase 102 P01 | 25min | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,10 @@ v3.3 decisions archived to milestones/v3.3-ROADMAP.md.
 - [Phase 102]: [Phase 102 P00] node:test hermetic skip pattern — use TestContext.skip() inside it((t)=>...) NOT SuiteContext.skip() inside before((t)=>...) (SuiteContext has no .skip); DB_READY module-const + per-it check keeps Wave 0 tests hermetic
 - [Phase 102]: [Phase 102 P00] Placeholder hash prefix $argon2id$v=19$m=19456,t=2,p=1$ pinned in migrate.test.ts + password.test.ts — seed-user claim flow (D-11) relies on exact prefix match for register-overwrite detection
 - [Phase 102]: [Phase 102 P00] Cross-user isolation imports app from ../index.js — creates hard contract for Plan 03 to change 'const app' to 'export const app' in src/index.ts; 7 LEAK: assertion messages in integration test fire if any Plan 04 route misses .where(userId) clause
+- [Phase 102]: Plan 01 — Hand-rewrote drizzle-kit-generated 0012.sql to use Pitfall 2 expand-contract (nullable ADD → backfill → SET NOT NULL) + 13 DO/EXCEPTION duplicate_object blocks for FK idempotency; Postgres has no ADD CONSTRAINT IF NOT EXISTS for FKs
+- [Phase 102]: Plan 01 — migrate-102-seed.ts uses ALTER DATABASE ... SET vigil.seed_email (persists across migrator reconnects) rather than SET LOCAL (session-scoped, wouldn't survive drizzle's fresh connection per .sql file)
+- [Phase 102]: Plan 01 — Railway production DB migrated live at current scale (single replica, ~137 active thoughts + 508 total) without scaling to 0 replicas; Pitfall 2 race window did not hit. Flagged for Plan 05 runbook: scale Railway to 0 for future schema-wave deploys
+- [Phase 102]: Plan 01 — Dropped .unique() inline modifier on briefs.date + oauth_tokens.provider in addition to the uniqueIndex swap; drizzle emits both as separate SQL objects (briefs_date_unique + uq_briefs_date). Both required for the per-user composite uniqueness target
 
 ### Pending Todos
 
@@ -108,7 +113,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-18T20:48:25.807Z
-Stopped at: Completed 102-00-PLAN.md Wave-0 scaffolds — 6 test files, 5 RED (npm test exit 1), zero regression. Ready for user review before Waves 1-4.
+Last session: 2026-04-18T21:17:56.584Z
+Stopped at: Completed 102-01 — users table + 11 userId FK + backfill migrated on Railway live (508 thoughts scoped to seed user id=1); Plan 00 migrate.test.ts 6/6 GREEN; idempotency proven. Next: Plan 02 (utils/password.ts + utils/jwt.ts)
 Resume file: None
 Next action: `/gsd-plan-phase 99`
