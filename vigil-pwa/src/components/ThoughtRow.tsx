@@ -66,6 +66,33 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
     }
   }, [isEditing])
 
+  // Phase 100 / EDIT-01, D-12: unmount during edit (tab close / nav) — dispatch
+  // end so the useThoughts pause gate refcount doesn't leak.
+  //
+  // Implementation note: keep a ref in sync with isEditing so the []-deps
+  // cleanup can read the latest value at unmount without re-running the
+  // cleanup on every isEditing transition (which would double-dispatch end
+  // alongside the explicit handleKeyDown/handleSave dispatches).
+  const isEditingRef = useRef(isEditing)
+  useEffect(() => {
+    isEditingRef.current = isEditing
+  }, [isEditing])
+  const thoughtIdRef = useRef(thought.id)
+  useEffect(() => {
+    thoughtIdRef.current = thought.id
+  }, [thought.id])
+  useEffect(() => {
+    return () => {
+      if (isEditingRef.current) {
+        window.dispatchEvent(
+          new CustomEvent('vigil:edit-ended', {
+            detail: { id: thoughtIdRef.current },
+          }),
+        )
+      }
+    }
+  }, [])
+
   const categoryStyle = thought.category
     ? (CATEGORY_STYLES[thought.category] ?? 'bg-gray-50 text-gray-400')
     : 'bg-gray-50 text-gray-400'
@@ -84,6 +111,10 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
   function handleContentClick() {
     setDraft(thought.content)
     setIsEditing(true)
+    // Phase 100 / EDIT-01, D-11: notify useThoughts pause gate
+    window.dispatchEvent(
+      new CustomEvent('vigil:edit-started', { detail: { id: thought.id } }),
+    )
   }
 
   async function handleSave() {
@@ -92,6 +123,10 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
     // No change — just exit editing
     if (trimmed === thought.content) {
       setIsEditing(false)
+      // D-11: early-exit path must still pair with the edit-started dispatched on entry
+      window.dispatchEvent(
+        new CustomEvent('vigil:edit-ended', { detail: { id: thought.id } }),
+      )
       return
     }
 
@@ -99,6 +134,9 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
     if (!trimmed) {
       setDraft(thought.content)
       setIsEditing(false)
+      window.dispatchEvent(
+        new CustomEvent('vigil:edit-ended', { detail: { id: thought.id } }),
+      )
       return
     }
 
@@ -108,6 +146,10 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
     } finally {
       setIsEditing(false)
       setIsSaving(false)
+      // D-11: fire even if onUpdate threw — the edit session is over either way
+      window.dispatchEvent(
+        new CustomEvent('vigil:edit-ended', { detail: { id: thought.id } }),
+      )
     }
   }
 
@@ -116,6 +158,10 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
       e.preventDefault()
       setDraft(thought.content)
       setIsEditing(false)
+      // Phase 100 / EDIT-01, D-11: Escape cancels edit — notify pause gate
+      window.dispatchEvent(
+        new CustomEvent('vigil:edit-ended', { detail: { id: thought.id } }),
+      )
     } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault()
       handleSave()
