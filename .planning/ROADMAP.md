@@ -246,7 +246,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 ### Phases
 
 - [x] **Phase 99: Brief History Fix** - Make past briefs reliably loadable in the PWA regardless of Railway redeploys (completed 2026-04-17)
-- [ ] **Phase 100: Edit-Refresh Pause** - Pause the 30s auto-refresh poll while a thought is being edited in the PWA
+- [x] **Phase 100: Edit-Refresh Pause** - Pause the 30s auto-refresh poll while a thought is being edited in the PWA (completed 2026-04-18)
 - [ ] **Phase 101: Context Menu** - Right-click (desktop) and long-press (mobile) context menu on every thought row
 - [ ] **Phase 102: Multi-User Foundation** - Users table, JWT auth endpoints, and per-user data scoping in vigil-core
 
@@ -274,7 +274,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   2. After the user saves or dismisses the edit, the auto-refresh resumes on its normal schedule
   3. A user who types for more than 30 seconds without saving does not lose their draft
 **Plans**: 1 plan
-- [ ] 100-01-PLAN.md — Window event bus pause gate in useThoughts + edit-lifecycle dispatches in ThoughtRow (TDD, vitest)
+- [x] 100-01-PLAN.md — Window event bus pause gate in useThoughts + edit-lifecycle dispatches in ThoughtRow (TDD, vitest)
 **UI hint**: yes
 
 ### Phase 101: Context Menu
@@ -405,7 +405,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 | 97. Mac CLI Print Reliability | v3.3 | 2/2 | Complete | 2026-04-17 |
 | 98. Thought-Contextual Chat | v3.3 | 1/1 | Complete | 2026-04-17 |
 | 99. Brief History Fix | v3.4 | 3/3 | Complete    | 2026-04-18 |
-| 100. Edit-Refresh Pause | v3.4 | 0/1 | Not started | - |
+| 100. Edit-Refresh Pause | v3.4 | 1/1 | Complete   | 2026-04-18 |
 | 101. Context Menu | v3.4 | 0/TBD | Not started | - |
 | 102. Multi-User Foundation | v3.4 | 0/TBD | Not started | - |
 

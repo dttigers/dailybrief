@@ -13,7 +13,7 @@ Requirements for Multi-User Foundation & PWA Polish. Each maps to roadmap phases
 
 ### PWA Editing
 
-- [ ] **EDIT-01**: User can edit a thought without the 30s auto-refresh overwriting in-progress changes
+- [x] **EDIT-01**: User can edit a thought without the 30s auto-refresh overwriting in-progress changes
 
 ### Context Menu
 
@@ -64,7 +64,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | BRIEF-01 | Phase 99 | Complete |
-| EDIT-01 | Phase 100 | Pending |
+| EDIT-01 | Phase 100 | Complete |
 | CTX-01 | Phase 101 | Pending |
 | CTX-02 | Phase 101 | Pending |
 | CTX-03 | Phase 101 | Pending |
