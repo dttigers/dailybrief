@@ -290,7 +290,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] 101-00-PLAN.md — Wave 0 test scaffolds (ContextMenu, ToastHost, useToast, ThoughtRow extensions)
 - [x] 101-01-PLAN.md — ToastHost + useToast + CATEGORIES constant extraction
 - [x] 101-02-PLAN.md — ContextMenu component (portal, positioning, submenus, view state machine)
-- [ ] 101-03-PLAN.md — Wire ThoughtRow / ThoughtList / ThoughtsPage / App root (deferred-commit undo)
+- [x] 101-03-PLAN.md — Wire ThoughtRow / ThoughtList / ThoughtsPage / App root (deferred-commit undo)
 - [ ] 101-04-PLAN.md — Keyboard a11y + ThoughtsPage integration test + manual iOS UAT
 **UI hint**: yes
 
@@ -411,7 +411,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 | 98. Thought-Contextual Chat | v3.3 | 1/1 | Complete | 2026-04-17 |
 | 99. Brief History Fix | v3.4 | 3/3 | Complete    | 2026-04-18 |
 | 100. Edit-Refresh Pause | v3.4 | 1/1 | Complete    | 2026-04-18 |
-| 101. Context Menu | v3.4 | 3/5 | In Progress|  |
+| 101. Context Menu | v3.4 | 4/5 | In Progress|  |
 | 102. Multi-User Foundation | v3.4 | 0/TBD | Not started | - |
 
 ## Backlog

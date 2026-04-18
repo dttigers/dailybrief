@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Multi-User Foundation & PWA Polish
 status: executing
-stopped_at: Completed 101-02-PLAN.md (ContextMenu portal + positioning + submenus, Wave 1)
-last_updated: "2026-04-18T17:29:44.021Z"
+stopped_at: Completed 101-03-PLAN.md (ThoughtRow + ThoughtList + ThoughtsPage wiring, Wave 2)
+last_updated: "2026-04-18T17:42:57.509Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 9
-  completed_plans: 7
-  percent: 78
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 ## Current Position
 
 Phase: 101 (context-menu) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-04-18
 
@@ -65,6 +65,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 101 P00 | 6 min | 3 tasks | 4 files |
 | Phase 101 P01 | 2min | 3 tasks | 4 files |
 | Phase 101 P02 | 4min | 1 tasks | 1 files |
+| Phase 101 P03 | 9min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,9 @@ v3.3 decisions archived to milestones/v3.3-ROADMAP.md.
 - [Phase 101]: useToast hook + ToastHost: single-slot toast via React context + useRef timer/onExpire (no module-level singleton); showToast replacement fires previous onExpire synchronously before setState (D-16); manual dismiss() does NOT fire onExpire (only timer does)
 - [Phase 101]: CATEGORIES canonical constant at vigil-pwa/src/constants/categories.ts — doc comment points at vigil-core VALID_CATEGORIES for drift detection (T-101-01-04); BulkActionBar imports from constants instead of declaring inline; Plan 02 Move-to-category submenu will consume the same tuple
 - [Phase 101]: Plan 02 ContextMenu: portal to document.body via createPortal; view state machine root|categories|projects with useLayoutEffect re-measure on view change for mobile inline-replace; jsdom-safe fallback dims (192w/200h) so overflow-flip tests pass without a browser; D-19 interlock preserved (zero references to edit-state setter or edit-started window event in ContextMenu.tsx)
+- [Phase 101]: Plan 03 deferred-commit delete via filter-on-render (hiddenPendingDelete Set + visibleThoughts); useThoughts.ts byte-identical to Phase 100 final state; D-19 interlock preserved via onStartEdit={handleContentClick} in ThoughtRow ContextMenu mount; all 5 vigil:edit-ended sites intact
+- [Phase 101]: Plan 03 PointerEvent polyfill in src/test/setup.ts (Rule 3 blocking fix) — jsdom 25 ships generic Event for fireEvent.pointerDown so pointerType/clientX/clientY silently dropped; polyfill extends MouseEvent with PointerEventInit fields guarded by typeof check; production code unchanged
+- [Phase 101]: Plan 03 dual-mode open-state in ThoughtRow (parent-managed vs. local-fallback via parentManagesOpenState = onOpenMenu !== undefined) — preserves single-open invariant in production while letting 17 Wave 0 ThoughtRow tests render standalone without fabricating parent state
 
 ### Pending Todos
 
@@ -96,7 +100,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-18T17:29:44.016Z
-Stopped at: Completed 101-02-PLAN.md (ContextMenu portal + positioning + submenus, Wave 1)
+Last session: 2026-04-18T17:42:57.504Z
+Stopped at: Completed 101-03-PLAN.md (ThoughtRow + ThoughtList + ThoughtsPage wiring, Wave 2)
 Resume file: None
 Next action: `/gsd-plan-phase 99`
