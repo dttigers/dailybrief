@@ -103,11 +103,12 @@ function toJSON(rows: DrizzleThought[]): object[] {
 
 export const exportRoute = new Hono();
 
-// GET /export — Export thoughts in JSON, CSV, or Markdown
+// GET /export — Export thoughts in JSON, CSV, or Markdown (scoped by userId)
 exportRoute.get("/export", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const format = c.req.query("format") as ExportFormat | undefined;
     if (!format || !VALID_FORMATS.includes(format)) {
       return c.json(
@@ -130,8 +131,11 @@ exportRoute.get("/export", async (c) => {
       return c.json({ error: "to must be a valid ISO 8601 date string" }, 400);
     }
 
-    // Build WHERE conditions (same pattern as thoughts.ts)
-    const conditions = [ne(thoughtsTable.syncStatus, "pendingDeletion")];
+    // Build WHERE conditions (same pattern as thoughts.ts); always scope by userId.
+    const conditions = [
+      eq(thoughtsTable.userId, userId),
+      ne(thoughtsTable.syncStatus, "pendingDeletion"),
+    ];
 
     if (q) {
       conditions.push(

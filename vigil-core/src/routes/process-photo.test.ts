@@ -178,6 +178,7 @@ function mockDrizzleThought(
   const now = new Date();
   return {
     id: Math.floor(Math.random() * 1_000_000),
+    userId: 1, // Phase 102: seed user id — mocked rows
     content: "x",
     category: null,
     confidence: null,

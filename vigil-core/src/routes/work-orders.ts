@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, isNotNull, inArray } from "drizzle-orm";
+import { eq, and, isNotNull, inArray } from "drizzle-orm";
 import { db } from "../db/connection.js";
 import { workOrders, workOrderStatuses } from "../db/schema.js";
 
@@ -7,10 +7,11 @@ import { workOrders, workOrderStatuses } from "../db/schema.js";
 
 export const workOrdersRouter = new Hono();
 
-// POST /work-orders/sync — upsert work orders from CLI
+// POST /work-orders/sync — upsert work orders from CLI (scoped by userId)
 workOrdersRouter.post("/work-orders/sync", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
+  const userId = c.get("userId");
   let body: unknown;
   try {
     body = await c.req.json();
@@ -29,7 +30,9 @@ workOrdersRouter.post("/work-orders/sync", async (c) => {
   }
 
   // Mass-assignment defense: destructure only the 9 known fields (T-66-02)
+  // Phase 102: Every row carries userId so the NOT NULL constraint is satisfied.
   const sanitized = inputOrders.map((wo: Record<string, unknown>) => ({
+    userId,
     caseNumber: String(wo.caseNumber ?? ""),
     store: String(wo.store ?? ""),
     shortDescription: String(wo.shortDescription ?? ""),
@@ -71,10 +74,11 @@ workOrdersRouter.post("/work-orders/sync", async (c) => {
   return c.json({ synced: valid.length });
 });
 
-// GET /work-orders — return work orders joined with status, with lazy auto-archive
+// GET /work-orders — scoped by userId; joined with status; lazy auto-archive
 workOrdersRouter.get("/work-orders", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
+  const userId = c.get("userId");
   // Validate filter param against allowlist (T-92-02)
   const filterParam = c.req.query("filter") ?? "active";
   const validFilters = ["active", "archived", "all"] as const;
@@ -82,7 +86,7 @@ workOrdersRouter.get("/work-orders", async (c) => {
     ? (filterParam as typeof validFilters[number])
     : "active";
 
-  const rows = await db.select().from(workOrders);
+  const rows = await db.select().from(workOrders).where(eq(workOrders.userId, userId));
 
   // Fetch all statuses in one query and build a lookup map
   const statusRows = await db.select().from(workOrderStatuses);
@@ -119,12 +123,12 @@ workOrdersRouter.get("/work-orders", async (c) => {
     }
   }
 
-  // Batch update all orders that need archiving
+  // Batch update all orders that need archiving (scoped by userId)
   if (toArchive.length > 0) {
     await db
       .update(workOrders)
       .set({ archivedAt: now })
-      .where(inArray(workOrders.caseNumber, toArchive));
+      .where(and(inArray(workOrders.caseNumber, toArchive), eq(workOrders.userId, userId)));
 
     // Update in-memory rows to reflect the archive
     for (const wo of rows) {
@@ -162,17 +166,18 @@ workOrdersRouter.get("/work-orders", async (c) => {
   return c.json({ data });
 });
 
-// PUT /work-orders/:caseNumber/unarchive — restore an archived order (D-02)
+// PUT /work-orders/:caseNumber/unarchive — restore an archived order (scoped)
 workOrdersRouter.put("/work-orders/:caseNumber/unarchive", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
+  const userId = c.get("userId");
   const caseNumber = c.req.param("caseNumber");
 
-  // Validate caseNumber exists (T-92-03)
+  // Validate caseNumber exists (T-92-03) — scoped by userId, cross-user returns 404
   const existing = await db
     .select({ caseNumber: workOrders.caseNumber })
     .from(workOrders)
-    .where(eq(workOrders.caseNumber, caseNumber));
+    .where(and(eq(workOrders.caseNumber, caseNumber), eq(workOrders.userId, userId)));
 
   if (existing.length === 0) {
     return c.json({ error: "Work order not found" }, 404);
@@ -181,20 +186,21 @@ workOrdersRouter.put("/work-orders/:caseNumber/unarchive", async (c) => {
   await db
     .update(workOrders)
     .set({ archivedAt: null })
-    .where(eq(workOrders.caseNumber, caseNumber));
+    .where(and(eq(workOrders.caseNumber, caseNumber), eq(workOrders.userId, userId)));
 
   return c.json({ caseNumber, archivedAt: null });
 });
 
-// DELETE /work-orders/archived — hard-delete all archived orders (D-09, D-10)
+// DELETE /work-orders/archived — hard-delete all archived orders (scoped by userId)
 workOrdersRouter.delete("/work-orders/archived", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
-  // Find all archived orders (T-92-01: WHERE clause guarantees only archived are deleted)
+  const userId = c.get("userId");
+  // Find all archived orders for this user
   const archived = await db
     .select({ caseNumber: workOrders.caseNumber })
     .from(workOrders)
-    .where(isNotNull(workOrders.archivedAt));
+    .where(and(eq(workOrders.userId, userId), isNotNull(workOrders.archivedAt)));
 
   if (archived.length === 0) {
     return c.json({ deleted: 0 });
@@ -202,15 +208,16 @@ workOrdersRouter.delete("/work-orders/archived", async (c) => {
 
   const archivedCaseNumbers = archived.map((r) => r.caseNumber);
 
-  // Clean up corresponding statuses first
+  // Clean up corresponding statuses first (caseNumber-keyed; workOrderStatuses
+  // stays globally-keyed per D-23 — only this user's caseNumbers get cleared).
   await db
     .delete(workOrderStatuses)
     .where(inArray(workOrderStatuses.caseNumber, archivedCaseNumbers));
 
-  // Hard-delete the archived work orders
+  // Hard-delete only this user's archived work orders
   await db
     .delete(workOrders)
-    .where(isNotNull(workOrders.archivedAt));
+    .where(and(eq(workOrders.userId, userId), isNotNull(workOrders.archivedAt)));
 
   return c.json({ deleted: archived.length });
 });

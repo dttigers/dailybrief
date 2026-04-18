@@ -11,10 +11,12 @@ export const insights = new Hono();
 insights.get("/insights/cache", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
+  const userId = c.get("userId");
+  // Phase 102: aiCache is per-user — scope the read to prevent userA seeing userB's cache.
   const rows = await db
     .select()
     .from(aiCache)
-    .where(eq(aiCache.type, "insights"))
+    .where(and(eq(aiCache.userId, userId), eq(aiCache.type, "insights")))
     .limit(1);
 
   if (rows.length === 0) {
@@ -36,18 +38,20 @@ insights.post("/insights", async (c) => {
 
   if (!db) return c.json({ error: "Database not available" }, 503);
 
-  // Resolve user timezone (same pattern as thoughts.ts)
+  const userId = c.get("userId");
+  // Resolve user timezone (composite PK (userId, key) per Phase 102 Pitfall 3)
   const tzRows = await db
     .select({ value: appSettings.value })
     .from(appSettings)
-    .where(eq(appSettings.key, "user_timezone"))
+    .where(and(eq(appSettings.userId, userId), eq(appSettings.key, "user_timezone")))
     .limit(1);
   const tz = tzRows.length > 0 ? (tzRows[0].value as string) : "America/New_York";
 
-  // 7-day rolling window
+  // 7-day rolling window, scoped by userId
   const { start, end } = getRollingDayWindow(tz, 7);
 
   const conditions = [
+    eq(thoughtsTable.userId, userId),
     ne(thoughtsTable.syncStatus, "pendingDeletion"),
     gte(thoughtsTable.createdAt, start),
     lt(thoughtsTable.createdAt, end),
@@ -139,11 +143,12 @@ Return ONLY the JSON array, no other text.`;
       .filter((insight) => insight.confidence >= 0.5);
 
     // Write to ai_cache (upsert: overwrite on regenerate)
+    // Phase 102: composite (userId, type) conflict target per uq_ai_cache_user_type.
     await db
       .insert(aiCache)
-      .values({ type: "insights", result: insightsResult, generatedAt: new Date(), updatedAt: new Date() })
+      .values({ userId, type: "insights", result: insightsResult, generatedAt: new Date(), updatedAt: new Date() })
       .onConflictDoUpdate({
-        target: aiCache.type,
+        target: [aiCache.userId, aiCache.type],
         set: { result: insightsResult, generatedAt: new Date(), updatedAt: new Date() },
       });
 

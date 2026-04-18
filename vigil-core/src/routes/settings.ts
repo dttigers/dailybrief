@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db/connection.js";
 import { appSettings } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -70,15 +70,17 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
 
   router.get("/settings/print-schedule", async (c) => {
     try {
+      const userId = c.get("userId");
       let schedule: PrintSchedule;
       if (deps?.dbGetFn) {
         schedule = (await deps.dbGetFn()) ?? DEFAULT_PRINT;
       } else {
         if (!db) return c.json({ error: "database_unavailable" }, 503);
+        // Phase 102: appSettings PK is composite (userId, key).
         const rows = await db
           .select({ value: appSettings.value })
           .from(appSettings)
-          .where(eq(appSettings.key, PRINT_SCHEDULE_KEY))
+          .where(and(eq(appSettings.userId, userId), eq(appSettings.key, PRINT_SCHEDULE_KEY)))
           .limit(1);
         schedule = rows.length > 0
           ? (rows[0].value as PrintSchedule)
@@ -93,6 +95,7 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
 
   router.put("/settings/print-schedule", async (c) => {
     try {
+      const userId = c.get("userId");
       const body = await c.req.json<unknown>();
       if (!isValidSchedule(body)) {
         return c.json({ error: "invalid_input" }, 400);
@@ -104,9 +107,9 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
       } else {
         if (!db) return c.json({ error: "database_unavailable" }, 503);
         await db.insert(appSettings)
-          .values({ key: PRINT_SCHEDULE_KEY, value: schedule })
+          .values({ userId, key: PRINT_SCHEDULE_KEY, value: schedule })
           .onConflictDoUpdate({
-            target: appSettings.key,
+            target: [appSettings.userId, appSettings.key],
             set: { value: schedule, updatedAt: new Date() },
           });
       }
@@ -121,6 +124,7 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
 
   router.get("/settings/generate-schedule", async (c) => {
     try {
+      const userId = c.get("userId");
       let schedule: PrintSchedule;
       if (deps?.dbGetGenerateFn) {
         schedule = (await deps.dbGetGenerateFn()) ?? DEFAULT_GENERATE;
@@ -129,7 +133,7 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
         const rows = await db
           .select({ value: appSettings.value })
           .from(appSettings)
-          .where(eq(appSettings.key, GENERATE_SCHEDULE_KEY))
+          .where(and(eq(appSettings.userId, userId), eq(appSettings.key, GENERATE_SCHEDULE_KEY)))
           .limit(1);
         schedule = rows.length > 0
           ? (rows[0].value as PrintSchedule)
@@ -144,6 +148,7 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
 
   router.put("/settings/generate-schedule", async (c) => {
     try {
+      const userId = c.get("userId");
       const body = await c.req.json<unknown>();
       if (!isValidSchedule(body)) {
         return c.json({ error: "invalid_input" }, 400);
@@ -155,9 +160,9 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
       } else {
         if (!db) return c.json({ error: "database_unavailable" }, 503);
         await db.insert(appSettings)
-          .values({ key: GENERATE_SCHEDULE_KEY, value: schedule })
+          .values({ userId, key: GENERATE_SCHEDULE_KEY, value: schedule })
           .onConflictDoUpdate({
-            target: appSettings.key,
+            target: [appSettings.userId, appSettings.key],
             set: { value: schedule, updatedAt: new Date() },
           });
       }
@@ -172,6 +177,7 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
 
   router.get("/settings/timezone", async (c) => {
     try {
+      const userId = c.get("userId");
       let tz: string;
       if (deps?.dbGetTimezoneFn) {
         tz = (await deps.dbGetTimezoneFn()) ?? DEFAULT_TIMEZONE;
@@ -180,7 +186,7 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
         const rows = await db
           .select({ value: appSettings.value })
           .from(appSettings)
-          .where(eq(appSettings.key, TIMEZONE_KEY))
+          .where(and(eq(appSettings.userId, userId), eq(appSettings.key, TIMEZONE_KEY)))
           .limit(1);
         tz = rows.length > 0 ? (rows[0].value as string) : DEFAULT_TIMEZONE;
       }
@@ -193,6 +199,7 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
 
   router.put("/settings/timezone", async (c) => {
     try {
+      const userId = c.get("userId");
       const body = await c.req.json<unknown>();
       const tz = (body as { timezone?: unknown } | null)?.timezone;
       if (!isValidTimezone(tz)) {
@@ -204,9 +211,9 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
       } else {
         if (!db) return c.json({ error: "database_unavailable" }, 503);
         await db.insert(appSettings)
-          .values({ key: TIMEZONE_KEY, value: tz })
+          .values({ userId, key: TIMEZONE_KEY, value: tz })
           .onConflictDoUpdate({
-            target: appSettings.key,
+            target: [appSettings.userId, appSettings.key],
             set: { value: tz, updatedAt: new Date() },
           });
       }
@@ -223,11 +230,12 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
 
   router.get("/settings/task-status-filter", async (c) => {
     try {
+      const userId = c.get("userId");
       if (!db) return c.json({ error: "database_unavailable" }, 503);
       const rows = await db
         .select({ value: appSettings.value })
         .from(appSettings)
-        .where(eq(appSettings.key, TASK_STATUS_FILTER_KEY))
+        .where(and(eq(appSettings.userId, userId), eq(appSettings.key, TASK_STATUS_FILTER_KEY)))
         .limit(1);
       const filter = rows.length > 0 ? (rows[0].value as string) : "open";
       return c.json({ filter }, 200);
@@ -239,6 +247,7 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
 
   router.put("/settings/task-status-filter", async (c) => {
     try {
+      const userId = c.get("userId");
       const body = await c.req.json<unknown>();
       const filter = (body as { filter?: unknown } | null)?.filter;
       if (typeof filter !== "string" || !VALID_TASK_FILTERS.includes(filter as typeof VALID_TASK_FILTERS[number])) {
@@ -247,9 +256,9 @@ export function createSettingsRouter(deps?: SettingsDeps): Hono {
 
       if (!db) return c.json({ error: "database_unavailable" }, 503);
       await db.insert(appSettings)
-        .values({ key: TASK_STATUS_FILTER_KEY, value: filter })
+        .values({ userId, key: TASK_STATUS_FILTER_KEY, value: filter })
         .onConflictDoUpdate({
-          target: appSettings.key,
+          target: [appSettings.userId, appSettings.key],
           set: { value: filter, updatedAt: new Date() },
         });
       return c.json({ ok: true }, 200);

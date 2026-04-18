@@ -252,6 +252,7 @@ export function createProcessPhotoRouter(
 
   // POST /process-photo — Smart photo upload: detect paper type + verbatim transcribe.
   router.post("/process-photo", async (c) => {
+    const userId = c.get("userId");
     // 0. Preview mode flag (Plan 60-01 D-01). Strict equality — only the exact
     //    string "true" triggers preview mode. `?preview=yes`, `?preview=1`,
     //    `?preview=TRUE` all fall through to commit mode by design (T-60-02).
@@ -378,7 +379,9 @@ export function createProcessPhotoRouter(
     }
 
     // 8. Commit mode — build insert rows, every row gets its OWN randomUUID (P-7).
+    // Phase 102: every row carries userId (NOT NULL constraint).
     const insertRows = transformed.thoughts.map((content) => ({
+      userId,
       content,
       source: "image" as const,
       confidence: transformed.confidence,

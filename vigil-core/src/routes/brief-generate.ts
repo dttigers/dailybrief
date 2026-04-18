@@ -5,7 +5,7 @@
 import { Hono } from "hono";
 import { db as defaultDb } from "../db/connection.js";
 import { briefs, briefPdfs } from "../db/schema.js";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type * as schema from "../db/schema.js";
 import { createBriefAssemblyService } from "../services/brief-assembly-service.js";
@@ -18,7 +18,7 @@ export interface BriefGenerateDeps {
   // null accepted to match the nullable db export from connection.ts
   db?: PostgresJsDatabase<typeof schema> | null;
   assemblerFactory?: () => {
-    assembleAndRender: (dateStr: string) => Promise<{
+    assembleAndRender: (dateStr: string, userId: number) => Promise<{
       buffer: Buffer;
       metadata: { thoughtCount: number; taskCount: number; dateStr: string };
     }>;
@@ -51,23 +51,27 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
     if (!db) return c.json({ error: "Database not available" }, 503);
 
     try {
+      const userId = c.get("userId");
       const dateStr = new Date().toISOString().slice(0, 10);
       const assembler = getAssembler();
-      const { buffer, metadata } = await assembler.assembleAndRender(dateStr);
+      const { buffer, metadata } = await assembler.assembleAndRender(dateStr, userId);
 
       // WR-01: Wrap both upserts in a single transaction so either both rows land or
       // neither does. Prevents leaking a `brief_pdf_not_stored` state if the bytes
       // insert fails after the metadata insert succeeds.
+      // Phase 102: conflict target is composite (userId, date); briefPdfs.userId is
+      // denormalized from parent briefs.userId.
       const summaryJson = { generatedAt: new Date().toISOString(), partial: false };
       await db.transaction(async (tx) => {
         const [briefRow] = await tx.insert(briefs).values({
+          userId,
           date: dateStr,
           summary: summaryJson,
           pdfFilename: null,
           thoughtCount: metadata.thoughtCount,
           taskCount: metadata.taskCount,
         }).onConflictDoUpdate({
-          target: briefs.date,
+          target: [briefs.userId, briefs.date],
           set: {
             summary: summaryJson,
             pdfFilename: null,
@@ -79,6 +83,7 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
 
         // Upsert brief_pdfs row (bytes). PK is brief_id.
         await tx.insert(briefPdfs).values({
+          userId,
           briefId: briefRow.id,
           bytes: buffer,
           contentType: "application/pdf",
@@ -114,6 +119,7 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
     const db = getDb();
     if (!db) return c.json({ error: "Database not available" }, 503);
 
+    const userId = c.get("userId");
     const date = c.req.param("date");
 
     // T-76-04: validate date format to prevent path traversal
@@ -124,6 +130,7 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
     try {
       // Single query: join briefs → brief_pdfs; left join so we can tell
       // "brief row missing" apart from "brief row exists but no bytes".
+      // Phase 102: scope the briefs lookup by userId (per-user brief history).
       const rows = await db
         .select({
           briefId: briefs.id,
@@ -132,7 +139,7 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
         })
         .from(briefs)
         .leftJoin(briefPdfs, eq(briefPdfs.briefId, briefs.id))
-        .where(eq(briefs.date, date))
+        .where(and(eq(briefs.userId, userId), eq(briefs.date, date)))
         .limit(1);
 
       if (rows.length === 0) {

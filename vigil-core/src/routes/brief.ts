@@ -11,20 +11,21 @@ brief.get("/brief", async (c) => {
   }
 
   try {
-    // 1. Total thought count (excluding soft-deleted)
+    const userId = c.get("userId");
+    // 1. Total thought count (scoped by userId, excluding soft-deleted)
     const [{ total }] = await db
       .select({ total: count() })
       .from(thoughts)
-      .where(ne(thoughts.syncStatus, "pendingDeletion"));
+      .where(and(eq(thoughts.userId, userId), ne(thoughts.syncStatus, "pendingDeletion")));
 
-    // 2. Counts by category
+    // 2. Counts by category (scoped)
     const categoryRows = await db
       .select({
         category: thoughts.category,
         count: count(),
       })
       .from(thoughts)
-      .where(ne(thoughts.syncStatus, "pendingDeletion"))
+      .where(and(eq(thoughts.userId, userId), ne(thoughts.syncStatus, "pendingDeletion")))
       .groupBy(thoughts.category);
 
     const byCategory: Record<string, number> = {};
@@ -32,7 +33,7 @@ brief.get("/brief", async (c) => {
       byCategory[row.category ?? "uncategorized"] = row.count;
     }
 
-    // 3. Task counts by status
+    // 3. Task counts by status (scoped)
     const taskRows = await db
       .select({
         taskStatus: thoughts.taskStatus,
@@ -41,6 +42,7 @@ brief.get("/brief", async (c) => {
       .from(thoughts)
       .where(
         and(
+          eq(thoughts.userId, userId),
           eq(thoughts.category, "task"),
           ne(thoughts.syncStatus, "pendingDeletion"),
         ),
@@ -52,34 +54,37 @@ brief.get("/brief", async (c) => {
       tasksByStatus[row.taskStatus ?? "none"] = row.count;
     }
 
-    // 4. Favorites count
+    // 4. Favorites count (scoped)
     const [{ favCount }] = await db
       .select({ favCount: count() })
       .from(thoughts)
       .where(
         and(
+          eq(thoughts.userId, userId),
           eq(thoughts.isFavorited, true),
           ne(thoughts.syncStatus, "pendingDeletion"),
         ),
       );
 
-    // 5. Unprocessed count (no category assigned)
+    // 5. Unprocessed count (scoped — no category assigned)
     const [{ unprocessed }] = await db
       .select({ unprocessed: count() })
       .from(thoughts)
       .where(
         and(
+          eq(thoughts.userId, userId),
           isNull(thoughts.category),
           ne(thoughts.syncStatus, "pendingDeletion"),
         ),
       );
 
-    // 6. Open tasks (open or inProgress, limit 10)
+    // 6. Open tasks (scoped — open or inProgress, limit 10)
     const openTaskRows = await db
       .select()
       .from(thoughts)
       .where(
         and(
+          eq(thoughts.userId, userId),
           eq(thoughts.category, "task"),
           or(
             eq(thoughts.taskStatus, "open"),
@@ -99,11 +104,11 @@ brief.get("/brief", async (c) => {
       tags: row.tags ?? [],
     }));
 
-    // 7. Recent thoughts (last 5)
+    // 7. Recent thoughts (scoped — last 5)
     const recentRows = await db
       .select()
       .from(thoughts)
-      .where(ne(thoughts.syncStatus, "pendingDeletion"))
+      .where(and(eq(thoughts.userId, userId), ne(thoughts.syncStatus, "pendingDeletion")))
       .orderBy(desc(thoughts.createdAt))
       .limit(5);
 
@@ -116,12 +121,13 @@ brief.get("/brief", async (c) => {
       tags: row.tags ?? [],
     }));
 
-    // 8. Recent therapy thoughts (last 5)
+    // 8. Recent therapy thoughts (scoped — last 5)
     const therapyRows = await db
       .select()
       .from(thoughts)
       .where(
         and(
+          eq(thoughts.userId, userId),
           eq(thoughts.category, "therapy"),
           ne(thoughts.syncStatus, "pendingDeletion"),
         ),
@@ -137,12 +143,13 @@ brief.get("/brief", async (c) => {
       tags: row.tags ?? [],
     }));
 
-    // 9. Today's capture count (PostgreSQL date comparison)
+    // 9. Today's capture count (scoped by userId)
     const [{ todayCount }] = await db
       .select({ todayCount: count() })
       .from(thoughts)
       .where(
         and(
+          eq(thoughts.userId, userId),
           sql`${thoughts.createdAt}::date = CURRENT_DATE`,
           ne(thoughts.syncStatus, "pendingDeletion"),
         ),

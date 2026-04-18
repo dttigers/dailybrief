@@ -271,8 +271,149 @@ describe("cross-user isolation (AUTH-05)", () => {
     );
   });
 
-  it.skip("TODO Plan 04: chat-sessions isolation — GET /v1/chat/sessions returns only caller's sessions", () => {});
-  it.skip("TODO Plan 04: brief-history isolation — GET /v1/brief-history returns only caller's briefs", () => {});
-  it.skip("TODO Plan 04: work-orders isolation — GET /v1/work-orders returns only caller's work orders", () => {});
-  it.skip("TODO Plan 04: insights cache isolation — POST /v1/insights does not serve userA's cached result to userB (aiCache.userId)", () => {});
+  it("chat-sessions isolation — GET /v1/chat-sessions returns only caller's sessions", async (t) => {
+    if (!DB_READY) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { db: d } = await import("../db/connection.js");
+    const { chatSessions } = await import("../db/schema.js");
+    const [aSession] = await d!
+      .insert(chatSessions)
+      .values({ userId: userA.id, title: "A session" })
+      .returning();
+    const [bSession] = await d!
+      .insert(chatSessions)
+      .values({ userId: userB.id, title: "B session" })
+      .returning();
+    try {
+      const res = await get("/v1/chat-sessions", tokenA);
+      assert.equal(res.status, 200);
+      const body = (await res.json()) as { data: Array<{ id: number; title: string }> };
+      const titles = body.data.map((s) => s.title);
+      assert.ok(titles.includes("A session"), "userA must see own session");
+      assert.ok(
+        !titles.includes("B session"),
+        "LEAK: GET /v1/chat-sessions surfaced userB's session in userA's list",
+      );
+    } finally {
+      await d!.delete(chatSessions).where(eq(chatSessions.id, aSession.id));
+      await d!.delete(chatSessions).where(eq(chatSessions.id, bSession.id));
+    }
+  });
+
+  it("brief-history isolation — GET /v1/briefs returns only caller's briefs", async (t) => {
+    if (!DB_READY) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { db: d } = await import("../db/connection.js");
+    const { briefs } = await import("../db/schema.js");
+    // Use distant-future dates to avoid colliding with seed user's real brief history.
+    const [aBrief] = await d!
+      .insert(briefs)
+      .values({
+        userId: userA.id,
+        date: "2099-12-30",
+        summary: { test: "A-brief" },
+        thoughtCount: 1,
+        taskCount: 0,
+      })
+      .returning();
+    const [bBrief] = await d!
+      .insert(briefs)
+      .values({
+        userId: userB.id,
+        date: "2099-12-31",
+        summary: { test: "B-brief" },
+        thoughtCount: 1,
+        taskCount: 0,
+      })
+      .returning();
+    try {
+      const res = await get("/v1/briefs?from=2099-12-01&to=2099-12-31", tokenA);
+      assert.equal(res.status, 200);
+      const body = (await res.json()) as { data: Array<{ id: number; date: string }> };
+      const ids = body.data.map((b) => b.id);
+      assert.ok(ids.includes(aBrief.id), "userA must see own brief");
+      assert.ok(
+        !ids.includes(bBrief.id),
+        "LEAK: GET /v1/briefs surfaced userB's brief in userA's history",
+      );
+    } finally {
+      await d!.delete(briefs).where(eq(briefs.id, aBrief.id));
+      await d!.delete(briefs).where(eq(briefs.id, bBrief.id));
+    }
+  });
+
+  it("work-orders isolation — GET /v1/work-orders returns only caller's orders", async (t) => {
+    if (!DB_READY) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { db: d } = await import("../db/connection.js");
+    const { workOrders } = await import("../db/schema.js");
+    // Use unique caseNumbers scoped to this test to avoid PK collisions.
+    const aCase = `ISO-A-${Date.now()}`;
+    const bCase = `ISO-B-${Date.now()}`;
+    await d!.insert(workOrders).values({
+      userId: userA.id,
+      caseNumber: aCase,
+      shortDescription: "userA-order",
+    });
+    await d!.insert(workOrders).values({
+      userId: userB.id,
+      caseNumber: bCase,
+      shortDescription: "userB-order",
+    });
+    try {
+      const res = await get("/v1/work-orders?filter=all", tokenA);
+      assert.equal(res.status, 200);
+      const body = (await res.json()) as { data: Array<{ caseNumber: string }> };
+      const cases = body.data.map((w) => w.caseNumber);
+      assert.ok(cases.includes(aCase), "userA must see own work order");
+      assert.ok(
+        !cases.includes(bCase),
+        "LEAK: GET /v1/work-orders surfaced userB's order in userA's list",
+      );
+    } finally {
+      await d!.delete(workOrders).where(eq(workOrders.caseNumber, aCase));
+      await d!.delete(workOrders).where(eq(workOrders.caseNumber, bCase));
+    }
+  });
+
+  it("insights cache isolation — GET /v1/insights/cache does not serve userA's cache to userB (aiCache.userId)", async (t) => {
+    if (!DB_READY) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { db: d } = await import("../db/connection.js");
+    const { aiCache } = await import("../db/schema.js");
+    // Pre-seed userA's insights cache with a known-unique payload.
+    const marker = `SECRET-A-${Date.now()}`;
+    const [aRow] = await d!
+      .insert(aiCache)
+      .values({
+        userId: userA.id,
+        type: "insights",
+        result: [{ marker }],
+      })
+      .onConflictDoUpdate({
+        target: [aiCache.userId, aiCache.type],
+        set: { result: [{ marker }], updatedAt: new Date() },
+      })
+      .returning();
+    try {
+      // Hit userB's cache endpoint — must NOT return userA's payload.
+      const res = await get("/v1/insights/cache", tokenB);
+      // Either 404 (no cache for userB) or 200 with different payload — but NEVER userA's marker.
+      const text = await res.text();
+      assert.ok(
+        !text.includes(marker),
+        "LEAK: userB received userA's cached insights (aiCache not scoped by userId)",
+      );
+    } finally {
+      await d!.delete(aiCache).where(eq(aiCache.id, aRow.id));
+    }
+  });
 });

@@ -5,7 +5,7 @@ import {
 } from "../ai/client.js";
 import { db } from "../db/connection.js";
 import { thoughts as thoughtsTable } from "../db/schema.js";
-import { desc, ne } from "drizzle-orm";
+import { desc, ne, eq, and } from "drizzle-orm";
 
 export const chat = new Hono();
 
@@ -15,6 +15,7 @@ chat.post("/chat", async (c) => {
     return c.json({ error: "AI service unavailable" }, 503);
   }
 
+  const userId = c.get("userId");
   // Parse and validate body
   let messages: Array<{ role: "user" | "assistant"; content: string }>;
   let includeContext = true;
@@ -57,7 +58,8 @@ chat.post("/chat", async (c) => {
 
   let contextUsed = 0;
 
-  // Optionally inject recent thoughts as context
+  // Optionally inject recent thoughts as context (scoped by userId — never leak
+  // userB's content into userA's chat)
   if (includeContext && db) {
     try {
       const recentThoughts = await db
@@ -68,7 +70,7 @@ chat.post("/chat", async (c) => {
           taskStatus: thoughtsTable.taskStatus,
         })
         .from(thoughtsTable)
-        .where(ne(thoughtsTable.syncStatus, "deleted"))
+        .where(and(eq(thoughtsTable.userId, userId), ne(thoughtsTable.syncStatus, "deleted")))
         .orderBy(desc(thoughtsTable.createdAt))
         .limit(contextLimit);
 

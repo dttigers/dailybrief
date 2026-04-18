@@ -34,6 +34,7 @@ briefHistory.post("/briefs", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const body = await c.req.json();
     const { date, summary, pdfFilename, thoughtCount, taskCount } = body;
 
@@ -51,10 +52,11 @@ briefHistory.post("/briefs", async (c) => {
       return c.json({ error: "taskCount is required and must be a number" }, 400);
     }
 
-    // Upsert — on conflict on date, update the record
+    // Upsert — Phase 102: composite conflict target (userId, date) per uq_briefs_user_date.
     const [saved] = await db
       .insert(briefs)
       .values({
+        userId,
         date,
         summary,
         pdfFilename: pdfFilename ?? null,
@@ -62,7 +64,7 @@ briefHistory.post("/briefs", async (c) => {
         taskCount,
       })
       .onConflictDoUpdate({
-        target: briefs.date,
+        target: [briefs.userId, briefs.date],
         set: {
           summary,
           pdfFilename: pdfFilename ?? null,
@@ -85,6 +87,7 @@ briefHistory.get("/briefs", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const limit = Math.min(Math.max(Number(c.req.query("limit")) || 30, 1), 200);
     const offset = Math.max(Number(c.req.query("offset")) || 0, 0);
     const from = c.req.query("from");
@@ -98,8 +101,8 @@ briefHistory.get("/briefs", async (c) => {
       return c.json({ error: "to must be YYYY-MM-DD format" }, 400);
     }
 
-    // Build conditions
-    const conditions = [];
+    // Build conditions — always scope by userId (Phase 102 — brief history is per-user)
+    const conditions = [eq(briefs.userId, userId)];
     if (from) {
       conditions.push(gte(briefs.date, from));
     }
@@ -107,7 +110,7 @@ briefHistory.get("/briefs", async (c) => {
       conditions.push(lte(briefs.date, to));
     }
 
-    const whereCondition = conditions.length > 0 ? and(...conditions) : undefined;
+    const whereCondition = and(...conditions);
 
     // Count query
     const [{ total }] = await db
@@ -138,11 +141,12 @@ briefHistory.get("/briefs", async (c) => {
   }
 });
 
-// GET /briefs/:date — Get specific brief by date
+// GET /briefs/:date — Get specific brief by date (scoped by userId)
 briefHistory.get("/briefs/:date", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const date = c.req.param("date");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       return c.json({ error: "date must be YYYY-MM-DD format" }, 400);
@@ -151,7 +155,7 @@ briefHistory.get("/briefs/:date", async (c) => {
     const rows = await db
       .select()
       .from(briefs)
-      .where(eq(briefs.date, date))
+      .where(and(eq(briefs.userId, userId), eq(briefs.date, date)))
       .limit(1);
 
     if (rows.length === 0) {

@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { callClaudeMultimodal, getAIClient, parseAIJson, callClaude } from "../ai/client.js";
 import { db } from "../db/connection.js";
 import { thoughts as thoughtsTable } from "../db/schema.js";
@@ -41,6 +41,7 @@ type AudioMediaType = (typeof VALID_MEDIA_TYPES)[number];
 
 // POST /process-audio — Transcribe audio via Claude, create thought, auto-triage.
 processAudio.post("/process-audio", async (c) => {
+  const userId = c.get("userId");
   // 1. Parse JSON body
   let body: { audio?: string; mediaType?: string };
   try {
@@ -131,12 +132,13 @@ processAudio.post("/process-audio", async (c) => {
     return c.json({ error: "Transcription produced no text" }, 422);
   }
 
-  // 6. Create thought
+  // 6. Create thought — Phase 102: userId required (NOT NULL constraint).
   let insertedRow: typeof thoughtsTable.$inferSelect;
   try {
     const rows = await db!
       .insert(thoughtsTable)
       .values({
+        userId,
         content: transcription.trim(),
         source: "voice",
         cloudKitRecordID: crypto.randomUUID(),
@@ -148,7 +150,7 @@ processAudio.post("/process-audio", async (c) => {
     return c.json({ error: "Failed to save thought" }, 500);
   }
 
-  // 7. Fire-and-forget triage (non-blocking)
+  // 7. Fire-and-forget triage (non-blocking, scoped by userId)
   (async () => {
     try {
       const raw = await callClaude({
@@ -166,7 +168,7 @@ processAudio.post("/process-audio", async (c) => {
           ...(result.tags ? { tags: result.tags } : {}),
           ...(result.therapyClassification ? { therapyClassification: result.therapyClassification } : {}),
         })
-        .where(eq(thoughtsTable.id, insertedRow.id));
+        .where(and(eq(thoughtsTable.id, insertedRow.id), eq(thoughtsTable.userId, userId)));
     } catch (err) {
       console.error("[vigil-core] /process-audio triage failed (non-fatal):", err);
     }

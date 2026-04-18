@@ -18,6 +18,7 @@ export const therapy = new Hono();
 therapy.get("/therapy/cache", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
+  const userId = c.get("userId");
   const type = c.req.query("type");
   if (type !== "patterns" && type !== "prep") {
     return c.json({ error: "type must be 'patterns' or 'prep'" }, 400);
@@ -26,7 +27,7 @@ therapy.get("/therapy/cache", async (c) => {
   const rows = await db
     .select()
     .from(aiCache)
-    .where(eq(aiCache.type, type))
+    .where(and(eq(aiCache.userId, userId), eq(aiCache.type, type)))
     .limit(1);
 
   if (rows.length === 0) {
@@ -131,16 +132,18 @@ therapy.post("/therapy/patterns", async (c) => {
 
   if (!db) return c.json({ error: "Database not available" }, 503);
 
+  const userId = c.get("userId");
   const tzRows = await db
     .select({ value: appSettings.value })
     .from(appSettings)
-    .where(eq(appSettings.key, "user_timezone"))
+    .where(and(eq(appSettings.userId, userId), eq(appSettings.key, "user_timezone")))
     .limit(1);
   const tz = tzRows.length > 0 ? (tzRows[0].value as string) : "America/New_York";
 
   const { start, end } = getRollingDayWindow(tz, 7);
 
   const conditions = [
+    eq(thoughtsTable.userId, userId),
     ne(thoughtsTable.syncStatus, "pendingDeletion"),
     gte(thoughtsTable.createdAt, start),
     lt(thoughtsTable.createdAt, end),
@@ -211,12 +214,12 @@ therapy.post("/therapy/patterns", async (c) => {
         confidence: p.confidence,
       }));
 
-    // Write to ai_cache (upsert: overwrite on regenerate)
+    // Write to ai_cache (upsert: overwrite on regenerate) — per-user (userId, type)
     await db
       .insert(aiCache)
-      .values({ type: "patterns", result: patterns, generatedAt: new Date(), updatedAt: new Date() })
+      .values({ userId, type: "patterns", result: patterns, generatedAt: new Date(), updatedAt: new Date() })
       .onConflictDoUpdate({
-        target: aiCache.type,
+        target: [aiCache.userId, aiCache.type],
         set: { result: patterns, generatedAt: new Date(), updatedAt: new Date() },
       });
 
@@ -251,16 +254,18 @@ therapy.post("/therapy/prep", async (c) => {
 
   if (!db) return c.json({ error: "Database not available" }, 503);
 
+  const userId = c.get("userId");
   const tzRows = await db
     .select({ value: appSettings.value })
     .from(appSettings)
-    .where(eq(appSettings.key, "user_timezone"))
+    .where(and(eq(appSettings.userId, userId), eq(appSettings.key, "user_timezone")))
     .limit(1);
   const tz = tzRows.length > 0 ? (tzRows[0].value as string) : "America/New_York";
 
   const { start, end } = getRollingDayWindow(tz, 7);
 
   const conditions = [
+    eq(thoughtsTable.userId, userId),
     ne(thoughtsTable.syncStatus, "pendingDeletion"),
     gte(thoughtsTable.createdAt, start),
     lt(thoughtsTable.createdAt, end),
@@ -321,12 +326,12 @@ therapy.post("/therapy/prep", async (c) => {
       suggestedFocus: parsed.suggested_focus,
     };
 
-    // Write to ai_cache (upsert: overwrite on regenerate)
+    // Write to ai_cache (upsert: overwrite on regenerate) — per-user (userId, type)
     await db
       .insert(aiCache)
-      .values({ type: "prep", result: prep, generatedAt: new Date(), updatedAt: new Date() })
+      .values({ userId, type: "prep", result: prep, generatedAt: new Date(), updatedAt: new Date() })
       .onConflictDoUpdate({
-        target: aiCache.type,
+        target: [aiCache.userId, aiCache.type],
         set: { result: prep, generatedAt: new Date(), updatedAt: new Date() },
       });
 

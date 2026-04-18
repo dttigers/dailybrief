@@ -1,12 +1,13 @@
 import { Hono } from "hono";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { db } from "../db/connection.js";
 import { chatSessions } from "../db/schema.js";
 
 export const chatSessionsRouter = new Hono();
 
-// GET /chat-sessions — List all sessions (newest first)
+// GET /chat-sessions — List all sessions (scoped by userId, newest first)
 chatSessionsRouter.get("/chat-sessions", async (c) => {
+  const userId = c.get("userId");
   const rows = await db!
     .select({
       id: chatSessions.id,
@@ -16,6 +17,7 @@ chatSessionsRouter.get("/chat-sessions", async (c) => {
       updatedAt: chatSessions.updatedAt,
     })
     .from(chatSessions)
+    .where(eq(chatSessions.userId, userId))
     .orderBy(desc(chatSessions.updatedAt))
     .limit(50);
 
@@ -30,8 +32,9 @@ chatSessionsRouter.get("/chat-sessions", async (c) => {
   });
 });
 
-// GET /chat-sessions/:id — Get a single session with full messages
+// GET /chat-sessions/:id — Get a single session with full messages (scoped)
 chatSessionsRouter.get("/chat-sessions/:id", async (c) => {
+  const userId = c.get("userId");
   const id = Number(c.req.param("id"));
   if (!Number.isInteger(id) || id <= 0) {
     return c.json({ error: "Invalid session ID" }, 400);
@@ -40,7 +43,7 @@ chatSessionsRouter.get("/chat-sessions/:id", async (c) => {
   const rows = await db!
     .select()
     .from(chatSessions)
-    .where(eq(chatSessions.id, id))
+    .where(and(eq(chatSessions.id, id), eq(chatSessions.userId, userId)))
     .limit(1);
 
   if (rows.length === 0) {
@@ -59,6 +62,7 @@ chatSessionsRouter.get("/chat-sessions/:id", async (c) => {
 
 // POST /chat-sessions — Create a new session
 chatSessionsRouter.post("/chat-sessions", async (c) => {
+  const userId = c.get("userId");
   let body: { title?: string; messages?: Array<{ role: "user" | "assistant"; content: string }> };
   try {
     body = await c.req.json();
@@ -69,6 +73,7 @@ chatSessionsRouter.post("/chat-sessions", async (c) => {
   const rows = await db!
     .insert(chatSessions)
     .values({
+      userId,
       title: body.title ?? "New Chat",
       messages: body.messages ?? [],
     })
@@ -87,8 +92,9 @@ chatSessionsRouter.post("/chat-sessions", async (c) => {
   );
 });
 
-// PUT /chat-sessions/:id — Update session (title, messages)
+// PUT /chat-sessions/:id — Update session (title, messages) (scoped)
 chatSessionsRouter.put("/chat-sessions/:id", async (c) => {
+  const userId = c.get("userId");
   const id = Number(c.req.param("id"));
   if (!Number.isInteger(id) || id <= 0) {
     return c.json({ error: "Invalid session ID" }, 400);
@@ -108,7 +114,7 @@ chatSessionsRouter.put("/chat-sessions/:id", async (c) => {
   const rows = await db!
     .update(chatSessions)
     .set(updates)
-    .where(eq(chatSessions.id, id))
+    .where(and(eq(chatSessions.id, id), eq(chatSessions.userId, userId)))
     .returning();
 
   if (rows.length === 0) {
@@ -125,8 +131,9 @@ chatSessionsRouter.put("/chat-sessions/:id", async (c) => {
   });
 });
 
-// DELETE /chat-sessions/:id — Delete a session
+// DELETE /chat-sessions/:id — Delete a session (scoped)
 chatSessionsRouter.delete("/chat-sessions/:id", async (c) => {
+  const userId = c.get("userId");
   const id = Number(c.req.param("id"));
   if (!Number.isInteger(id) || id <= 0) {
     return c.json({ error: "Invalid session ID" }, 400);
@@ -134,7 +141,7 @@ chatSessionsRouter.delete("/chat-sessions/:id", async (c) => {
 
   const rows = await db!
     .delete(chatSessions)
-    .where(eq(chatSessions.id, id))
+    .where(and(eq(chatSessions.id, id), eq(chatSessions.userId, userId)))
     .returning();
 
   if (rows.length === 0) {
