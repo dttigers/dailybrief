@@ -146,6 +146,13 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
     setIsSaving(true)
     try {
       await onUpdate(thought.id, { content: trimmed })
+    } catch (err) {
+      // WR-02: handleSave is invoked without await from synchronous handlers
+      // (onBlur, handleKeyDown). Swallowing + logging prevents unhandled
+      // rejection from escaping to window.onunhandledrejection while still
+      // surfacing the failure for debugging. The finally block below
+      // guarantees the edit session ends and the pause gate is released.
+      console.error('[ThoughtRow] save failed', err)
     } finally {
       setIsEditing(false)
       setIsSaving(false)
