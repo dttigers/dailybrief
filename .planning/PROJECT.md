@@ -121,13 +121,14 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Completed tasks hidden from all views — server-side excludeDone filter — v3.3
 - ✓ Mac CLI print reliability — lpr error handling, 404 fallback, reachability check — v3.3
 - ✓ Thought-contextual chat — chat button on every thought with auto-send — v3.3
+- ✓ Multi-user foundation — users table + userId FK on 11 scoped tables, argon2id password + HS256 JWT, bearerAuth three-path dispatcher (vk_ keys + JWT + legacy), POST /v1/auth/register|login with D-11 claim-flow, seed-user backfill preserving D-03 vk_-client backcompat — v3.4
 
 ### Active
 
 - [ ] Fix brief history retrieval (older briefs fail to load in PWA)
 - [ ] Right-click context menu on thought rows (Delete, Move, Edit, Re-triage, Add to Project)
 - [x] Pause auto-refresh while editing a thought — Validated in Phase 100: Edit-Refresh Pause
-- [ ] Multi-user foundation (separate accounts, separate data, auth system)
+- [x] Multi-user foundation (separate accounts, separate data, auth system) — Validated in Phase 102: Multi-User Foundation
 - [ ] Persistent Safari extension (survives restarts without re-enabling)
 
 ### Out of Scope
@@ -143,7 +144,7 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
-v3.4 in progress: Multi-User Foundation & PWA Polish — brief history fix, right-click context menu, edit-refresh pause, multi-user groundwork. Phase 99 (brief history) and Phase 100 (edit-refresh pause) complete.
+v3.4 in progress: Multi-User Foundation & PWA Polish — brief history fix, right-click context menu, edit-refresh pause, multi-user groundwork. Phase 99 (brief history), Phase 100 (edit-refresh pause), Phase 101 (context menu), Phase 102 (multi-user foundation) complete — multi-user auth live on https://api.vigilhub.io with seed-user claim-flow, HS256 JWTs, and D-03 no-regression preserved for existing vk_ clients.
 Shipped v3.3 Stability & Chat Context (2026-04-17) — PWA chat 400 fix, server-side excludeDone filter, Mac CLI print hardening, thought-contextual chat. 3 phases, 5 plans, 12 files changed (+195/-41 LOC).
 Shipped v3.2 Freshness & Capture Parity (2026-04-16) — Wed-anchored weekly rollover, 7-day analysis scope, server-side AI cache with Regenerate, task status filter, work order auto-archive, brief PDF restructure, browser extension quick-capture. 8 phases, 14 plans.
 Shipped v3.1 Gmail + Thin Clients (2026-04-15) — Gmail OAuth, PWA brand theme, Settings UI, CLI restructure, menu bar redesign, browser extension, split brief schedule, app icons.
@@ -224,4 +225,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-18 after Phase 101 (context menu) completion — CTX-01..CTX-07 validated, D-19 edit interlock preserved, iOS UAT approved*
+*Last updated: 2026-04-18 after Phase 102 (multi-user foundation) completion — AUTH-01..05 validated, D-03 vk_-client backcompat preserved, live Railway deploy verified via 5/5 go/no-go curls*
