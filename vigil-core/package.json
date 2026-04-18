@@ -16,6 +16,7 @@
     "db:migrate-102-prod": "node dist/scripts/migrate-102-seed.js && node dist/db/migrate.js",
     "db:generate-key": "tsx scripts/generate-key.ts",
     "db:migrate-sqlite": "tsx scripts/migrate-sqlite.ts",
+    "set-password": "tsx scripts/set-password.ts",
     "smoke-test": "tsx scripts/smoke-test.ts"
   },
   "dependencies": {
