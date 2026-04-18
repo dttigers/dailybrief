@@ -303,7 +303,14 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   2. A POST /v1/auth/login call returns a valid JWT token that can be used to authenticate subsequent requests
   3. All existing thoughts, briefs, work orders, and projects belong to the seed user and are returned normally for requests authenticated as that user
   4. A request authenticated as a different user returns only that user's data — never another user's
-**Plans**: TBD
+**Plans**: 6 plans
+- [x] 102-00-PLAN.md — Wave 0 test scaffolds (password/jwt/middleware/auth-routes/migration/cross-user-isolation — 6 files, ~45 failing cases)
+- [ ] 102-01-PLAN.md — Drizzle schema + 0012 migration (users table, 11 userId FKs, backfill, app_settings composite PK, seed-user helper)
+- [ ] 102-02-PLAN.md — @node-rs/argon2 install + docker-build verification + utils/password + utils/jwt + JWT_SECRET boot-check + set-password CLI
+- [ ] 102-03-PLAN.md — Extend bearerAuth with JWT path + userId injection + POST /v1/auth/register|login + CORS-safe mounting + generate-key.ts requires --email
+- [ ] 102-04-PLAN.md — Route scoping audit (20 routes + 4 services) + Google OAuth state-JWT userId injection + schedulers hard-scope to seed user (Open Q3/Q4 resolved)
+- [ ] 102-05-PLAN.md — Runbook + Dockerfile CMD chain + full-suite pre-deploy gate + Railway deploy + go/no-go curl (human-action checkpoint)
+**UI hint**: no (pure server-side — no PWA changes in this phase)
 
 ## Progress
 
@@ -412,7 +419,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 | 99. Brief History Fix | v3.4 | 3/3 | Complete    | 2026-04-18 |
 | 100. Edit-Refresh Pause | v3.4 | 1/1 | Complete    | 2026-04-18 |
 | 101. Context Menu | v3.4 | 5/5 | Complete    | 2026-04-18 |
-| 102. Multi-User Foundation | v3.4 | 0/TBD | Not started | - |
+| 102. Multi-User Foundation | v3.4 | 1/6 | In Progress|  |
 
 ## Backlog
 
