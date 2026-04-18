@@ -126,4 +126,35 @@ describe('ThoughtRow — edit lifecycle events', () => {
     unmount()
     expect(endSpy).not.toHaveBeenCalled()
   })
+
+  it('dispatches vigil:edit-ended even when onUpdate rejects', async () => {
+    // WR-03: Pins D-11's "fire even if onUpdate threw" invariant — a
+    // regression that moves the dispatch out of `finally` would slip past
+    // every other test. Silence the expected console.error from WR-02's
+    // catch so the suite stays quiet.
+    const consoleErrorSpy = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {})
+
+    try {
+      const onUpdate = vi.fn().mockRejectedValue(new Error('network'))
+      const { getByText, getByRole } = render(
+        <ThoughtRow thought={baseThought} onUpdate={onUpdate} />,
+      )
+      fireEvent.click(getByText('hello'))
+      startSpy.mockClear()
+      endSpy.mockClear()
+
+      const textarea = getByRole('textbox') as HTMLTextAreaElement
+      fireEvent.change(textarea, { target: { value: 'newvalue' } })
+      fireEvent.keyDown(textarea, { key: 'Enter', metaKey: true })
+
+      await waitFor(() => expect(endSpy).toHaveBeenCalledTimes(1))
+      const ev = endSpy.mock.calls[0][0] as CustomEvent<{ id: number }>
+      expect(ev.detail).toEqual({ id: 42 })
+      expect(onUpdate).toHaveBeenCalledWith(42, { content: 'newvalue' })
+    } finally {
+      consoleErrorSpy.mockRestore()
+    }
+  })
 })
