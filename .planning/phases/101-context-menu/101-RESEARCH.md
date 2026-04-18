@@ -865,27 +865,27 @@ it('Escape closes the menu', () => {
 | A3 | `window.matchMedia('(pointer: coarse)')` reliably detects touch devices | Pattern 6 | On hybrid devices (laptops with touchscreens), this returns `true` even though the user may be using mouse. Safer alternative: dispatch based on which trigger opened the menu (`contextmenu` event → desktop layout, long-press handler → mobile layout). **Recommendation: derive from trigger source, not media query** — the trigger already knows the input modality. |
 | A4 | Tailwind v4 supports `[-webkit-touch-callout:none]` arbitrary-property syntax | Pitfall 1 | Tailwind v4 docs confirm arbitrary variants and arbitrary property values work. If syntax differs, fall back to a one-line CSS rule in `index.css` (`.no-callout { -webkit-touch-callout: none }`). Low risk. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Desktop vs touch detection — media query or trigger source?**
    - What we know: `(pointer: coarse)` media query works but has edge cases on hybrid devices.
    - What's unclear: If a user right-clicks with a trackpad on an iPad (external mouse connected), should they get the desktop-submenu-on-hover layout or the mobile in-place-replace layout? D-11 says desktop = hover-submenu, D-12 says mobile = in-place. Ambiguous for hybrid devices.
-   - Recommendation: **Derive from trigger source.** If opened via `contextmenu` event → desktop layout; if opened via long-press → mobile layout. Pass a flag into `<ContextMenu>` at open time. This sidesteps the hybrid-device ambiguity entirely.
+   - **RESOLVED:** Recommendation: **Derive from trigger source.** If opened via `contextmenu` event → desktop layout; if opened via long-press → mobile layout. Pass a flag into `<ContextMenu>` at open time. This sidesteps the hybrid-device ambiguity entirely.
 
 2. **Category list source — hardcode vs derive from existing thoughts?**
    - What we know: `BulkActionBar.tsx:3` hardcodes `['task', 'therapy', 'idea', 'reflection', 'project']`. The backend validates against the same list via `VALID_CATEGORIES` in `vigil-core/src/routes/thoughts.ts`. UI-SPEC §Submenu empty states locks "5 hardcoded categories".
    - What's unclear: Whether to extract to a shared `src/constants/categories.ts` (so both `BulkActionBar` and `ContextMenu` import from one source) or duplicate.
-   - Recommendation: **Extract to `src/constants/categories.ts`** as part of Phase 101 (one-liner file; eliminates future drift). Not strictly required; planner's call. D-13 says "planner's call" explicitly.
+   - **RESOLVED:** Recommendation: **Extract to `src/constants/categories.ts`** as part of Phase 101 (one-liner file; eliminates future drift). Not strictly required; planner's call. D-13 says "planner's call" explicitly.
 
 3. **Should the 5-second undo toast pause the 30s poll?**
    - What we know: During the 5s undo window, the row is hidden locally but still on the server. If the poll fires `setThoughts(res.data)`, the deleted-pending-commit row would be in the response.
    - What's unclear: Does the filter-on-render approach (Pattern 5) handle this, or do we need to pause the poll?
-   - Recommendation: **Filter-on-render is sufficient** — the `hiddenPendingDelete` Set persists across poll-driven state replaces. No need to pause. Lower complexity, no event bus abuse.
+   - **RESOLVED:** Recommendation: **Filter-on-render is sufficient** — the `hiddenPendingDelete` Set persists across poll-driven state replaces. No need to pause. Lower complexity, no event bus abuse.
 
 4. **Single-open-menu invariant — lift state or event bus?**
    - What we know: Two menus open simultaneously is a valid bug vector (Pitfall 8).
    - What's unclear: Lift `openMenuForId` to `ThoughtList` OR use a `vigil:context-menu-opened` window event.
-   - Recommendation: **Lift state.** Simpler, type-safe, no cross-cutting concerns. Four-line change in `ThoughtList.tsx`.
+   - **RESOLVED:** Recommendation: **Lift state.** Simpler, type-safe, no cross-cutting concerns. Four-line change in `ThoughtList.tsx`.
 
 ## Environment Availability
 
