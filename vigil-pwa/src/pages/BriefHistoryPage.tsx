@@ -130,28 +130,16 @@ export default function BriefHistoryPage() {
     setRegenerating(true)
     setDetailError(null)
     try {
-      const blob = await generateBrief()
-      // Revoke any stale detail blob URL.
-      if (detailBlobUrlRef.current) {
-        URL.revokeObjectURL(detailBlobUrlRef.current)
-        detailBlobUrlRef.current = null
-      }
-      // POST /brief/generate always generates TODAY's brief. Navigate back to the
-      // list so the user sees today's freshly-generated brief in its correct slot,
-      // and so useBriefs re-fetches on next mount. Revoke any stale blob URL for today.
-      if (todayBlobUrl) URL.revokeObjectURL(todayBlobUrl)
-      const url = URL.createObjectURL(blob)
-      setTodayBlobUrl(url)
-      setGenerateState('done')
-      setSelectedDate(null)
-      setDetailBlobUrl(null)
-      setDetailErrorCode(null)
-      // Trigger history re-fetch by reloading the page in-place — useBriefs
-      // only fetches on mount. Simplest safe reload: window.location.reload().
+      // WR-02: POST /brief/generate always generates TODAY's brief. We intentionally
+      // reload the page to force useBriefs to re-fetch on mount — any local state
+      // updates on the success path would be discarded by the reload, so we skip
+      // them. The returned blob is discarded too; the reload-triggered effect will
+      // re-fetch today's PDF fresh. Browser GC handles the transient blob on nav.
+      await generateBrief()
       window.location.reload()
+      // Nothing after reload() runs on the success path.
     } catch (e: unknown) {
       setDetailError(e instanceof Error ? e.message : 'Regenerate failed. Try again.')
-    } finally {
       setRegenerating(false)
     }
   }
