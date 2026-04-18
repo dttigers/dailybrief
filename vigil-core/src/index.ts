@@ -50,6 +50,13 @@ for (const key of ["GOOGLE_OAUTH_STATE_SECRET", "GOOGLE_TOKEN_ENCRYPTION_KEY"]) 
   }
 }
 
+// JWT_SECRET: D-18/D-19. utils/jwt.ts exits on its own at import time if missing — this
+// pre-check ensures the FATAL line is visible in startup logs before the first import-time exit.
+if (!process.env["JWT_SECRET"] || (process.env["JWT_SECRET"] as string).length < 32) {
+  console.error("FATAL: JWT_SECRET must be set and at least 32 characters");
+  process.exit(1);
+}
+
 const app = new Hono();
 
 // CORS middleware — must run before auth so preflight OPTIONS requests are not rejected
