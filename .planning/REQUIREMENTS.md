@@ -19,7 +19,7 @@ Requirements for Multi-User Foundation & PWA Polish. Each maps to roadmap phases
 
 - [ ] **CTX-01**: User can right-click a thought row to open a context menu (desktop)
 - [ ] **CTX-02**: User can long-press a thought row to open a context menu (iOS/mobile)
-- [ ] **CTX-03**: User can delete a thought from the context menu
+- [x] **CTX-03**: User can delete a thought from the context menu
 - [ ] **CTX-04**: User can move a thought to a different category from the context menu
 - [ ] **CTX-05**: User can enter edit mode from the context menu
 - [ ] **CTX-06**: User can re-triage a thought from the context menu
@@ -67,7 +67,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EDIT-01 | Phase 100 | Complete |
 | CTX-01 | Phase 101 | Pending |
 | CTX-02 | Phase 101 | Pending |
-| CTX-03 | Phase 101 | Pending |
+| CTX-03 | Phase 101 | Complete |
 | CTX-04 | Phase 101 | Pending |
 | CTX-05 | Phase 101 | Pending |
 | CTX-06 | Phase 101 | Pending |

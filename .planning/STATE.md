@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Multi-User Foundation & PWA Polish
 status: executing
-stopped_at: Completed 101-00-PLAN.md (Wave 0 test scaffolds)
-last_updated: "2026-04-18T17:17:34.503Z"
+stopped_at: Completed 101-01-PLAN.md (toast infra + CATEGORIES extract, Wave 1)
+last_updated: "2026-04-18T17:23:02.362Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 9
-  completed_plans: 5
-  percent: 56
+  completed_plans: 6
+  percent: 67
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 ## Current Position
 
 Phase: 101 (context-menu) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-04-18
 
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 99-brief-history-fix P02 | 5 minutes | 3 tasks | 6 files |
 | Phase 100 P01 | 5 min | 3 tasks | 4 files |
 | Phase 101 P00 | 6 min | 3 tasks | 4 files |
+| Phase 101 P01 | 2min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,8 @@ v3.3 decisions archived to milestones/v3.3-ROADMAP.md.
 - [Phase 100]: D-12 unmount guard pattern: isEditingRef + []-deps cleanup (not [isEditing, thought.id] deps) to avoid re-firing end on every isEditing transition
 - [Phase 101]: Wave 0 test scaffolds: fail-by-default via real imports (not stubs) so module-resolution failure IS the RED signal. 70 test cases across 4 files pin D-01..D-21 + CTX-01..CTX-07. D-19 interlock trap-test spies vigil:edit-started around menu Edit click to catch the shortcut of setIsEditing=true inline.
 - [Phase 101]: Pointer Events (pointerType:'touch', clientX/Y) in long-press tests — matches production useLongPress hook path 1:1, avoids Pitfall 4 (fireEvent.touchStart missing clientX/Y).
+- [Phase 101]: useToast hook + ToastHost: single-slot toast via React context + useRef timer/onExpire (no module-level singleton); showToast replacement fires previous onExpire synchronously before setState (D-16); manual dismiss() does NOT fire onExpire (only timer does)
+- [Phase 101]: CATEGORIES canonical constant at vigil-pwa/src/constants/categories.ts — doc comment points at vigil-core VALID_CATEGORIES for drift detection (T-101-01-04); BulkActionBar imports from constants instead of declaring inline; Plan 02 Move-to-category submenu will consume the same tuple
 
 ### Pending Todos
 
@@ -91,7 +94,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-18T17:17:23.971Z
-Stopped at: Completed 101-00-PLAN.md (Wave 0 test scaffolds)
+Last session: 2026-04-18T17:23:02.357Z
+Stopped at: Completed 101-01-PLAN.md (toast infra + CATEGORIES extract, Wave 1)
 Resume file: None
 Next action: `/gsd-plan-phase 99`
