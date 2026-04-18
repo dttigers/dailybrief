@@ -90,21 +90,25 @@ app.use("*", rateLimiter);
 // Health route — no auth required (monitoring)
 app.route("/v1", health);
 
-// Google OAuth routes — no auth required (browser redirect flow)
-app.route("/v1", googleAuth);
-
 // Auth routes (register/login) — mount BEFORE bearer middleware; public endpoints
 // exempted via path check below (Pitfall 8 — CORS preflight would otherwise fail).
 app.route("/v1", authRoutes);
 
-// Auth middleware — all /v1/* routes except /v1/health require a valid API key
+// Auth middleware — all /v1/* routes except /v1/health, register, login, and
+// the Google OAuth callback require a valid API key.
+// Phase 102 RESEARCH Open Q3 (path a): /v1/auth/google/callback stays public
+// (Google redirects to it; no bearer available), but /v1/auth/google initiation
+// now requires bearer so the state JWT can carry the authenticated userId.
 app.use("/v1/*", async (c, next) => {
   if (c.req.path === "/v1/health") return next();
-  if (c.req.path.startsWith("/v1/auth/google")) return next();
+  if (c.req.path === "/v1/auth/google/callback") return next(); // callback only
   if (c.req.path === "/v1/auth/register") return next(); // Pitfall 8 — CORS preflight
   if (c.req.path === "/v1/auth/login") return next();
   return bearerAuth(c, next);
 });
+
+// Google OAuth routes — initiation behind bearer, callback exempted above.
+app.route("/v1", googleAuth);
 
 // Protected routes
 app.route("/v1", summary);
@@ -153,7 +157,7 @@ const assembler = createBriefAssemblyService({
 });
 const generateScheduler = createGenerateScheduler({
   db: mainDb,
-  assemble: (dateStr) => assembler.assembleAndRender(dateStr),
+  assemble: (dateStr, userId) => assembler.assembleAndRender(dateStr, userId),
   logFn: (level, msg, meta) => {
     const line = `[generate-scheduler] ${msg}`;
     if (level === "error") console.error(line, meta ?? "");

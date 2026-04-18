@@ -3,9 +3,15 @@
 // Follows calendar-service token pattern and generate-scheduler periodic pattern.
 
 import { db } from "../db/connection.js";
-import { oauthTokens, workOrders as workOrdersTable } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { oauthTokens, workOrders as workOrdersTable, users } from "../db/schema.js";
+import { eq, and } from "drizzle-orm";
 import { decryptToken } from "../utils/token-crypto.js";
+
+// TODO(AUTH-06+): Per-user scheduler fan-out. For Phase 102 the Gmail
+// work-order importer is hard-scoped to the seed user (VIGIL_SEED_USER_EMAIL).
+// Future phase: iterate over every user with an oauthTokens row for provider
+// "google" and dispatch a separate import tick per user. Captured in
+// RESEARCH Open Q4.
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,13 +53,14 @@ export interface GmailWorkOrderDeps {
 
 // ── Token management (mirrors calendar-service pattern) ──────────────────────
 
-async function getValidAccessToken(): Promise<string> {
+async function getValidAccessToken(userId: number): Promise<string> {
   if (!db) throw new Error("Database not available");
 
+  // Phase 102: oauth_tokens is per-user via composite (userId, provider).
   const rows = await db
     .select()
     .from(oauthTokens)
-    .where(eq(oauthTokens.provider, "google"))
+    .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.provider, "google")))
     .limit(1);
 
   if (rows.length === 0) throw new Error("No Google OAuth token found");
@@ -88,7 +95,7 @@ async function getValidAccessToken(): Promise<string> {
     await db
       .update(oauthTokens)
       .set({ accessToken, expiresAt: newExpiry ?? undefined, updatedAt: new Date() })
-      .where(eq(oauthTokens.provider, "google"));
+      .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.provider, "google")));
   }
 
   return accessToken;
@@ -207,13 +214,35 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
   // Track processed message IDs in memory (survives across ticks, reset on restart)
   const processedIds = new Set<string>();
 
+  // Phase 102 RESEARCH Open Q4: hard-scope to seed user at first import.
+  let resolvedSeedUserId: number | null = null;
+  async function getSeedUserId(): Promise<number | null> {
+    if (resolvedSeedUserId !== null) return resolvedSeedUserId;
+    if (!db) return null;
+    const seedEmail = (process.env["VIGIL_SEED_USER_EMAIL"] ?? "jamesonmorrill1@gmail.com").toLowerCase();
+    const rows = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, seedEmail))
+      .limit(1);
+    if (rows.length === 0) return null;
+    resolvedSeedUserId = rows[0].id;
+    return resolvedSeedUserId;
+  }
+
   async function importWorkOrders(): Promise<number> {
     if (!db) {
       log("warn", "Database not available — skipping import");
       return 0;
     }
 
-    const token = await getValidAccessToken();
+    const seedUserId = await getSeedUserId();
+    if (seedUserId === null) {
+      log("warn", "Seed user not found — skipping import");
+      return 0;
+    }
+
+    const token = await getValidAccessToken(seedUserId);
 
     // Search for work order emails — matches both direct and forwarded copies
     // "Case CS" in subject catches originals and "Fwd: Case CS..." forwards
@@ -253,15 +282,15 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
       return 0;
     }
 
-    // Upsert to database with change detection
+    // Upsert to database with change detection (scoped by seedUserId)
     let synced = 0;
     for (const wo of workOrders) {
       try {
-        // Check for existing row to detect changes
+        // Check for existing row to detect changes (scoped)
         const existing = await db
           .select()
           .from(workOrdersTable)
-          .where(eq(workOrdersTable.caseNumber, wo.caseNumber))
+          .where(and(eq(workOrdersTable.userId, seedUserId), eq(workOrdersTable.caseNumber, wo.caseNumber)))
           .limit(1);
 
         let lastChangeSummary: string | null = null;
@@ -286,6 +315,7 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
         await db
           .insert(workOrdersTable)
           .values({
+            userId: seedUserId,
             caseNumber: wo.caseNumber,
             store: wo.store,
             shortDescription: wo.shortDescription,

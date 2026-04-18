@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db/connection.js";
 import { oauthTokens } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 const CALENDAR_SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
 const GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
@@ -25,6 +25,7 @@ export function createGoogleStatusRouter(deps?: GoogleStatusDeps): Hono {
 
   router.get("/google/status", async (c) => {
     try {
+      const userId = c.get("userId");
       let rows: Array<{ scopes: string[] | null; accountEmail?: string | null }>;
 
       if (deps?.dbSelectFn) {
@@ -33,10 +34,11 @@ export function createGoogleStatusRouter(deps?: GoogleStatusDeps): Hono {
         if (!db) {
           return c.json({ error: "database_unavailable" }, 503);
         }
+        // Phase 102: oauth_tokens scoped by (userId, provider) via uq_oauth_tokens_user_provider.
         rows = await db
           .select({ scopes: oauthTokens.scopes, accountEmail: oauthTokens.accountEmail })
           .from(oauthTokens)
-          .where(eq(oauthTokens.provider, "google"))
+          .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.provider, "google")))
           .limit(1);
       }
 
@@ -80,16 +82,17 @@ export function createGoogleStatusRouter(deps?: GoogleStatusDeps): Hono {
     }
   });
 
-  // ── DELETE /google/tokens — disconnect Google account ─────────────────────
+  // ── DELETE /google/tokens — disconnect Google account (scoped by userId) ──
   router.delete("/google/tokens", async (c) => {
     try {
+      const userId = c.get("userId");
       if (deps?.dbDeleteFn) {
         await deps.dbDeleteFn();
       } else {
         if (!db) {
           return c.json({ error: "database_unavailable" }, 503);
         }
-        await db.delete(oauthTokens).where(eq(oauthTokens.provider, "google"));
+        await db.delete(oauthTokens).where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.provider, "google")));
       }
       return c.json({ ok: true }, 200);
     } catch (err) {

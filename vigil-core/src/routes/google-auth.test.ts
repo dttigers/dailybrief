@@ -34,22 +34,29 @@ const GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
 
 /** Build an app with DI mocks for testing. */
 function buildApp(overrides: {
-  signStateFn?: (nonce: string) => Promise<string>;
-  verifyStateFn?: (token: string) => Promise<boolean>;
-  dbUpsertCapture?: Array<{ provider: string; scopes: string[]; accountEmail: string | null }>;
+  signStateFn?: (nonce: string, userId: number) => Promise<string>;
+  verifyStateFn?: (token: string) => Promise<{ valid: true; userId: number } | { valid: false }>;
+  dbUpsertCapture?: Array<{ userId: number; provider: string; scopes: string[]; accountEmail: string | null }>;
 } = {}) {
-  const dbCalls: Array<{ provider: string; scopes: string[]; accountEmail: string | null }> = overrides.dbUpsertCapture ?? [];
+  const dbCalls: Array<{ userId: number; provider: string; scopes: string[]; accountEmail: string | null }> = overrides.dbUpsertCapture ?? [];
 
   const router = createGoogleAuthRouter({
+    // Phase 102: signStateFn now takes (nonce, userId); verifyStateFn returns userId.
     signStateFn: overrides.signStateFn ?? (async () => "test-jwt"),
-    verifyStateFn: overrides.verifyStateFn ?? (async () => true),
+    verifyStateFn: overrides.verifyStateFn ?? (async () => ({ valid: true, userId: 42 })),
     getTokenFn: async () => ({ tokens: MOCK_TOKENS }),
-    dbUpsertFn: async (provider, _enc, _access, _expires, scopes, accountEmail) => {
-      dbCalls.push({ provider, scopes, accountEmail });
+    dbUpsertFn: async (userId, provider, _enc, _access, _expires, scopes, accountEmail) => {
+      dbCalls.push({ userId, provider, scopes, accountEmail });
     },
   });
 
   const app = new Hono();
+  // Phase 102: /auth/google initiation requires c.get("userId") — mount a tiny
+  // middleware that sets it so tests exercise the route without the bearer stack.
+  app.use("*", async (c, next) => {
+    c.set("userId", 42);
+    await next();
+  });
   app.route("/", router);
 
   return { app, dbCalls };
@@ -81,7 +88,7 @@ test("GA-02-prompt-consent: GET /auth/google returns 302 with prompt=consent and
 });
 
 test("GA-03-callback-success: GET /auth/google/callback with valid JWT state and code redirects to PWA with google_connected=true", async () => {
-  const { app, dbCalls } = buildApp({ verifyStateFn: async () => true });
+  const { app, dbCalls } = buildApp({ verifyStateFn: async () => ({ valid: true, userId: 42 }) });
 
   const res = await app.request("/auth/google/callback?code=test_code&state=test-jwt");
 
@@ -97,8 +104,8 @@ test("GA-03-callback-success: GET /auth/google/callback with valid JWT state and
 });
 
 test("GA-04-scopes-stored: GET /auth/google/callback calls dbUpsertFn with scopes array containing both scopes", async () => {
-  const dbCalls: Array<{ provider: string; scopes: string[]; accountEmail: string | null }> = [];
-  const { app } = buildApp({ dbUpsertCapture: dbCalls, verifyStateFn: async () => true });
+  const dbCalls: Array<{ userId: number; provider: string; scopes: string[]; accountEmail: string | null }> = [];
+  const { app } = buildApp({ dbUpsertCapture: dbCalls, verifyStateFn: async () => ({ valid: true, userId: 42 }) });
 
   await app.request("/auth/google/callback?code=test_code&state=test-jwt");
 
@@ -132,7 +139,7 @@ test("GA-06-no-code: GET /auth/google/callback with no code redirects with googl
 });
 
 test("GA-07-invalid-state: GET /auth/google/callback with expired/invalid JWT state redirects with google_error=invalid_state (OAUTH-04)", async () => {
-  const { app } = buildApp({ verifyStateFn: async () => false });
+  const { app } = buildApp({ verifyStateFn: async () => ({ valid: false }) });
 
   const res = await app.request("/auth/google/callback?code=some_code&state=expired-jwt");
 
@@ -155,8 +162,8 @@ test("GA-08-missing-state: GET /auth/google/callback with missing state redirect
 });
 
 test("GA-09-account-email-stored: callback decodes id_token and passes accountEmail to dbUpsertFn", async () => {
-  const dbCalls: Array<{ provider: string; scopes: string[]; accountEmail: string | null }> = [];
-  const { app } = buildApp({ dbUpsertCapture: dbCalls, verifyStateFn: async () => true });
+  const dbCalls: Array<{ userId: number; provider: string; scopes: string[]; accountEmail: string | null }> = [];
+  const { app } = buildApp({ dbUpsertCapture: dbCalls, verifyStateFn: async () => ({ valid: true, userId: 42 }) });
 
   await app.request("/auth/google/callback?code=test_code&state=test-jwt");
 

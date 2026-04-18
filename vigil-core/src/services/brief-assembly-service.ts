@@ -196,12 +196,12 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
 
   // ── DB query helpers ────────────────────────────────────────────────────
 
-  async function fetchTaskThoughts(db: any, start: Date, end: Date): Promise<BriefThought[]> {
+  async function fetchTaskThoughts(db: any, start: Date, end: Date, userId: number): Promise<BriefThought[]> {
     try {
       const rows = await db
         .select()
         .from(getThoughtsTable())
-        .where(and(taskThoughtsFilter(), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
+        .where(and(drizzleEq(thoughtsTable.userId, userId), taskThoughtsFilter(), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
         .orderBy(thoughtsOrderDesc())
         .limit(8);
       return mapThoughts(rows);
@@ -210,12 +210,12 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     }
   }
 
-  async function fetchRecentThoughts(db: any, start: Date, end: Date): Promise<BriefThought[]> {
+  async function fetchRecentThoughts(db: any, start: Date, end: Date, userId: number): Promise<BriefThought[]> {
     try {
       const rows = await db
         .select()
         .from(getThoughtsTable())
-        .where(and(gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
+        .where(and(drizzleEq(thoughtsTable.userId, userId), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
         .orderBy(thoughtsOrderDesc())
         .limit(20);
       return mapThoughts(rows);
@@ -224,12 +224,12 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     }
   }
 
-  async function fetchUnprocessedThoughts(db: any, start: Date, end: Date): Promise<BriefThought[]> {
+  async function fetchUnprocessedThoughts(db: any, start: Date, end: Date, userId: number): Promise<BriefThought[]> {
     try {
       const rows = await db
         .select()
         .from(getThoughtsTable())
-        .where(and(unprocessedFilter(), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
+        .where(and(drizzleEq(thoughtsTable.userId, userId), unprocessedFilter(), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
         .orderBy(thoughtsOrderDesc())
         .limit(20);
       return mapThoughts(rows);
@@ -238,14 +238,14 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     }
   }
 
-  async function fetchWorkOrdersWithStatus(db: any): Promise<{ workOrders: BriefWorkOrder[]; rawRows: any[] }> {
+  async function fetchWorkOrdersWithStatus(db: any, userId: number): Promise<{ workOrders: BriefWorkOrder[]; rawRows: any[] }> {
     // Check for test overrides first
     if (deps._workOrderRows) {
       const mapped = mapWorkOrders(deps._workOrderRows, deps._workOrderStatusRows ?? []);
       return { workOrders: mapped, rawRows: deps._workOrderRows };
     }
     try {
-      const woRows = await db.select().from(getWorkOrdersTable()).limit(100);
+      const woRows = await db.select().from(getWorkOrdersTable()).where(drizzleEq(workOrdersTable.userId, userId)).limit(100);
       const statusRows = await db.select().from(getWorkOrderStatusesTable()).limit(100);
       const mapped = mapWorkOrders(woRows, statusRows);
       return { workOrders: mapped, rawRows: woRows };
@@ -392,12 +392,13 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
 
   // ── Timezone helper ────────────────────────────────────────────────────
 
-  async function getUserTimezone(db: any): Promise<string> {
+  async function getUserTimezone(db: any, userId: number): Promise<string> {
     try {
+      // Phase 102: appSettings has composite PK (userId, key).
       const rows = await db
         .select({ value: appSettings.value })
         .from(appSettings)
-        .where(drizzleEq(appSettings.key, "user_timezone"))
+        .where(and(drizzleEq(appSettings.userId, userId), drizzleEq(appSettings.key, "user_timezone")))
         .limit(1);
       return rows.length > 0 ? (rows[0].value as string) : "America/New_York";
     } catch {
@@ -416,7 +417,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
 
   // ── Main orchestration ─────────────────────────────────────────────────
 
-  async function assembleAndRender(dateStr: string): Promise<{
+  async function assembleAndRender(dateStr: string, userId: number): Promise<{
     buffer: Buffer;
     metadata: { thoughtCount: number; taskCount: number; dateStr: string };
   }> {
@@ -424,10 +425,11 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     const db = deps.dbClient;
 
     // 0. Compute Wed-anchored week window for thought queries
-    const tz = db ? await getUserTimezone(db) : "America/New_York";
+    const tz = db ? await getUserTimezone(db, userId) : "America/New_York";
     const { start: weekStart, end: weekEnd } = getCurrentWeekWindow(tz);
 
     // 1. Fetch all sources concurrently via Promise.allSettled with per-source timeouts (T-76-02)
+    //    Phase 102: all DB queries scoped by userId (per-user brief).
     const [sportsR, calendarR, thoughtsR, workOrdersR, affirmationR] = await Promise.allSettled([
       deps.sportsService
         ? withTimeout(deps.sportsService.fetchAllLeagues(), SOURCE_TIMEOUT_MS)
@@ -439,9 +441,9 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
         ? withTimeout(
             (async () => {
               const [task, recent, unprocessed] = await Promise.all([
-                fetchTaskThoughts(db, weekStart, weekEnd),
-                fetchRecentThoughts(db, weekStart, weekEnd),
-                fetchUnprocessedThoughts(db, weekStart, weekEnd),
+                fetchTaskThoughts(db, weekStart, weekEnd, userId),
+                fetchRecentThoughts(db, weekStart, weekEnd, userId),
+                fetchUnprocessedThoughts(db, weekStart, weekEnd, userId),
               ]);
               return { taskThoughts: task, recentThoughts: recent, unprocessedThoughts: unprocessed };
             })(),
@@ -449,7 +451,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
           )
         : Promise.resolve({ taskThoughts: [] as BriefThought[], recentThoughts: [] as BriefThought[], unprocessedThoughts: [] as BriefThought[] }),
       db
-        ? withTimeout(fetchWorkOrdersWithStatus(db), SOURCE_TIMEOUT_MS)
+        ? withTimeout(fetchWorkOrdersWithStatus(db, userId), SOURCE_TIMEOUT_MS)
         : Promise.resolve({ workOrders: [] as BriefWorkOrder[], rawRows: [] }),
       // Affirmation needs recent thoughts — we'll fetch it after thoughts settle
       Promise.resolve(null), // placeholder — will fetch affirmation after

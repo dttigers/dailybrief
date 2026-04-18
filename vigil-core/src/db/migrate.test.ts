@@ -189,7 +189,7 @@ describe("migration 0012 — multi-user foundation (AUTH-01, AUTH-04)", () => {
       "app_settings",
     ];
     for (const t of tables) {
-      const rows = await db.execute(sql`
+      const rows: unknown = await db.execute(sql`
         SELECT indexname FROM pg_indexes
         WHERE tablename = ${t} AND indexname = ${`idx_${t}_user_id`}
       `);

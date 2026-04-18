@@ -5,6 +5,7 @@ import { SignJWT, jwtVerify } from "jose";
 import { encryptToken } from "../utils/token-crypto.js";
 import { db } from "../db/connection.js";
 import { oauthTokens } from "../db/schema.js";
+import { eq, and } from "drizzle-orm";
 
 // ── Scope constants ────────────────────────────────────────────────────────────
 
@@ -17,6 +18,7 @@ const REQUESTED_SCOPES = ["openid", "email", CALENDAR_SCOPE, GMAIL_SCOPE];
 export interface GoogleAuthDeps {
   getTokenFn?: (client: OAuth2Client, code: string) => Promise<{ tokens: Tokens }>;
   dbUpsertFn?: (
+    userId: number,
     provider: string,
     encryptedRefreshToken: string,
     accessToken: string,
@@ -24,8 +26,11 @@ export interface GoogleAuthDeps {
     scopes: string[],
     accountEmail: string | null
   ) => Promise<void>;
-  signStateFn?: (nonce: string) => Promise<string>;
-  verifyStateFn?: (token: string) => Promise<boolean>;
+  // Phase 102 RESEARCH Open Q3: state JWT carries {nonce, userId}; initiation
+  // route requires bearer (mounted behind auth in src/index.ts); callback
+  // stays public and extracts userId from verified state.
+  signStateFn?: (nonce: string, userId: number) => Promise<string>;
+  verifyStateFn?: (token: string) => Promise<{ valid: true; userId: number } | { valid: false }>;
 }
 
 interface Tokens {
@@ -41,22 +46,26 @@ interface Tokens {
 export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
   const router = new Hono();
 
-  // ── GET /auth/google — initiate OAuth consent flow ────────────────────────
+  // ── GET /auth/google — initiate OAuth consent flow (bearer-required) ──────
+  // Phase 102 RESEARCH Open Q3: state JWT now carries {nonce, userId}. Route
+  // is mounted behind bearerAuth in src/index.ts so c.get("userId") is set.
   router.get("/auth/google", async (c) => {
+    const userId = c.get("userId");
     const clientId = process.env["GOOGLE_CLIENT_ID"];
     const clientSecret = process.env["GOOGLE_CLIENT_SECRET"];
     const redirectUri = process.env["GOOGLE_REDIRECT_URI"];
 
     const client = new OAuth2Client(clientId, clientSecret, redirectUri);
 
-    // Generate JWT state nonce (T-79-01, T-79-02, T-79-03 mitigations)
+    // Generate JWT state nonce (T-79-01, T-79-02, T-79-03 mitigations).
+    // State JWT carries {nonce, userId} — callback extracts userId for oauthTokens upsert.
     let stateJwt: string;
     if (deps?.signStateFn) {
-      stateJwt = await deps.signStateFn(randomBytes(16).toString("hex"));
+      stateJwt = await deps.signStateFn(randomBytes(16).toString("hex"), userId);
     } else {
       const secret = new TextEncoder().encode(process.env["GOOGLE_OAUTH_STATE_SECRET"]!);
       const nonce = randomBytes(16).toString("hex");
-      stateJwt = await new SignJWT({ nonce })
+      stateJwt = await new SignJWT({ nonce, userId })
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
         .setExpirationTime("5m")
@@ -92,23 +101,31 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
       return c.redirect(`${pwaUrl}?google_error=invalid_state`);
     }
 
+    // Phase 102: state verification must also extract userId. The sole trust
+    // anchor is jwtVerify — attacker without GOOGLE_OAUTH_STATE_SECRET cannot mint.
+    let verifiedUserId: number;
     try {
-      let stateValid: boolean;
+      let verifyResult: { valid: true; userId: number } | { valid: false };
       if (deps?.verifyStateFn) {
-        stateValid = await deps.verifyStateFn(state);
+        verifyResult = await deps.verifyStateFn(state);
       } else {
         const secret = new TextEncoder().encode(process.env["GOOGLE_OAUTH_STATE_SECRET"]!);
         try {
-          await jwtVerify(state, secret);
-          stateValid = true;
+          const { payload } = await jwtVerify(state, secret, { algorithms: ["HS256"] });
+          if (typeof payload.userId !== "number" || payload.userId <= 0) {
+            verifyResult = { valid: false };
+          } else {
+            verifyResult = { valid: true, userId: payload.userId };
+          }
         } catch {
-          stateValid = false;
+          verifyResult = { valid: false };
         }
       }
 
-      if (!stateValid) {
+      if (!verifyResult.valid) {
         return c.redirect(`${pwaUrl}?google_error=invalid_state`);
       }
+      verifiedUserId = verifyResult.userId;
     } catch {
       return c.redirect(`${pwaUrl}?google_error=invalid_state`);
     }
@@ -157,10 +174,12 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
         }
       }
 
-      // Upsert into oauth_tokens table with scopes and email (D-04)
+      // Upsert into oauth_tokens table with scopes and email (D-04).
+      // Phase 102: composite unique is (userId, provider) per uq_oauth_tokens_user_provider.
       const dbUpsertFn =
         deps?.dbUpsertFn ??
         (async (
+          upsertUserId: number,
           provider: string,
           encryptedRefreshToken: string,
           storedAccessToken: string,
@@ -174,6 +193,7 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
           await db
             .insert(oauthTokens)
             .values({
+              userId: upsertUserId,
               provider,
               encryptedRefreshToken,
               accessToken: storedAccessToken,
@@ -183,7 +203,7 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
               accountEmail: email,
             })
             .onConflictDoUpdate({
-              target: oauthTokens.provider,
+              target: [oauthTokens.userId, oauthTokens.provider],
               set: {
                 encryptedRefreshToken,
                 accessToken: storedAccessToken,
@@ -196,7 +216,7 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
             });
         });
 
-      await dbUpsertFn("google", encrypted, accessToken, expiresAt, grantedScopes, accountEmail);
+      await dbUpsertFn(verifiedUserId, "google", encrypted, accessToken, expiresAt, grantedScopes, accountEmail);
 
       // Redirect to PWA with success param (per D-07: google_connected not calendar_connected)
       return c.redirect(`${pwaUrl}?google_connected=true`);

@@ -100,7 +100,7 @@ describe("assembleAndRender orchestration", () => {
   test("Test 1: happy path — all deps return valid data", async () => {
     const deps = makeBaseDeps();
     const service = createBriefAssemblyService(deps);
-    const result = await service.assembleAndRender(TEST_DATE);
+    const result = await service.assembleAndRender(TEST_DATE, 1);
 
     assert.ok(result.buffer.length > 0, "buffer should not be empty");
     assert.equal(result.metadata.dateStr, TEST_DATE);
@@ -118,7 +118,7 @@ describe("assembleAndRender orchestration", () => {
       },
     });
     const service = createBriefAssemblyService(deps);
-    const result = await service.assembleAndRender(TEST_DATE);
+    const result = await service.assembleAndRender(TEST_DATE, 1);
 
     assert.ok(result.buffer.length > 0);
     assert.ok(capturedData);
@@ -138,7 +138,7 @@ describe("assembleAndRender orchestration", () => {
       },
     });
     const service = createBriefAssemblyService(deps);
-    const result = await service.assembleAndRender(TEST_DATE);
+    const result = await service.assembleAndRender(TEST_DATE, 1);
 
     assert.ok(result.buffer.length > 0);
     assert.ok(capturedData);
@@ -176,7 +176,7 @@ describe("assembleAndRender orchestration", () => {
       },
     });
     const service = createBriefAssemblyService(deps);
-    const result = await service.assembleAndRender(TEST_DATE);
+    const result = await service.assembleAndRender(TEST_DATE, 1);
 
     assert.ok(result.buffer.length > 0);
     assert.ok(capturedData);
@@ -205,7 +205,7 @@ describe("assembleAndRender orchestration", () => {
     });
     // Override timeout to 100ms for test speed
     const service = createBriefAssemblyService({ ...deps, _sourceTimeoutMs: 100 } as any);
-    const result = await service.assembleAndRender(TEST_DATE);
+    const result = await service.assembleAndRender(TEST_DATE, 1);
 
     assert.ok(result.buffer.length > 0);
     assert.ok(capturedData);
@@ -220,7 +220,7 @@ describe("assembleAndRender orchestration", () => {
     const mkdirSpy = t.mock.method(fs.promises, "mkdir");
     const writeFileSpy = t.mock.method(fs.promises, "writeFile");
     const service = createBriefAssemblyService(makeBaseDeps());
-    const result = await service.assembleAndRender(TEST_DATE);
+    const result = await service.assembleAndRender(TEST_DATE, 1);
     // Affirmation cache may still mkdir ~/.cache/dailybrief; assert no /tmp/briefs or /brief-*.pdf writes.
     const writeFileCalls = writeFileSpy.mock.calls.map((c) => String(c.arguments[0]));
     assert.ok(
@@ -281,7 +281,7 @@ describe("assembleAndRender orchestration", () => {
     } as any);
 
     const service = createBriefAssemblyService(deps);
-    const result = await service.assembleAndRender(TEST_DATE);
+    const result = await service.assembleAndRender(TEST_DATE, 1);
 
     assert.ok(result.buffer.length > 0);
     assert.ok(capturedData);

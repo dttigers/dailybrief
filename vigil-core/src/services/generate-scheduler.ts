@@ -9,10 +9,15 @@
 //   • DI seams (getSettingFn / getRecentBriefFn / upsertBriefFn) keep tests free of drizzle.
 //     When absent, real drizzle is used.
 
-import { sql, eq } from "drizzle-orm";
+import { sql, eq, and } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
-import { briefs, briefPdfs, appSettings } from "../db/schema.js";
+import { briefs, briefPdfs, appSettings, users } from "../db/schema.js";
 import type * as schema from "../db/schema.js";
+
+// TODO(AUTH-06+): Per-user scheduler fan-out. For Phase 102 the scheduler is
+// hard-scoped to the seed user (VIGIL_SEED_USER_EMAIL). Future phase: iterate
+// over all users' appSettings and dispatch a brief-generate per user per
+// schedule window. Captured in RESEARCH Open Q4.
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -24,7 +29,7 @@ export interface GenerateSchedule {
 
 export interface GenerateSchedulerDeps {
   db: PostgresJsDatabase<typeof schema> | null;
-  assemble: (dateStr: string) => Promise<{
+  assemble: (dateStr: string, userId: number) => Promise<{
     buffer: Buffer;
     metadata: { thoughtCount: number; taskCount: number; dateStr: string };
   }>;
@@ -37,12 +42,15 @@ export interface GenerateSchedulerDeps {
   getSettingFn?: (key: string) => Promise<unknown | null>;
   getRecentBriefFn?: (date: string) => Promise<{ createdAt: Date } | null>;
   upsertBriefFn?: (b: {
+    userId: number;
     date: string;
     bytes: Buffer;
     thoughtCount: number;
     taskCount: number;
     summary: object;
   }) => Promise<void>;
+  // Optional DI seam: resolve seed user id synchronously for tests.
+  seedUserId?: number;
 }
 
 export interface GenerateScheduler {
@@ -93,31 +101,52 @@ export function createGenerateScheduler(deps: GenerateSchedulerDeps): GenerateSc
   const tickIntervalMs = deps.tickIntervalMs ?? DEFAULT_TICK_INTERVAL_MS;
   const dedupeWindowMs = deps.dedupeWindowMs ?? DEFAULT_DEDUPE_WINDOW_MS;
 
+  // Phase 102 RESEARCH Open Q4: hard-scope to seed user at service start.
+  // Resolved lazily on first tick so tests that inject seedUserId can skip the DB lookup.
+  let resolvedSeedUserId: number | null = deps.seedUserId ?? null;
+  async function getSeedUserId(): Promise<number | null> {
+    if (resolvedSeedUserId !== null) return resolvedSeedUserId;
+    if (!deps.db) return null;
+    const seedEmail = (process.env["VIGIL_SEED_USER_EMAIL"] ?? "jamesonmorrill1@gmail.com").toLowerCase();
+    const rows = await deps.db
+      .select({ id: users.id })
+      .from(users)
+      .where(eq(users.email, seedEmail))
+      .limit(1);
+    if (rows.length === 0) {
+      log("error", `seed user not found: ${seedEmail} — run migration first`);
+      return null;
+    }
+    resolvedSeedUserId = rows[0].id;
+    return resolvedSeedUserId;
+  }
+
   // ── Real drizzle implementations (used if caller did not inject fn) ────
 
-  async function getSettingViaDb(key: string): Promise<unknown | null> {
+  async function getSettingViaDb(key: string, userId: number): Promise<unknown | null> {
     if (deps.getSettingFn) return deps.getSettingFn(key);
     if (!deps.db) return null;
     const rows = await deps.db
       .select({ value: appSettings.value })
       .from(appSettings)
-      .where(eq(appSettings.key, key))
+      .where(and(eq(appSettings.userId, userId), eq(appSettings.key, key)))
       .limit(1);
     return rows.length > 0 ? rows[0].value : null;
   }
 
-  async function getRecentBriefViaDb(date: string): Promise<{ createdAt: Date } | null> {
+  async function getRecentBriefViaDb(date: string, userId: number): Promise<{ createdAt: Date } | null> {
     if (deps.getRecentBriefFn) return deps.getRecentBriefFn(date);
     if (!deps.db) return null;
     const rows = await deps.db
       .select({ createdAt: briefs.createdAt })
       .from(briefs)
-      .where(eq(briefs.date, date))
+      .where(and(eq(briefs.userId, userId), eq(briefs.date, date)))
       .limit(1);
     return rows.length > 0 ? { createdAt: rows[0].createdAt } : null;
   }
 
   async function upsertBriefViaDb(b: {
+    userId: number;
     date: string;
     bytes: Buffer;
     thoughtCount: number;
@@ -130,15 +159,17 @@ export function createGenerateScheduler(deps: GenerateSchedulerDeps): GenerateSc
     // WR-01: Wrap both upserts in a single transaction so either both rows land or
     // neither does. Prevents leaking a `brief_pdf_not_stored` state if the bytes
     // insert fails after the metadata insert succeeds.
+    // Phase 102: composite conflict target (userId, date); briefPdfs.userId denormalized.
     await deps.db.transaction(async (tx) => {
       const [briefRow] = await tx.insert(briefs).values({
+        userId: b.userId,
         date: b.date,
         summary: b.summary,
         pdfFilename: null,
         thoughtCount: b.thoughtCount,
         taskCount: b.taskCount,
       }).onConflictDoUpdate({
-        target: briefs.date,
+        target: [briefs.userId, briefs.date],
         set: {
           summary: b.summary,
           pdfFilename: null,
@@ -149,6 +180,7 @@ export function createGenerateScheduler(deps: GenerateSchedulerDeps): GenerateSc
       }).returning({ id: briefs.id });
 
       await tx.insert(briefPdfs).values({
+        userId: b.userId,
         briefId: briefRow.id,
         bytes: b.bytes,
         contentType: "application/pdf",
@@ -176,11 +208,18 @@ export function createGenerateScheduler(deps: GenerateSchedulerDeps): GenerateSc
         return;
       }
 
-      // Read settings
-      const tzRaw = await getSettingViaDb("user_timezone");
+      // Resolve seed user id (Phase 102 hard-scope). Silent-skip if missing.
+      const seedUserId = await getSeedUserId();
+      if (seedUserId === null) {
+        log("warn", "seed user not resolved, skipping tick");
+        return;
+      }
+
+      // Read settings (scoped to seed user via composite PK)
+      const tzRaw = await getSettingViaDb("user_timezone", seedUserId);
       const tz = typeof tzRaw === "string" && tzRaw.length > 0 ? tzRaw : DEFAULT_TIMEZONE;
 
-      const schedRaw = await getSettingViaDb("generate_schedule");
+      const schedRaw = await getSettingViaDb("generate_schedule", seedUserId);
       const schedule: GenerateSchedule =
         schedRaw && typeof schedRaw === "object"
           ? (schedRaw as GenerateSchedule)
@@ -192,18 +231,19 @@ export function createGenerateScheduler(deps: GenerateSchedulerDeps): GenerateSc
       const { date: todayInTz, hour: hourInTz, minute: minuteInTz } = partsInZone(now(), tz);
       if (hourInTz !== schedule.hour || minuteInTz !== schedule.minute) return;
 
-      // Dedupe check (D-03)
-      const recent = await getRecentBriefViaDb(todayInTz);
+      // Dedupe check (D-03) — scoped by seed userId
+      const recent = await getRecentBriefViaDb(todayInTz, seedUserId);
       if (recent && now().getTime() - recent.createdAt.getTime() < dedupeWindowMs) {
         log("info", `dedupe: brief for ${todayInTz} generated recently, skipping`);
         return;
       }
 
-      // Generate
+      // Generate (assemble for seed user; brief row carries seed userId)
       try {
-        const result = await deps.assemble(todayInTz);
+        const result = await deps.assemble(todayInTz, seedUserId);
         const summaryJson = { generatedAt: new Date().toISOString(), partial: false };
         await upsertBriefViaDb({
+          userId: seedUserId,
           date: todayInTz,
           bytes: result.buffer,
           thoughtCount: result.metadata.thoughtCount,

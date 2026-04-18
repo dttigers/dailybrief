@@ -3,9 +3,17 @@
 // Security: access tokens are NEVER logged (T-74-08 mitigation).
 
 import { db } from "../db/connection.js";
-import { oauthTokens } from "../db/schema.js";
-import { eq } from "drizzle-orm";
+import { oauthTokens, users } from "../db/schema.js";
+import { eq, and } from "drizzle-orm";
 import { decryptToken } from "../utils/token-crypto.js";
+
+// TODO(AUTH-06+): Per-user calendar service. For Phase 102 the calendar
+// service is hard-scoped to the seed user (VIGIL_SEED_USER_EMAIL) because
+// oauth_tokens is now keyed by (userId, provider) and the production
+// singleton has no per-request userId context. Future phase: thread
+// userId through fetchTodaysEvents / fetchCalendarList when the PWA
+// switches from vk_ to JWT auth and the brief assembly pipeline fans
+// out per user. Captured in RESEARCH Open Q4.
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -111,10 +119,28 @@ export function createCalendarService(deps?: CalendarServiceDeps): {
 
   // ── DB helpers ────────────────────────────────────────────────────────────
 
+  // Phase 102: resolve seed user id lazily so test DI paths don't need to run it.
+  let resolvedSeedUserId: number | null = null;
+  async function getSeedUserId(): Promise<number | null> {
+    if (resolvedSeedUserId !== null) return resolvedSeedUserId;
+    if (!db) return null;
+    const seedEmail = (process.env["VIGIL_SEED_USER_EMAIL"] ?? "jamesonmorrill1@gmail.com").toLowerCase();
+    const rows = await db.select({ id: users.id }).from(users).where(eq(users.email, seedEmail)).limit(1);
+    if (rows.length === 0) return null;
+    resolvedSeedUserId = rows[0].id;
+    return resolvedSeedUserId;
+  }
+
   async function dbSelect(): Promise<OAuthTokenRow | null> {
     if (deps?.dbSelectFn) return deps.dbSelectFn();
     if (!db) return null;
-    const rows = await db.select().from(oauthTokens).where(eq(oauthTokens.provider, "google")).limit(1);
+    const seedUserId = await getSeedUserId();
+    if (seedUserId === null) return null;
+    const rows = await db
+      .select()
+      .from(oauthTokens)
+      .where(and(eq(oauthTokens.userId, seedUserId), eq(oauthTokens.provider, "google")))
+      .limit(1);
     if (rows.length === 0) return null;
     const row = rows[0];
     return {
@@ -132,10 +158,12 @@ export function createCalendarService(deps?: CalendarServiceDeps): {
   async function dbUpdate(accessToken: string, expiresAt: Date | null): Promise<void> {
     if (deps?.dbUpdateFn) return deps.dbUpdateFn(accessToken, expiresAt);
     if (!db) return;
+    const seedUserId = await getSeedUserId();
+    if (seedUserId === null) return;
     await db
       .update(oauthTokens)
       .set({ accessToken, expiresAt: expiresAt ?? undefined, updatedAt: new Date() })
-      .where(eq(oauthTokens.provider, "google"));
+      .where(and(eq(oauthTokens.userId, seedUserId), eq(oauthTokens.provider, "google")));
   }
 
   async function doRefresh(refreshToken: string): Promise<{ access_token: string; expiry_date: number | null }> {
