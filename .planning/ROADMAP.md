@@ -307,7 +307,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] 102-00-PLAN.md — Wave 0 test scaffolds (password/jwt/middleware/auth-routes/migration/cross-user-isolation — 6 files, ~45 failing cases)
 - [x] 102-01-PLAN.md — Drizzle schema + 0012 migration (users table, 11 userId FKs, backfill, app_settings composite PK, seed-user helper)
 - [x] 102-02-PLAN.md — @node-rs/argon2 install + docker-build verification + utils/password + utils/jwt + JWT_SECRET boot-check + set-password CLI
-- [ ] 102-03-PLAN.md — Extend bearerAuth with JWT path + userId injection + POST /v1/auth/register|login + CORS-safe mounting + generate-key.ts requires --email
+- [x] 102-03-PLAN.md — Extend bearerAuth with JWT path + userId injection + POST /v1/auth/register|login + CORS-safe mounting + generate-key.ts requires --email
 - [ ] 102-04-PLAN.md — Route scoping audit (20 routes + 4 services) + Google OAuth state-JWT userId injection + schedulers hard-scope to seed user (Open Q3/Q4 resolved)
 - [ ] 102-05-PLAN.md — Runbook + Dockerfile CMD chain + full-suite pre-deploy gate + Railway deploy + go/no-go curl (human-action checkpoint)
 **UI hint**: no (pure server-side — no PWA changes in this phase)
@@ -419,7 +419,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 | 99. Brief History Fix | v3.4 | 3/3 | Complete    | 2026-04-18 |
 | 100. Edit-Refresh Pause | v3.4 | 1/1 | Complete    | 2026-04-18 |
 | 101. Context Menu | v3.4 | 5/5 | Complete    | 2026-04-18 |
-| 102. Multi-User Foundation | v3.4 | 3/6 | In Progress|  |
+| 102. Multi-User Foundation | v3.4 | 4/6 | In Progress|  |
 
 ## Backlog
 

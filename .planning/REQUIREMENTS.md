@@ -28,10 +28,10 @@ Requirements for Multi-User Foundation & PWA Polish. Each maps to roadmap phases
 ### Multi-User Foundation
 
 - [x] **AUTH-01**: System has a users table with email, hashed password, and profile fields
-- [ ] **AUTH-02**: User can register with email and password (API endpoint)
+- [x] **AUTH-02**: User can register with email and password (API endpoint)
 - [x] **AUTH-03**: User can log in and receive a JWT token (API endpoint)
 - [x] **AUTH-04**: All data tables have userId foreign keys with existing data backfilled to seed user
-- [ ] **AUTH-05**: All API routes scope data queries to the authenticated user's userId
+- [x] **AUTH-05**: All API routes scope data queries to the authenticated user's userId
 
 ## Future Requirements
 
@@ -73,10 +73,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CTX-06 | Phase 101 | Complete |
 | CTX-07 | Phase 101 | Complete |
 | AUTH-01 | Phase 102 | Complete |
-| AUTH-02 | Phase 102 | Pending |
+| AUTH-02 | Phase 102 | Complete |
 | AUTH-03 | Phase 102 | Complete |
 | AUTH-04 | Phase 102 | Complete |
-| AUTH-05 | Phase 102 | Pending |
+| AUTH-05 | Phase 102 | Complete |
 
 **Coverage:**
 - v3.4 requirements: 14 total

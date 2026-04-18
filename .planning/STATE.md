@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Multi-User Foundation & PWA Polish
 status: executing
-stopped_at: "Completed 102-02 — @node-rs/argon2 installed with musl prebuilt; utils/password.ts + utils/jwt.ts created with OWASP 2024 params + HS256-only guard + JWT_SECRET boot-check; scripts/set-password.ts live-tested against Railway; Plan 00 password.test.ts + jwt.test.ts 14/14 GREEN. Next: Plan 03 (routes/auth + middleware JWT path + export const app)"
-last_updated: "2026-04-18T21:31:13.475Z"
+stopped_at: "Completed 102-03 — bearerAuth dispatches vk_/JWT/malformed with userId injection; POST /v1/auth/register + login shipped with allowlist + D-11 claim-flow + timing-safe login; export const app in index.ts for integration tests; generate-key.ts requires --email. Plan 00 middleware + routes tests GREEN (8/8 each); cross-user-isolation imports resolve (11/11 enumerate, 4 per-route scoping failures → Plan 04's job). Next: Plan 04 (route-scoping audit) — add .where(userId) to every query site in 20 route files"
+last_updated: "2026-04-18T21:45:50.265Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 15
-  completed_plans: 12
-  percent: 80
+  completed_plans: 13
+  percent: 87
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 ## Current Position
 
 Phase: 102 (multi-user-foundation) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-04-18
 
@@ -70,6 +70,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 102 P00 | 15min | 3 tasks | 6 files |
 | Phase 102 P01 | 25min | 2 tasks | 6 files |
 | Phase 102 P02 | 9min | 3 tasks | 6 files |
+| Phase 102 P03 | 9m1s | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -103,6 +104,10 @@ v3.3 decisions archived to milestones/v3.3-ROADMAP.md.
 - [Phase 102]: Plan 02 — Docker build verification substituted with package-lock.json musl-entry check (linux-x64-musl + linux-arm64-musl@2.0.2 pinned); dev machine has no Docker, and @node-rs/argon2 ships prebuilt binaries as separate npm packages (not a buildable native addon) so Pitfall 1's true signal is lockfile entries not docker output. Real validation at Railway deploy (Plan 05).
 - [Phase 102]: Plan 02 — three-token-class discipline pinned: argon2id → utils/password.ts, HS256 JWT → utils/jwt.ts, SHA256 vk_ keys → middleware/auth.ts. Each module is standalone; verifyPassword returns false (never throws) for both malformed-hash and oversized-input cases for timing-safe reject parity
 - [Phase 102]: Plan 02 — IIFE boot-check in utils/jwt.ts + pre-check in src/index.ts is intentional duplication: scripts that bypass index.ts (set-password.ts, tests) still exit cleanly on missing JWT_SECRET. Both pathways agree on the same 32-char threshold (D-19)
+- [Phase 102]: Plan 03 — isVkKey() tightened to include !token.includes('.') to route vk_ strings with dots into malformed (401 'Unrecognized token format') rather than accidentally dispatching to api_keys lookup; matches D-02 error-copy contract
+- [Phase 102]: Plan 03 — Moved if(!db) guard from middleware entry into vk_ branch only; malformed + JWT paths must 401 without touching DB (plan's example code would 503 pre-dispatch when DATABASE_URL unset, failing Plan 00 hermetic tests)
+- [Phase 102]: Plan 03 — DUMMY_HASH is a compile-time constant (format-valid argon2id string with base64 junk) not a runtime hash; saves ~30ms boot cost, verifyPassword() returns false deterministically, timing parity preserved
+- [Phase 102]: Plan 03 — Bearer exemption extended ONLY to /v1/auth/register + /v1/auth/login by exact-path match; future AUTH-06 profile + AUTH-07 password-reset must add their own exemptions (prevents accidental public surface growth)
 
 ### Pending Todos
 
@@ -117,7 +122,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-18T21:30:59.780Z
-Stopped at: Completed 102-02 — @node-rs/argon2 installed with musl prebuilt; utils/password.ts + utils/jwt.ts created with OWASP 2024 params + HS256-only guard + JWT_SECRET boot-check; scripts/set-password.ts live-tested against Railway; Plan 00 password.test.ts + jwt.test.ts 14/14 GREEN. Next: Plan 03 (routes/auth + middleware JWT path + export const app)
+Last session: 2026-04-18T21:45:50.259Z
+Stopped at: Completed 102-03 — bearerAuth dispatches vk_/JWT/malformed with userId injection; POST /v1/auth/register + login shipped with allowlist + D-11 claim-flow + timing-safe login; export const app in index.ts for integration tests; generate-key.ts requires --email. Plan 00 middleware + routes tests GREEN (8/8 each); cross-user-isolation imports resolve (11/11 enumerate, 4 per-route scoping failures → Plan 04's job). Next: Plan 04 (route-scoping audit) — add .where(userId) to every query site in 20 route files
 Resume file: None
 Next action: `/gsd-plan-phase 99`
