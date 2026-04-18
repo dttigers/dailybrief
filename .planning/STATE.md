@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Multi-User Foundation & PWA Polish
-status: executing
-stopped_at: Completed 101-03-PLAN.md (ThoughtRow + ThoughtList + ThoughtsPage wiring, Wave 2)
-last_updated: "2026-04-18T17:42:57.509Z"
+status: verifying
+stopped_at: Completed 101-04-PLAN.md autonomous tasks (Tasks 1 & 2); iOS Safari UAT checkpoint (Task 3) pending human action on physical iPhone
+last_updated: "2026-04-18T17:55:08.718Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 4
-  completed_phases: 2
+  completed_phases: 3
   total_plans: 9
-  completed_plans: 8
-  percent: 89
+  completed_plans: 9
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 
 Phase: 101 (context-menu) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-18
 
 Progress: [░░░░░░░░░░] 0%
@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 101 P01 | 2min | 3 tasks | 4 files |
 | Phase 101 P02 | 4min | 1 tasks | 1 files |
 | Phase 101 P03 | 9min | 3 tasks | 5 files |
+| Phase 101 P04 | 7min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,9 @@ v3.3 decisions archived to milestones/v3.3-ROADMAP.md.
 - [Phase 101]: Plan 03 deferred-commit delete via filter-on-render (hiddenPendingDelete Set + visibleThoughts); useThoughts.ts byte-identical to Phase 100 final state; D-19 interlock preserved via onStartEdit={handleContentClick} in ThoughtRow ContextMenu mount; all 5 vigil:edit-ended sites intact
 - [Phase 101]: Plan 03 PointerEvent polyfill in src/test/setup.ts (Rule 3 blocking fix) — jsdom 25 ships generic Event for fireEvent.pointerDown so pointerType/clientX/clientY silently dropped; polyfill extends MouseEvent with PointerEventInit fields guarded by typeof check; production code unchanged
 - [Phase 101]: Plan 03 dual-mode open-state in ThoughtRow (parent-managed vs. local-fallback via parentManagesOpenState = onOpenMenu !== undefined) — preserves single-open invariant in production while letting 17 Wave 0 ThoughtRow tests render standalone without fabricating parent state
+- [Phase 101]: Plan 04 keyboard a11y: useLayoutEffect (not useEffect) for focus apply so document.activeElement lands synchronously after portal commit; ref-callback eager .focus() as safety net for portal-initial-mount timing; requestAnimationFrame-deferred rowRef.focus() on menu close (synchronous focus gets clobbered by portal unmount)
+- [Phase 101]: Plan 04 integration tests avoid waitFor() under vi.useFakeTimers — waitFor polls with setTimeout which halts under fake timers; use flushMicrotasks() (double Promise.resolve inside act) matching useThoughts.test.tsx pattern
+- [Phase 101]: Plan 04 Task 3 iOS Safari long-press UAT is a human-action checkpoint — autonomous executor completed Tasks 1 and 2 (33/33 ContextMenu tests + 24/24 ThoughtRow tests + 5/5 new ThoughtsPage integration tests green) but phase gate is NOT closed until operator records Tests A–H results on physical iPhone in 101-04-SUMMARY.md
 
 ### Pending Todos
 
@@ -100,7 +104,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-18T17:42:57.504Z
-Stopped at: Completed 101-03-PLAN.md (ThoughtRow + ThoughtList + ThoughtsPage wiring, Wave 2)
+Last session: 2026-04-18T17:55:00.051Z
+Stopped at: Completed 101-04-PLAN.md autonomous tasks (Tasks 1 & 2); iOS Safari UAT checkpoint (Task 3) pending human action on physical iPhone
 Resume file: None
 Next action: `/gsd-plan-phase 99`

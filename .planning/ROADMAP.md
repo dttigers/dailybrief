@@ -247,7 +247,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 - [x] **Phase 99: Brief History Fix** - Make past briefs reliably loadable in the PWA regardless of Railway redeploys (completed 2026-04-17)
 - [x] **Phase 100: Edit-Refresh Pause** - Pause the 30s auto-refresh poll while a thought is being edited in the PWA (completed 2026-04-18)
-- [ ] **Phase 101: Context Menu** - Right-click (desktop) and long-press (mobile) context menu on every thought row
+- [x] **Phase 101: Context Menu** - Right-click (desktop) and long-press (mobile) context menu on every thought row (completed 2026-04-18)
 - [ ] **Phase 102: Multi-User Foundation** - Users table, JWT auth endpoints, and per-user data scoping in vigil-core
 
 ## Phase Details
@@ -291,7 +291,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] 101-01-PLAN.md — ToastHost + useToast + CATEGORIES constant extraction
 - [x] 101-02-PLAN.md — ContextMenu component (portal, positioning, submenus, view state machine)
 - [x] 101-03-PLAN.md — Wire ThoughtRow / ThoughtList / ThoughtsPage / App root (deferred-commit undo)
-- [ ] 101-04-PLAN.md — Keyboard a11y + ThoughtsPage integration test + manual iOS UAT
+- [x] 101-04-PLAN.md — Keyboard a11y + ThoughtsPage integration test + manual iOS UAT
 **UI hint**: yes
 
 ### Phase 102: Multi-User Foundation
@@ -411,7 +411,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 | 98. Thought-Contextual Chat | v3.3 | 1/1 | Complete | 2026-04-17 |
 | 99. Brief History Fix | v3.4 | 3/3 | Complete    | 2026-04-18 |
 | 100. Edit-Refresh Pause | v3.4 | 1/1 | Complete    | 2026-04-18 |
-| 101. Context Menu | v3.4 | 4/5 | In Progress|  |
+| 101. Context Menu | v3.4 | 5/5 | Complete   | 2026-04-18 |
 | 102. Multi-User Foundation | v3.4 | 0/TBD | Not started | - |
 
 ## Backlog
