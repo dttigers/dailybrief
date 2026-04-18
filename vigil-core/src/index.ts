@@ -31,6 +31,7 @@ import { sports } from "./routes/sports.js";
 import { calendar } from "./routes/calendar.js";
 import { googleAuth } from "./routes/google-auth.js";
 import { googleStatus } from "./routes/google-status.js";
+import { auth as authRoutes } from "./routes/auth.js";
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
 import { testConnection, closeConnection, db as mainDb } from "./db/connection.js";
@@ -57,7 +58,7 @@ if (!process.env["JWT_SECRET"] || (process.env["JWT_SECRET"] as string).length <
   process.exit(1);
 }
 
-const app = new Hono();
+export const app = new Hono();
 
 // CORS middleware — must run before auth so preflight OPTIONS requests are not rejected
 const corsOrigins = process.env.CORS_ORIGINS
@@ -92,10 +93,16 @@ app.route("/v1", health);
 // Google OAuth routes — no auth required (browser redirect flow)
 app.route("/v1", googleAuth);
 
+// Auth routes (register/login) — mount BEFORE bearer middleware; public endpoints
+// exempted via path check below (Pitfall 8 — CORS preflight would otherwise fail).
+app.route("/v1", authRoutes);
+
 // Auth middleware — all /v1/* routes except /v1/health require a valid API key
 app.use("/v1/*", async (c, next) => {
   if (c.req.path === "/v1/health") return next();
   if (c.req.path.startsWith("/v1/auth/google")) return next();
+  if (c.req.path === "/v1/auth/register") return next(); // Pitfall 8 — CORS preflight
+  if (c.req.path === "/v1/auth/login") return next();
   return bearerAuth(c, next);
 });
 
