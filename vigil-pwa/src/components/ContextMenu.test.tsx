@@ -629,15 +629,179 @@ describe('ContextMenu — a11y (D-21)', () => {
     expect(screen.getByRole('menu')).toBeTruthy()
   })
 
-  it.skip('TODO Plan 04: ArrowDown moves focus to next menuitem', () => {
-    // Wave 3 manual/keyboard gate — implemented in Plan 04 polish pass.
+  it('ArrowDown moves focus to next menuitem (Plan 04, D-21)', () => {
+    wrap(
+      <ContextMenu
+        anchor={{ x: 50, y: 50 }}
+        thought={baseThought}
+        projects={baseProjects}
+        openedVia="mouse"
+        onClose={vi.fn()}
+        onStartEdit={vi.fn()}
+        onRetriage={vi.fn()}
+        onMoveToCategory={vi.fn()}
+        onAssignProject={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    )
+    // Focus starts on Edit (index 0).
+    const items = screen.getAllByRole('menuitem')
+    expect(document.activeElement).toBe(items[0])
+    fireEvent.keyDown(window, { key: 'ArrowDown' })
+    // After ArrowDown, focus should be on Re-triage (index 1).
+    expect(document.activeElement).toBe(items[1])
   })
 
-  it.skip('TODO Plan 04: Enter activates focused menuitem', () => {
-    // Wave 3 manual/keyboard gate — implemented in Plan 04 polish pass.
+  it('ArrowDown wraps from last to first (Plan 04, D-21)', () => {
+    wrap(
+      <ContextMenu
+        anchor={{ x: 50, y: 50 }}
+        thought={baseThought}
+        projects={baseProjects}
+        openedVia="mouse"
+        onClose={vi.fn()}
+        onStartEdit={vi.fn()}
+        onRetriage={vi.fn()}
+        onMoveToCategory={vi.fn()}
+        onAssignProject={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    )
+    const items = screen.getAllByRole('menuitem')
+    // Cycle ArrowDown 5 times → back to Edit (index 0).
+    for (let i = 0; i < 5; i++) {
+      fireEvent.keyDown(window, { key: 'ArrowDown' })
+    }
+    expect(document.activeElement).toBe(items[0])
   })
 
-  it.skip('TODO Plan 04: Escape returns focus to triggering row', () => {
-    // Wave 3 manual/keyboard gate — implemented in Plan 04 polish pass.
+  it('ArrowUp wraps from first to last (Plan 04, D-21)', () => {
+    wrap(
+      <ContextMenu
+        anchor={{ x: 50, y: 50 }}
+        thought={baseThought}
+        projects={baseProjects}
+        openedVia="mouse"
+        onClose={vi.fn()}
+        onStartEdit={vi.fn()}
+        onRetriage={vi.fn()}
+        onMoveToCategory={vi.fn()}
+        onAssignProject={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    )
+    const items = screen.getAllByRole('menuitem')
+    // From Edit (index 0), ArrowUp → Delete (index 4).
+    fireEvent.keyDown(window, { key: 'ArrowUp' })
+    expect(document.activeElement).toBe(items[4])
+  })
+
+  it('Enter activates focused menuitem (Plan 04, D-21)', () => {
+    const onStartEdit = vi.fn()
+    const onClose = vi.fn()
+    wrap(
+      <ContextMenu
+        anchor={{ x: 50, y: 50 }}
+        thought={baseThought}
+        projects={baseProjects}
+        openedVia="mouse"
+        onClose={onClose}
+        onStartEdit={onStartEdit}
+        onRetriage={vi.fn()}
+        onMoveToCategory={vi.fn()}
+        onAssignProject={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    )
+    // Edit is the default-focused item (index 0).
+    fireEvent.keyDown(window, { key: 'Enter' })
+    expect(onStartEdit).toHaveBeenCalledTimes(1)
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('Escape returns focus to triggering element (Plan 04, D-21)', () => {
+    // Render a harness with a focusable trigger button, focus it, then render
+    // ContextMenu. After Escape, focus should return to the trigger.
+    const trigger = document.createElement('button')
+    trigger.textContent = 'Trigger'
+    trigger.tabIndex = -1
+    document.body.appendChild(trigger)
+    trigger.focus()
+    expect(document.activeElement).toBe(trigger)
+
+    const onClose = vi.fn(() => {
+      // Close handler moves focus back to the triggering row — matches the
+      // production pattern in ThoughtRow.tsx (rowRef.current?.focus()).
+      trigger.focus()
+    })
+    wrap(
+      <ContextMenu
+        anchor={{ x: 50, y: 50 }}
+        thought={baseThought}
+        projects={baseProjects}
+        openedVia="mouse"
+        onClose={onClose}
+        onStartEdit={vi.fn()}
+        onRetriage={vi.fn()}
+        onMoveToCategory={vi.fn()}
+        onAssignProject={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    )
+    // Menu stole focus on mount (first menuitem); Escape must close + trigger
+    // restoration.
+    fireEvent.keyDown(window, { key: 'Escape' })
+    expect(onClose).toHaveBeenCalled()
+    expect(document.activeElement).toBe(trigger)
+    document.body.removeChild(trigger)
+  })
+
+  it('focusing a menuitem updates focusedIndex so ArrowUp navigates from the focused item (Plan 04)', () => {
+    wrap(
+      <ContextMenu
+        anchor={{ x: 50, y: 50 }}
+        thought={baseThought}
+        projects={baseProjects}
+        openedVia="mouse"
+        onClose={vi.fn()}
+        onStartEdit={vi.fn()}
+        onRetriage={vi.fn()}
+        onMoveToCategory={vi.fn()}
+        onAssignProject={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    )
+    const items = screen.getAllByRole('menuitem')
+    // Direct focus on Delete (index 4).
+    fireEvent.focus(items[4])
+    // ArrowUp should now go to Add to project (index 3).
+    fireEvent.keyDown(window, { key: 'ArrowUp' })
+    expect(document.activeElement).toBe(items[3])
+  })
+
+  it('Right arrow opens Move-to-category submenu when that item is focused (Plan 04, D-21)', () => {
+    wrap(
+      <ContextMenu
+        anchor={{ x: 50, y: 50 }}
+        thought={baseThought}
+        projects={baseProjects}
+        openedVia="touch"
+        onClose={vi.fn()}
+        onStartEdit={vi.fn()}
+        onRetriage={vi.fn()}
+        onMoveToCategory={vi.fn()}
+        onAssignProject={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    )
+    // Navigate to Move-to-category (index 2).
+    fireEvent.keyDown(window, { key: 'ArrowDown' })
+    fireEvent.keyDown(window, { key: 'ArrowDown' })
+    // Open submenu with ArrowRight. Touch mode → mobile inline-replace view.
+    fireEvent.keyDown(window, { key: 'ArrowRight' })
+    // Re-triage is a root-only label — gone in categories view.
+    expect(screen.queryByRole('menuitem', { name: /Re-triage/ })).toBeNull()
+    // Back affordance indicates categories view.
+    expect(screen.getByText(/←\s*Categories/)).toBeTruthy()
   })
 })
