@@ -717,27 +717,14 @@ test("userA cannot see userB's thoughts via GET /v1/thoughts", async () => {
 | A6 | `appSettings.key` primary-key change from singleton to `(userId, key)` composite is correct for multi-user | Pitfall 3 | LOW — alternative would be to duplicate settings per user via a different schema, but composite PK is the PG-idiomatic choice. [ASSUMED — planner could pick differently] |
 | A7 | Placeholder argon2id hash string prefix (`$argon2id$v=19$m=19456,t=2,p=1$PLACEHOLDER`) can be detected by `startsWith` check | Code Examples — Register route | LOW — the hash format is standardized and self-describing. Alternative: add `password_claimed BOOLEAN` column. Planner picks. [ASSUMED] |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **D-16 library choice: `argon2` vs `@node-rs/argon2`**
-   - What we know: `node:20-alpine` Dockerfile; `argon2` has documented musl issues.
-   - What's unclear: Did the user intentionally pick `argon2` knowing the Alpine constraint, or did they pick it because it's the "default" package name?
-   - Recommendation: Planner flags this in Plan 01 and does a quick `docker build .` on the current Dockerfile with each package to make a data-driven call. If `argon2` builds cleanly on current Railway image, fine to keep. If it fails, switch to `@node-rs/argon2` — zero semantic difference in the wrapper code.
+All four open questions were resolved by the orchestrator before plan creation. Resolutions are baked into the plan files.
 
-2. **Single migration file vs multi-step migration**
-   - What we know: Phase 102 touches 11 tables. Single SQL file has transaction atomicity; multi-file allows resumability after partial failure.
-   - What's unclear: Is the Railway deploy/migrate cycle robust enough to retry a failed single-file migration? If the migration fails halfway, `__drizzle_migrations` won't mark 0012 as applied, so next deploy retries the whole file — which requires the `IF NOT EXISTS` guards to hold.
-   - Recommendation: Single `.ts` migration file that runs Drizzle-level operations (seed user insert via ORM) + raw SQL for ALTER + UPDATE statements. More readable and easier to unit-test than a single `.sql` file.
-
-3. **OAuth state JWT userId injection (Google callback)**
-   - What we know: Callback has no bearer auth; currently only validates state nonce.
-   - What's unclear: Does the planner add `userId` to the state JWT claims (requires modifying `SignJWT({ nonce })` → `SignJWT({ nonce, userId })` at `google-auth.ts:59`), or require pre-auth (check `c.get('userId')` before initiating Google flow)?
-   - Recommendation: Pre-auth is simpler (mount `/auth/google` inside the authed middleware group, not in the exempt list) — but changes the 5-Mac-clients flow. State JWT injection is more invasive but preserves the current redirect pattern.
-
-4. **Per-user schedulers (generate-scheduler, gmail-workorders)**
-   - What we know: Current schedulers iterate over a single singleton table (or `oauth_tokens` keyed by provider='google').
-   - What's unclear: After migration, do we hard-scope schedulers to the seed user, or loop over all users?
-   - Recommendation: Scope to seed user for this phase (minimal diff). Revisit when user count exceeds 1.
+1. **D-16 library choice: `argon2` vs `@node-rs/argon2`** — **RESOLVED: `@node-rs/argon2`** (Plan 02 Task 1). Musl-prebuilt binaries avoid node-gyp on Railway's `node:20-alpine`. `docker build .` smoke-test gates the commit. CONTEXT.md D-16 updated to reflect this.
+2. **Single migration file vs multi-step** — **RESOLVED: single atomic `.sql` file with `IF NOT EXISTS` + `duplicate_object` DO-blocks** (Plan 01 Task 2). Drizzle's standard 0012_multi_user_foundation.sql with explicit transactional semantics. Paired with a `.ts` helper (`scripts/migrate-102-seed.ts`) that runs first for the seed-user insert via ORM (clean type-safe path).
+3. **OAuth state JWT userId injection (Google callback)** — **RESOLVED: path a — state JWT carries `{nonce, userId}`; callback verifies and extracts** (Plan 04 Task 3). Less invasive than flipping `/auth/google` initiation behind bearer. Preserves the current 5-Mac-client redirect flow.
+4. **Per-user schedulers (generate-scheduler, gmail-workorders)** — **RESOLVED: hard-scope to seed user via `VIGIL_SEED_USER_EMAIL` for this phase** (Plan 04 Task 3); `TODO(AUTH-06+)` markers for future per-user fan-out.
 
 ## Environment Availability
 
