@@ -248,7 +248,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 99: Brief History Fix** - Make past briefs reliably loadable in the PWA regardless of Railway redeploys (completed 2026-04-17)
 - [x] **Phase 100: Edit-Refresh Pause** - Pause the 30s auto-refresh poll while a thought is being edited in the PWA (completed 2026-04-18)
 - [x] **Phase 101: Context Menu** - Right-click (desktop) and long-press (mobile) context menu on every thought row (completed 2026-04-18)
-- [ ] **Phase 102: Multi-User Foundation** - Users table, JWT auth endpoints, and per-user data scoping in vigil-core
+- [x] **Phase 102: Multi-User Foundation** - Users table, JWT auth endpoints, and per-user data scoping in vigil-core (completed 2026-04-18)
 
 ## Phase Details
 
