@@ -26,6 +26,7 @@ bulk.post("/thoughts/bulk/delete", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const body = await c.req.json();
     const { ids } = body;
 
@@ -36,13 +37,14 @@ bulk.post("/thoughts/bulk/delete", async (c) => {
       );
     }
 
+    // Phase 102: scope by userId — cross-user ids silently drop to 0 (no leak).
     const result = await db
       .update(thoughts)
       .set({
         syncStatus: "pendingDeletion",
         modifiedAt: new Date(),
       })
-      .where(inArray(thoughts.id, ids))
+      .where(and(inArray(thoughts.id, ids), eq(thoughts.userId, userId)))
       .returning({ id: thoughts.id });
 
     return c.json({ deleted: result.length });
@@ -57,6 +59,7 @@ bulk.post("/thoughts/bulk/recategorize", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const body = await c.req.json();
     const { ids, category } = body;
 
@@ -91,6 +94,7 @@ bulk.post("/thoughts/bulk/recategorize", async (c) => {
       .where(
         and(
           inArray(thoughts.id, ids),
+          eq(thoughts.userId, userId),
           ne(thoughts.syncStatus, "pendingDeletion"),
         ),
       )
@@ -108,6 +112,7 @@ bulk.post("/thoughts/bulk/therapy-classify", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const body = await c.req.json();
     const { ids, classification } = body;
 
@@ -143,6 +148,7 @@ bulk.post("/thoughts/bulk/therapy-classify", async (c) => {
       .where(
         and(
           inArray(thoughts.id, ids),
+          eq(thoughts.userId, userId),
           ne(thoughts.syncStatus, "pendingDeletion"),
         ),
       )
@@ -160,6 +166,7 @@ bulk.post("/thoughts/bulk/tag", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const body = await c.req.json();
     const { ids, tag, action } = body;
 
@@ -183,13 +190,14 @@ bulk.post("/thoughts/bulk/tag", async (c) => {
 
     const trimmedTag = tag.trim();
 
-    // Fetch all matching thoughts
+    // Fetch all matching thoughts (scoped by userId)
     const matchingThoughts = await db
       .select({ id: thoughts.id, tags: thoughts.tags })
       .from(thoughts)
       .where(
         and(
           inArray(thoughts.id, ids),
+          eq(thoughts.userId, userId),
           ne(thoughts.syncStatus, "pendingDeletion"),
         ),
       );
@@ -216,7 +224,7 @@ bulk.post("/thoughts/bulk/tag", async (c) => {
             modifiedAt: new Date(),
             syncStatus: "pending",
           })
-          .where(eq(thoughts.id, t.id));
+          .where(and(eq(thoughts.id, t.id), eq(thoughts.userId, userId)));
         modifiedCount++;
       }
     });

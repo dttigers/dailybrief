@@ -18,6 +18,7 @@ links.post("/thoughts/:id/links", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const sourceId = Number(c.req.param("id"));
     const body = await c.req.json();
     const { targetId } = body;
@@ -30,26 +31,37 @@ links.post("/thoughts/:id/links", async (c) => {
       return c.json({ error: "Cannot link a thought to itself" }, 400);
     }
 
-    // Check both thoughts exist
+    // Phase 102: Verify BOTH thoughts belong to the caller. Prevents userA from
+    // linking userB's thoughts. Returns 404 (not 403) to avoid existence leak.
     const [sourceRow] = await db
       .select({ id: thoughts.id })
       .from(thoughts)
-      .where(and(eq(thoughts.id, sourceId), ne(thoughts.syncStatus, "pendingDeletion")));
+      .where(and(
+        eq(thoughts.id, sourceId),
+        eq(thoughts.userId, userId),
+        ne(thoughts.syncStatus, "pendingDeletion"),
+      ));
 
     if (!sourceRow) return c.json({ error: "Source thought not found" }, 404);
 
     const [targetRow] = await db
       .select({ id: thoughts.id })
       .from(thoughts)
-      .where(and(eq(thoughts.id, targetId), ne(thoughts.syncStatus, "pendingDeletion")));
+      .where(and(
+        eq(thoughts.id, targetId),
+        eq(thoughts.userId, userId),
+        ne(thoughts.syncStatus, "pendingDeletion"),
+      ));
 
     if (!targetRow) return c.json({ error: "Target thought not found" }, 404);
 
-    // Insert both directions atomically
+    // Insert both directions atomically — userId is belt-and-suspenders
+    // (both source and target already verified above; thoughtLinks.userId also scopes reads).
     await db.transaction(async (tx) => {
       await tx
         .insert(thoughtLinks)
         .values({
+          userId,
           sourceThoughtId: sourceId,
           targetThoughtId: targetId,
         })
@@ -57,6 +69,7 @@ links.post("/thoughts/:id/links", async (c) => {
       await tx
         .insert(thoughtLinks)
         .values({
+          userId,
           sourceThoughtId: targetId,
           targetThoughtId: sourceId,
         })
@@ -75,34 +88,39 @@ links.delete("/thoughts/:id/links/:linkedId", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const id = Number(c.req.param("id"));
     const linkedId = Number(c.req.param("linkedId"));
 
-    // Check if link exists in either direction
+    // Check if link exists in either direction (scoped by userId)
     const [existing] = await db
       .select({ id: thoughtLinks.id })
       .from(thoughtLinks)
       .where(
-        or(
-          and(
-            eq(thoughtLinks.sourceThoughtId, id),
-            eq(thoughtLinks.targetThoughtId, linkedId),
-          ),
-          and(
-            eq(thoughtLinks.sourceThoughtId, linkedId),
-            eq(thoughtLinks.targetThoughtId, id),
+        and(
+          eq(thoughtLinks.userId, userId),
+          or(
+            and(
+              eq(thoughtLinks.sourceThoughtId, id),
+              eq(thoughtLinks.targetThoughtId, linkedId),
+            ),
+            and(
+              eq(thoughtLinks.sourceThoughtId, linkedId),
+              eq(thoughtLinks.targetThoughtId, id),
+            ),
           ),
         ),
       );
 
     if (!existing) return c.json({ error: "Link not found" }, 404);
 
-    // Delete both directions atomically
+    // Delete both directions atomically (scoped by userId)
     await db.transaction(async (tx) => {
       await tx
         .delete(thoughtLinks)
         .where(
           and(
+            eq(thoughtLinks.userId, userId),
             eq(thoughtLinks.sourceThoughtId, id),
             eq(thoughtLinks.targetThoughtId, linkedId),
           ),
@@ -111,6 +129,7 @@ links.delete("/thoughts/:id/links/:linkedId", async (c) => {
         .delete(thoughtLinks)
         .where(
           and(
+            eq(thoughtLinks.userId, userId),
             eq(thoughtLinks.sourceThoughtId, linkedId),
             eq(thoughtLinks.targetThoughtId, id),
           ),
@@ -129,17 +148,22 @@ links.get("/thoughts/:id/links", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const id = Number(c.req.param("id"));
 
-    // Check source thought exists
+    // Check source thought exists (scoped by userId)
     const [sourceRow] = await db
       .select({ id: thoughts.id })
       .from(thoughts)
-      .where(and(eq(thoughts.id, id), ne(thoughts.syncStatus, "pendingDeletion")));
+      .where(and(
+        eq(thoughts.id, id),
+        eq(thoughts.userId, userId),
+        ne(thoughts.syncStatus, "pendingDeletion"),
+      ));
 
     if (!sourceRow) return c.json({ error: "Thought not found" }, 404);
 
-    // Get all linked thought IDs from both directions
+    // Get all linked thought IDs from both directions (scoped by userId)
     const linkRows = await db
       .select({
         sourceThoughtId: thoughtLinks.sourceThoughtId,
@@ -147,9 +171,12 @@ links.get("/thoughts/:id/links", async (c) => {
       })
       .from(thoughtLinks)
       .where(
-        or(
-          eq(thoughtLinks.sourceThoughtId, id),
-          eq(thoughtLinks.targetThoughtId, id),
+        and(
+          eq(thoughtLinks.userId, userId),
+          or(
+            eq(thoughtLinks.sourceThoughtId, id),
+            eq(thoughtLinks.targetThoughtId, id),
+          ),
         ),
       );
 
@@ -164,13 +191,14 @@ links.get("/thoughts/:id/links", async (c) => {
       return c.json({ links: [] });
     }
 
-    // Fetch the actual thoughts
+    // Fetch the actual thoughts (scoped by userId)
     const linkedThoughts = await db
       .select()
       .from(thoughts)
       .where(
         and(
           inArray(thoughts.id, Array.from(linkedIds)),
+          eq(thoughts.userId, userId),
           ne(thoughts.syncStatus, "pendingDeletion"),
         ),
       );

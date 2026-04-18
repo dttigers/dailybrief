@@ -11,20 +11,21 @@ summary.get("/summary", async (c) => {
   }
 
   try {
-    // Total thought count (excluding soft-deleted)
+    const userId = c.get("userId");
+    // Total thought count (excluding soft-deleted), scoped by userId
     const [{ total }] = await db
       .select({ total: count() })
       .from(thoughts)
-      .where(ne(thoughts.syncStatus, "pendingDeletion"));
+      .where(and(eq(thoughts.userId, userId), ne(thoughts.syncStatus, "pendingDeletion")));
 
-    // Counts by category
+    // Counts by category (scoped by userId)
     const categoryRows = await db
       .select({
         category: thoughts.category,
         count: count(),
       })
       .from(thoughts)
-      .where(ne(thoughts.syncStatus, "pendingDeletion"))
+      .where(and(eq(thoughts.userId, userId), ne(thoughts.syncStatus, "pendingDeletion")))
       .groupBy(thoughts.category);
 
     const byCategory: Record<string, number> = {};
@@ -32,7 +33,7 @@ summary.get("/summary", async (c) => {
       byCategory[row.category ?? "uncategorized"] = row.count;
     }
 
-    // Task counts by status
+    // Task counts by status (scoped by userId)
     const taskRows = await db
       .select({
         taskStatus: thoughts.taskStatus,
@@ -41,6 +42,7 @@ summary.get("/summary", async (c) => {
       .from(thoughts)
       .where(
         and(
+          eq(thoughts.userId, userId),
           eq(thoughts.category, "task"),
           ne(thoughts.syncStatus, "pendingDeletion"),
         ),
@@ -52,30 +54,32 @@ summary.get("/summary", async (c) => {
       tasksByStatus[row.taskStatus ?? "none"] = row.count;
     }
 
-    // Favorites count
+    // Favorites count (scoped by userId)
     const [{ favCount }] = await db
       .select({ favCount: count() })
       .from(thoughts)
       .where(
         and(
+          eq(thoughts.userId, userId),
           eq(thoughts.isFavorited, true),
           ne(thoughts.syncStatus, "pendingDeletion"),
         ),
       );
 
-    // Linked thoughts count
+    // Linked thoughts count (scoped by userId — thoughtLinks has own userId after Plan 01)
     const [{ linkedCount }] = await db
       .select({
         linkedCount:
           sql<number>`count(distinct ${thoughtLinks.sourceThoughtId})`,
       })
-      .from(thoughtLinks);
+      .from(thoughtLinks)
+      .where(eq(thoughtLinks.userId, userId));
 
-    // Recent 5 thoughts
+    // Recent 5 thoughts (scoped by userId)
     const recentRows = await db
       .select()
       .from(thoughts)
-      .where(ne(thoughts.syncStatus, "pendingDeletion"))
+      .where(and(eq(thoughts.userId, userId), ne(thoughts.syncStatus, "pendingDeletion")))
       .orderBy(desc(thoughts.createdAt))
       .limit(5);
 

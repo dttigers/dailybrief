@@ -49,5 +49,5 @@ export async function verifyToken(token: string): Promise<JwtClaims> {
   if (typeof payload.iat !== "number" || typeof payload.exp !== "number") {
     throw new Error("Malformed JWT timestamps");
   }
-  return payload as JwtClaims;
+  return payload as unknown as JwtClaims;
 }

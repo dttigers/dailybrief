@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { db } from "../db/connection.js";
 import { projects as projectsTable } from "../db/schema.js";
-import { eq, desc } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import type { DrizzleProject } from "../db/types.js";
 
 const VALID_STATUSES = ["active", "archived", "done"] as const;
@@ -40,9 +40,11 @@ export const projects = new Hono();
 projects.get("/projects", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
   try {
+    const userId = c.get("userId");
     const rows = await db
       .select()
       .from(projectsTable)
+      .where(eq(projectsTable.userId, userId))
       .orderBy(desc(projectsTable.createdAt));
     return c.json(rows.map(toResponse));
   } catch (err) {
@@ -55,13 +57,14 @@ projects.get("/projects", async (c) => {
 projects.get("/projects/:id", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
   try {
+    const userId = c.get("userId");
     const id = Number(c.req.param("id"));
     if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
 
     const rows = await db
       .select()
       .from(projectsTable)
-      .where(eq(projectsTable.id, id))
+      .where(and(eq(projectsTable.id, id), eq(projectsTable.userId, userId)))
       .limit(1);
 
     if (rows.length === 0) return c.json({ error: "Project not found" }, 404);
@@ -76,6 +79,7 @@ projects.get("/projects/:id", async (c) => {
 projects.post("/projects", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
   try {
+    const userId = c.get("userId");
     const body = await c.req.json();
     // Explicit destructure = mass-assignment defense; extras silently dropped
     const { name, description, status } = body;
@@ -114,6 +118,7 @@ projects.post("/projects", async (c) => {
     const [created] = await db
       .insert(projectsTable)
       .values({
+        userId,
         name: trimmedName,
         description: description ?? null,
         status: status ?? null,
@@ -131,14 +136,15 @@ projects.post("/projects", async (c) => {
 projects.patch("/projects/:id", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
   try {
+    const userId = c.get("userId");
     const id = Number(c.req.param("id"));
     if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
 
-    // Existence check
+    // Existence check (scoped by userId — cross-user PATCH returns 404)
     const existing = await db
       .select({ id: projectsTable.id })
       .from(projectsTable)
-      .where(eq(projectsTable.id, id))
+      .where(and(eq(projectsTable.id, id), eq(projectsTable.userId, userId)))
       .limit(1);
     if (existing.length === 0) {
       return c.json({ error: "Project not found" }, 404);
@@ -189,7 +195,7 @@ projects.patch("/projects/:id", async (c) => {
     const [updated] = await db
       .update(projectsTable)
       .set(updates)
-      .where(eq(projectsTable.id, id))
+      .where(and(eq(projectsTable.id, id), eq(projectsTable.userId, userId)))
       .returning();
 
     return c.json(toResponse(updated));
@@ -203,19 +209,20 @@ projects.patch("/projects/:id", async (c) => {
 projects.delete("/projects/:id", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
   try {
+    const userId = c.get("userId");
     const id = Number(c.req.param("id"));
     if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
 
     const existing = await db
       .select({ id: projectsTable.id })
       .from(projectsTable)
-      .where(eq(projectsTable.id, id))
+      .where(and(eq(projectsTable.id, id), eq(projectsTable.userId, userId)))
       .limit(1);
     if (existing.length === 0) {
       return c.json({ error: "Project not found" }, 404);
     }
 
-    await db.delete(projectsTable).where(eq(projectsTable.id, id));
+    await db.delete(projectsTable).where(and(eq(projectsTable.id, id), eq(projectsTable.userId, userId)));
 
     return c.body(null, 204);
   } catch (err) {

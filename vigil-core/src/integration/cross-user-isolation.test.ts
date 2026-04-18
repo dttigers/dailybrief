@@ -173,10 +173,9 @@ describe("cross-user isolation (AUTH-05)", () => {
       .returning();
     try {
       const res = await get("/v1/projects", tokenA);
-      const body = (await res.json()) as {
-        data: Array<{ id: number; name: string }>;
-      };
-      const names = body.data.map((p) => p.name);
+      // /v1/projects returns a bare array (D-03 contract preserved for PWA/Mac clients).
+      const body = (await res.json()) as Array<{ id: number; name: string }>;
+      const names = body.map((p) => p.name);
       assert.ok(names.includes("A-proj"));
       assert.ok(
         !names.includes("B-proj"),

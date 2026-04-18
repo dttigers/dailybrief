@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { eq, sql } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { db } from "../db/connection.js";
 import { thoughts } from "../db/schema.js";
 import type { DrizzleThought } from "../db/types.js";
@@ -18,6 +18,7 @@ tags.post("/thoughts/:id/tags", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const id = Number(c.req.param("id"));
     const body = await c.req.json();
     const { tag } = body;
@@ -29,7 +30,7 @@ tags.post("/thoughts/:id/tags", async (c) => {
     const [thought] = await db
       .select()
       .from(thoughts)
-      .where(eq(thoughts.id, id));
+      .where(and(eq(thoughts.id, id), eq(thoughts.userId, userId)));
 
     if (!thought || thought.syncStatus === "pendingDeletion") {
       return c.json({ error: "Thought not found" }, 404);
@@ -47,13 +48,13 @@ tags.post("/thoughts/:id/tags", async (c) => {
           modifiedAt: new Date(),
           syncStatus: "pending",
         })
-        .where(eq(thoughts.id, id));
+        .where(and(eq(thoughts.id, id), eq(thoughts.userId, userId)));
     }
 
     const [updated] = await db
       .select()
       .from(thoughts)
-      .where(eq(thoughts.id, id));
+      .where(and(eq(thoughts.id, id), eq(thoughts.userId, userId)));
 
     return c.json(toResponse(updated));
   } catch (err) {
@@ -67,13 +68,14 @@ tags.delete("/thoughts/:id/tags/:tag", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const id = Number(c.req.param("id"));
     const tagParam = decodeURIComponent(c.req.param("tag"));
 
     const [thought] = await db
       .select()
       .from(thoughts)
-      .where(eq(thoughts.id, id));
+      .where(and(eq(thoughts.id, id), eq(thoughts.userId, userId)));
 
     if (!thought || thought.syncStatus === "pendingDeletion") {
       return c.json({ error: "Thought not found" }, 404);
@@ -94,12 +96,12 @@ tags.delete("/thoughts/:id/tags/:tag", async (c) => {
         modifiedAt: new Date(),
         syncStatus: "pending",
       })
-      .where(eq(thoughts.id, id));
+      .where(and(eq(thoughts.id, id), eq(thoughts.userId, userId)));
 
     const [updated] = await db
       .select()
       .from(thoughts)
-      .where(eq(thoughts.id, id));
+      .where(and(eq(thoughts.id, id), eq(thoughts.userId, userId)));
 
     return c.json(toResponse(updated));
   } catch (err) {
@@ -108,15 +110,16 @@ tags.delete("/thoughts/:id/tags/:tag", async (c) => {
   }
 });
 
-// GET /tags — List all unique tags
+// GET /tags — List all unique tags (scoped by userId)
 tags.get("/tags", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const result = await db.execute(
       sql`SELECT DISTINCT jsonb_array_elements_text(tags) as tag
           FROM ${thoughts}
-          WHERE tags IS NOT NULL AND sync_status != 'pendingDeletion'
+          WHERE tags IS NOT NULL AND sync_status != 'pendingDeletion' AND user_id = ${userId}
           ORDER BY tag`,
     );
 
@@ -134,12 +137,13 @@ tags.put("/thoughts/:id/favorite", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const id = Number(c.req.param("id"));
 
     const [thought] = await db
       .select()
       .from(thoughts)
-      .where(eq(thoughts.id, id));
+      .where(and(eq(thoughts.id, id), eq(thoughts.userId, userId)));
 
     if (!thought || thought.syncStatus === "pendingDeletion") {
       return c.json({ error: "Thought not found" }, 404);
@@ -152,7 +156,7 @@ tags.put("/thoughts/:id/favorite", async (c) => {
         modifiedAt: new Date(),
         syncStatus: "pending",
       })
-      .where(eq(thoughts.id, id))
+      .where(and(eq(thoughts.id, id), eq(thoughts.userId, userId)))
       .returning();
 
     return c.json(toResponse(updated));

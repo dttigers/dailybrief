@@ -101,6 +101,7 @@ thoughts.get("/thoughts", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const category = c.req.query("category");
     const source = c.req.query("source");
     const taskStatus = c.req.query("taskStatus");
@@ -143,7 +144,10 @@ thoughts.get("/thoughts", async (c) => {
     }
 
     // Build dynamic WHERE conditions
-    const conditions = [ne(thoughtsTable.syncStatus, "pendingDeletion")];
+    const conditions = [
+      eq(thoughtsTable.userId, userId),
+      ne(thoughtsTable.syncStatus, "pendingDeletion"),
+    ];
 
     if (q) {
       conditions.push(
@@ -200,10 +204,11 @@ thoughts.get("/thoughts", async (c) => {
     const bypassWindow = shouldBypassWindow({ q, after, before, window: windowParam, category });
     if (!bypassWindow) {
       // Inline tz lookup (mirrors settings.ts pattern; extraction to shared util deferred to Phase 89 per CONTEXT.md)
+      // Phase 102: appSettings has composite PK (user_id, key) — scope by userId.
       const tzRows = await db
         .select({ value: appSettings.value })
         .from(appSettings)
-        .where(eq(appSettings.key, "user_timezone"))
+        .where(and(eq(appSettings.userId, userId), eq(appSettings.key, "user_timezone")))
         .limit(1);
       const tz = tzRows.length > 0 ? (tzRows[0].value as string) : "America/New_York";
       const { start, end } = getCurrentWeekWindow(tz);
@@ -247,6 +252,7 @@ thoughts.get("/thoughts/:id", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const id = Number(c.req.param("id"));
     if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
 
@@ -256,6 +262,7 @@ thoughts.get("/thoughts/:id", async (c) => {
       .where(
         and(
           eq(thoughtsTable.id, id),
+          eq(thoughtsTable.userId, userId),
           ne(thoughtsTable.syncStatus, "pendingDeletion"),
         ),
       )
@@ -275,6 +282,7 @@ thoughts.post("/thoughts", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const body = await c.req.json();
     const { content, source, category, tags } = body;
 
@@ -298,6 +306,7 @@ thoughts.post("/thoughts", async (c) => {
     const [created] = await db
       .insert(thoughtsTable)
       .values({
+        userId,
         content: content.trim(),
         source,
         category: category ?? null,
@@ -327,7 +336,7 @@ thoughts.post("/thoughts", async (c) => {
               ...(result.tags ? { tags: result.tags } : {}),
               ...(result.therapyClassification ? { therapyClassification: result.therapyClassification } : {}),
             })
-            .where(eq(thoughtsTable.id, thoughtId));
+            .where(and(eq(thoughtsTable.id, thoughtId), eq(thoughtsTable.userId, userId)));
         } catch (err) {
           console.error("[vigil-core] Auto-triage failed (non-fatal):", err);
         }
@@ -346,16 +355,18 @@ thoughts.put("/thoughts/:id", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const id = Number(c.req.param("id"));
     if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
 
-    // Check existence
+    // Check existence (scoped by userId — cross-user PATCH returns 404 not 403)
     const existing = await db
       .select({ id: thoughtsTable.id })
       .from(thoughtsTable)
       .where(
         and(
           eq(thoughtsTable.id, id),
+          eq(thoughtsTable.userId, userId),
           ne(thoughtsTable.syncStatus, "pendingDeletion"),
         ),
       )
@@ -397,10 +408,12 @@ thoughts.put("/thoughts/:id", async (c) => {
         rawProjectId > 0
       ) {
         // FK existence check (mirrors projects.ts:137-145 pattern)
+        // Phase 102: must also scope by userId to prevent cross-user projectId
+        // reference attack (userA setting a thought's projectId to userB's project).
         const projectExists = await db
           .select({ id: projectsTable.id })
           .from(projectsTable)
-          .where(eq(projectsTable.id, rawProjectId))
+          .where(and(eq(projectsTable.id, rawProjectId), eq(projectsTable.userId, userId)))
           .limit(1);
         if (projectExists.length === 0) {
           return c.json({ error: "project not found" }, 400);
@@ -433,7 +446,7 @@ thoughts.put("/thoughts/:id", async (c) => {
     const [updated] = await db
       .update(thoughtsTable)
       .set(updates)
-      .where(eq(thoughtsTable.id, id))
+      .where(and(eq(thoughtsTable.id, id), eq(thoughtsTable.userId, userId)))
       .returning();
 
     return c.json(toResponse(updated));
@@ -448,16 +461,18 @@ thoughts.delete("/thoughts/:id", async (c) => {
   if (!db) return c.json({ error: "Database not available" }, 503);
 
   try {
+    const userId = c.get("userId");
     const id = Number(c.req.param("id"));
     if (isNaN(id)) return c.json({ error: "Invalid id" }, 400);
 
-    // Check existence
+    // Check existence (scoped by userId — cross-user delete returns 404)
     const existing = await db
       .select({ id: thoughtsTable.id })
       .from(thoughtsTable)
       .where(
         and(
           eq(thoughtsTable.id, id),
+          eq(thoughtsTable.userId, userId),
           ne(thoughtsTable.syncStatus, "pendingDeletion"),
         ),
       )
@@ -467,7 +482,7 @@ thoughts.delete("/thoughts/:id", async (c) => {
     await db
       .update(thoughtsTable)
       .set({ syncStatus: "pendingDeletion", modifiedAt: new Date() })
-      .where(eq(thoughtsTable.id, id));
+      .where(and(eq(thoughtsTable.id, id), eq(thoughtsTable.userId, userId)));
 
     return c.body(null, 204);
   } catch (err) {
