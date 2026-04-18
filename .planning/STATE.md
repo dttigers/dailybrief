@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Multi-User Foundation & PWA Polish
 status: executing
-stopped_at: "Completed 102-01 — users table + 11 userId FK + backfill migrated on Railway live (508 thoughts scoped to seed user id=1); Plan 00 migrate.test.ts 6/6 GREEN; idempotency proven. Next: Plan 02 (utils/password.ts + utils/jwt.ts)"
-last_updated: "2026-04-18T21:17:56.589Z"
+stopped_at: "Completed 102-02 — @node-rs/argon2 installed with musl prebuilt; utils/password.ts + utils/jwt.ts created with OWASP 2024 params + HS256-only guard + JWT_SECRET boot-check; scripts/set-password.ts live-tested against Railway; Plan 00 password.test.ts + jwt.test.ts 14/14 GREEN. Next: Plan 03 (routes/auth + middleware JWT path + export const app)"
+last_updated: "2026-04-18T21:31:13.475Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 4
   completed_phases: 3
   total_plans: 15
-  completed_plans: 11
-  percent: 73
+  completed_plans: 12
+  percent: 80
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 ## Current Position
 
 Phase: 102 (multi-user-foundation) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-04-18
 
@@ -69,6 +69,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 101 P04 | 7min | 2 tasks | 4 files |
 | Phase 102 P00 | 15min | 3 tasks | 6 files |
 | Phase 102 P01 | 25min | 2 tasks | 6 files |
+| Phase 102 P02 | 9min | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -99,6 +100,9 @@ v3.3 decisions archived to milestones/v3.3-ROADMAP.md.
 - [Phase 102]: Plan 01 — migrate-102-seed.ts uses ALTER DATABASE ... SET vigil.seed_email (persists across migrator reconnects) rather than SET LOCAL (session-scoped, wouldn't survive drizzle's fresh connection per .sql file)
 - [Phase 102]: Plan 01 — Railway production DB migrated live at current scale (single replica, ~137 active thoughts + 508 total) without scaling to 0 replicas; Pitfall 2 race window did not hit. Flagged for Plan 05 runbook: scale Railway to 0 for future schema-wave deploys
 - [Phase 102]: Plan 01 — Dropped .unique() inline modifier on briefs.date + oauth_tokens.provider in addition to the uniqueIndex swap; drizzle emits both as separate SQL objects (briefs_date_unique + uq_briefs_date). Both required for the per-user composite uniqueness target
+- [Phase 102]: Plan 02 — Docker build verification substituted with package-lock.json musl-entry check (linux-x64-musl + linux-arm64-musl@2.0.2 pinned); dev machine has no Docker, and @node-rs/argon2 ships prebuilt binaries as separate npm packages (not a buildable native addon) so Pitfall 1's true signal is lockfile entries not docker output. Real validation at Railway deploy (Plan 05).
+- [Phase 102]: Plan 02 — three-token-class discipline pinned: argon2id → utils/password.ts, HS256 JWT → utils/jwt.ts, SHA256 vk_ keys → middleware/auth.ts. Each module is standalone; verifyPassword returns false (never throws) for both malformed-hash and oversized-input cases for timing-safe reject parity
+- [Phase 102]: Plan 02 — IIFE boot-check in utils/jwt.ts + pre-check in src/index.ts is intentional duplication: scripts that bypass index.ts (set-password.ts, tests) still exit cleanly on missing JWT_SECRET. Both pathways agree on the same 32-char threshold (D-19)
 
 ### Pending Todos
 
@@ -113,7 +117,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-18T21:17:56.584Z
-Stopped at: Completed 102-01 — users table + 11 userId FK + backfill migrated on Railway live (508 thoughts scoped to seed user id=1); Plan 00 migrate.test.ts 6/6 GREEN; idempotency proven. Next: Plan 02 (utils/password.ts + utils/jwt.ts)
+Last session: 2026-04-18T21:30:59.780Z
+Stopped at: Completed 102-02 — @node-rs/argon2 installed with musl prebuilt; utils/password.ts + utils/jwt.ts created with OWASP 2024 params + HS256-only guard + JWT_SECRET boot-check; scripts/set-password.ts live-tested against Railway; Plan 00 password.test.ts + jwt.test.ts 14/14 GREEN. Next: Plan 03 (routes/auth + middleware JWT path + export const app)
 Resume file: None
 Next action: `/gsd-plan-phase 99`
