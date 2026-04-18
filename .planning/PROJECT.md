@@ -126,7 +126,7 @@ Capture every thought with zero friction and have the system organize it for you
 
 - [ ] Fix brief history retrieval (older briefs fail to load in PWA)
 - [ ] Right-click context menu on thought rows (Delete, Move, Edit, Re-triage, Add to Project)
-- [ ] Pause auto-refresh while editing a thought
+- [x] Pause auto-refresh while editing a thought — Validated in Phase 100: Edit-Refresh Pause
 - [ ] Multi-user foundation (separate accounts, separate data, auth system)
 - [ ] Persistent Safari extension (survives restarts without re-enabling)
 
@@ -143,7 +143,7 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
-v3.4 in progress: Multi-User Foundation & PWA Polish — brief history fix, right-click context menu, edit-refresh pause, multi-user groundwork.
+v3.4 in progress: Multi-User Foundation & PWA Polish — brief history fix, right-click context menu, edit-refresh pause, multi-user groundwork. Phase 99 (brief history) and Phase 100 (edit-refresh pause) complete.
 Shipped v3.3 Stability & Chat Context (2026-04-17) — PWA chat 400 fix, server-side excludeDone filter, Mac CLI print hardening, thought-contextual chat. 3 phases, 5 plans, 12 files changed (+195/-41 LOC).
 Shipped v3.2 Freshness & Capture Parity (2026-04-16) — Wed-anchored weekly rollover, 7-day analysis scope, server-side AI cache with Regenerate, task status filter, work order auto-archive, brief PDF restructure, browser extension quick-capture. 8 phases, 14 plans.
 Shipped v3.1 Gmail + Thin Clients (2026-04-15) — Gmail OAuth, PWA brand theme, Settings UI, CLI restructure, menu bar redesign, browser extension, split brief schedule, app icons.
@@ -224,4 +224,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-17 after v3.4 milestone start*
+*Last updated: 2026-04-18 after Phase 100 completion*
