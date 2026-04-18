@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Multi-User Foundation & PWA Polish
 status: executing
-stopped_at: Completed 101-01-PLAN.md (toast infra + CATEGORIES extract, Wave 1)
-last_updated: "2026-04-18T17:23:02.362Z"
+stopped_at: Completed 101-02-PLAN.md (ContextMenu portal + positioning + submenus, Wave 1)
+last_updated: "2026-04-18T17:29:44.021Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 4
   completed_phases: 2
   total_plans: 9
-  completed_plans: 6
-  percent: 67
+  completed_plans: 7
+  percent: 78
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-17)
 ## Current Position
 
 Phase: 101 (context-menu) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-04-18
 
@@ -64,6 +64,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 100 P01 | 5 min | 3 tasks | 4 files |
 | Phase 101 P00 | 6 min | 3 tasks | 4 files |
 | Phase 101 P01 | 2min | 3 tasks | 4 files |
+| Phase 101 P02 | 4min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -80,6 +81,7 @@ v3.3 decisions archived to milestones/v3.3-ROADMAP.md.
 - [Phase 101]: Pointer Events (pointerType:'touch', clientX/Y) in long-press tests — matches production useLongPress hook path 1:1, avoids Pitfall 4 (fireEvent.touchStart missing clientX/Y).
 - [Phase 101]: useToast hook + ToastHost: single-slot toast via React context + useRef timer/onExpire (no module-level singleton); showToast replacement fires previous onExpire synchronously before setState (D-16); manual dismiss() does NOT fire onExpire (only timer does)
 - [Phase 101]: CATEGORIES canonical constant at vigil-pwa/src/constants/categories.ts — doc comment points at vigil-core VALID_CATEGORIES for drift detection (T-101-01-04); BulkActionBar imports from constants instead of declaring inline; Plan 02 Move-to-category submenu will consume the same tuple
+- [Phase 101]: Plan 02 ContextMenu: portal to document.body via createPortal; view state machine root|categories|projects with useLayoutEffect re-measure on view change for mobile inline-replace; jsdom-safe fallback dims (192w/200h) so overflow-flip tests pass without a browser; D-19 interlock preserved (zero references to edit-state setter or edit-started window event in ContextMenu.tsx)
 
 ### Pending Todos
 
@@ -94,7 +96,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-18T17:23:02.357Z
-Stopped at: Completed 101-01-PLAN.md (toast infra + CATEGORIES extract, Wave 1)
+Last session: 2026-04-18T17:29:44.016Z
+Stopped at: Completed 101-02-PLAN.md (ContextMenu portal + positioning + submenus, Wave 1)
 Resume file: None
 Next action: `/gsd-plan-phase 99`
