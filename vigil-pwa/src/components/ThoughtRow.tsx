@@ -3,7 +3,10 @@ import type { ThoughtApiResponse } from '../api/client'
 
 interface ThoughtRowProps {
   thought: ThoughtApiResponse
-  onUpdate: (id: number, patch: { content?: string; category?: string; taskStatus?: string }) => void
+  onUpdate: (
+    id: number,
+    patch: { content?: string; category?: string; taskStatus?: string },
+  ) => void | Promise<void>
   onToggleFavorite?: (id: number, isFavorited: boolean) => void
   onRetriage?: (id: number) => void
   onChat?: () => void
