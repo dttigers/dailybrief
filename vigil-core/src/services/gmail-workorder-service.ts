@@ -219,7 +219,7 @@ export function createGmailWorkOrderService(deps: GmailWorkOrderDeps = {}) {
   async function getSeedUserId(): Promise<number | null> {
     if (resolvedSeedUserId !== null) return resolvedSeedUserId;
     if (!db) return null;
-    const seedEmail = (process.env["VIGIL_SEED_USER_EMAIL"] ?? "jamesonmorrill1@gmail.com").toLowerCase();
+    const seedEmail = (process.env["VIGIL_SEED_USER_EMAIL"] ?? "jamesonmorrill1@gmail.com").trim().toLowerCase();
     const rows = await db
       .select({ id: users.id })
       .from(users)
