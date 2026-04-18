@@ -1,6 +1,5 @@
 import { useState } from 'react'
-
-const CATEGORIES = ['task', 'therapy', 'idea', 'reflection', 'project'] as const
+import { CATEGORIES } from '../constants/categories'
 
 interface BulkActionBarProps {
   selectedCount: number
