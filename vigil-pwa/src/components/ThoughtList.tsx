@@ -1,4 +1,5 @@
-import type { ThoughtApiResponse } from '../api/client'
+import { useEffect, useState } from 'react'
+import type { ThoughtApiResponse, ProjectApiResponse } from '../api/client'
 import ThoughtRow from './ThoughtRow'
 
 interface ThoughtListProps {
@@ -17,9 +18,25 @@ interface ThoughtListProps {
   onToggleSelect?: (id: number) => void
   isSelectable?: boolean
   isSearchActive: boolean
+  // Phase 101 — context-menu actions prop-drilled to ThoughtRow (CTX-03/04/07).
+  onDelete?: (id: number) => void
+  onMoveToCategory?: (id: number, category: string) => void
+  onAssignProject?: (id: number, projectId: number) => void
+  projects?: ProjectApiResponse[]
 }
 
-export default function ThoughtList({ thoughts, total, isLoading, error, onUpdate, onToggleFavorite, onRetriage, onChat, selectedIds, onToggleSelect, isSelectable, isSearchActive }: ThoughtListProps) {
+export default function ThoughtList({ thoughts, total, isLoading, error, onUpdate, onToggleFavorite, onRetriage, onChat, selectedIds, onToggleSelect, isSelectable, isSearchActive, onDelete, onMoveToCategory, onAssignProject, projects }: ThoughtListProps) {
+  // Phase 101 (Pitfall 8): lift single-open state so only one ThoughtRow's
+  // context menu is mounted at any time across the entire list.
+  const [openMenuForId, setOpenMenuForId] = useState<number | null>(null)
+
+  // Auto-close the menu if the currently-open row scrolls out of the result
+  // set (filter change, category switch, search query change, pagination).
+  useEffect(() => {
+    if (openMenuForId !== null && !thoughts.some((t) => t.id === openMenuForId)) {
+      setOpenMenuForId(null)
+    }
+  }, [thoughts, openMenuForId])
   if (isLoading) {
     return (
       <div className="text-gray-400 text-center py-12">
@@ -67,6 +84,13 @@ export default function ThoughtList({ thoughts, total, isLoading, error, onUpdat
             isSelectable={isSelectable}
             isSelected={selectedIds?.has(thought.id)}
             onToggleSelect={onToggleSelect}
+            onDelete={onDelete}
+            onMoveToCategory={onMoveToCategory}
+            onAssignProject={onAssignProject}
+            projects={projects}
+            isMenuOpen={openMenuForId === thought.id}
+            onOpenMenu={(id) => setOpenMenuForId(id)}
+            onCloseMenu={() => setOpenMenuForId(null)}
           />
         ))}
       </div>
