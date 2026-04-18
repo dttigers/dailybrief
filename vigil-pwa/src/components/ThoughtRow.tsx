@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import type { ThoughtApiResponse } from '../api/client'
+import type { ThoughtApiResponse, ProjectApiResponse } from '../api/client'
+import ContextMenu from './ContextMenu'
 
 interface ThoughtRowProps {
   thought: ThoughtApiResponse
@@ -13,7 +14,20 @@ interface ThoughtRowProps {
   isSelectable?: boolean
   isSelected?: boolean
   onToggleSelect?: (id: number) => void
+  // Phase 101 context-menu props (all optional so Phase 100 tests continue to
+  // render without them).
+  onDelete?: (id: number) => void
+  onMoveToCategory?: (id: number, category: string) => void
+  onAssignProject?: (id: number, projectId: number) => void
+  projects?: ProjectApiResponse[]
+  isMenuOpen?: boolean
+  onOpenMenu?: (id: number) => void
+  onCloseMenu?: () => void
 }
+
+// Phase 101 D-02 long-press constants.
+const LONG_PRESS_MS = 500
+const MOVE_TOLERANCE_PX = 10
 
 const TASK_STATUS_CYCLE = ['open', 'inProgress', 'done'] as const
 const TASK_STATUS_LABELS: Record<string, string> = {
@@ -55,12 +69,57 @@ function relativeTime(isoString: string): string {
   return new Date(isoString).toLocaleDateString()
 }
 
-export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetriage, onChat, isSelectable, isSelected, onToggleSelect }: ThoughtRowProps) {
+export default function ThoughtRow({
+  thought,
+  onUpdate,
+  onToggleFavorite,
+  onRetriage,
+  onChat,
+  isSelectable,
+  isSelected,
+  onToggleSelect,
+  // Phase 101 context-menu props
+  onDelete,
+  onMoveToCategory,
+  onAssignProject,
+  projects,
+  isMenuOpen,
+  onOpenMenu,
+  onCloseMenu,
+}: ThoughtRowProps) {
   const [isTriaging, setIsTriaging] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [draft, setDraft] = useState(thought.content)
   const [isSaving, setIsSaving] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+
+  // Phase 101: context-menu local state. Anchor + openedVia are local because
+  // they're only meaningful while this row's menu is open; open-state itself is
+  // lifted to the parent (ThoughtList) via isMenuOpen/onOpenMenu/onCloseMenu so
+  // only one row across the whole list can own the menu at a time (Pitfall 8).
+  //
+  // When the parent does NOT provide open-state management (e.g. standalone
+  // ThoughtRow renders in unit tests), we fall back to anchor-presence as the
+  // open signal. If a parent IS managing it, we require both isMenuOpen===true
+  // and a local anchor (the parent may toggle isMenuOpen to close us).
+  const [menuAnchor, setMenuAnchor] = useState<{ x: number; y: number } | null>(null)
+  const [openedVia, setOpenedVia] = useState<'mouse' | 'touch'>('mouse')
+  const parentManagesOpenState = onOpenMenu !== undefined
+  const isActuallyOpen = parentManagesOpenState
+    ? isMenuOpen === true && menuAnchor !== null
+    : menuAnchor !== null
+
+  // Phase 101 D-02 long-press infrastructure.
+  const longPressTimerRef = useRef<number | null>(null)
+  const longPressStartRef = useRef<{ x: number; y: number; el: HTMLElement } | null>(null)
+
+  function cancelLongPress() {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current)
+      longPressTimerRef.current = null
+    }
+    longPressStartRef.current = null
+  }
 
   // Select all text when textarea mounts
   useEffect(() => {
@@ -163,6 +222,69 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
     }
   }
 
+  // --- Phase 101: context-menu triggers ----------------------------------
+  // D-01: desktop right-click opens menu anchored at pointer; suppresses the
+  // browser's native menu via preventDefault.
+  // D-03: both right-click and long-press are no-ops while isEditing so the
+  //       Phase 100 refresh-pause invariant stays clean.
+  function handleContextMenu(e: React.MouseEvent) {
+    if (isEditing) return // D-03
+    e.preventDefault() // D-01
+    setMenuAnchor({ x: e.clientX, y: e.clientY })
+    setOpenedVia('mouse')
+    onOpenMenu?.(thought.id)
+  }
+
+  // D-02 long-press: 500ms with 10px movement tolerance. D-04: touch-only.
+  function handlePointerDown(e: React.PointerEvent) {
+    if (e.pointerType !== 'touch') return // D-04
+    if (isEditing) return // D-03
+    longPressStartRef.current = {
+      x: e.clientX,
+      y: e.clientY,
+      el: e.currentTarget as HTMLElement,
+    }
+    longPressTimerRef.current = window.setTimeout(() => {
+      const s = longPressStartRef.current
+      if (!s) return
+      // D-06: mobile anchor = row bottom-left of the triggering element.
+      const rect = s.el.getBoundingClientRect()
+      setMenuAnchor({ x: rect.left, y: rect.bottom })
+      setOpenedVia('touch')
+      onOpenMenu?.(thought.id)
+      longPressTimerRef.current = null
+    }, LONG_PRESS_MS)
+  }
+
+  function handlePointerMove(e: React.PointerEvent) {
+    const s = longPressStartRef.current
+    if (!s || longPressTimerRef.current === null) return
+    if (
+      Math.abs(e.clientX - s.x) > MOVE_TOLERANCE_PX ||
+      Math.abs(e.clientY - s.y) > MOVE_TOLERANCE_PX
+    ) {
+      cancelLongPress()
+    }
+  }
+
+  function handlePointerUp() {
+    cancelLongPress()
+  }
+
+  function handlePointerCancel() {
+    cancelLongPress()
+  }
+
+  // Cleanup on unmount — prevent pending long-press timer from firing on a
+  // torn-down component (T-101-03-07).
+  useEffect(() => () => cancelLongPress(), [])
+
+  // If the parent closes the menu via isMenuOpen=false, clear our local anchor
+  // too so a stale rect doesn't survive into the next open (Pitfall 8 hygiene).
+  useEffect(() => {
+    if (isMenuOpen === false) setMenuAnchor(null)
+  }, [isMenuOpen])
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Escape') {
       e.preventDefault()
@@ -180,7 +302,14 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
   }
 
   return (
-    <div className={`p-4 border-b border-gray-700/50 hover:bg-gray-900/50 transition-colors${isSelectable && isSelected ? ' border-l-2 border-l-teal-600' : ''}`}>
+    <div
+      className={`p-4 border-b border-gray-700/50 hover:bg-gray-900/50 transition-colors [-webkit-touch-callout:none] touch-manipulation select-none${isSelectable && isSelected ? ' border-l-2 border-l-teal-600' : ''}`}
+      onContextMenu={handleContextMenu}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerCancel}
+    >
       <div className="flex items-start justify-between gap-3 mb-1.5">
         {isSelectable && (
           <input
@@ -263,6 +392,27 @@ export default function ThoughtRow({ thought, onUpdate, onToggleFavorite, onRetr
         >
           {thought.content}
         </p>
+      )}
+      {isActuallyOpen && menuAnchor && (
+        <ContextMenu
+          anchor={menuAnchor}
+          thought={thought}
+          projects={projects ?? []}
+          openedVia={openedVia}
+          onClose={() => {
+            setMenuAnchor(null)
+            onCloseMenu?.()
+          }}
+          // D-19 INTERLOCK: Edit routes through the existing Phase 100 edit-entry
+          // function so the vigil:edit-started dispatch + pause-gate stay in sync.
+          // Do NOT inline setIsEditing(true) here — the Wave 0 trap-test fails if
+          // the dispatch is skipped.
+          onStartEdit={handleContentClick}
+          onRetriage={(id) => onRetriage?.(id)}
+          onMoveToCategory={(id, c) => onMoveToCategory?.(id, c)}
+          onAssignProject={(id, pid) => onAssignProject?.(id, pid)}
+          onDelete={(id) => onDelete?.(id)}
+        />
       )}
     </div>
   )
