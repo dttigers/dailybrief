@@ -74,19 +74,67 @@ export function useThoughts(category: string | null, searchQuery: string, filter
     setFetchTick((n) => n + 1)
   }, [])
 
-  // Auto-refresh: visibility change, external thought creation, and 30s polling
+  // Auto-refresh with edit-aware pause gate (Phase 100 / EDIT-01, D-01 D-02 D-06 D-08)
   useEffect(() => {
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') refetch()
+    // D-02: Set of thought ids currently being edited; gate refresh on size > 0
+    const activeEdits = new Set<number>()
+    let pollId: ReturnType<typeof setInterval> | null = null
+
+    const startPoll = () => {
+      if (pollId !== null) return
+      pollId = setInterval(() => {
+        if (activeEdits.size === 0) refetch()
+      }, 30_000)
     }
-    const handleCreated = () => refetch()
+    const stopPoll = () => {
+      if (pollId !== null) {
+        clearInterval(pollId)
+        pollId = null
+      }
+    }
+
+    const handleVisibility = () => {
+      // D-06: visibilitychange is ALSO gated on active edits
+      if (document.visibilityState === 'visible' && activeEdits.size === 0) {
+        refetch()
+      }
+    }
+    const handleCreated = () => {
+      // D-06: vigil:thought-created is ALSO gated on active edits
+      if (activeEdits.size === 0) refetch()
+    }
+    const handleEditStarted = (e: Event) => {
+      const id = (e as CustomEvent<{ id: number }>).detail?.id
+      if (typeof id !== 'number') return
+      activeEdits.add(id)
+      // D-09: clearInterval during pause; restart on resume so resumed interval
+      // is a full 30s from the resume moment (not a leftover partial tick)
+      stopPoll()
+    }
+    const handleEditEnded = (e: Event) => {
+      const id = (e as CustomEvent<{ id: number }>).detail?.id
+      if (typeof id !== 'number') return
+      const hadEntry = activeEdits.delete(id)
+      // D-08: only the N→0 transition (last edit ending) triggers catch-up + restart.
+      // Stray end without matching start (hadEntry=false) is a no-op.
+      if (hadEntry && activeEdits.size === 0) {
+        refetch()
+        startPoll()
+      }
+    }
+
     document.addEventListener('visibilitychange', handleVisibility)
     window.addEventListener('vigil:thought-created', handleCreated)
-    const poll = setInterval(refetch, 30_000)
+    window.addEventListener('vigil:edit-started', handleEditStarted)
+    window.addEventListener('vigil:edit-ended', handleEditEnded)
+    startPoll()
+
     return () => {
       document.removeEventListener('visibilitychange', handleVisibility)
       window.removeEventListener('vigil:thought-created', handleCreated)
-      clearInterval(poll)
+      window.removeEventListener('vigil:edit-started', handleEditStarted)
+      window.removeEventListener('vigil:edit-ended', handleEditEnded)
+      stopPoll()
     }
   }, [refetch])
 

@@ -39,10 +39,20 @@ describe('useThoughts — edit-aware pause gate', () => {
     await flushMicrotasks()
     expect(mockGetThoughts).toHaveBeenCalledTimes(1)
 
-    // Advance 60s: two 30s ticks should fire, each calling refetch → getThoughts.
+    // Advance in 30s increments so each poll's state update + fetch resolves
+    // before the next tick. Batching across multiple timer ticks in a single
+    // advanceTimersByTimeAsync call can collapse two setFetchTick calls into
+    // one render, yielding a single getThoughts instead of two.
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(60_000)
+      await vi.advanceTimersByTimeAsync(30_000)
     })
+    await flushMicrotasks()
+    expect(mockGetThoughts).toHaveBeenCalledTimes(2)
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30_000)
+    })
+    await flushMicrotasks()
     expect(mockGetThoughts).toHaveBeenCalledTimes(3) // initial + 2 polls
 
     // Start an edit — polls should pause.
@@ -70,12 +80,14 @@ describe('useThoughts — edit-aware pause gate', () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(30_000)
     })
+    await flushMicrotasks()
     expect(mockGetThoughts).toHaveBeenCalledTimes(5)
 
     // And another at +60s.
     await act(async () => {
       await vi.advanceTimersByTimeAsync(30_000)
     })
+    await flushMicrotasks()
     expect(mockGetThoughts).toHaveBeenCalledTimes(6)
   })
 
