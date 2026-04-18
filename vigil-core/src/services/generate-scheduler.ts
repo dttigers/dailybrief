@@ -127,36 +127,41 @@ export function createGenerateScheduler(deps: GenerateSchedulerDeps): GenerateSc
     if (deps.upsertBriefFn) return deps.upsertBriefFn(b);
     if (!deps.db) return;
 
-    const [briefRow] = await deps.db.insert(briefs).values({
-      date: b.date,
-      summary: b.summary,
-      pdfFilename: null,
-      thoughtCount: b.thoughtCount,
-      taskCount: b.taskCount,
-    }).onConflictDoUpdate({
-      target: briefs.date,
-      set: {
+    // WR-01: Wrap both upserts in a single transaction so either both rows land or
+    // neither does. Prevents leaking a `brief_pdf_not_stored` state if the bytes
+    // insert fails after the metadata insert succeeds.
+    await deps.db.transaction(async (tx) => {
+      const [briefRow] = await tx.insert(briefs).values({
+        date: b.date,
         summary: b.summary,
         pdfFilename: null,
         thoughtCount: b.thoughtCount,
         taskCount: b.taskCount,
-        createdAt: sql`now()`,
-      },
-    }).returning({ id: briefs.id });
+      }).onConflictDoUpdate({
+        target: briefs.date,
+        set: {
+          summary: b.summary,
+          pdfFilename: null,
+          thoughtCount: b.thoughtCount,
+          taskCount: b.taskCount,
+          createdAt: sql`now()`,
+        },
+      }).returning({ id: briefs.id });
 
-    await deps.db.insert(briefPdfs).values({
-      briefId: briefRow.id,
-      bytes: b.bytes,
-      contentType: "application/pdf",
-      byteLength: b.bytes.length,
-    }).onConflictDoUpdate({
-      target: briefPdfs.briefId,
-      set: {
+      await tx.insert(briefPdfs).values({
+        briefId: briefRow.id,
         bytes: b.bytes,
         contentType: "application/pdf",
         byteLength: b.bytes.length,
-        createdAt: sql`now()`,
-      },
+      }).onConflictDoUpdate({
+        target: briefPdfs.briefId,
+        set: {
+          bytes: b.bytes,
+          contentType: "application/pdf",
+          byteLength: b.bytes.length,
+          createdAt: sql`now()`,
+        },
+      });
     });
   }
 

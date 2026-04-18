@@ -24,7 +24,7 @@ function makeMockDb(opts: {
 } = {}) {
   const captures = opts.captureInserts ?? {};
   let insertTarget: "briefs" | "briefPdfs" | null = null;
-  return {
+  const db: any = {
     select: () => ({
       from: () => ({
         leftJoin: () => ({
@@ -53,7 +53,11 @@ function makeMockDb(opts: {
         },
       };
     },
-  } as unknown as PostgresJsDatabase<typeof schema>;
+    // WR-01: route now wraps the two upserts in db.transaction(fn). The mock
+    // simply invokes fn with itself as tx so insert capture still works.
+    transaction: async (fn: (tx: any) => Promise<any>) => fn(db),
+  };
+  return db as PostgresJsDatabase<typeof schema>;
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────

@@ -55,39 +55,43 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
       const assembler = getAssembler();
       const { buffer, metadata } = await assembler.assembleAndRender(dateStr);
 
-      // Upsert briefs row (metadata). pdfFilename is set to null under the new model (D-04).
+      // WR-01: Wrap both upserts in a single transaction so either both rows land or
+      // neither does. Prevents leaking a `brief_pdf_not_stored` state if the bytes
+      // insert fails after the metadata insert succeeds.
       const summaryJson = { generatedAt: new Date().toISOString(), partial: false };
-      const [briefRow] = await db.insert(briefs).values({
-        date: dateStr,
-        summary: summaryJson,
-        pdfFilename: null,
-        thoughtCount: metadata.thoughtCount,
-        taskCount: metadata.taskCount,
-      }).onConflictDoUpdate({
-        target: briefs.date,
-        set: {
+      await db.transaction(async (tx) => {
+        const [briefRow] = await tx.insert(briefs).values({
+          date: dateStr,
           summary: summaryJson,
           pdfFilename: null,
           thoughtCount: metadata.thoughtCount,
           taskCount: metadata.taskCount,
-          createdAt: sql`now()`,
-        },
-      }).returning({ id: briefs.id });
+        }).onConflictDoUpdate({
+          target: briefs.date,
+          set: {
+            summary: summaryJson,
+            pdfFilename: null,
+            thoughtCount: metadata.thoughtCount,
+            taskCount: metadata.taskCount,
+            createdAt: sql`now()`,
+          },
+        }).returning({ id: briefs.id });
 
-      // Upsert brief_pdfs row (bytes). PK is brief_id.
-      await db.insert(briefPdfs).values({
-        briefId: briefRow.id,
-        bytes: buffer,
-        contentType: "application/pdf",
-        byteLength: buffer.length,
-      }).onConflictDoUpdate({
-        target: briefPdfs.briefId,
-        set: {
+        // Upsert brief_pdfs row (bytes). PK is brief_id.
+        await tx.insert(briefPdfs).values({
+          briefId: briefRow.id,
           bytes: buffer,
           contentType: "application/pdf",
           byteLength: buffer.length,
-          createdAt: sql`now()`,
-        },
+        }).onConflictDoUpdate({
+          target: briefPdfs.briefId,
+          set: {
+            bytes: buffer,
+            contentType: "application/pdf",
+            byteLength: buffer.length,
+            createdAt: sql`now()`,
+          },
+        });
       });
 
       return new Response(new Uint8Array(buffer), {
