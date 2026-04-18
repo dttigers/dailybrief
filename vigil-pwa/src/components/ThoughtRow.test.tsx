@@ -418,6 +418,51 @@ describe('ThoughtRow — context menu triggers (Phase 101)', () => {
     }
   })
 
+  it('Edit menuitem keeps edit mode — focus-return must not blur the textarea (D-21 focus race)', async () => {
+    // Regression test for iOS UAT Test F failure: Plan 04's D-21 focus-return
+    // (rowRef.focus() scheduled via rAF on menu close) was stealing focus from
+    // the just-mounted <textarea autoFocus>. The textarea's onBlur then fired
+    // handleSave → vigil:edit-ended → pause-gate catch-up refetch → isLoading
+    // flash → list re-rendered as "Loading thoughts..." and edit state was lost.
+    //
+    // Invariant: after Edit is tapped, vigil:edit-started fires but
+    // vigil:edit-ended MUST NOT fire until the user actually saves/cancels.
+    const startSpy = vi.fn()
+    const endSpy = vi.fn()
+    window.addEventListener('vigil:edit-started', startSpy)
+    window.addEventListener('vigil:edit-ended', endSpy)
+    try {
+      const { getByText } = render(
+        <ThoughtRow
+          thought={baseThought}
+          onUpdate={vi.fn()}
+          onDelete={vi.fn()}
+          onMoveToCategory={vi.fn()}
+          onAssignProject={vi.fn()}
+          onRetriage={vi.fn()}
+          projects={baseProjects}
+        />,
+      )
+      fireEvent.contextMenu(getByText('hello'), { clientX: 250, clientY: 300 })
+      const editItem = screen.getByRole('menuitem', { name: /^Edit$/ })
+      fireEvent.click(editItem)
+
+      // Flush the rAF-scheduled focus-return that caused the race.
+      // This describe block uses fake timers — rAF won't fire without advancing.
+      clockAdvance(32)
+
+      expect(startSpy).toHaveBeenCalledTimes(1)
+      expect(endSpy).not.toHaveBeenCalled()
+      // Textarea must still be in the DOM — if focus-return stole focus, the
+      // textarea would have blurred and isEditing would be false, unmounting it.
+      const textarea = screen.getByRole('textbox') as HTMLTextAreaElement
+      expect(textarea).toBeDefined()
+    } finally {
+      window.removeEventListener('vigil:edit-started', startSpy)
+      window.removeEventListener('vigil:edit-ended', endSpy)
+    }
+  })
+
   it('Re-triage menuitem calls the onRetriage prop with thought.id (CTX-06)', () => {
     const onRetriage = vi.fn()
     const { getByText } = render(

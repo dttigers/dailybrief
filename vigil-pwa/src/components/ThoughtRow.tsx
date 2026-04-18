@@ -414,7 +414,22 @@ export default function ThoughtRow({
             // so React has unmounted the ContextMenu portal and released its
             // active menuitem before we re-focus — calling rowRef.focus()
             // synchronously can be overridden when the unmount handler fires.
-            requestAnimationFrame(() => rowRef.current?.focus())
+            // Skip if focus has already landed inside the row (e.g., the Edit
+            // menu item mounted a focused textarea) — stealing it back would
+            // blur the input and trigger handleSave → vigil:edit-ended,
+            // collapsing the edit before the user can type.
+            requestAnimationFrame(() => {
+              const active = document.activeElement
+              if (
+                active &&
+                active !== document.body &&
+                rowRef.current?.contains(active) &&
+                active !== rowRef.current
+              ) {
+                return
+              }
+              rowRef.current?.focus()
+            })
           }}
           // D-19 INTERLOCK: Edit routes through the existing Phase 100 edit-entry
           // function so the vigil:edit-started dispatch + pause-gate stay in sync.
