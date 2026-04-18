@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router'
 import { getStoredKey } from './api/client'
 import { GoogleStatusProvider } from './hooks/GoogleStatusContext'
+import { ToastProvider } from './hooks/useToast'
+import ToastHost from './components/ToastHost'
 import Layout from './components/Layout'
 import AuthPage from './pages/AuthPage'
 import DashboardPage from './pages/DashboardPage'
@@ -37,19 +39,25 @@ export default function App() {
           isAuthenticated
             ? (
               <GoogleStatusProvider>
-                <Layout>
-                  <Routes>
-                    <Route path="/" element={<DashboardPage />} />
-                    <Route path="/work-orders" element={<WorkOrdersPage />} />
-                    <Route path="/projects" element={<ProjectsPage />} />
-                    <Route path="/chat" element={<ChatPage />} />
-                    <Route path="/insights" element={<InsightsPage />} />
-                    <Route path="/therapy" element={<TherapyPage />} />
-                    <Route path="/history" element={<BriefHistoryPage />} />
-                    <Route path="/upload" element={<UploadPage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
-                  </Routes>
-                </Layout>
+                <ToastProvider>
+                  <Layout>
+                    <Routes>
+                      <Route path="/" element={<DashboardPage />} />
+                      <Route path="/work-orders" element={<WorkOrdersPage />} />
+                      <Route path="/projects" element={<ProjectsPage />} />
+                      <Route path="/chat" element={<ChatPage />} />
+                      <Route path="/insights" element={<InsightsPage />} />
+                      <Route path="/therapy" element={<TherapyPage />} />
+                      <Route path="/history" element={<BriefHistoryPage />} />
+                      <Route path="/upload" element={<UploadPage />} />
+                      <Route path="/settings" element={<SettingsPage />} />
+                    </Routes>
+                  </Layout>
+                  {/* Phase 101 Pitfall 7: ToastHost mounts OUTSIDE <Routes> so it
+                      survives route navigation and deferred-commit timers fire
+                      regardless of which page is active. */}
+                  <ToastHost />
+                </ToastProvider>
               </GoogleStatusProvider>
             )
             : <Navigate to="/auth" replace />

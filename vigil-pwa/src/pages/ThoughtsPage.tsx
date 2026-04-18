@@ -13,6 +13,8 @@ import type { ThoughtApiResponse } from '../api/client'
 import { useThoughts, type ThoughtFilters } from '../hooks/useThoughts'
 import { getCurrentWeekWindow } from '../utils/date-window-client'
 import { useTimezone } from '../hooks/useTimezone'
+import { useToast } from '../hooks/useToast'
+import { useProjects } from '../hooks/useProjects'
 
 export default function ThoughtsPage() {
   const navigate = useNavigate()
@@ -23,6 +25,16 @@ export default function ThoughtsPage() {
   const { tz } = useTimezone()
   const [isSelectable, setIsSelectable] = useState(false)
   const [isBulkProcessing, setIsBulkProcessing] = useState(false)
+
+  // Phase 101 — context menu wiring ---------------------------------------
+  const { showToast } = useToast()
+  const { projects } = useProjects()
+  // D-15/D-16 deferred-commit pattern: client-side hide set + filter-on-render.
+  // Row is hidden the moment Delete is tapped; the API call fires only on
+  // toast expiry. Undo within 5s removes the id from the set (no API call).
+  const [hiddenPendingDelete, setHiddenPendingDelete] = useState<Set<number>>(
+    new Set(),
+  )
 
   // Task status filter state
   const TASK_FILTER_STORAGE_KEY = 'vigil_task_status_filter'
@@ -119,6 +131,81 @@ export default function ThoughtsPage() {
     })
   }
 
+  // Phase 101 — context-menu action handlers ----------------------------------
+  // D-15/D-16/D-20: delete via existing bulkDeleteThoughts with deferred commit.
+  // Pattern 5 (101-RESEARCH): filter-on-render instead of optimistic removeMany,
+  // so Undo is a trivial Set.delete rather than re-fetching the removed row.
+  function handleDelete(id: number) {
+    setHiddenPendingDelete((s) => {
+      const n = new Set(s)
+      n.add(id)
+      return n
+    })
+    showToast({
+      body: 'Thought deleted.',
+      action: 'Undo',
+      variant: 'default',
+      onAction: () => {
+        // User tapped Undo within 5s — un-hide, no API call.
+        setHiddenPendingDelete((s) => {
+          const n = new Set(s)
+          n.delete(id)
+          return n
+        })
+      },
+      onExpire: async () => {
+        // 5s elapsed with no Undo → commit the delete server-side.
+        try {
+          await bulkDeleteThoughts([id])
+          removeMany(new Set([id]))
+        } catch (err) {
+          console.error('[ThoughtsPage] delete commit failed', err)
+          // Revert optimistic hide so the row reappears.
+          setHiddenPendingDelete((s) => {
+            const n = new Set(s)
+            n.delete(id)
+            return n
+          })
+          showToast({ body: "Couldn't delete. Try again.", variant: 'error' })
+          return
+        }
+        // Success — clean up the hide-set entry so it doesn't linger.
+        setHiddenPendingDelete((s) => {
+          if (!s.has(id)) return s
+          const n = new Set(s)
+          n.delete(id)
+          return n
+        })
+      },
+    })
+  }
+
+  async function handleMoveToCategory(id: number, category: string) {
+    const prev = thoughts.find((t) => t.id === id)?.category
+    // D-20 optimistic: flip the pill immediately, reconcile on server response.
+    updateLocal(id, { category })
+    try {
+      await updateThought(id, { category })
+    } catch (err) {
+      console.error('[ThoughtsPage] move to category failed', err)
+      if (prev !== undefined) updateLocal(id, { category: prev })
+      showToast({ body: "Couldn't move. Try again.", variant: 'error' })
+    }
+  }
+
+  async function handleAssignProject(id: number, projectId: number) {
+    const prev = thoughts.find((t) => t.id === id)?.projectId
+    // D-20 optimistic.
+    updateLocal(id, { projectId })
+    try {
+      await updateThought(id, { projectId })
+    } catch (err) {
+      console.error('[ThoughtsPage] assign project failed', err)
+      updateLocal(id, { projectId: prev ?? null })
+      showToast({ body: "Couldn't add to project. Try again.", variant: 'error' })
+    }
+  }
+
   function handleToggleSelect(id: number) {
     setSelectedIds((prev) => {
       const next = new Set(prev)
@@ -169,6 +256,12 @@ export default function ThoughtsPage() {
       setIsBulkProcessing(false)
     }
   }
+
+  // Phase 101 Pattern 5: filter-on-render for deferred-commit delete.
+  // Rows pending server-deletion are hidden locally but remain in `thoughts`
+  // until the toast expires (or the user hits Undo). This keeps the Undo path
+  // as a trivial Set.delete instead of a re-fetch of the removed row.
+  const visibleThoughts = thoughts.filter((t) => !hiddenPendingDelete.has(t.id))
 
   const allSelected = thoughts.length > 0 && selectedIds.size === thoughts.length
   const hasActiveFilters = !!sourceFilter || !!dateAfter || !!dateBefore || favoritesOnly
@@ -275,8 +368,8 @@ export default function ThoughtsPage() {
           </p>
         )}
         <ThoughtList
-          thoughts={thoughts}
-          total={total}
+          thoughts={visibleThoughts}
+          total={total - hiddenPendingDelete.size}
           isLoading={isLoading}
           error={error}
           onUpdate={handleUpdate}
@@ -287,6 +380,10 @@ export default function ThoughtsPage() {
           onToggleSelect={handleToggleSelect}
           isSelectable={isSelectable}
           isSearchActive={debouncedQuery !== ''}
+          onDelete={handleDelete}
+          onMoveToCategory={handleMoveToCategory}
+          onAssignProject={handleAssignProject}
+          projects={projects}
         />
       </div>
       <CaptureBar
