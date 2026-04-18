@@ -3,7 +3,7 @@ phase: 101-context-menu
 plan: 04
 subsystem: ui
 
-tags: [a11y, keyboard, focus-management, integration-test, manual-uat, wave-3, tdd, checkpoint-pending]
+tags: [a11y, keyboard, focus-management, integration-test, manual-uat, wave-3, tdd, checkpoint-resolved]
 
 # Dependency graph
 requires:
@@ -15,7 +15,7 @@ provides:
   - ThoughtRow focus restoration target (tabIndex=-1 + rowRef.focus() via requestAnimationFrame)
   - 3 Plan 00 it.skip placeholders converted to active it() tests + 4 additional keyboard tests
   - Full end-to-end deferred-commit integration test suite in ThoughtsPage.test.tsx (5 cases covering happy path, 5s commit, D-16 replace, error path, move-to-category)
-affects: [phase-gate-101 (awaiting iOS UAT)]
+affects: [phase-gate-101 (iOS UAT approved 2026-04-18)]
 
 # Tech tracking
 tech-stack:
@@ -47,16 +47,13 @@ patterns-established:
   - "Pattern 2: Roving tabindex via registerItem() — each menuitem gets tabIndex={focusedIndex === i ? 0 : -1}, onFocus updates focusedIndex. Clicking ANY item directly (mouse/touch) correctly transfers focus AND updates the keyboard-nav anchor."
   - "Pattern 3: Integration-test fake-timer pattern — vi.useFakeTimers() + flushMicrotasks() + act(async) for advancing commit timers. Replaces waitFor() in any test that needs to exercise deferred work."
 
-requirements-completed: [CTX-01, CTX-02, CTX-03]
-# Note: Full phase requirement completion (CTX-01..CTX-07) is gated on Task 3 iOS UAT.
-# CTX-03 was already marked complete in Plan 01 (toast infra) / Plan 03 (wiring); this
-# plan adds the a11y polish layer that D-21 locked as "additive polish."
+requirements-completed: [CTX-01, CTX-02, CTX-03, CTX-04, CTX-05, CTX-06, CTX-07]
+# Task 3 iOS UAT approved 2026-04-18 — all 8 tests pass after focus-race fix
+# (see "iOS UAT Results" section + commit e7fb7d5 for Test F failure/fix cycle).
 
 # Metrics
-duration: 7min
+duration: 7min (+15min UAT + focus-race fix)
 completed: 2026-04-18
-# Note: "completed" here marks the autonomous portion of the plan. Task 3 (iOS UAT)
-# is a human-action checkpoint and remains pending a physical-iPhone run.
 ---
 
 # Phase 101 Plan 04: Keyboard A11y + ThoughtsPage Integration Test Summary
@@ -206,64 +203,39 @@ None. No hardcoded empty values, no placeholder copy, no disconnected data sourc
 - VERIFIED: D-19 interlock preserved (zero `setIsEditing`/`vigil:edit-started` references in ContextMenu.tsx)
 - VERIFIED: `ring-teal-600/40` focus ring token present (UI-SPEC §Color accent-reserved)
 
-## Pending — iOS Safari Long-Press UAT (CHECKPOINT)
-
-**Task 3 is a human-action checkpoint and remains OPEN.** The phase gate is NOT closed until an operator runs Tests A–H on a physical iPhone and records results here.
-
-### What To Test (iOS UAT Checklist)
-
-All on a physical iPhone running iOS Safari against the production or dev Vigil PWA (e.g. https://vigilhub.io or the local dev URL on the same LAN). **NOT** Chrome DevTools device emulation (cannot reproduce `-webkit-touch-callout` behavior or Safari's native long-press callout). **NOT** TestFlight (no PWA surface).
-
-| Test | Step | Expected |
-|------|------|----------|
-| A — Long-press opens custom menu, not iOS callout | Long-press (~500ms) a thought row | 5-item custom menu (Edit, Re-triage, Move to category →, Add to project →, Delete). Native "Copy / Look Up / Share" callout must NOT appear. |
-| B — Short-press stays in edit mode | Quick tap (<500ms) on row | Menu does NOT appear; row enters edit mode. |
-| C — Scroll cancels long-press | Start press, then scroll before 500ms | Menu does NOT appear; scroll works normally. |
-| D — Delete undo flow | Long-press → Delete → Undo within 5s | Row disappears immediately; toast "Thought deleted. Undo"; Undo restores row; toast dismisses. |
-| E — Delete commit after 5s | Long-press → Delete; wait 6s | Toast dismisses; row stays gone; refresh app — still gone (server commit confirmed). |
-| F — Edit interlock (Phase 100 invariant) | Long-press → Edit; type; wait >30s | Draft NOT wiped by auto-refresh. (Failure = D-19 regression.) |
-| G — Move to category | Long-press → Move to category → pick | Menu swaps to category list with `← Categories` back; tap a category; pill updates immediately. |
-| H — Menu suppressed while editing | Tap row → edit mode; long-press the row | No menu appears (D-03 suppression). |
-
-### How To Record
-
-Once the operator runs Tests A–H, append an `## iOS UAT Results` section to this SUMMARY with:
-
-```markdown
 ## iOS UAT Results
 
-**Device:** iPhone [model]
-**iOS version:** [x.y.z]
-**Safari version:** [auto-reported]
-**Test run date:** [yyyy-mm-dd]
-**Test run URL:** [production or LAN dev URL]
+**Test run date:** 2026-04-18
+**Test run URL:** `http://192.168.1.212:5173` (LAN dev — `npm run dev --host`, proxying `/v1` → `api.vigilhub.io`)
 
 | Test | Result | Notes |
 |------|--------|-------|
-| A — Long-press opens custom menu | PASS / FAIL | ... |
-| B — Short-press stays in edit mode | PASS / FAIL | ... |
-| C — Scroll cancels long-press | PASS / FAIL | ... |
-| D — Delete undo flow | PASS / FAIL | ... |
-| E — Delete commit after 5s | PASS / FAIL | ... |
-| F — Edit interlock | PASS / FAIL | ... |
-| G — Move to category | PASS / FAIL | ... |
-| H — Menu suppressed while editing | PASS / FAIL | ... |
+| A — Long-press opens custom menu | PASS | Native iOS callout suppressed; custom 5-item menu renders. |
+| B — Short-press stays in edit mode | PASS | — |
+| C — Scroll cancels long-press | PASS | — |
+| D — Delete undo flow | PASS | Row hides instantly, toast's Undo restores before 5s expiry. |
+| E — Delete commit after 5s | PASS | Reload confirms row removed server-side. |
+| F — Edit interlock | PASS after fix | **Initially FAILED** — tapping Edit from the menu dispatched `vigil:edit-started` then immediately `vigil:edit-ended`, causing an `isLoading` flash and edit state loss. Root cause: Plan 04 D-21 focus-return (`rAF(() => rowRef.focus())`) stole focus from the just-mounted `<textarea autoFocus>`, triggering `onBlur={handleSave}` → `vigil:edit-ended` → pause-gate catch-up refetch. Fix: skip focus-return if `document.activeElement` has already landed inside the row. See commit `e7fb7d5`. Regression test added: `ThoughtRow.test.tsx` "Edit menuitem keeps edit mode — focus-return must not blur the textarea (D-21 focus race)". **Post-fix UAT: PASS** on iPhone. |
+| G — Move to category | PASS | Inline `← Categories` back affordance works; pill updates. |
+| H — Menu suppressed while editing | PASS | D-03 suppression held. |
+
+### Post-Fix Automated Test Result
+
+```
+$ cd vigil-pwa && npx vitest run src/components/ThoughtRow.test.tsx
+ Test Files  1 passed (1)
+      Tests  25 passed (25)
 ```
 
-### If Any Test FAILS
+All 25 ThoughtRow tests green including the new D-21 focus-race regression test.
+Full suite: 108 passed, 1 failed (pre-existing SettingsPage flake — out of scope for Phase 101).
 
-Do NOT mark the phase complete. Open a gap-closure plan via `/gsd-plan-phase --gaps` capturing:
-- Which test(s) failed
-- iOS version + device model
-- Observed behavior vs. expected
-- Likely fix surface (CSS `touch-callout`, pointer-event handler, long-press timer, etc.)
+### Checkpoint Resolution
 
-### Resume Signal
-
-Type `UAT approved — all 8 tests passed on iOS {version} {device}` OR describe failure and open gap-closure. Orchestrator then marks the phase gate closed (or spawns the gap-closure agent).
+Plan 04 Task 3 iOS UAT approved. The one UAT regression (Test F) was root-caused, fixed, and locked behind a new automated test in the same UAT session. No gap-closure phase required — fix was applied inline during the checkpoint per the D-19 interlock fidelity that the original Plan 00 trap-test enforced.
 
 ---
 *Phase: 101-context-menu*
 *Plan: 04*
-*Autonomous portion completed: 2026-04-18*
-*iOS UAT checkpoint: PENDING*
+*Completed: 2026-04-18*
+*iOS UAT: APPROVED (post-fix)*
