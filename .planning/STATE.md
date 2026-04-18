@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.4
 milestone_name: Multi-User Foundation & PWA Polish
-status: verifying
-stopped_at: Phase 101 UI-SPEC approved
-last_updated: "2026-04-18T01:13:16.768Z"
+status: executing
+stopped_at: Completed 101-00-PLAN.md (Wave 0 test scaffolds)
+last_updated: "2026-04-18T17:17:34.503Z"
 last_activity: 2026-04-18
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 4
-  completed_plans: 4
-  percent: 100
+  total_plans: 9
+  completed_plans: 5
+  percent: 56
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-17)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 100 — edit-refresh-pause
+**Current focus:** Phase 101 — context-menu
 
 ## Current Position
 
-Phase: 101
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 101 (context-menu) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
 Last activity: 2026-04-18
 
 Progress: [░░░░░░░░░░] 0%
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 99-brief-history-fix P01 | 20min | 2 tasks | 6 files |
 | Phase 99-brief-history-fix P02 | 5 minutes | 3 tasks | 6 files |
 | Phase 100 P01 | 5 min | 3 tasks | 4 files |
+| Phase 101 P00 | 6 min | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,8 @@ v3.3 decisions archived to milestones/v3.3-ROADMAP.md.
 - [Phase 99-brief-history-fix]: assembleAndRender drops filePath; GET /brief/:date uses LEFT JOIN brief_pdfs for two-tier 404 (brief_pdf_not_stored vs brief_not_found); retention sweep deleted per D-09
 - [Phase 100]: Event names vigil:edit-started / vigil:edit-ended on window with {id:number} detail; Set<number> refcount; N->0 catch-up + interval reset; 5 edit-ended dispatch sites in ThoughtRow (no-change, empty, save-finally, Escape, unmount)
 - [Phase 100]: D-12 unmount guard pattern: isEditingRef + []-deps cleanup (not [isEditing, thought.id] deps) to avoid re-firing end on every isEditing transition
+- [Phase 101]: Wave 0 test scaffolds: fail-by-default via real imports (not stubs) so module-resolution failure IS the RED signal. 70 test cases across 4 files pin D-01..D-21 + CTX-01..CTX-07. D-19 interlock trap-test spies vigil:edit-started around menu Edit click to catch the shortcut of setIsEditing=true inline.
+- [Phase 101]: Pointer Events (pointerType:'touch', clientX/Y) in long-press tests — matches production useLongPress hook path 1:1, avoids Pitfall 4 (fireEvent.touchStart missing clientX/Y).
 
 ### Pending Todos
 
@@ -88,7 +91,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-18T01:13:16.764Z
-Stopped at: Phase 101 UI-SPEC approved
-Resume file: .planning/phases/101-context-menu/101-UI-SPEC.md
+Last session: 2026-04-18T17:17:23.971Z
+Stopped at: Completed 101-00-PLAN.md (Wave 0 test scaffolds)
+Resume file: None
 Next action: `/gsd-plan-phase 99`
