@@ -15,4 +15,4 @@ COPY --from=builder /app/dist ./dist
 COPY drizzle ./drizzle
 COPY assets ./assets
 EXPOSE 3001
-CMD ["sh", "-c", "node dist/db/migrate.js && node dist/index.js"]
+CMD ["sh", "-c", "node dist/scripts/migrate-102-seed.js && node dist/db/migrate.js && node dist/index.js"]

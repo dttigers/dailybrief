@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist/scripts",
+    "rootDir": "./scripts",
+    "noEmit": false,
+    "declaration": false
+  },
+  "include": ["scripts/migrate-102-seed.ts"]
+}
