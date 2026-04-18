@@ -88,12 +88,27 @@ export default function ContextMenu(props: ContextMenuProps) {
   const menuRef = useRef<HTMLDivElement>(null)
   const submenuRef = useRef<HTMLDivElement>(null)
 
+  // Plan 04 — D-21 keyboard navigation. focusedIndex tracks the active
+  // menuitem position within the current view; itemRefs collects the live
+  // button nodes so we can call .focus() when the index changes. Array is
+  // cleared on every view swap (mobile inline-replace re-mounts the items).
+  const itemRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const [focusedIndex, setFocusedIndex] = useState(0)
+
   // Alphabetically-sorted projects (D-13). Re-computed only when the projects
   // array identity changes.
   const sortedProjects = useMemo(
     () => [...projects].sort((a, b) => a.name.localeCompare(b.name)),
     [projects],
   )
+
+  // Count of actionable menuitems in the current view. Drives ArrowUp/Down
+  // wraparound. Back-header button is NOT role="menuitem" so it's excluded.
+  const visibleItemCount = useMemo(() => {
+    if (view === 'categories') return ALPHABETICAL_CATEGORIES.length
+    if (view === 'projects') return sortedProjects.length
+    return 5 // root: Edit, Re-triage, Move, Add-to-project, Delete
+  }, [view, sortedProjects.length])
 
   // D-08: viewport-overflow positioning. Runs AFTER mount so we can measure.
   // Falls back to estimated dims when the environment (jsdom) reports rect=0.
@@ -134,10 +149,78 @@ export default function ContextMenu(props: ContextMenuProps) {
     setSubmenuPos({ left: rootRight + SUBMENU_GAP, top: rootTop })
   }, [openedVia, desktopSubmenu, adjusted.x, adjusted.y])
 
-  // D-07: close on Escape, outside pointerdown, scroll, resize.
+  // Plan 04 — D-21 keyboard a11y. Reset focus to the first item whenever the
+  // view swaps (root ↔ categories ↔ projects under mobile inline-replace).
+  // Clearing the refs array here avoids stale button pointers when the render
+  // tree shrinks between views (e.g. 5 categories → 0 projects empty state).
+  // Runs before paint via useLayoutEffect so the subsequent focus effect
+  // doesn't race with the stale refs array from the previous view.
+  useLayoutEffect(() => {
+    setFocusedIndex(0)
+    itemRefs.current = []
+  }, [view])
+
+  // Apply focus whenever the focused index changes or the view re-renders.
+  // useLayoutEffect (not useEffect) so the focus lands synchronously after the
+  // DOM update — this matters for the initial mount where tests assert
+  // document.activeElement immediately after render, and also for Escape
+  // close-handlers that want to restore focus before React's next paint.
+  useLayoutEffect(() => {
+    const target = itemRefs.current[focusedIndex]
+    if (target) target.focus()
+  }, [focusedIndex, view])
+
+  // D-07 + Plan 04 D-21: Escape close, outside pointerdown, scroll, resize,
+  // and keyboard navigation (ArrowUp/Down, Enter, ArrowRight/Left).
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
+        return
+      }
+      if (e.key === 'ArrowDown') {
+        e.preventDefault()
+        if (visibleItemCount > 0) {
+          setFocusedIndex((i) => (i + 1) % visibleItemCount)
+        }
+        return
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault()
+        if (visibleItemCount > 0) {
+          setFocusedIndex((i) => (i - 1 + visibleItemCount) % visibleItemCount)
+        }
+        return
+      }
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        itemRefs.current[focusedIndex]?.click()
+        return
+      }
+      if (e.key === 'ArrowRight' && view === 'root') {
+        // Open submenu for Move-to-category (index 2) or Add-to-project (index 3).
+        if (focusedIndex === 2) {
+          e.preventDefault()
+          if (openedVia === 'touch') setView('categories')
+          else setDesktopSubmenu('categories')
+        } else if (focusedIndex === 3) {
+          e.preventDefault()
+          if (openedVia === 'touch') setView('projects')
+          else setDesktopSubmenu('projects')
+        }
+        return
+      }
+      if (e.key === 'ArrowLeft') {
+        if (view === 'categories' || view === 'projects') {
+          e.preventDefault()
+          setView('root')
+        } else if (desktopSubmenu !== null) {
+          e.preventDefault()
+          setDesktopSubmenu(null)
+        }
+        return
+      }
     }
     const onScroll = () => onClose()
     const onResize = () => onClose()
@@ -159,7 +242,7 @@ export default function ContextMenu(props: ContextMenuProps) {
       window.removeEventListener('resize', onResize)
       window.removeEventListener('pointerdown', onDown)
     }
-  }, [onClose])
+  }, [onClose, view, focusedIndex, openedVia, desktopSubmenu, visibleItemCount])
 
   // --- Action handlers ------------------------------------------------------
 
@@ -218,10 +301,44 @@ export default function ContextMenu(props: ContextMenuProps) {
 
   // --- Renderers ------------------------------------------------------------
 
+  // Plan 04 — focus-ring accent token from UI-SPEC (teal-600 at 40% opacity,
+  // the accent-reserved ring color for keyboard-focused menu items).
+  const FOCUS_RING = 'ring-2 ring-teal-600/40'
+
+  // Registers a button ref at a given index and applies the focus ring when
+  // the index matches the current focusedIndex. Keeps the per-button JSX
+  // compact while keeping the a11y plumbing explicit. The ref callback also
+  // eagerly calls .focus() when the newly-mounted element matches the active
+  // focusedIndex — this covers the initial-mount case where the
+  // useLayoutEffect-driven focus apply runs before the portal children have
+  // been attached to document.body.
+  function registerItem(
+    index: number,
+    baseClasses: string,
+  ): {
+    ref: (el: HTMLButtonElement | null) => void
+    tabIndex: number
+    onFocus: () => void
+    className: string
+  } {
+    return {
+      ref: (el) => {
+        itemRefs.current[index] = el
+        if (el && focusedIndex === index && document.activeElement !== el) {
+          el.focus()
+        }
+      },
+      tabIndex: focusedIndex === index ? 0 : -1,
+      onFocus: () => setFocusedIndex(index),
+      className: `${baseClasses}${focusedIndex === index ? ` ${FOCUS_RING}` : ''}`,
+    }
+  }
+
   function renderCategoryList(inSubmenu: boolean) {
     const itemClasses = inSubmenu ? SUBMENU_ITEM_CLASSES : ROOT_ITEM_CLASSES
-    return ALPHABETICAL_CATEGORIES.map((cat) => {
+    return ALPHABETICAL_CATEGORIES.map((cat, i) => {
       const isCurrent = thought.category === cat
+      const reg = registerItem(i, itemClasses)
       return (
         <button
           key={cat}
@@ -229,7 +346,10 @@ export default function ContextMenu(props: ContextMenuProps) {
           role="menuitem"
           data-current={isCurrent ? 'true' : undefined}
           onClick={() => handleMoveCategory(cat)}
-          className={itemClasses}
+          ref={reg.ref}
+          tabIndex={reg.tabIndex}
+          onFocus={reg.onFocus}
+          className={reg.className}
         >
           <span>{cat}</span>
           {isCurrent && <span className="text-teal-400" aria-hidden="true">✓</span>}
@@ -247,8 +367,9 @@ export default function ContextMenu(props: ContextMenuProps) {
       )
     }
     const itemClasses = inSubmenu ? SUBMENU_ITEM_CLASSES : ROOT_ITEM_CLASSES
-    return sortedProjects.map((p) => {
+    return sortedProjects.map((p, i) => {
       const isCurrent = thought.projectId === p.id
+      const reg = registerItem(i, itemClasses)
       return (
         <button
           key={p.id}
@@ -256,7 +377,10 @@ export default function ContextMenu(props: ContextMenuProps) {
           role="menuitem"
           data-current={isCurrent ? 'true' : undefined}
           onClick={() => handleAssignProject(p.id)}
-          className={itemClasses}
+          ref={reg.ref}
+          tabIndex={reg.tabIndex}
+          onFocus={reg.onFocus}
+          className={reg.className}
         >
           <span>{p.name}</span>
           {isCurrent && <span className="text-teal-400" aria-hidden="true">✓</span>}
@@ -266,6 +390,11 @@ export default function ContextMenu(props: ContextMenuProps) {
   }
 
   function renderRoot() {
+    const editReg = registerItem(0, ROOT_ITEM_CLASSES)
+    const retriageReg = registerItem(1, ROOT_ITEM_CLASSES)
+    const moveReg = registerItem(2, ROOT_ITEM_CLASSES)
+    const addReg = registerItem(3, ROOT_ITEM_CLASSES)
+    const deleteReg = registerItem(4, DELETE_ITEM_CLASSES)
     return (
       <>
         <button
@@ -273,7 +402,10 @@ export default function ContextMenu(props: ContextMenuProps) {
           role="menuitem"
           onClick={handleEdit}
           onMouseEnter={closeDesktopSubmenu}
-          className={ROOT_ITEM_CLASSES}
+          ref={editReg.ref}
+          tabIndex={editReg.tabIndex}
+          onFocus={editReg.onFocus}
+          className={editReg.className}
         >
           <span>Edit</span>
         </button>
@@ -282,7 +414,10 @@ export default function ContextMenu(props: ContextMenuProps) {
           role="menuitem"
           onClick={handleRetriage}
           onMouseEnter={closeDesktopSubmenu}
-          className={ROOT_ITEM_CLASSES}
+          ref={retriageReg.ref}
+          tabIndex={retriageReg.tabIndex}
+          onFocus={retriageReg.onFocus}
+          className={retriageReg.className}
         >
           <span>Re-triage</span>
         </button>
@@ -291,7 +426,10 @@ export default function ContextMenu(props: ContextMenuProps) {
           role="menuitem"
           onClick={handleMoveTap}
           onMouseEnter={handleMoveHover}
-          className={ROOT_ITEM_CLASSES}
+          ref={moveReg.ref}
+          tabIndex={moveReg.tabIndex}
+          onFocus={moveReg.onFocus}
+          className={moveReg.className}
           aria-haspopup="menu"
         >
           <span>Move to category</span>
@@ -302,7 +440,10 @@ export default function ContextMenu(props: ContextMenuProps) {
           role="menuitem"
           onClick={handleAssignTap}
           onMouseEnter={handleAssignHover}
-          className={ROOT_ITEM_CLASSES}
+          ref={addReg.ref}
+          tabIndex={addReg.tabIndex}
+          onFocus={addReg.onFocus}
+          className={addReg.className}
           aria-haspopup="menu"
         >
           <span>Add to project</span>
@@ -314,7 +455,10 @@ export default function ContextMenu(props: ContextMenuProps) {
           role="menuitem"
           onClick={handleDelete}
           onMouseEnter={closeDesktopSubmenu}
-          className={DELETE_ITEM_CLASSES}
+          ref={deleteReg.ref}
+          tabIndex={deleteReg.tabIndex}
+          onFocus={deleteReg.onFocus}
+          className={deleteReg.className}
         >
           <span>Delete</span>
         </button>

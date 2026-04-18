@@ -113,6 +113,12 @@ export default function ThoughtRow({
   const longPressTimerRef = useRef<number | null>(null)
   const longPressStartRef = useRef<{ x: number; y: number; el: HTMLElement } | null>(null)
 
+  // Phase 101 Plan 04 — D-21 focus restoration. The outer row div is the
+  // focus target returned to when the context menu closes (Escape or outside
+  // click). tabIndex={-1} makes it programmatically focusable without putting
+  // it in the tab order for non-keyboard users.
+  const rowRef = useRef<HTMLDivElement>(null)
+
   function cancelLongPress() {
     if (longPressTimerRef.current !== null) {
       window.clearTimeout(longPressTimerRef.current)
@@ -303,7 +309,9 @@ export default function ThoughtRow({
 
   return (
     <div
-      className={`p-4 border-b border-gray-700/50 hover:bg-gray-900/50 transition-colors [-webkit-touch-callout:none] touch-manipulation select-none${isSelectable && isSelected ? ' border-l-2 border-l-teal-600' : ''}`}
+      ref={rowRef}
+      tabIndex={-1}
+      className={`p-4 border-b border-gray-700/50 hover:bg-gray-900/50 transition-colors [-webkit-touch-callout:none] touch-manipulation select-none focus:outline-none${isSelectable && isSelected ? ' border-l-2 border-l-teal-600' : ''}`}
       onContextMenu={handleContextMenu}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
@@ -402,6 +410,11 @@ export default function ThoughtRow({
           onClose={() => {
             setMenuAnchor(null)
             onCloseMenu?.()
+            // Plan 04 D-21: return focus to the triggering row. Defer one frame
+            // so React has unmounted the ContextMenu portal and released its
+            // active menuitem before we re-focus — calling rowRef.focus()
+            // synchronously can be overridden when the unmount handler fires.
+            requestAnimationFrame(() => rowRef.current?.focus())
           }}
           // D-19 INTERLOCK: Edit routes through the existing Phase 100 edit-entry
           // function so the vigil:edit-started dispatch + pause-gate stay in sync.
