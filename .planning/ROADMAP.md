@@ -295,8 +295,11 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   3. Wrong email and wrong password both display the identical generic error message — no user enumeration possible
   4. React render errors caught by the error boundary appear in PostHog — verified by triggering a test throw
   5. JWT is stored in sessionStorage, not localStorage — confirmed in DevTools Application tab
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 3 plans
+Plans:
+- [ ] 104-01-PLAN.md — Wave 0: Test scaffolds (sessionStorage shim + 3 updated test files + 3 new RED test stubs for AuthPage, ErrorBoundary, posthog)
+- [ ] 104-02-PLAN.md — Storage migration (client.ts) + AuthPage email/password form + posthog.ts singleton + ErrorBoundary + main.tsx wiring
+- [ ] 104-03-PLAN.md — App.tsx identify wiring + SettingsPage Vigil Account section + human verification checkpoint
 
 ### Phase 105: Product Events, API Metrics & User Identity
 **Goal**: The capture funnel, API error rates, and user identity are visible in the PostHog dashboard
