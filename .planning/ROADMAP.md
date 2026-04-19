@@ -441,7 +441,7 @@ Plans:
 | 101. Context Menu | v3.4 | 5/5 | Complete | 2026-04-18 |
 | 102. Multi-User Foundation | v3.4 | 6/6 | Complete | 2026-04-18 |
 | 103. Capture Repair & Server Observability Foundations | v3.5 | 5/5 | Complete   | 2026-04-19 |
-| 104. PWA Auth UI & Browser Observability | v3.5 | 3/3 | Complete   | 2026-04-19 |
+| 104. PWA Auth UI & Browser Observability | v3.5 | 3/3 | Complete    | 2026-04-19 |
 | 105. Product Events, API Metrics & User Identity | v3.5 | 0/TBD | Not started | - |
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 0/TBD | Not started | - |
 | 107. Safari Extension Persistence | v3.5 | 0/TBD | Not started | - |
