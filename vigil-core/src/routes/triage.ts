@@ -19,6 +19,27 @@ Also:
 Respond with ONLY a JSON object, no other text:
 {"category": "<category>", "confidence": <0.0-1.0>, "tags": ["tag1", "tag2"], "therapyClassification": "selfLearnable"|"bringToTherapist"|null}`;
 
+/**
+ * Reusable triage helper extracted for CAP-02 (Phase 103 Plan 02).
+ * Same prompt + maxTokens contract as the POST /v1/triage route — if the prompt
+ * or model parameters change, update BOTH the route and this helper together.
+ *
+ * Throws on:
+ *  - Claude network/API errors (5xx, timeout, throttle)
+ *  - parseAIJson failure (malformed JSON response)
+ *
+ * Callers handling CAP-02 D-07 graceful-null fallback wrap this in
+ * Promise.allSettled and treat rejections as "keep the row, null category".
+ */
+export async function triageThought(content: string): Promise<TriageResult> {
+  const raw = await callClaude({
+    system: TRIAGE_SYSTEM_PROMPT,
+    userMessage: content,
+    maxTokens: 100,
+  });
+  return parseAIJson<TriageResult>(raw);
+}
+
 // POST /triage — Categorize a thought via Claude
 triage.post("/triage", async (c) => {
   let body: { content?: string };
