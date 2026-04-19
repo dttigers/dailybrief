@@ -28,7 +28,8 @@
     "hono": "^4.7.0",
     "jose": "^6.2.2",
     "pdfkit": "^0.18.0",
-    "postgres": "^3.4.9"
+    "postgres": "^3.4.9",
+    "posthog-node": "^5.29.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
