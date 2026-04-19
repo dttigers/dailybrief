@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Phase 104 UI-SPEC approved
-last_updated: "2026-04-19T21:27:06.918Z"
-last_activity: 2026-04-19 -- Phase 104 planning complete
+stopped_at: Completed 104-01-PLAN.md
+last_updated: "2026-04-19T21:34:51.073Z"
+last_activity: 2026-04-19
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
-  percent: 63
+  completed_plans: 6
+  percent: 75
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-19)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 103 — capture-repair-server-observability-foundations
+**Current focus:** Phase 104 — pwa-auth-ui-browser-observability
 
 ## Current Position
 
-Phase: 103 (capture-repair-server-observability-foundations) — EXECUTING
-Plan: 2 of 5
+Phase: 104 (pwa-auth-ui-browser-observability) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-04-19 -- Phase 104 planning complete
+Last activity: 2026-04-19
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -51,6 +51,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 103 P03 | 1m 14s | 1 tasks | 1 files |
 | Phase 103 P02 | 18m 10s | 3 tasks | 6 files |
 | Phase 103 P04 | 12m 23s | 4 tasks | 5 files |
+| Phase 104 P01 | 3min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -77,6 +78,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 103]: Used debug-throw temporary route (Option B) for ANLY-01 SC#3 verification — no pre-existing broken endpoint available
 - [Phase 103]: HEIC test fixture sourced from strukturag/libheif (not catdad-experiments) — GitHub raw URL redirect issue
 - [Phase 103]: posthog-dev-vs-prod.txt documents automated code-path verification; PostHog Cloud UI confirmation deferred to user (autonomous: false plan)
+- [Phase 104]: [Phase 104] Plan 104-01 — reused createMemoryStorage() factory with SEPARATE Map for sessionStorage shim (T-104-W0-01 isolation); migrated 3 existing test files to sessionStorage/vigil_jwt one plan ahead of client.ts (accepts 3 intentionally RED Bearer tests until Plan 02); exact-string assertion 'Invalid email or password. Please try again.' in AuthPage.test.tsx prevents user-enumeration regressions (T-104-W0-02)
 
 ### Pending Todos
 
@@ -92,7 +94,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-19T21:13:38.214Z
-Stopped at: Phase 104 UI-SPEC approved
-Resume file: .planning/phases/104-pwa-auth-ui-browser-observability/104-UI-SPEC.md
+Last session: 2026-04-19T21:34:51.068Z
+Stopped at: Completed 104-01-PLAN.md
+Resume file: None
 Next action: `/gsd-plan-phase 103`
