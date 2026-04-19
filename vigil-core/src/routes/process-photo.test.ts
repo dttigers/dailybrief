@@ -677,3 +677,185 @@ test("RT-20: oversized image (>7 MB base64) returns 413 before Claude call", asy
   assert.equal(claudeCalled, false, "Claude must not be called on oversized payload");
   assert.equal(dbCalled, false);
 });
+
+// ── Phase 103 Wave 0 — CAP-01 + CAP-02 RED scaffolds ─────────────────────────
+// These tests reference ProcessPhotoDeps fields that Plan 02 will ADD:
+//   - triageFn: (content: string) => Promise<TriageResult>
+//   - heicConvertFn: (buf: Buffer) => Promise<Buffer>
+// Until Plan 02 extends makeDeps() with defaults for these, these tests will
+// fail with either a TS compile error or a runtime "triageFn is not a function".
+// That is the Wave 0 RED signal.
+
+test("CAP-01-a: image/heic body triggers heicConvertFn BEFORE callClaudeFn (D-01)", async () => {
+  const callOrder: string[] = [];
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      heicConvertFn: async (_buf: Buffer) => {
+        callOrder.push("heicConvert");
+        // Return a 3-byte fake JPEG buffer
+        return Buffer.from([0xff, 0xd8, 0xff]);
+      },
+      callClaudeFn: async (params: unknown) => {
+        callOrder.push("claude");
+        // Assert Claude was called with image/jpeg (not image/heic)
+        const p = params as {
+          content: Array<{ type: string; source?: { media_type: string } }>;
+        };
+        const imagePart = p.content.find((c) => c.type === "image");
+        assert.equal(imagePart?.source?.media_type, "image/jpeg");
+        return JSON.stringify({
+          paperType: "lined",
+          confidence: 0.9,
+          thoughts: ["heic note"],
+        });
+      },
+      triageFn: async () => ({ category: "task", confidence: 0.9 }),
+    } as Partial<ProcessPhotoDeps>),
+  );
+  const res = await post(router, {
+    image: "aGVsbG8=",
+    mediaType: "image/heic",
+  });
+  assert.equal(res.status, 201);
+  assert.deepEqual(callOrder.slice(0, 2), ["heicConvert", "claude"]);
+});
+
+test("CAP-01-b: image/heif body triggers the same conversion path (D-01)", async () => {
+  let converted = false;
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      heicConvertFn: async (_buf: Buffer) => {
+        converted = true;
+        return Buffer.from([0xff, 0xd8, 0xff]);
+      },
+      triageFn: async () => ({ category: "task", confidence: 0.9 }),
+    } as Partial<ProcessPhotoDeps>),
+  );
+  const res = await post(router, {
+    image: "aGVsbG8=",
+    mediaType: "image/heif",
+  });
+  assert.equal(res.status, 201);
+  assert.equal(converted, true);
+});
+
+test("CAP-01-c: HEIC conversion failure returns 422 'Image conversion failed'", async () => {
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      heicConvertFn: async () => {
+        throw new Error("decode failed");
+      },
+      triageFn: async () => ({ category: "task", confidence: 0.9 }),
+    } as Partial<ProcessPhotoDeps>),
+  );
+  const res = await post(router, {
+    image: "aGVsbG8=",
+    mediaType: "image/heic",
+  });
+  assert.equal(res.status, 422);
+  const body = (await res.json()) as { error: string };
+  assert.match(body.error, /conversion failed/i);
+});
+
+test("CAP-01-d: non-HEIC body does NOT call heicConvertFn (passthrough)", async () => {
+  let converted = false;
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      heicConvertFn: async () => {
+        converted = true;
+        return Buffer.alloc(0);
+      },
+      triageFn: async () => ({ category: "task", confidence: 0.9 }),
+    } as Partial<ProcessPhotoDeps>),
+  );
+  const res = await post(router, {
+    image: "aGVsbG8=",
+    mediaType: "image/jpeg",
+  });
+  assert.equal(res.status, 201);
+  assert.equal(converted, false);
+});
+
+test("CAP-02-a: commit mode returns thoughts with category populated (D-05)", async () => {
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      triageFn: async () => ({ category: "task", confidence: 0.9, tags: ["home"] }),
+    } as Partial<ProcessPhotoDeps>),
+  );
+  const res = await post(router, {
+    image: "aGVsbG8=",
+    mediaType: "image/jpeg",
+  });
+  assert.equal(res.status, 201);
+  const json = (await res.json()) as {
+    thoughts: Array<{ category: string | null }>;
+  };
+  assert.ok(json.thoughts.length >= 1);
+  for (const t of json.thoughts) {
+    assert.equal(t.category, "task");
+  }
+});
+
+test("CAP-02-b: N=3 lined thoughts triggers 3 parallel triage calls (D-06)", async () => {
+  let triageCallCount = 0;
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      triageFn: async (_content: string) => {
+        triageCallCount++;
+        return { category: "task", confidence: 0.9 };
+      },
+    } as Partial<ProcessPhotoDeps>),
+  );
+  const res = await post(router, {
+    image: "aGVsbG8=",
+    mediaType: "image/jpeg",
+  });
+  assert.equal(res.status, 201);
+  // Default makeDeps() returns 3 thoughts — expect 3 triage calls.
+  assert.equal(triageCallCount, 3);
+});
+
+test("CAP-02-c: per-thought triage failure returns 201 with null category for that thought only (D-07)", async () => {
+  let n = 0;
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      triageFn: async (_content: string) => {
+        n++;
+        if (n === 2) throw new Error("claude 5xx");
+        return { category: "task", confidence: 0.9 };
+      },
+    } as Partial<ProcessPhotoDeps>),
+  );
+  const res = await post(router, {
+    image: "aGVsbG8=",
+    mediaType: "image/jpeg",
+  });
+  assert.equal(res.status, 201);
+  const json = (await res.json()) as {
+    thoughts: Array<{ category: string | null }>;
+  };
+  assert.equal(json.thoughts.length, 3);
+  const nullCount = json.thoughts.filter((t) => t.category == null).length;
+  assert.equal(nullCount, 1, "exactly one thought should have null category");
+  const populatedCount = json.thoughts.filter((t) => t.category === "task").length;
+  assert.equal(populatedCount, 2);
+});
+
+test("CAP-02-d: preview mode skips triage entirely (D-08 scope)", async () => {
+  let triageCalled = false;
+  const router = createProcessPhotoRouter(
+    makeDeps({
+      triageFn: async () => {
+        triageCalled = true;
+        return { category: "task", confidence: 0.9 };
+      },
+    } as Partial<ProcessPhotoDeps>),
+  );
+  const res = await router.request("/process-photo?preview=true", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ image: "aGVsbG8=", mediaType: "image/jpeg" }),
+  });
+  assert.equal(res.status, 200);
+  assert.equal(triageCalled, false);
+});
