@@ -145,12 +145,12 @@ Capture every thought with zero friction and have the system organize it for you
 - [ ] G2 resubmit: latest-simulator screenshots (G2-01)
 - [ ] G2 resubmit: double-tap exit dialogue per lifecycle docs (G2-02)
 - [ ] G2 resubmit: WebView brand-compliant content (G2-03)
-- [ ] PostHog analytics integration — error tracking + product events + API metrics (ANLY-01..04)
-- [ ] PWA login/register UI (AUTH-06 — backend complete in v3.4)
+- [ ] PostHog analytics integration — error tracking + product events + API metrics (ANLY-01..04) — browser half landed in Phase 104
+- [x] PWA login/register UI (AUTH-06 — validated in Phase 104 2026-04-19)
+- [x] PWA profile + change-password foundation (AUTH-07 — email display + sign out in Phase 104; full profile editing deferred)
 - [ ] Persistent Safari extension (EXT-01 — survives restarts without re-enabling)
 
 **Deferred to v3.6:**
-- [ ] PWA profile + change-password (AUTH-07)
 - [ ] `work_order_statuses` userId scoping (W-01 — tech debt from v3.4)
 - [ ] GET /v1/brief/:date cross-user isolation test (W-02)
 - [ ] Per-user scheduler fan-out (schedulers hard-scoped to seed user with TODO markers)
@@ -251,4 +251,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-19 — v3.5 Observability, G2 Resubmit & Capture Repair milestone started. Scope: photo pipeline fixes, G2 store resubmit (3 rejection items), PostHog analytics, PWA login UI (AUTH-06), persistent Safari extension (EXT-01).*
+*Last updated: 2026-04-19 — Phase 104 complete: PWA auth UI (email/password signup + login), sessionStorage JWT, PostHog browser error boundary, Vigil Account section in Settings. AUTH-06/AUTH-07/ANLY-01-browser shipped; 5/5 success criteria verified in browser.*
