@@ -4,11 +4,11 @@ import { getGoogleStatus, disconnectGoogle, redirectToGoogleAuth, getPrintSchedu
 describe('api/client Google methods', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
-    localStorage.setItem('vigil_api_key', 'test-key')
+    sessionStorage.setItem('vigil_jwt', 'test-key')
   })
 
   afterEach(() => {
-    localStorage.removeItem('vigil_api_key')
+    sessionStorage.removeItem('vigil_jwt')
   })
 
   it('getGoogleStatus returns null on 404', async () => {
@@ -69,11 +69,11 @@ describe('api/client Google methods', () => {
 describe('api/client PrintSchedule methods', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
-    localStorage.setItem('vigil_api_key', 'test-key')
+    sessionStorage.setItem('vigil_jwt', 'test-key')
   })
 
   afterEach(() => {
-    localStorage.removeItem('vigil_api_key')
+    sessionStorage.removeItem('vigil_jwt')
   })
 
   it('getPrintSchedule returns parsed PrintSchedule on 200', async () => {

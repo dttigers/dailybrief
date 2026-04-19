@@ -84,3 +84,18 @@ if (typeof window !== 'undefined') {
     value: memoryLocalStorage,
   })
 }
+
+// sessionStorage shim — SEPARATE store instance from localStorage to prevent
+// cross-contamination in tests (T-104-W0-01). JWT tokens live in sessionStorage
+// per the v3.5 auth migration; tests must exercise the same surface.
+const memorySessionStorage = createMemoryStorage()
+Object.defineProperty(globalThis, 'sessionStorage', {
+  configurable: true,
+  value: memorySessionStorage,
+})
+if (typeof window !== 'undefined') {
+  Object.defineProperty(window, 'sessionStorage', {
+    configurable: true,
+    value: memorySessionStorage,
+  })
+}

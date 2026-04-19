@@ -26,7 +26,7 @@ function renderPage({
 }
 
 beforeEach(() => {
-  localStorage.setItem('vigil_api_key', 'test-key')
+  sessionStorage.setItem('vigil_jwt', 'test-key')
   // Spy on replaceState so callback tests can assert it fires exactly once
   window.history.replaceState = vi.fn() as unknown as typeof window.history.replaceState
 })

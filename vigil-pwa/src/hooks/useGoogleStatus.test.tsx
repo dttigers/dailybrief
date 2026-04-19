@@ -11,11 +11,11 @@ describe('useGoogleStatus (via GoogleStatusContext)', () => {
   beforeEach(() => {
     // Every test stubs its own fetch mock; reset between tests.
     vi.unstubAllGlobals()
-    // Node 24+ ships a native localStorage that shadows jsdom's per-window
+    // Node 24+ ships a native sessionStorage that shadows jsdom's per-window
     // storage. Stub it with a simple Map so `getStoredKey()` returns a key
     // without needing a backing file.
-    const store = new Map<string, string>([['vigil_api_key', 'test-key']])
-    vi.stubGlobal('localStorage', {
+    const store = new Map<string, string>([['vigil_jwt', 'test-key']])
+    vi.stubGlobal('sessionStorage', {
       getItem: (k: string) => store.get(k) ?? null,
       setItem: (k: string, v: string) => { store.set(k, v) },
       removeItem: (k: string) => { store.delete(k) },
