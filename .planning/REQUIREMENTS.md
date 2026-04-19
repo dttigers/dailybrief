@@ -37,7 +37,7 @@ Closes the v3.4 multi-user loop. Backend endpoints (`POST /v1/auth/register`, `P
 
 - [ ] **AUTH-06**: PWA visitor can sign up with email + password and is logged in on success (JWT stored, subsequent API calls authenticated)
 - [ ] **AUTH-07**: PWA visitor can log in with existing email + password and is redirected to the dashboard
-- [ ] **AUTH-08**: PWA shows authenticated user's email in the header/settings area via a `GET /v1/me` endpoint
+- [x] **AUTH-08**: PWA shows authenticated user's email in the header/settings area via a `GET /v1/me` endpoint
 
 ### Extension Persistence
 
@@ -92,7 +92,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CAP-01 | Phase 103 | Pending |
 | CAP-02 | Phase 103 | Pending |
 | ANLY-01 | Phase 103 + Phase 104 | Complete |
-| AUTH-08 | Phase 103 | Pending |
+| AUTH-08 | Phase 103 | Complete |
 | AUTH-06 | Phase 104 | Pending |
 | AUTH-07 | Phase 104 | Pending |
 | ANLY-02 | Phase 105 | Pending |
