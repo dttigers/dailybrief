@@ -1,0 +1,29 @@
+# CAP-02 POST-fix curl — Phase 103 Plan 04
+# Timestamp: 2026-04-19T20:02:11Z
+# Endpoint: https://api.vigilhub.io/v1/process-photo
+# Expected: HTTP 201, thoughts[0].category is a non-null enum (task|therapy|idea|reflection|project)
+# Contrast with: .planning/phases/103-.../artifacts/cap-02-pre-fix-curl.txt (category was null)
+
+HTTP/2 201 
+x-railway-cdn-edge: fastly/cache-bur-kbur8200155-BUR
+content-type: application/json
+date: Sun, 19 Apr 2026 20:02:16 GMT
+origin-agent-cluster: ?1
+referrer-policy: no-referrer
+server: railway-edge
+strict-transport-security: max-age=15552000; includeSubDomains
+vary: Origin
+x-content-type-options: nosniff
+x-dns-prefetch-control: off
+x-download-options: noopen
+x-frame-options: SAMEORIGIN
+x-permitted-cross-domain-policies: none
+x-railway-edge: railway/us-west2
+x-railway-request-id: WiDwTtrkR8e1xulQ9I3ezw
+x-xss-protection: 0
+x-cache: MISS
+x-cache-hits: 0
+x-served-by: cache-bur-kbur8200155-BUR
+content-length: 2059
+
+{"paperType":"lined","confidence":0.9,"thoughts":[{"id":557,"content":"- Call Sarah about weekend plans","category":"task","confidence":1,"source":"image","createdAt":"2026-04-19T20:02:14.230Z","modifiedAt":"2026-04-19T20:02:14.230Z","cloudKitRecordID":"932a5423-3b8e-4b44-99c1-23045492444a","syncStatus":"pending","lastSyncedAt":null,"taskStatus":"open","therapyClassification":null,"tags":["communication","social"],"isFavorited":false,"projectId":null},{"id":558,"content":"- Pick up groceries (milk, bread, eggs)","category":"task","confidence":1,"source":"image","createdAt":"2026-04-19T20:02:14.230Z","modifiedAt":"2026-04-19T20:02:14.230Z","cloudKitRecordID":"23565106-1d2d-4c59-b319-e10d7c351503","syncStatus":"pending","lastSyncedAt":null,"taskStatus":"open","therapyClassification":null,"tags":["grocery","shopping"],"isFavorited":false,"projectId":null},{"id":559,"content":"- Finish project report by Friday","category":"task","confidence":0.95,"source":"image","createdAt":"2026-04-19T20:02:14.230Z","modifiedAt":"2026-04-19T20:02:14.230Z","cloudKitRecordID":"63662d64-a488-4074-aab8-bd8643ce17f1","syncStatus":"pending","lastSyncedAt":null,"taskStatus":"open","therapyClassification":null,"tags":["work","deadline"],"isFavorited":false,"projectId":null},{"id":560,"content":"- Schedule dentist appointment","category":"task","confidence":1,"source":"image","createdAt":"2026-04-19T20:02:14.230Z","modifiedAt":"2026-04-19T20:02:14.230Z","cloudKitRecordID":"82db564c-680d-42a0-b8d4-ebe513c44b19","syncStatus":"pending","lastSyncedAt":null,"taskStatus":"open","therapyClassification":null,"tags":["health","appointment"],"isFavorited":false,"projectId":null},{"id":561,"content":"- Pay electric bill","category":"task","confidence":1,"source":"image","createdAt":"2026-04-19T20:02:14.230Z","modifiedAt":"2026-04-19T20:02:14.230Z","cloudKitRecordID":"6c022f27-0f61-4a87-ba18-6fd44251f5b8","syncStatus":"pending","lastSyncedAt":null,"taskStatus":"open","therapyClassification":null,"tags":["bills","utilities"],"isFavorited":false,"projectId":null}]}
