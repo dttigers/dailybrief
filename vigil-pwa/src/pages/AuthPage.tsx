@@ -1,12 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
-import { storeKey } from '../api/client'
+import { storeKey, API_BASE } from '../api/client'
 
 interface AuthPageProps {
   onAuthSuccess?: (userId: string, email: string) => void
 }
-
-const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? (import.meta.env.DEV ? '' : 'https://api.vigilhub.io')
 
 const GENERIC_ERROR = 'Invalid email or password. Please try again.'
 

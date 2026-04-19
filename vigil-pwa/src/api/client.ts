@@ -1,6 +1,6 @@
 const STORAGE_KEY = 'vigil_jwt'
 const LEGACY_KEY = 'vigil_api_key'
-const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? (import.meta.env.DEV ? '' : 'https://api.vigilhub.io')
+export const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? (import.meta.env.DEV ? '' : 'https://api.vigilhub.io')
 
 export const getStoredKey = (): string | null => sessionStorage.getItem(STORAGE_KEY)
 
