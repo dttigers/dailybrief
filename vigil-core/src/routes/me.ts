@@ -28,9 +28,17 @@ export interface MeDeps {
   userLookupFn: (userId: number) => Promise<{ id: number; email: string } | null>;
 }
 
+/** Typed sentinel thrown when the DB connection is unavailable at call time. */
+class DbUnavailableError extends Error {
+  constructor() {
+    super("db_unavailable");
+    this.name = "DbUnavailableError";
+  }
+}
+
 const defaultDeps: MeDeps = {
   userLookupFn: async (userId) => {
-    if (!defaultDb) throw new Error("db_unavailable");
+    if (!defaultDb) throw new DbUnavailableError();
     const [row] = await defaultDb
       .select({ id: users.id, email: users.email })
       .from(users)
@@ -61,8 +69,7 @@ export function createMeRouter(deps: MeDeps = defaultDeps): Hono {
     } catch (err) {
       // DB lookup failed (connection, not logic). Surface as 503, not 500,
       // so PWA can retry rather than force re-auth.
-      const msg = err instanceof Error ? err.message : String(err);
-      if (msg === "db_unavailable") {
+      if (err instanceof DbUnavailableError) {
         return c.json({ error: "Database unavailable" }, 503);
       }
       // Unknown error — rethrow so app.onError (Plan 04) captures to PostHog.
