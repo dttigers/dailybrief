@@ -444,11 +444,14 @@ export function createProcessPhotoRouter(
 
     // 8. Commit mode — build insert rows, every row gets its OWN randomUUID (P-7).
     // Phase 102: every row carries userId (NOT NULL constraint).
+    // CAP-02: confidence starts null — triage update is the single source of truth
+    // for per-thought confidence. The page-level vision confidence lives only in the
+    // response envelope (paperType/confidence), not in individual thought rows.
     const insertRows = transformed.thoughts.map((content) => ({
       userId,
       content,
       source: "image" as const,
-      confidence: transformed.confidence,
+      confidence: null,
       cloudKitRecordID: crypto.randomUUID(),
     }));
 
