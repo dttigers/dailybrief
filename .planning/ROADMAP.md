@@ -261,7 +261,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 ## Phases
 
 - [x] **Phase 103: Capture Repair & Server Observability Foundations** - Fix photo pipeline bugs + PostHog singleton + /v1/me endpoint on vigil-core (completed 2026-04-19)
-- [ ] **Phase 104: PWA Auth UI & Browser Observability** - Email/password login+register forms + posthog-js init + error boundary in PWA
+- [x] **Phase 104: PWA Auth UI & Browser Observability** - Email/password login+register forms + posthog-js init + error boundary in PWA (completed 2026-04-19)
 - [ ] **Phase 105: Product Events, API Metrics & User Identity** - Capture funnel events, per-route API metrics, and posthog.identify on login
 - [ ] **Phase 106: G2 Store Resubmit (Atomic)** - Screenshots + double-tap exit dialogue + brand-compliant WebView, all gated together
 - [ ] **Phase 107: Safari Extension Persistence** - Login Item registration so extension survives Mac reboots
@@ -299,7 +299,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 Plans:
 - [x] 104-01-PLAN.md — Wave 0: Test scaffolds (sessionStorage shim + 3 updated test files + 3 new RED test stubs for AuthPage, ErrorBoundary, posthog)
 - [x] 104-02-PLAN.md — Storage migration (client.ts) + AuthPage email/password form + posthog.ts singleton + ErrorBoundary + main.tsx wiring
-- [ ] 104-03-PLAN.md — App.tsx identify wiring + SettingsPage Vigil Account section + human verification checkpoint
+- [x] 104-03-PLAN.md — App.tsx identify wiring + SettingsPage Vigil Account section + human verification checkpoint
 
 ### Phase 105: Product Events, API Metrics & User Identity
 **Goal**: The capture funnel, API error rates, and user identity are visible in the PostHog dashboard
@@ -441,7 +441,7 @@ Plans:
 | 101. Context Menu | v3.4 | 5/5 | Complete | 2026-04-18 |
 | 102. Multi-User Foundation | v3.4 | 6/6 | Complete | 2026-04-18 |
 | 103. Capture Repair & Server Observability Foundations | v3.5 | 5/5 | Complete   | 2026-04-19 |
-| 104. PWA Auth UI & Browser Observability | v3.5 | 2/3 | In Progress|  |
+| 104. PWA Auth UI & Browser Observability | v3.5 | 3/3 | Complete   | 2026-04-19 |
 | 105. Product Events, API Metrics & User Identity | v3.5 | 0/TBD | Not started | - |
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 0/TBD | Not started | - |
 | 107. Safari Extension Persistence | v3.5 | 0/TBD | Not started | - |

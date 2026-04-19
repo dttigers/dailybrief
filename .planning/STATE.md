@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
-status: executing
-stopped_at: Completed 104-02-PLAN.md
-last_updated: "2026-04-19T21:40:53.911Z"
+status: verifying
+stopped_at: Completed 104-03-PLAN.md — Phase 104 complete
+last_updated: "2026-04-19T22:12:28.305Z"
 last_activity: 2026-04-19
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 8
-  completed_plans: 7
-  percent: 88
+  completed_plans: 8
+  percent: 100
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 
 Phase: 104 (pwa-auth-ui-browser-observability) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-19
 
 Progress: [░░░░░░░░░░] 0%
@@ -53,6 +53,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 103 P04 | 12m 23s | 4 tasks | 5 files |
 | Phase 104 P01 | 3min | 2 tasks | 7 files |
 | Phase 104 P02 | 3m 3s | 2 tasks | 7 files |
+| Phase 104 P03 | 24m 9s | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -81,6 +82,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 103]: posthog-dev-vs-prod.txt documents automated code-path verification; PostHog Cloud UI confirmation deferred to user (autonomous: false plan)
 - [Phase 104]: [Phase 104] Plan 104-01 — reused createMemoryStorage() factory with SEPARATE Map for sessionStorage shim (T-104-W0-01 isolation); migrated 3 existing test files to sessionStorage/vigil_jwt one plan ahead of client.ts (accepts 3 intentionally RED Bearer tests until Plan 02); exact-string assertion 'Invalid email or password. Please try again.' in AuthPage.test.tsx prevents user-enumeration regressions (T-104-W0-02)
 - [Phase 104]: Plan 104-02 — STORAGE_KEY value flipped ('vigil_api_key'→'vigil_jwt') while keeping the identifier name, minimizing blast radius on vigilFetch and all callers; clearKey idempotently cleans BOTH sessionStorage['vigil_jwt'] AND localStorage['vigil_api_key'] (D-10) so stale tabs opened after migration land clean; AuthPage onAuthSuccess signature expanded to (userId,email) in this plan to unblock Plan 03 identifyUser wiring without re-editing AuthPage; posthog.init(...) ?? null defends against builds that return undefined (Pitfall 6)
+- [Phase 104]: Plan 104-03 — centralized signOut() in api/client.ts + window 'vigil:signout' CustomEvent bus to sync App.tsx isAuthenticated with sessionStorage on sign-out (UAT-found redirect-loop fix); returning-session /v1/me identify swallows errors silently and relies on vigilFetch auth guard for stale-JWT redirect; Phase 104 complete, all 5 success criteria human-verified
 
 ### Pending Todos
 
@@ -96,7 +98,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-19T21:40:53.906Z
-Stopped at: Completed 104-02-PLAN.md
+Last session: 2026-04-19T22:12:28.301Z
+Stopped at: Completed 104-03-PLAN.md — Phase 104 complete
 Resume file: None
 Next action: `/gsd-plan-phase 103`
