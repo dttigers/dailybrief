@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { renderHook, act, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { GoogleStatusProvider, useGoogleStatus } from './GoogleStatusContext'
@@ -11,18 +11,15 @@ describe('useGoogleStatus (via GoogleStatusContext)', () => {
   beforeEach(() => {
     // Every test stubs its own fetch mock; reset between tests.
     vi.unstubAllGlobals()
-    // Node 24+ ships a native sessionStorage that shadows jsdom's per-window
-    // storage. Stub it with a simple Map so `getStoredKey()` returns a key
-    // without needing a backing file.
-    const store = new Map<string, string>([['vigil_jwt', 'test-key']])
-    vi.stubGlobal('sessionStorage', {
-      getItem: (k: string) => store.get(k) ?? null,
-      setItem: (k: string, v: string) => { store.set(k, v) },
-      removeItem: (k: string) => { store.delete(k) },
-      clear: () => { store.clear() },
-      key: () => null,
-      length: store.size,
-    })
+    // WR-03: rely on setup.ts's memorySessionStorage shim (installed on both
+    // globalThis and window) rather than stubbing a local Map-backed surface
+    // that leaks across suites. Seed the JWT directly on the shared shim.
+    sessionStorage.setItem('vigil_jwt', 'test-key')
+  })
+  afterEach(() => {
+    // WR-03: remove the JWT so tests exercising the unauthenticated path in
+    // other suites (client.test.ts, etc.) don't inherit an auth token.
+    sessionStorage.removeItem('vigil_jwt')
   })
 
   it('returns status=null when api returns 404 (disconnected)', async () => {
