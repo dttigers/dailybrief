@@ -33,7 +33,6 @@ import { googleAuth } from "./routes/google-auth.js";
 import { googleStatus } from "./routes/google-status.js";
 import { auth as authRoutes } from "./routes/auth.js";
 import { me } from "./routes/me.js";
-import { debugThrow } from "./routes/debug-throw.js";
 import { captureException, shutdownPosthog } from "./analytics/posthog.js";
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
@@ -140,7 +139,6 @@ app.route("/v1", sports);
 app.route("/v1", calendar);
 app.route("/v1", googleStatus);
 app.route("/v1", settings);
-app.route("/v1", debugThrow);  // TEMPORARY — Phase 103 Plan 04 ANLY-01 verification only
 app.route("/v1", me);  // Phase 103 Plan 03 — AUTH-08, behind bearerAuth catch-all (D-17)
 
 // D-13 — single chokepoint for unhandled errors. Must be AFTER all app.route()
