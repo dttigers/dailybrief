@@ -11,8 +11,8 @@
 
 Capture pipeline regressions discovered in daily use after v3.4 shipped. Both bugs silently drop thoughts — highest-priority fix.
 
-- [ ] **CAP-01**: HEIC photos dropped into the Mac watched folder (iCloud path) are triaged instead of silently ignored
-- [ ] **CAP-02**: Photos uploaded through the API are AI-triaged automatically — the category field is populated on the returned thought, not left null
+- [x] **CAP-01**: HEIC photos dropped into the Mac watched folder (iCloud path) are triaged instead of silently ignored
+- [x] **CAP-02**: Photos uploaded through the API are AI-triaged automatically — the category field is populated on the returned thought, not left null
 
 ### G2 Store Resubmit
 
@@ -89,8 +89,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CAP-01 | Phase 103 | Pending |
-| CAP-02 | Phase 103 | Pending |
+| CAP-01 | Phase 103 | Complete |
+| CAP-02 | Phase 103 | Complete |
 | ANLY-01 | Phase 103 + Phase 104 | Complete |
 | AUTH-08 | Phase 103 | Complete |
 | AUTH-06 | Phase 104 | Pending |

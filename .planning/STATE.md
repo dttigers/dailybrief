@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Completed 103-03-PLAN.md
-last_updated: "2026-04-19T18:30:36.519Z"
+stopped_at: Completed 103-02-PLAN.md
+last_updated: "2026-04-19T18:52:23.847Z"
 last_activity: 2026-04-19
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 5
-  completed_plans: 3
-  percent: 60
+  completed_plans: 4
+  percent: 80
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 ## Current Position
 
 Phase: 103 (capture-repair-server-observability-foundations) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-04-19
 
@@ -49,6 +49,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 103 P00 | 3m 11s | 2 tasks | 4 files |
 | Phase 103 P01 | 3m 10s | 2 tasks | 3 files |
 | Phase 103 P03 | 1m 14s | 1 tasks | 1 files |
+| Phase 103 P02 | 18m 10s | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -71,6 +72,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 103]: Plan 103-00 — Runtime RED (not TS compile-time RED) chosen for CAP-* cases: cast fake deps as Partial<ProcessPhotoDeps> so file compiles today; Plan 02 removes cast when extending interface
 - [Phase 103]: Plan 103-01 — Used snake_case before_send verbatim (Pitfall 2); normalized non-Error throws inside captureException wrapper; no NODE_ENV coupling (key-absence gate only)
 - [Phase 103]: Plan 103-03 — Used String(row.id) from the DB-returned value rather than String(userId) from context; distinguished 'db_unavailable' sentinel from other throws (503 vs rethrow to app.onError); exported BOTH createMeRouter factory AND me singleton to satisfy Plan 00 tests today and future dep-injected tests later
+- [Phase 103]: Plan 103-02 — Replaced sharp with heic-convert@^2.1.0 per D-01 revision (pure-JS, zero Railway rebuild). Promise.allSettled over Promise.all for per-thought triage (Pitfall 6). Extended ProcessPhotoDeps from 3 to 6 fields (heicConvertFn, triageFn, dbUpdateTriageFn) as required, non-optional — test makeDeps() gained defaults so existing callers compile unchanged.
 
 ### Pending Todos
 
@@ -86,7 +88,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-19T18:30:36.514Z
-Stopped at: Completed 103-03-PLAN.md
+Last session: 2026-04-19T18:52:23.842Z
+Stopped at: Completed 103-02-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 103`
