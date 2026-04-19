@@ -2,18 +2,30 @@
 
 ## Current State
 
+**In progress:** v3.5 Observability, G2 Resubmit & Capture Repair (started 2026-04-19) — fix broken photo capture, unblock G2 store approval, land PostHog analytics + error tracking, ship PWA login UI, persist Safari extension.
+
 **Shipped:** v3.4 Multi-User Foundation & PWA Polish (2026-04-18) — 4 phases, 15 plans, 14/14 requirements satisfied, live on api.vigilhub.io with 5/5 go/no-go curls GREEN.
 
-**Next:** v3.5 — scope TBD. G2 glasses arriving ~2026-04-24 remains the near-term anchor event. Top v3.5 candidates (not yet committed):
-- AUTH-06: PWA login/register UI (backend complete, UI deferred)
-- W-01: `work_order_statuses` table userId scoping follow-up
-- Per-user scheduler fan-out (schedulers hard-scoped to seed user in v3.4 with TODO markers)
+## Current Milestone: v3.5 Observability, G2 Resubmit & Capture Repair
 
-**Carry-forward (blocked):**
-- Phase 85 (iOS Shortcut) held — Shortcuts.app bugs
-- Phase 80 (Gmail Server Service) — blocked on ServiceNow API token from IT
-- G2 hardware retest — pending physical device access (~2026-04-24)
-- EXT-01: Persistent Safari extension (survives restarts without re-enabling)
+**Goal:** Fix the capture pipeline, unblock G2 approval, and land analytics/error tracking so we stop debugging blind — plus close the multi-user loop with a real login UI.
+
+**Target features:**
+- Photo capture repair — folder watcher broken on iCloud path; manual uploads skipping triage
+- G2 store resubmit — fresh simulator screenshots, double-tap exit dialogue, brand-compliant WebView
+- PostHog analytics — error tracking, per-user product events, API metrics, traffic baseline
+- AUTH-06 PWA login/register UI — close the multi-user loop
+- EXT-01 Persistent Safari extension — survives restarts without re-enabling
+
+**Carry-forward (deferred to v3.6):**
+- W-01: `work_order_statuses` table userId scoping
+- W-02: GET /v1/brief/:date cross-user isolation test coverage
+- Per-user scheduler fan-out (schedulers still hard-scoped to seed user)
+
+**Still blocked:**
+- Phase 85 (iOS Shortcut) — Shortcuts.app bugs
+- Phase 80 (ServiceNow API work orders) — IT token
+- G2 hardware retest — device arriving ~2026-04-24
 
 ## What This Is
 
@@ -127,11 +139,21 @@ Capture every thought with zero friction and have the system organize it for you
 
 ### Active
 
-- [ ] PWA login/register UI (AUTH-06 — backend complete in v3.4; UI carry-forward)
-- [ ] PWA profile + change-password (AUTH-07)
-- [ ] `work_order_statuses` userId scoping (W-01 — audit tech debt from v3.4)
-- [ ] Per-user scheduler fan-out (schedulers hard-scoped to seed user with TODO markers)
+**v3.5 (in progress):**
+- [ ] Photo folder watcher repair — broken on iCloud path (CAP-01)
+- [ ] Manual photo upload triage — uploaded photos skipping AI categorization (CAP-02)
+- [ ] G2 resubmit: latest-simulator screenshots (G2-01)
+- [ ] G2 resubmit: double-tap exit dialogue per lifecycle docs (G2-02)
+- [ ] G2 resubmit: WebView brand-compliant content (G2-03)
+- [ ] PostHog analytics integration — error tracking + product events + API metrics (ANLY-01..04)
+- [ ] PWA login/register UI (AUTH-06 — backend complete in v3.4)
 - [ ] Persistent Safari extension (EXT-01 — survives restarts without re-enabling)
+
+**Deferred to v3.6:**
+- [ ] PWA profile + change-password (AUTH-07)
+- [ ] `work_order_statuses` userId scoping (W-01 — tech debt from v3.4)
+- [ ] GET /v1/brief/:date cross-user isolation test (W-02)
+- [ ] Per-user scheduler fan-out (schedulers hard-scoped to seed user with TODO markers)
 - [ ] iOS Shortcut quick-capture (IOS-01 — blocked by Shortcuts.app bugs)
 - [ ] ServiceNow API work order source (WO-01 — blocked on IT token)
 
@@ -229,4 +251,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-18 after v3.4 milestone completion — Multi-User Foundation & PWA Polish shipped (14/14 requirements, 8/8 E2E flows, 5/5 production curls GREEN). Next milestone TBD via /gsd-new-milestone.*
+*Last updated: 2026-04-19 — v3.5 Observability, G2 Resubmit & Capture Repair milestone started. Scope: photo pipeline fixes, G2 store resubmit (3 rejection items), PostHog analytics, PWA login UI (AUTH-06), persistent Safari extension (EXT-01).*

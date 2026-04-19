@@ -1,10 +1,10 @@
 ---
 gsd_state_version: 1.0
-milestone: null
-milestone_name: null
-status: between_milestones
-stopped_at: v3.4 Multi-User Foundation & PWA Polish shipped — 4 phases, 15 plans, 14/14 requirements satisfied, live on api.vigilhub.io. Archived to .planning/milestones/v3.4-*. REQUIREMENTS.md reset. Ready for /gsd-new-milestone.
-last_updated: "2026-04-19T00:15:00.000Z"
+milestone: v3.5
+milestone_name: Observability, G2 Resubmit & Capture Repair
+status: defining_requirements
+stopped_at: v3.5 started — PROJECT.md + STATE.md updated. Scope confirmed: photo capture repair, G2 resubmit fixes, PostHog analytics, AUTH-06 PWA login UI, EXT-01 Safari persistence. Next: define REQUIREMENTS.md and roadmap.
+last_updated: "2026-04-19T00:30:00.000Z"
 last_activity: 2026-04-19
 progress:
   total_phases: 0
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-18 after v3.4 milestone completion)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Between milestones — plan next via `/gsd-new-milestone`
+**Current focus:** v3.5 — fix capture pipeline, unblock G2 approval, land observability
 
 ## Current Position
 
-Milestone: v3.4 shipped 2026-04-18
-Next: TBD
-Status: Between milestones
-Last activity: 2026-04-19
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-04-19 — Milestone v3.5 started
 
 Progress: —
 
@@ -81,7 +81,7 @@ _(None)_
 
 ## Session Continuity
 
-Last session: 2026-04-19T00:15:00.000Z
-Stopped at: v3.4 Multi-User Foundation & PWA Polish shipped — archived to .planning/milestones/v3.4-*, REQUIREMENTS.md reset, PROJECT.md evolved. Ready for next milestone.
+Last session: 2026-04-19T00:30:00.000Z
+Stopped at: v3.5 started — PROJECT.md + STATE.md updated. Scope confirmed. Defining requirements next.
 Resume file: None
-Next action: `/gsd-new-milestone` to define v3.5 requirements and roadmap
+Next action: Define REQUIREMENTS.md, then spawn gsd-roadmapper for ROADMAP.md
