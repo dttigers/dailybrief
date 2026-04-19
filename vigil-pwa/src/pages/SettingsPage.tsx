@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { useSearchParams } from 'react-router'
+import { useSearchParams, useNavigate } from 'react-router'
 import { useGoogleStatus } from '../hooks/useGoogleStatus'
 import {
   disconnectGoogle,
@@ -10,6 +10,8 @@ import {
   setGenerateSchedule,
   getTimezone,
   setTimezone,
+  vigilFetch,
+  clearKey,
 } from '../api/client'
 import { ScheduleCard } from '../components/ScheduleCard'
 
@@ -47,12 +49,36 @@ const GOOGLE_ERROR_MESSAGES: Record<string, string> = {
 export default function SettingsPage() {
   const { status, isLoading, error, refetch } = useGoogleStatus()
   const [searchParams] = useSearchParams()
+  const navigate = useNavigate()
   const [banner, setBanner] = useState<Banner>(null)
   const [confirming, setConfirming] = useState(false)
   const [disconnecting, setDisconnecting] = useState(false)
   const [timezone, setTimezoneState] = useState<string>('America/New_York')
   const [timezoneLoading, setTimezoneLoading] = useState(true)
   const [timezoneSaving, setTimezoneSaving] = useState(false)
+  // D-06 / D-07: Vigil Account section state — email from GET /v1/me
+  const [accountEmail, setAccountEmail] = useState<string | null>(null)
+  const [accountLoading, setAccountLoading] = useState(true)
+
+  // D-07: fetch authenticated user email for Vigil Account section.
+  // Silent on failure — no error banner; absence renders empty string.
+  useEffect(() => {
+    vigilFetch('/v1/me')
+      .then((r) => {
+        if (!r.ok) {
+          setAccountLoading(false)
+          return undefined
+        }
+        return r.json()
+      })
+      .then((data?: { userId: string; email: string }) => {
+        if (data?.email) setAccountEmail(data.email)
+        setAccountLoading(false)
+      })
+      .catch(() => {
+        setAccountLoading(false)
+      })
+  }, [])
 
   // D-11 + Pitfall 4: read callback params ONCE on mount, then strip the URL.
   useEffect(() => {
@@ -185,6 +211,24 @@ export default function SettingsPage() {
       )}
 
       <h1 className="text-2xl font-medium mb-4">Settings</h1>
+
+      {/* D-06: Vigil Account — first card in Settings content, shows
+          authenticated user's email from GET /v1/me + Sign out button. */}
+      <section className="bg-gray-900 border border-gray-900/40 rounded-lg p-5 mb-4">
+        <h2 className="text-lg font-medium">Vigil Account</h2>
+        {accountLoading ? (
+          <p className="text-gray-400 text-sm mt-2">Loading…</p>
+        ) : (
+          <p className="text-gray-400 text-sm mt-2">{accountEmail ?? ''}</p>
+        )}
+        <button
+          type="button"
+          onClick={() => { clearKey(); navigate('/auth') }}
+          className="mt-3 text-sm text-red-400 hover:text-red-300"
+        >
+          Sign out
+        </button>
+      </section>
 
       <section className="bg-gray-900 border border-gray-900/40 rounded-lg p-5">
         <div className="flex items-start justify-between mb-4">
