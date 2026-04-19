@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate } from 'react-router'
-import { getStoredKey } from './api/client'
+import { getStoredKey, vigilFetch } from './api/client'
+import { identifyUser } from './analytics/posthog'
 import { GoogleStatusProvider } from './hooks/GoogleStatusContext'
 import { ToastProvider } from './hooks/useToast'
 import ToastHost from './components/ToastHost'
@@ -19,9 +20,23 @@ import SettingsPage from './pages/SettingsPage'
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => getStoredKey() !== null)
 
-  function handleAuthSuccess() {
+  function handleAuthSuccess(userId: string, email: string) {
     setIsAuthenticated(true)
+    identifyUser(userId, email) // D-15: identify immediately on auth success
   }
+
+  // D-15: identify returning users on mount (JWT already in sessionStorage).
+  // Observability is best-effort — 401/network errors are silently ignored;
+  // protected-route guards will handle any actual auth failures.
+  useEffect(() => {
+    if (!getStoredKey()) return
+    vigilFetch('/v1/me')
+      .then((r) => r.json())
+      .then(({ userId, email }: { userId: string; email: string }) => {
+        identifyUser(userId, email)
+      })
+      .catch(() => { /* silent — observability is best-effort */ })
+  }, [])
 
   return (
     <Routes>
