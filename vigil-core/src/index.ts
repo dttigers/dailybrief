@@ -32,6 +32,8 @@ import { calendar } from "./routes/calendar.js";
 import { googleAuth } from "./routes/google-auth.js";
 import { googleStatus } from "./routes/google-status.js";
 import { auth as authRoutes } from "./routes/auth.js";
+import { me } from "./routes/me.js";
+import { captureException, shutdownPosthog } from "./analytics/posthog.js";
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
 import { testConnection, closeConnection, db as mainDb } from "./db/connection.js";
@@ -137,6 +139,19 @@ app.route("/v1", sports);
 app.route("/v1", calendar);
 app.route("/v1", googleStatus);
 app.route("/v1", settings);
+app.route("/v1", me);  // Phase 103 Plan 03 — AUTH-08, behind bearerAuth catch-all (D-17)
+
+// D-13 — single chokepoint for unhandled errors. Must be AFTER all app.route()
+// calls so Hono's handler-chain ordering routes thrown errors here (Pitfall 4).
+app.onError((err, c) => {
+  console.error("[vigil-core] unhandled error:", err);
+  const userId = (c.get("userId") as number | undefined) ?? null;
+  captureException(userId, err, {
+    route: c.req.path,
+    method: c.req.method,
+  });
+  return c.json({ error: "Internal server error" }, 500);
+});
 
 const port = Number(process.env.PORT) || 3001;
 
@@ -176,6 +191,9 @@ console.log("[gmail-workorders] started (5m tick interval)");
 // Graceful shutdown
 process.on("SIGTERM", async () => {
   console.log("[vigil-core] SIGTERM received, stopping services + closing connections...");
+  // D-15 — FIRST await: flush PostHog event buffer BEFORE anything else can hang.
+  // Railway drops the buffer otherwise (Pitfall 5).
+  await shutdownPosthog();
   generateScheduler.stop();
   gmailWorkOrders.stop();
   await closeConnection();
@@ -184,6 +202,9 @@ process.on("SIGTERM", async () => {
 
 process.on("SIGINT", async () => {
   console.log("[vigil-core] SIGINT received, stopping services + closing connections...");
+  // D-15 — FIRST await: flush PostHog event buffer BEFORE anything else can hang.
+  // Railway drops the buffer otherwise (Pitfall 5).
+  await shutdownPosthog();
   generateScheduler.stop();
   gmailWorkOrders.stop();
   await closeConnection();
