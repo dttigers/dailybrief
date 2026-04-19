@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { getGoogleStatus, disconnectGoogle, redirectToGoogleAuth, getPrintSchedule, setPrintSchedule } from './client'
+import { getGoogleStatus, disconnectGoogle, redirectToGoogleAuth, getPrintSchedule, setPrintSchedule, signOut } from './client'
 
 describe('api/client Google methods', () => {
   beforeEach(() => {
@@ -133,5 +133,52 @@ describe('api/client PrintSchedule methods', () => {
       vi.fn().mockResolvedValue(new Response('error', { status: 400 })),
     )
     await expect(setPrintSchedule({ hour: 7, minute: 30, enabled: true })).rejects.toThrow(/400/)
+  })
+})
+
+describe('api/client signOut', () => {
+  beforeEach(() => {
+    sessionStorage.setItem('vigil_jwt', 'test-jwt')
+    localStorage.setItem('vigil_api_key', 'legacy-key')
+  })
+
+  afterEach(() => {
+    sessionStorage.removeItem('vigil_jwt')
+    localStorage.removeItem('vigil_api_key')
+  })
+
+  it('clears sessionStorage JWT and legacy localStorage key', () => {
+    expect(sessionStorage.getItem('vigil_jwt')).toBe('test-jwt')
+    expect(localStorage.getItem('vigil_api_key')).toBe('legacy-key')
+    signOut()
+    expect(sessionStorage.getItem('vigil_jwt')).toBeNull()
+    expect(localStorage.getItem('vigil_api_key')).toBeNull()
+  })
+
+  it('dispatches a vigil:signout CustomEvent on window', () => {
+    const listener = vi.fn()
+    window.addEventListener('vigil:signout', listener)
+    try {
+      signOut()
+      expect(listener).toHaveBeenCalledTimes(1)
+      const event = listener.mock.calls[0][0] as Event
+      expect(event.type).toBe('vigil:signout')
+    } finally {
+      window.removeEventListener('vigil:signout', listener)
+    }
+  })
+
+  it('fires the event after clearing storage (listener sees cleared state)', () => {
+    let jwtDuringEvent: string | null = 'not-yet-observed'
+    const listener = () => {
+      jwtDuringEvent = sessionStorage.getItem('vigil_jwt')
+    }
+    window.addEventListener('vigil:signout', listener)
+    try {
+      signOut()
+      expect(jwtDuringEvent).toBeNull()
+    } finally {
+      window.removeEventListener('vigil:signout', listener)
+    }
   })
 })

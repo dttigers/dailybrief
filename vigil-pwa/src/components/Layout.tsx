@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
-import { clearKey } from '../api/client'
+import { signOut } from '../api/client'
 import { useGoogleStatus } from '../hooks/useGoogleStatus'
 import OfflineBanner from './OfflineBanner'
 
@@ -49,7 +49,7 @@ export default function Layout({ children }: LayoutProps) {
   }, [])
 
   function handleSignOut() {
-    clearKey()
+    signOut() // clears JWT + dispatches vigil:signout so App flips isAuthenticated
     navigate('/auth')
   }
 

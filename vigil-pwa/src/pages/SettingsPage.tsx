@@ -11,7 +11,7 @@ import {
   getTimezone,
   setTimezone,
   vigilFetch,
-  clearKey,
+  signOut,
 } from '../api/client'
 import { ScheduleCard } from '../components/ScheduleCard'
 
@@ -223,7 +223,7 @@ export default function SettingsPage() {
         )}
         <button
           type="button"
-          onClick={() => { clearKey(); navigate('/auth') }}
+          onClick={() => { signOut(); navigate('/auth') }}
           className="mt-3 text-sm text-red-400 hover:text-red-300"
         >
           Sign out

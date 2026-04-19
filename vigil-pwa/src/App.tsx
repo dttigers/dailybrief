@@ -38,6 +38,18 @@ export default function App() {
       .catch(() => { /* silent — observability is best-effort */ })
   }, [])
 
+  // Phase 104-03 UAT fix: listen for sign-out so the /auth route guard
+  // (isAuthenticated ? <Navigate to="/" /> : <AuthPage />) actually lets the
+  // user land on /auth after clearing the JWT. Without this flip, sign-out
+  // bounces back to / and the dashboard 401s on its thoughts fetch.
+  useEffect(() => {
+    function handleSignOut() {
+      setIsAuthenticated(false)
+    }
+    window.addEventListener('vigil:signout', handleSignOut)
+    return () => window.removeEventListener('vigil:signout', handleSignOut)
+  }, [])
+
   return (
     <Routes>
       <Route

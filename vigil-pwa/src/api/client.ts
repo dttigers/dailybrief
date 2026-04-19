@@ -13,6 +13,24 @@ export const clearKey = (): void => {
   localStorage.removeItem(LEGACY_KEY) // D-10: one-time legacy cleanup
 }
 
+/**
+ * Sign out of Vigil.
+ *
+ * Clears the JWT (sessionStorage) and legacy API key (localStorage), then
+ * dispatches a `vigil:signout` CustomEvent on `window` so App-level state
+ * (e.g. `isAuthenticated`) can flip to false. Without the event, the /auth
+ * route guard (`isAuthenticated ? <Navigate to="/" /> : <AuthPage />`)
+ * bounces the user straight back to the dashboard after clearing the JWT,
+ * causing a 401 cascade instead of landing on the login screen.
+ *
+ * Call this from any sign-out UI (Layout header, SettingsPage) instead of
+ * inlining `clearKey()`.
+ */
+export const signOut = (): void => {
+  clearKey()
+  window.dispatchEvent(new CustomEvent('vigil:signout'))
+}
+
 export async function vigilFetch(path: string, init?: RequestInit): Promise<Response> {
   const key = getStoredKey()
   const authHeaders: Record<string, string> = key
