@@ -310,7 +310,11 @@ Plans:
   2. After a photo upload, a `photo_uploaded` event appears in PostHog filtered by the authenticated userId
   3. Per-route API metrics (status code, latency, route name) are populated in PostHog for authenticated requests — visible in a dashboard query
   4. No event property contains user-generated string content — grep of all `capture()` calls confirms the property allowlist (enums, booleans, numbers only)
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 105-01-PLAN.md — Extend trackEvent with BLOCKED_PROPERTY_NAMES guard + add identifyUser wrapper
+- [ ] 105-02-PLAN.md — Metrics middleware (api_request) + wire 5 capture-funnel events into route handlers
+- [ ] 105-03-PLAN.md — Server-side identifyUser in /v1/me with email + createdAt person properties
 
 ### Phase 106: G2 Store Resubmit (Atomic)
 **Goal**: All three Even Hub store rejection items are resolved and verified on the simulator before a single resubmission is made
@@ -442,7 +446,7 @@ Plans:
 | 102. Multi-User Foundation | v3.4 | 6/6 | Complete | 2026-04-18 |
 | 103. Capture Repair & Server Observability Foundations | v3.5 | 5/5 | Complete   | 2026-04-19 |
 | 104. PWA Auth UI & Browser Observability | v3.5 | 3/3 | Complete    | 2026-04-19 |
-| 105. Product Events, API Metrics & User Identity | v3.5 | 0/TBD | Not started | - |
+| 105. Product Events, API Metrics & User Identity | v3.5 | 0/3 | Not started | - |
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 0/TBD | Not started | - |
 | 107. Safari Extension Persistence | v3.5 | 0/TBD | Not started | - |
 
