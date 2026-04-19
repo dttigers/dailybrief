@@ -1,14 +1,16 @@
-const STORAGE_KEY = 'vigil_api_key'
+const STORAGE_KEY = 'vigil_jwt'
+const LEGACY_KEY = 'vigil_api_key'
 const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? (import.meta.env.DEV ? '' : 'https://api.vigilhub.io')
 
-export const getStoredKey = (): string | null => localStorage.getItem(STORAGE_KEY)
+export const getStoredKey = (): string | null => sessionStorage.getItem(STORAGE_KEY)
 
 export const storeKey = (key: string): void => {
-  localStorage.setItem(STORAGE_KEY, key)
+  sessionStorage.setItem(STORAGE_KEY, key)
 }
 
 export const clearKey = (): void => {
-  localStorage.removeItem(STORAGE_KEY)
+  sessionStorage.removeItem(STORAGE_KEY)
+  localStorage.removeItem(LEGACY_KEY) // D-10: one-time legacy cleanup
 }
 
 export async function vigilFetch(path: string, init?: RequestInit): Promise<Response> {
