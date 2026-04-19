@@ -19,6 +19,13 @@ export function captureException(
   ph?.captureException(error, context)
 }
 
+// WR-02: guard against repeat identify calls (StrictMode double-mount, /v1/me +
+// handleAuthSuccess racing for the same session, HMR re-evaluation). posthog-js
+// treats $identify as idempotent for the same distinct_id, but avoiding the
+// duplicate call keeps debug traces clean and protects against future refactors.
+let lastIdentifiedId: string | null = null
 export function identifyUser(userId: string, email: string): void {
+  if (lastIdentifiedId === userId) return
+  lastIdentifiedId = userId
   ph?.identify(userId, { email })
 }
