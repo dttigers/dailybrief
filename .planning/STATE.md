@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Completed 103-02-PLAN.md
-last_updated: "2026-04-19T18:52:23.847Z"
+stopped_at: Completed 103-04-PLAN.md
+last_updated: "2026-04-19T20:08:37.547Z"
 last_activity: 2026-04-19
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 5
-  completed_plans: 4
-  percent: 80
+  completed_plans: 5
+  percent: 100
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 ## Current Position
 
 Phase: 103 (capture-repair-server-observability-foundations) — EXECUTING
-Plan: 5 of 5
+Plan: 2 of 5
 Status: Ready to execute
 Last activity: 2026-04-19
 
@@ -50,6 +50,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 103 P01 | 3m 10s | 2 tasks | 3 files |
 | Phase 103 P03 | 1m 14s | 1 tasks | 1 files |
 | Phase 103 P02 | 18m 10s | 3 tasks | 6 files |
+| Phase 103 P04 | 12m 23s | 4 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,9 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 103]: Plan 103-01 — Used snake_case before_send verbatim (Pitfall 2); normalized non-Error throws inside captureException wrapper; no NODE_ENV coupling (key-absence gate only)
 - [Phase 103]: Plan 103-03 — Used String(row.id) from the DB-returned value rather than String(userId) from context; distinguished 'db_unavailable' sentinel from other throws (503 vs rethrow to app.onError); exported BOTH createMeRouter factory AND me singleton to satisfy Plan 00 tests today and future dep-injected tests later
 - [Phase 103]: Plan 103-02 — Replaced sharp with heic-convert@^2.1.0 per D-01 revision (pure-JS, zero Railway rebuild). Promise.allSettled over Promise.all for per-thought triage (Pitfall 6). Extended ProcessPhotoDeps from 3 to 6 fields (heicConvertFn, triageFn, dbUpdateTriageFn) as required, non-optional — test makeDeps() gained defaults so existing callers compile unchanged.
+- [Phase 103]: Used debug-throw temporary route (Option B) for ANLY-01 SC#3 verification — no pre-existing broken endpoint available
+- [Phase 103]: HEIC test fixture sourced from strukturag/libheif (not catdad-experiments) — GitHub raw URL redirect issue
+- [Phase 103]: posthog-dev-vs-prod.txt documents automated code-path verification; PostHog Cloud UI confirmation deferred to user (autonomous: false plan)
 
 ### Pending Todos
 
@@ -88,7 +92,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-19T18:52:23.842Z
-Stopped at: Completed 103-02-PLAN.md
+Last session: 2026-04-19T20:08:37.542Z
+Stopped at: Completed 103-04-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 103`
