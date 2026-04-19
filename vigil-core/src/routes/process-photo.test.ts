@@ -219,6 +219,10 @@ function makeDeps(
           cloudKitRecordID: r.cloudKitRecordID as string,
         }),
       ),
+    // Phase 103 Plan 02 defaults — tests override per-case.
+    heicConvertFn: async (buf) => buf,
+    triageFn: async () => ({ category: "task", confidence: 0.9 }),
+    dbUpdateTriageFn: async () => {},
     ...overrides,
   };
 }
@@ -255,11 +259,13 @@ test("RT-1: lined happy path returns 201 with 3 thoughts (image source, distinct
   assert.equal(res.status, 201);
   const json = (await res.json()) as ProcessPhotoResponseShape;
   assert.equal(json.paperType, "lined");
-  assert.equal(json.confidence, 0.92);
+  assert.equal(json.confidence, 0.92); // page-level confidence = Claude vision result
   assert.equal(json.thoughts.length, 3);
   for (const t of json.thoughts) {
     assert.equal(t.source, "image");
-    assert.equal(t.confidence, 0.92);
+    // Phase 103 Plan 02: per-thought confidence now reflects triage confidence
+    // (default makeDeps triageFn returns 0.9), not Claude vision confidence.
+    assert.equal(t.confidence, 0.9);
     assert.equal(t.projectId, null);
   }
   // P-7: distinct cloudKitRecordIDs
@@ -287,10 +293,12 @@ test("RT-2: gridded happy path returns 201 with exactly 1 thought", async () => 
   assert.equal(res.status, 201);
   const json = (await res.json()) as ProcessPhotoResponseShape;
   assert.equal(json.paperType, "gridded");
-  assert.equal(json.confidence, 0.88);
+  assert.equal(json.confidence, 0.88); // page-level confidence = Claude vision result
   assert.equal(json.thoughts.length, 1);
   assert.equal(json.thoughts[0].source, "image");
-  assert.equal(json.thoughts[0].confidence, 0.88);
+  // Phase 103 Plan 02: per-thought confidence now reflects triage confidence
+  // (default makeDeps triageFn returns 0.9), not Claude vision confidence.
+  assert.equal(json.thoughts[0].confidence, 0.9);
   assert.equal(json.thoughts[0].projectId, null);
 });
 

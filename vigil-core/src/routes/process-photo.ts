@@ -1,16 +1,23 @@
 import { Hono } from "hono";
 import crypto from "node:crypto";
+import heicConvert from "heic-convert";
+import { and, eq } from "drizzle-orm";
 import { callClaudeMultimodal, getAIClient, parseAIJson } from "../ai/client.js";
 import { db } from "../db/connection.js";
 import { thoughts as thoughtsTable } from "../db/schema.js";
 import { toResponse, type ThoughtApiResponse } from "./thoughts.js";
 import type { DrizzleThought } from "../db/types.js";
+import { captureException } from "../analytics/posthog.js";
+import { triageThought } from "./triage.js";
+import type { TriageResult } from "../ai/types.js";
 
 const VALID_MEDIA_TYPES = [
   "image/jpeg",
   "image/png",
   "image/gif",
   "image/webp",
+  "image/heic",   // CAP-01 + D-01 (Phase 103)
+  "image/heif",   // CAP-01 + D-01 (Phase 103)
 ] as const;
 
 type MediaType = (typeof VALID_MEDIA_TYPES)[number];
@@ -228,6 +235,17 @@ export interface ProcessPhotoDeps {
   dbInsertFn: (
     rows: Array<typeof thoughtsTable.$inferInsert>,
   ) => Promise<DrizzleThought[]>;
+  // Phase 103 Plan 02 additions:
+  /** CAP-01 D-01: HEIC/HEIF → JPEG buffer conversion. Called only when mediaType is heic/heif. */
+  heicConvertFn: (buf: Buffer) => Promise<Buffer>;
+  /** CAP-02 D-05/D-06: Per-thought triage. Called in parallel for each inserted row (commit mode only). */
+  triageFn: (content: string) => Promise<TriageResult>;
+  /** CAP-02 D-07: Post-triage DB update for per-thought category/confidence/tags. */
+  dbUpdateTriageFn: (
+    thoughtId: number,
+    userId: number,
+    result: TriageResult,
+  ) => Promise<void>;
 }
 
 const defaultDeps: ProcessPhotoDeps = {
@@ -237,6 +255,29 @@ const defaultDeps: ProcessPhotoDeps = {
     if (!db) throw new Error("Database not available");
     // P-12: ONE batched insert — Postgres executes atomically (T-59-03).
     return db.insert(thoughtsTable).values(rows).returning();
+  },
+  // CAP-01 Plan 02: heic-convert produces Uint8Array, widen to Buffer for Claude base64 encode.
+  heicConvertFn: async (buf) => {
+    const out = await heicConvert({ buffer: buf, format: "JPEG", quality: 0.92 });
+    return Buffer.from(out);
+  },
+  // CAP-02 Plan 02: reuse existing triage prompt via exported helper.
+  triageFn: triageThought,
+  // CAP-02 Plan 02: userId-scoped update preserves existing multi-user isolation.
+  dbUpdateTriageFn: async (thoughtId, userId, result) => {
+    if (!db) throw new Error("Database not available");
+    await db
+      .update(thoughtsTable)
+      .set({
+        category: result.category,
+        confidence: result.confidence,
+        ...(result.category === "task" ? { taskStatus: "open" as const } : {}),
+        ...(result.tags ? { tags: result.tags } : {}),
+        ...(result.therapyClassification
+          ? { therapyClassification: result.therapyClassification }
+          : {}),
+      })
+      .where(and(eq(thoughtsTable.id, thoughtId), eq(thoughtsTable.userId, userId)));
   },
 };
 
@@ -316,6 +357,29 @@ export function createProcessPhotoRouter(
       forcePaperType = rawForce;
     }
 
+    // 3c. CAP-01 D-01 — HEIC/HEIF → JPEG pre-conversion (Phase 103 Plan 02).
+    //     Runs ONLY for heic/heif mediaTypes. Non-HEIC paths pass through
+    //     unchanged so the existing jpeg/png/gif/webp behavior is untouched.
+    //     Pitfall 7: heic-convert expects a raw byte Buffer, not the base64 string.
+    let claudeMediaType: "image/jpeg" | "image/png" | "image/gif" | "image/webp" =
+      mediaType === "image/heic" || mediaType === "image/heif"
+        ? "image/jpeg"
+        : (mediaType as "image/jpeg" | "image/png" | "image/gif" | "image/webp");
+    let claudeImageB64 = body.image;
+    if (mediaType === "image/heic" || mediaType === "image/heif") {
+      try {
+        const inputBuf = Buffer.from(body.image, "base64");
+        const jpegBuf = await deps.heicConvertFn(inputBuf);
+        claudeImageB64 = jpegBuf.toString("base64");
+      } catch (err) {
+        console.error(
+          "[vigil-core] /process-photo HEIC conversion failed:",
+          err instanceof Error ? err.message : err,
+        );
+        return c.json({ error: "Image conversion failed" }, 422);
+      }
+    }
+
     // 4. AI client availability gate.
     if (!deps.getAIClientFn()) {
       return c.json(
@@ -333,8 +397,8 @@ export function createProcessPhotoRouter(
             type: "image",
             source: {
               type: "base64",
-              media_type: mediaType,
-              data: body.image,
+              media_type: claudeMediaType,
+              data: claudeImageB64,
             },
           },
           { type: "text", text: PHOTO_PROMPT },
@@ -398,8 +462,64 @@ export function createProcessPhotoRouter(
       return c.json({ error: "Create failed" }, 500);
     }
 
+    // 9b. CAP-02 D-05/D-06/D-07 — Per-thought sync triage (Phase 103 Plan 02).
+    //     Parallel via Promise.allSettled so one rejection does NOT short-circuit
+    //     the batch (Pitfall 6). On per-thought failure: keep the row, leave
+    //     category null, report to PostHog via Plan 01 captureException wrapper.
+    //     D-07: never lose the user's capture — always return 201.
+    const triageOutcomes = await Promise.allSettled(
+      insertedRows.map((row) => deps.triageFn(row.content)),
+    );
+    const triagedRows: DrizzleThought[] = await Promise.all(
+      insertedRows.map(async (row, i) => {
+        const outcome = triageOutcomes[i];
+        if (outcome.status === "fulfilled") {
+          const t = outcome.value;
+          try {
+            await deps.dbUpdateTriageFn(row.id, userId, t);
+            return {
+              ...row,
+              category: t.category,
+              confidence: t.confidence,
+              tags: t.tags ?? row.tags,
+              taskStatus: t.category === "task" ? "open" : row.taskStatus,
+              therapyClassification:
+                t.therapyClassification ?? row.therapyClassification,
+            };
+          } catch (updateErr) {
+            // DB update failed — still return the row with null category (D-07).
+            console.error(
+              "[vigil-core] /process-photo triage DB update failed:",
+              updateErr instanceof Error ? updateErr.message : updateErr,
+            );
+            captureException(userId, updateErr, {
+              route: "/v1/process-photo",
+              method: "POST",
+              op: "triage_update",
+            });
+            return row;
+          }
+        } else {
+          // D-07: triage call rejected — keep row, report to PostHog, return null-category row.
+          console.error(
+            "[vigil-core] /process-photo triage failed (non-fatal):",
+            outcome.reason instanceof Error
+              ? outcome.reason.message
+              : outcome.reason,
+          );
+          captureException(userId, outcome.reason, {
+            route: "/v1/process-photo",
+            method: "POST",
+            op: "triage",
+          });
+          return row;
+        }
+      }),
+    );
+
     // 10. Success: 201 with serialized thoughts via toResponse.
-    const thoughtsResponse: ThoughtApiResponse[] = insertedRows.map(toResponse);
+    //     CAP-02: triagedRows reflects post-triage category/confidence/tags.
+    const thoughtsResponse: ThoughtApiResponse[] = triagedRows.map(toResponse);
     return c.json(
       {
         paperType: transformed.paperType,
