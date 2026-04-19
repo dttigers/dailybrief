@@ -1,9 +1,9 @@
 ---
 phase: 103
 slug: capture-repair-server-observability-foundations
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: approved
+nyquist_compliant: true
+wave_0_complete: false  # becomes true after Plan 00 runs
 created: 2026-04-19
 ---
 
@@ -36,16 +36,21 @@ created: 2026-04-19
 
 ## Per-Task Verification Map
 
-*Populated by gsd-planner when plans land. Placeholder rows below show the expected shape.*
+*Populated by gsd-planner 2026-04-19 when plans landed.*
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 103-00-01 | 00 | 0 | CAP-02 | — | Diagnostic curl records null `category` pre-fix | manual | `curl -sS -X POST $API/v1/process-photo ...` | N/A | ⬜ pending |
-| 103-01-01 | 01 | 1 | CAP-01 | — | HEIC upload returns 2xx with non-empty content | unit | `npx tsx --test src/routes/process-photo.test.ts` | ❌ W0 | ⬜ pending |
-| 103-02-01 | 02 | 1 | CAP-02 | — | /process-photo response has non-null `category` | unit | `npx tsx --test src/routes/process-photo.test.ts` | ❌ W0 | ⬜ pending |
-| 103-03-01 | 03 | 1 | ANLY-01 | — | Unhandled exception in route → posthog capture invoked | unit | `npx tsx --test src/analytics/posthog.test.ts` | ❌ W0 | ⬜ pending |
-| 103-03-02 | 03 | 1 | ANLY-01 | — | Shim no-ops when POSTHOG_API_KEY unset | unit | `npx tsx --test src/analytics/posthog.test.ts` | ❌ W0 | ⬜ pending |
-| 103-04-01 | 04 | 1 | AUTH-08 | — | GET /v1/me returns `{userId,email}` for valid JWT | unit | `npx tsx --test src/routes/me.test.ts` | ❌ W0 | ⬜ pending |
+| 103-00-01 | 00 | 0 | CAP-02 | T-103-00-01 | Pre-fix diagnostic curl on live Railway records `category: null` — bug evidence | manual | `curl -sS -i -X POST https://api.vigilhub.io/v1/process-photo ...` | artifact file | ⬜ pending |
+| 103-00-02 | 00 | 0 | ANLY-01, CAP-01, CAP-02, AUTH-08 | T-103-00-04 | RED test scaffolds fail import/assertion before any impl code | unit | `npx tsx --test src/analytics/posthog.test.ts src/routes/me.test.ts src/routes/process-photo.test.ts` (expect RED) | ❌ RED Wave 0 | ⬜ pending |
+| 103-01-01 | 01 | 1 | ANLY-01 | T-103-01-05 | posthog-node@^5.29.2 installed; `npx tsc --noEmit` green | build | `cd vigil-core && npx tsc --noEmit` | N/A | ⬜ pending |
+| 103-01-02 | 01 | 1 | ANLY-01 | T-103-01-01, T-103-01-02, T-103-01-03, T-103-01-04 | redactEvent strips request_body on sensitive routes; shim no-ops when key absent; captureException normalizes non-Error; shutdownPosthog awaits SDK shutdown | unit | `cd vigil-core && npx tsx --test src/analytics/posthog.test.ts` | ✅ Plan 00 | ⬜ pending |
+| 103-02-01 | 02 | 2 | CAP-01 | T-103-02-01, T-103-02-02 | heic-convert@^2.1.0 installed; types resolve; `sharp` absent from package.json | build | `cd vigil-core && grep -q heic-convert package.json && ! grep -q '\"sharp\"' package.json && npx tsc --noEmit` | N/A | ⬜ pending |
+| 103-02-02 | 02 | 2 | CAP-02 | — | triageThought helper exported from routes/triage.ts; existing POST /v1/triage unchanged | build | `cd vigil-core && grep -q 'export async function triageThought' src/routes/triage.ts && npx tsc --noEmit` | N/A | ⬜ pending |
+| 103-02-03 | 02 | 2 | CAP-01, CAP-02 | T-103-02-01, T-103-02-03, T-103-02-04, T-103-02-05, T-103-02-07 | HEIC→JPEG pre-step (Step 3c), sync parallel triage (Step 9b via Promise.allSettled), D-07 null-category fallback, userId-scoped UPDATE | unit | `cd vigil-core && npx tsx --test src/routes/process-photo.test.ts` | ✅ Plan 00 | ⬜ pending |
+| 103-03-01 | 03 | 1 | AUTH-08 | T-103-03-01, T-103-03-03, T-103-03-06 | GET /v1/me returns {userId, email} 200 on happy path; 401 `invalid_user` on missing row; NO userId ever read from request | unit | `cd vigil-core && npx tsx --test src/routes/me.test.ts` | ✅ Plan 00 | ⬜ pending |
+| 103-04-02 | 04 | 3 | CAP-01, CAP-02, ANLY-01, AUTH-08 | T-103-04-01, T-103-04-02, T-103-04-03 | index.ts wiring: me route mounted behind bearerAuth; app.onError AFTER all routes; shutdownPosthog FIRST await in SIGTERM+SIGINT | build + grep | `cd vigil-core && npx tsc --noEmit && npm run build && grep -q 'app.route(\"/v1\", me)' src/index.ts && grep -c 'await shutdownPosthog' src/index.ts # expect 2` | N/A | ⬜ pending |
+| 103-04-03 | 04 | 3 | CAP-01, CAP-02, AUTH-08 | T-103-04-04 | Live Railway: HEIC round-trip 201; /v1/process-photo category non-null; /v1/me returns {userId, email} | manual + artifact | `test -f artifacts/cap-02-post-fix-curl.txt artifacts/heic-round-trip.txt artifacts/me-endpoint-curl.txt` | artifact files | ⬜ pending |
+| 103-04-04 | 04 | 3 | ANLY-01 | T-103-04-05, T-103-04-07 | Local dev session: zero PostHog events; prod throw: one event with stack trace | manual + artifact | `test -f artifacts/posthog-dev-vs-prod.txt` | artifact file | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -72,11 +77,11 @@ created: 2026-04-19
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (3 new test files)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 30s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify (manual curl artifact tasks bracketed by automated build/test tasks)
+- [x] Wave 0 covers all MISSING references (posthog.test.ts, me.test.ts, process-photo.test.ts extension)
+- [x] No watch-mode flags
+- [x] Feedback latency < 30s (tsx node:test suite ~15-30s per research)
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** gsd-planner 2026-04-19 — plans 00–04 landed; task map populated

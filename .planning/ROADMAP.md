@@ -278,7 +278,12 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
   3. Unhandled exceptions thrown in vigil-core routes appear in PostHog Cloud with stack traces (verified by intentionally triggering a test error)
   4. `GET /v1/me` returns `{ userId, email }` for a valid JWT — prerequisite for Phase 104
   5. Local `npm run dev` events do NOT appear in PostHog Cloud; Railway production events DO appear
-**Plans**: TBD
+**Plans**: 5 plans
+  - [ ] 103-00-PLAN.md — Wave 0 diagnostic curl + RED-by-default test scaffolds for Plans 01/02/03
+  - [ ] 103-01-PLAN.md — PostHog Node SDK singleton + sealed wrapper API (ANLY-01 server half)
+  - [ ] 103-02-PLAN.md — HEIC conversion + sync parallel triage in /v1/process-photo (CAP-01, CAP-02)
+  - [ ] 103-03-PLAN.md — GET /v1/me identity endpoint (AUTH-08)
+  - [ ] 103-04-PLAN.md — Wire PostHog + /v1/me + app.onError + shutdown into index.ts; live verification of all 5 success criteria
 
 ### Phase 104: PWA Auth UI & Browser Observability
 **Goal**: PWA visitors can sign up and log in with email/password, and browser-side errors are tracked in PostHog
@@ -432,7 +437,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 | 100. Edit-Refresh Pause | v3.4 | 1/1 | Complete | 2026-04-18 |
 | 101. Context Menu | v3.4 | 5/5 | Complete | 2026-04-18 |
 | 102. Multi-User Foundation | v3.4 | 6/6 | Complete | 2026-04-18 |
-| 103. Capture Repair & Server Observability Foundations | v3.5 | 0/TBD | Not started | - |
+| 103. Capture Repair & Server Observability Foundations | v3.5 | 0/5 | Not started | - |
 | 104. PWA Auth UI & Browser Observability | v3.5 | 0/TBD | Not started | - |
 | 105. Product Events, API Metrics & User Identity | v3.5 | 0/TBD | Not started | - |
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 0/TBD | Not started | - |
