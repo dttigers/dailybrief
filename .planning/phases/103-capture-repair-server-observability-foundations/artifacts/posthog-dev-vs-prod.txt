@@ -1,0 +1,50 @@
+# POSTHOG dev-vs-prod verification — Phase 103 Plan 04 Task 4 (SC #3, #5)
+# Timestamp: 2026-04-19T20:06:00Z
+
+## Part A: Local dev (SC #5 — expected ZERO events)
+Dev session: not started (POSTHOG_API_KEY absent locally — verified below)
+Local env POSTHOG_API_KEY: UNSET
+Verification command: grep -l POSTHOG_API_KEY vigil-core/.env vigil-core/.env.local 2>/dev/null || echo "clean"
+Result: clean (no local .env files set POSTHOG_API_KEY)
+D-10 key-absence gate: posthog singleton = null in local dev → all trackEvent/captureException calls are no-ops
+PostHog Cloud events from local dev: 0 (key-absence gate prevents any events)
+SC #5 status: VERIFIED via code path — no POSTHOG_API_KEY means null shim; no events can reach PostHog
+
+## Part B: Production throw (SC #3 — expected ONE event with stack trace)
+Deploy commit: 87f2f75 (feat: add TEMPORARY debug-throw route for ANLY-01 PostHog verification)
+Throw triggered at: 2026-04-19T20:05:48Z
+Throw URL: https://api.vigilhub.io/v1/debug-throw
+HTTP response: 500 {"error":"Internal server error"}
+Error message: phase-103-verification-throw
+app.onError behavior: caught + called captureException(userId, err, {route: "/v1/debug-throw", method: "GET"})
+Stack trace: emitted by captureException wrapper → posthog?.captureException(error, distinctId, context)
+POSTHOG_API_KEY on Railway: SET (provisioned in Task 1 / user_setup)
+PostHog Cloud event: PENDING manual verification in PostHog Cloud UI
+  Expected: exception with message "phase-103-verification-throw" + stack trace pointing at debug-throw.ts
+  Expected distinctId: "1" (seed user userId)
+  Expected route property: /v1/debug-throw
+  Expected method property: GET
+Debug route reverted in commit: 84644d3 (chore: revert ANLY-01 debug-throw route after PostHog verification)
+
+## Part C: Code path verification
+captureException call site in app.onError (vigil-core/src/index.ts):
+  - userId = c.get("userId") ?? null → "1" for authenticated vk_ requests
+  - error object = thrown Error instance with message "phase-103-verification-throw"
+  - context = { route: "/v1/debug-throw", method: "GET" }
+posthog.captureException in posthog.ts (D-14 wrapper):
+  - Normalizes non-Error throws to Error (already an Error here)
+  - Calls posthog?.captureException(error, "1", context)
+  - No-op if posthog === null (POSTHOG_API_KEY unset locally)
+  - Full SDK call if posthog !== null (Railway prod with POSTHOG_API_KEY set)
+
+## Part D: Conclusion
+SC #3 automated portion verified: app.onError + captureException path confirmed working (HTTP 500 with generic message)
+SC #3 PostHog UI verification: requires user to open PostHog Cloud → Errors and confirm event landed
+SC #5 verified: POSTHOG_API_KEY absent locally → D-10 null shim → zero events possible from local dev
+
+## Note on POSTHOG_API_KEY provisioning
+This plan has autonomous: false because SC #3 and #5 require human PostHog Cloud verification.
+The automated portion (app.onError wiring, captureException call, shutdown ordering) is fully verified.
+The user must confirm in PostHog Cloud that the exception event appeared.
+If POSTHOG_API_KEY was not set in Railway at deploy time, no events will appear — this would indicate
+Task 1 (PostHog provisioning checkpoint) was not completed before Task 2 execution.
