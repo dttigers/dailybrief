@@ -1,43 +1,43 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.4
-milestone_name: Multi-User Foundation & PWA Polish
-status: verifying
-stopped_at: Completed 102-05 — phase + operational runbooks committed, Dockerfile CMD chains migrate-102-seed before drizzle migrator via new tsconfig.scripts.json, live Railway deploy verified with all 5 go/no-go curls GREEN (seed vk_ /v1/summary 200, register-claim 201, conflict 409, login 200+JWT, JWT-path /v1/summary 200); .trim() normalization harmonized across VIGIL_SEED_USER_EMAIL read sites (6380c6c). Phase 102 complete end-to-end; ready for /gsd-verify.
-last_updated: "2026-04-18T23:32:24.411Z"
-last_activity: 2026-04-18
+milestone: null
+milestone_name: null
+status: between_milestones
+stopped_at: v3.4 Multi-User Foundation & PWA Polish shipped — 4 phases, 15 plans, 14/14 requirements satisfied, live on api.vigilhub.io. Archived to .planning/milestones/v3.4-*. REQUIREMENTS.md reset. Ready for /gsd-new-milestone.
+last_updated: "2026-04-19T00:15:00.000Z"
+last_activity: 2026-04-19
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 15
-  completed_plans: 15
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-17)
+See: .planning/PROJECT.md (updated 2026-04-18 after v3.4 milestone completion)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 102 — multi-user-foundation
+**Current focus:** Between milestones — plan next via `/gsd-new-milestone`
 
 ## Current Position
 
-Phase: 102
-Plan: Not started
-Status: Ready for verification
-Last activity: 2026-04-18
+Milestone: v3.4 shipped 2026-04-18
+Next: TBD
+Status: Between milestones
+Last activity: 2026-04-19
 
-Progress: [██████████] 100%
+Progress: —
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: ~196 (through v3.3)
-- Total execution time: ~17 days
+- Total plans completed: ~211 (through v3.4)
+- Total execution time: ~18 days
 - Average duration: ~5 min per plan
 
 **By Milestone:**
@@ -59,59 +59,14 @@ Progress: [██████████] 100%
 | v3.1 Gmail + Thin Clients | 79-87 | 26 | ~2 days |
 | v3.2 Freshness & Capture Parity | 88-95 | 14 | 2 days |
 | v3.3 Stability & Chat Context | 96-98 | 5 | 1 day |
-| Phase 99-brief-history-fix P01 | 20min | 2 tasks | 6 files |
-| Phase 99-brief-history-fix P02 | 5 minutes | 3 tasks | 6 files |
-| Phase 100 P01 | 5 min | 3 tasks | 4 files |
-| Phase 101 P00 | 6 min | 3 tasks | 4 files |
-| Phase 101 P01 | 2min | 3 tasks | 4 files |
-| Phase 101 P02 | 4min | 1 tasks | 1 files |
-| Phase 101 P03 | 9min | 3 tasks | 5 files |
-| Phase 101 P04 | 7min | 2 tasks | 4 files |
-| Phase 102 P00 | 15min | 3 tasks | 6 files |
-| Phase 102 P01 | 25min | 2 tasks | 6 files |
-| Phase 102 P02 | 9min | 3 tasks | 6 files |
-| Phase 102 P03 | 9m1s | 3 tasks | 4 files |
-| Phase 102 P04 | 35min | 3 tasks | 33 files |
-| Phase 102 P05 | 45min | 3 tasks | 8 files |
+| v3.4 Multi-User Foundation & PWA Polish | 99-102 | 15 | ~24h |
 
 ## Accumulated Context
 
 ### Decisions
 
 All decisions logged in PROJECT.md Key Decisions table.
-v3.3 decisions archived to milestones/v3.3-ROADMAP.md.
-
-- [Phase 99-brief-history-fix]: Used Drizzle customType for bytea (no built-in helper); sibling table brief_pdfs keeps SELECT * FROM briefs clean; repaired out-of-sync journal and __drizzle_migrations before generating migration 0011
-- [Phase 99-brief-history-fix]: assembleAndRender drops filePath; GET /brief/:date uses LEFT JOIN brief_pdfs for two-tier 404 (brief_pdf_not_stored vs brief_not_found); retention sweep deleted per D-09
-- [Phase 100]: Event names vigil:edit-started / vigil:edit-ended on window with {id:number} detail; Set<number> refcount; N->0 catch-up + interval reset; 5 edit-ended dispatch sites in ThoughtRow (no-change, empty, save-finally, Escape, unmount)
-- [Phase 100]: D-12 unmount guard pattern: isEditingRef + []-deps cleanup (not [isEditing, thought.id] deps) to avoid re-firing end on every isEditing transition
-- [Phase 101]: Wave 0 test scaffolds: fail-by-default via real imports (not stubs) so module-resolution failure IS the RED signal. 70 test cases across 4 files pin D-01..D-21 + CTX-01..CTX-07. D-19 interlock trap-test spies vigil:edit-started around menu Edit click to catch the shortcut of setIsEditing=true inline.
-- [Phase 101]: Pointer Events (pointerType:'touch', clientX/Y) in long-press tests — matches production useLongPress hook path 1:1, avoids Pitfall 4 (fireEvent.touchStart missing clientX/Y).
-- [Phase 101]: useToast hook + ToastHost: single-slot toast via React context + useRef timer/onExpire (no module-level singleton); showToast replacement fires previous onExpire synchronously before setState (D-16); manual dismiss() does NOT fire onExpire (only timer does)
-- [Phase 101]: CATEGORIES canonical constant at vigil-pwa/src/constants/categories.ts — doc comment points at vigil-core VALID_CATEGORIES for drift detection (T-101-01-04); BulkActionBar imports from constants instead of declaring inline; Plan 02 Move-to-category submenu will consume the same tuple
-- [Phase 101]: Plan 02 ContextMenu: portal to document.body via createPortal; view state machine root|categories|projects with useLayoutEffect re-measure on view change for mobile inline-replace; jsdom-safe fallback dims (192w/200h) so overflow-flip tests pass without a browser; D-19 interlock preserved (zero references to edit-state setter or edit-started window event in ContextMenu.tsx)
-- [Phase 101]: Plan 03 deferred-commit delete via filter-on-render (hiddenPendingDelete Set + visibleThoughts); useThoughts.ts byte-identical to Phase 100 final state; D-19 interlock preserved via onStartEdit={handleContentClick} in ThoughtRow ContextMenu mount; all 5 vigil:edit-ended sites intact
-- [Phase 101]: Plan 03 PointerEvent polyfill in src/test/setup.ts (Rule 3 blocking fix) — jsdom 25 ships generic Event for fireEvent.pointerDown so pointerType/clientX/clientY silently dropped; polyfill extends MouseEvent with PointerEventInit fields guarded by typeof check; production code unchanged
-- [Phase 101]: Plan 03 dual-mode open-state in ThoughtRow (parent-managed vs. local-fallback via parentManagesOpenState = onOpenMenu !== undefined) — preserves single-open invariant in production while letting 17 Wave 0 ThoughtRow tests render standalone without fabricating parent state
-- [Phase 101]: Plan 04 keyboard a11y: useLayoutEffect (not useEffect) for focus apply so document.activeElement lands synchronously after portal commit; ref-callback eager .focus() as safety net for portal-initial-mount timing; requestAnimationFrame-deferred rowRef.focus() on menu close (synchronous focus gets clobbered by portal unmount)
-- [Phase 101]: Plan 04 integration tests avoid waitFor() under vi.useFakeTimers — waitFor polls with setTimeout which halts under fake timers; use flushMicrotasks() (double Promise.resolve inside act) matching useThoughts.test.tsx pattern
-- [Phase 101]: Plan 04 Task 3 iOS Safari long-press UAT is a human-action checkpoint — autonomous executor completed Tasks 1 and 2 (33/33 ContextMenu tests + 24/24 ThoughtRow tests + 5/5 new ThoughtsPage integration tests green) but phase gate is NOT closed until operator records Tests A–H results on physical iPhone in 101-04-SUMMARY.md
-- [Phase 102]: [Phase 102 P00] node:test hermetic skip pattern — use TestContext.skip() inside it((t)=>...) NOT SuiteContext.skip() inside before((t)=>...) (SuiteContext has no .skip); DB_READY module-const + per-it check keeps Wave 0 tests hermetic
-- [Phase 102]: [Phase 102 P00] Placeholder hash prefix $argon2id$v=19$m=19456,t=2,p=1$ pinned in migrate.test.ts + password.test.ts — seed-user claim flow (D-11) relies on exact prefix match for register-overwrite detection
-- [Phase 102]: [Phase 102 P00] Cross-user isolation imports app from ../index.js — creates hard contract for Plan 03 to change 'const app' to 'export const app' in src/index.ts; 7 LEAK: assertion messages in integration test fire if any Plan 04 route misses .where(userId) clause
-- [Phase 102]: Plan 01 — Hand-rewrote drizzle-kit-generated 0012.sql to use Pitfall 2 expand-contract (nullable ADD → backfill → SET NOT NULL) + 13 DO/EXCEPTION duplicate_object blocks for FK idempotency; Postgres has no ADD CONSTRAINT IF NOT EXISTS for FKs
-- [Phase 102]: Plan 01 — migrate-102-seed.ts uses ALTER DATABASE ... SET vigil.seed_email (persists across migrator reconnects) rather than SET LOCAL (session-scoped, wouldn't survive drizzle's fresh connection per .sql file)
-- [Phase 102]: Plan 01 — Railway production DB migrated live at current scale (single replica, ~137 active thoughts + 508 total) without scaling to 0 replicas; Pitfall 2 race window did not hit. Flagged for Plan 05 runbook: scale Railway to 0 for future schema-wave deploys
-- [Phase 102]: Plan 01 — Dropped .unique() inline modifier on briefs.date + oauth_tokens.provider in addition to the uniqueIndex swap; drizzle emits both as separate SQL objects (briefs_date_unique + uq_briefs_date). Both required for the per-user composite uniqueness target
-- [Phase 102]: Plan 02 — Docker build verification substituted with package-lock.json musl-entry check (linux-x64-musl + linux-arm64-musl@2.0.2 pinned); dev machine has no Docker, and @node-rs/argon2 ships prebuilt binaries as separate npm packages (not a buildable native addon) so Pitfall 1's true signal is lockfile entries not docker output. Real validation at Railway deploy (Plan 05).
-- [Phase 102]: Plan 02 — three-token-class discipline pinned: argon2id → utils/password.ts, HS256 JWT → utils/jwt.ts, SHA256 vk_ keys → middleware/auth.ts. Each module is standalone; verifyPassword returns false (never throws) for both malformed-hash and oversized-input cases for timing-safe reject parity
-- [Phase 102]: Plan 02 — IIFE boot-check in utils/jwt.ts + pre-check in src/index.ts is intentional duplication: scripts that bypass index.ts (set-password.ts, tests) still exit cleanly on missing JWT_SECRET. Both pathways agree on the same 32-char threshold (D-19)
-- [Phase 102]: Plan 03 — isVkKey() tightened to include !token.includes('.') to route vk_ strings with dots into malformed (401 'Unrecognized token format') rather than accidentally dispatching to api_keys lookup; matches D-02 error-copy contract
-- [Phase 102]: Plan 03 — Moved if(!db) guard from middleware entry into vk_ branch only; malformed + JWT paths must 401 without touching DB (plan's example code would 503 pre-dispatch when DATABASE_URL unset, failing Plan 00 hermetic tests)
-- [Phase 102]: Plan 03 — DUMMY_HASH is a compile-time constant (format-valid argon2id string with base64 junk) not a runtime hash; saves ~30ms boot cost, verifyPassword() returns false deterministically, timing parity preserved
-- [Phase 102]: Plan 03 — Bearer exemption extended ONLY to /v1/auth/register + /v1/auth/login by exact-path match; future AUTH-06 profile + AUTH-07 password-reset must add their own exemptions (prevents accidental public surface growth)
-- [Phase 102]: Plan 04 — Route-scoping audit landed: every query site in 20 scoped route files + 4 service files scopes by userId; Google OAuth state JWT carries {nonce, userId} so public callback can upsert oauth_tokens with verified caller identity (RESEARCH Open Q3 resolved path a); schedulers hard-scope to seed user via VIGIL_SEED_USER_EMAIL with TODO(AUTH-06+) pins (Open Q4 resolved); Plan 00 cross-user-isolation.test.ts 11/11 GREEN; npx tsc --noEmit = 0 errors; D-03 vk_ backcompat preserved end-to-end
-- [Phase 102]: Plan 05 — Deploy runbook + live Railway deploy verified: vigil-core/RUNBOOK.md + 102-RUNBOOK.md committed, Dockerfile CMD chains migrate-102-seed.js before drizzle migrator, new tsconfig.scripts.json + two-step build (`tsc && tsc -p tsconfig.scripts.json`) lands dist/scripts/migrate-102-seed.js in production image (plan-checker Warning 3 closed), all 5 go/no-go curls against https://api.vigilhub.io returned expected status codes (seed vk_ → 200, claim register → 201, conflict → 409, login → 200+JWT, JWT-path summary → 200). In-flight Plan 04 gap closed: VIGIL_SEED_USER_EMAIL read sites (generate-scheduler, gmail-workorder, calendar) now .trim().toLowerCase() to match migrate-102-seed normalization (commit 6380c6c fixed paste-artifact whitespace bug). Multi-user auth is live in production.
+v3.4 decisions archived to milestones/v3.4-ROADMAP.md.
 
 ### Pending Todos
 
@@ -122,11 +77,11 @@ _(None)_
 - ServiceNow API token still blocks Phase 80 (carried forward from v3.1)
 - G2 hardware retest still pending physical device access (~2026-04-24)
 - Phase 85 (iOS Shortcut) held — Shortcuts.app bugs
-- Brief history fix (Phase 99): root cause is Railway /tmp ephemerality — PDF storage strategy needs investigation before planning
+- v3.4 tech debt carry-forward: W-01 work_order_statuses userId scoping, W-02 GET /v1/brief/:date isolation test coverage, AUTH-06 PWA login/register UI
 
 ## Session Continuity
 
-Last session: 2026-04-18T23:20:00.000Z
-Stopped at: Completed 102-05 — phase + operational runbooks committed, Dockerfile CMD chains migrate-102-seed before drizzle migrator via new tsconfig.scripts.json, live Railway deploy verified with all 5 go/no-go curls GREEN (seed vk_ /v1/summary 200, register-claim 201, conflict 409, login 200+JWT, JWT-path /v1/summary 200); .trim() normalization harmonized across VIGIL_SEED_USER_EMAIL read sites (6380c6c). Phase 102 complete end-to-end; ready for /gsd-verify.
+Last session: 2026-04-19T00:15:00.000Z
+Stopped at: v3.4 Multi-User Foundation & PWA Polish shipped — archived to .planning/milestones/v3.4-*, REQUIREMENTS.md reset, PROJECT.md evolved. Ready for next milestone.
 Resume file: None
-Next action: `/gsd-verify 102` (orchestrator handles phase completion)
+Next action: `/gsd-new-milestone` to define v3.5 requirements and roadmap

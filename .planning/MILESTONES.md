@@ -1,5 +1,33 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v3.4 Multi-User Foundation & PWA Polish (Shipped: 2026-04-18)
+
+**Phases completed:** 4 phases (99-102), 15 plans, 37 tasks
+**Git range:** fbd667c..a9309e8 (56 commits, +27,410 / -645 LOC across 131 files)
+**Requirements:** 14/14 satisfied (BRIEF-01, EDIT-01, CTX-01..07, AUTH-01..05)
+**Production:** live at api.vigilhub.io — 5/5 go/no-go curls GREEN
+
+**Key accomplishments:**
+
+- **Multi-user foundation live on Railway** — users table with argon2id passwords, POST /v1/auth/register + /login with JWT (HS256), bearerAuth three-path dispatcher (vk_/JWT/malformed), userId FKs on 11 data tables, and per-user scoping threaded through 20 route files + 4 service files. Google OAuth state-JWT carries userId through initiate → callback → oauth_tokens upsert. vk_ backcompat preserved so PWA/Monitor/G2/CLI survive with zero client changes. (Phase 102)
+- **Context menu on every thought row** — right-click (desktop) + long-press (iOS) surfaces a 7-action menu (delete/move/edit/re-triage/add-to-project/etc). Deferred-commit delete with single-slot toast undo window, optimistic category/project moves, and the D-19 interlock that keeps Phase 100's edit pause-gate as the sole setIsEditing entry point. 33/33 ContextMenu cases + 5/5 ThoughtsPage integration tests GREEN; iOS Safari long-press UAT operator-approved. (Phase 101)
+- **Edit-refresh collision eliminated** — window event bus `vigil:edit-started`/`vigil:edit-ended` with Set-based refcount pauses the 30s poll (+ visibilitychange + vigil:thought-created triggers) during active inline edits, then fires a single catch-up refetch on the last-edit-ends transition. 12/12 fake-timer vitest cases lock the contract. (Phase 100)
+- **Brief history survives Railway redeploys** — new brief_pdfs BYTEA table replaces the /tmp filesystem write path; POST/GET + scheduler + PWA detail-view all round-trip through the DB sink. Structured 404 (`brief_not_found` vs `brief_pdf_not_stored`) drives branched PWA UX with a Regenerate affordance. Operator-verified post-deploy on live Railway. (Phase 99)
+- **Wave-0 TDD discipline at scale** — 108+ failing test scaffolds landed before a single production line across Phases 101 (63 cases: D-01..D-21 + CTX-01..CTX-07 + iOS pitfalls) and 102 (45 cases: password/jwt/middleware/auth-routes/migration/cross-user-isolation). Cross-user-isolation suite runs against live Railway DB.
+- **Production operability** — JWT_SECRET fail-fast boot-check, Dockerfile seed-script CMD chain, 102-RUNBOOK.md (deploy + rotation + rollback playbook), and the 6380c6c `.trim().toLowerCase()` fix hardening seed-user lookup against paste-artifact whitespace across all three scheduler call sites.
+
+**Known non-blocking tech debt (v3.5 candidates):**
+
+- W-01: `work_order_statuses` table lacks userId column — top AUTH-06-adjacent follow-up
+- W-02: cross-user-isolation test covers GET /v1/briefs list but not GET /v1/brief/:date PDF bytes
+- Phase 101 WR-01..04 + info findings (ContextMenu keydown deps, handleRetriage try/catch, etc.)
+- VALIDATION.md paperwork gap for Phases 99/100/102 (coverage itself is substantial)
+
+**Audit:** [milestones/v3.4-MILESTONE-AUDIT.md](milestones/v3.4-MILESTONE-AUDIT.md)
+**Archive:** [milestones/v3.4-ROADMAP.md](milestones/v3.4-ROADMAP.md) · [milestones/v3.4-REQUIREMENTS.md](milestones/v3.4-REQUIREMENTS.md)
+
+---
+
 ## v3.3 Stability & Chat Context (Shipped: 2026-04-17)
 
 **Phases completed:** 3 phases, 5 plans, 11 tasks

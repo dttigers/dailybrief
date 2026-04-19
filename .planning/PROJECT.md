@@ -1,14 +1,13 @@
 # Vigil — Ambient AI Life Assistant
 
-## Current Milestone: v3.4 Multi-User Foundation & PWA Polish
+## Current State
 
-**Goal:** Fix daily-driver pain points (brief history, edit-refresh collision, right-click actions) and lay the groundwork for multi-user Vigil instances ahead of G2 glasses arriving ~2026-04-24.
+**Shipped:** v3.4 Multi-User Foundation & PWA Polish (2026-04-18) — 4 phases, 15 plans, 14/14 requirements satisfied, live on api.vigilhub.io with 5/5 go/no-go curls GREEN.
 
-**Target features:**
-- Fix brief history retrieval (generation works, older briefs fail to load)
-- Right-click context menu on thought rows (Delete, Move to category, Edit, Re-triage, Add to Project)
-- Pause auto-refresh while editing a thought (30s poll blows away in-progress edits)
-- Multi-user foundation — separate accounts, separate data, auth system for multiple Vigil instances
+**Next:** v3.5 — scope TBD. G2 glasses arriving ~2026-04-24 remains the near-term anchor event. Top v3.5 candidates (not yet committed):
+- AUTH-06: PWA login/register UI (backend complete, UI deferred)
+- W-01: `work_order_statuses` table userId scoping follow-up
+- Per-user scheduler fan-out (schedulers hard-scoped to seed user in v3.4 with TODO markers)
 
 **Carry-forward (blocked):**
 - Phase 85 (iOS Shortcut) held — Shortcuts.app bugs
@@ -122,14 +121,19 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Mac CLI print reliability — lpr error handling, 404 fallback, reachability check — v3.3
 - ✓ Thought-contextual chat — chat button on every thought with auto-send — v3.3
 - ✓ Multi-user foundation — users table + userId FK on 11 scoped tables, argon2id password + HS256 JWT, bearerAuth three-path dispatcher (vk_ keys + JWT + legacy), POST /v1/auth/register|login with D-11 claim-flow, seed-user backfill preserving D-03 vk_-client backcompat — v3.4
+- ✓ Brief history survives Railway redeploys — brief_pdfs BYTEA table replacing /tmp write path, structured 404 (`brief_not_found` vs `brief_pdf_not_stored`) drives branched PWA UX with Regenerate affordance — v3.4
+- ✓ Edit-refresh pause gate — window event bus `vigil:edit-started/ended` with refcount pauses 30s poll during inline edits, fires catch-up refetch on last-edit-ends — v3.4
+- ✓ Right-click + long-press context menu — 7 actions (delete/move/edit/re-triage/add-to-project), deferred-commit delete with single-slot toast undo, D-19 interlock preserves Phase 100 pause gate — v3.4
 
 ### Active
 
-- [ ] Fix brief history retrieval (older briefs fail to load in PWA)
-- [ ] Right-click context menu on thought rows (Delete, Move, Edit, Re-triage, Add to Project)
-- [x] Pause auto-refresh while editing a thought — Validated in Phase 100: Edit-Refresh Pause
-- [x] Multi-user foundation (separate accounts, separate data, auth system) — Validated in Phase 102: Multi-User Foundation
-- [ ] Persistent Safari extension (survives restarts without re-enabling)
+- [ ] PWA login/register UI (AUTH-06 — backend complete in v3.4; UI carry-forward)
+- [ ] PWA profile + change-password (AUTH-07)
+- [ ] `work_order_statuses` userId scoping (W-01 — audit tech debt from v3.4)
+- [ ] Per-user scheduler fan-out (schedulers hard-scoped to seed user with TODO markers)
+- [ ] Persistent Safari extension (EXT-01 — survives restarts without re-enabling)
+- [ ] iOS Shortcut quick-capture (IOS-01 — blocked by Shortcuts.app bugs)
+- [ ] ServiceNow API work order source (WO-01 — blocked on IT token)
 
 ### Out of Scope
 
@@ -144,7 +148,7 @@ Capture every thought with zero friction and have the system organize it for you
 
 ## Context
 
-v3.4 in progress: Multi-User Foundation & PWA Polish — brief history fix, right-click context menu, edit-refresh pause, multi-user groundwork. Phase 99 (brief history), Phase 100 (edit-refresh pause), Phase 101 (context menu), Phase 102 (multi-user foundation) complete — multi-user auth live on https://api.vigilhub.io with seed-user claim-flow, HS256 JWTs, and D-03 no-regression preserved for existing vk_ clients.
+Shipped v3.4 Multi-User Foundation & PWA Polish (2026-04-18) — brief history fix, edit-refresh pause, right-click + long-press context menu, multi-user backend. 4 phases, 15 plans, 131 files changed (+27,410/-645 LOC). Multi-user auth live on https://api.vigilhub.io with seed-user claim-flow, HS256 JWTs, and D-03 no-regression preserved for existing vk_ clients. Tech debt carry-forward: AUTH-06 PWA login UI, W-01 work_order_statuses userId scoping, per-user scheduler fan-out.
 Shipped v3.3 Stability & Chat Context (2026-04-17) — PWA chat 400 fix, server-side excludeDone filter, Mac CLI print hardening, thought-contextual chat. 3 phases, 5 plans, 12 files changed (+195/-41 LOC).
 Shipped v3.2 Freshness & Capture Parity (2026-04-16) — Wed-anchored weekly rollover, 7-day analysis scope, server-side AI cache with Regenerate, task status filter, work order auto-archive, brief PDF restructure, browser extension quick-capture. 8 phases, 14 plans.
 Shipped v3.1 Gmail + Thin Clients (2026-04-15) — Gmail OAuth, PWA brand theme, Settings UI, CLI restructure, menu bar redesign, browser extension, split brief schedule, app icons.
@@ -152,7 +156,7 @@ Shipped v3.0 Server-Side PDF (2026-04-14) — Sports proxy, Google Calendar serv
 Tech stack: Swift 6.2/SwiftUI/SPM (Mac app, ~14,000 LOC), Node.js/Hono/TypeScript/Drizzle ORM/PostgreSQL (Vigil Core API), React/Vite/TypeScript (PWA), Vite/TypeScript/Even Hub SDK (G2 plugin).
 5 client surfaces connected to production: Mac app (capture + menu bar + folder watcher + PDF brief), PWA (dashboard + management + settings), Vigil Core API (Railway, 25+ REST endpoints), Even G2 plugin (3 screens + task detail), Browser extension (Chrome + Safari quick-capture).
 API secured with SHA-256 hashed bearer tokens, rate limiting (100 req/60s), 30s timeouts, security headers, and CORS.
-98 phases and ~196 plans completed across 15 milestones in ~17 days.
+102 phases and ~211 plans completed across 16 milestones in ~18 days.
 
 ## Constraints
 
@@ -225,4 +229,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-18 after Phase 102 (multi-user foundation) completion — AUTH-01..05 validated, D-03 vk_-client backcompat preserved, live Railway deploy verified via 5/5 go/no-go curls*
+*Last updated: 2026-04-18 after v3.4 milestone completion — Multi-User Foundation & PWA Polish shipped (14/14 requirements, 8/8 E2E flows, 5/5 production curls GREEN). Next milestone TBD via /gsd-new-milestone.*
