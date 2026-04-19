@@ -14,10 +14,10 @@ Server-side foundations only: fix the two `vigil-core` photo capture defects (CA
 ## Implementation Decisions
 
 ### CAP-01 HEIC fix location
-- **D-01:** HEIC → JPEG conversion lives **server-side** via `sharp` on `POST /v1/process-photo`. Add `image/heic` + `image/heif` to `VALID_MEDIA_TYPES`; convert to JPEG before the Claude vision call. One fix covers every client (Mac folder watcher, future browser drops, any other surface).
+- **D-01:** HEIC → JPEG conversion lives **server-side** via `heic-convert@^2.1.0` on `POST /v1/process-photo`. Add `image/heic` + `image/heif` to `VALID_MEDIA_TYPES`; convert to JPEG before the Claude vision call. One fix covers every client (Mac folder watcher, future browser drops, any other surface). **Revised 2026-04-19:** `sharp` rejected — prebuilt libvips binaries on Railway exclude HEIC decoders (patent-encumbered libheif), verified live. `heic-convert` is pure JS, zero native deps, no Dockerfile changes.
 - **D-02:** Mac-side CoreGraphics conversion is **not re-added** in this phase. Existing `APIImageDescriptionService.swift` behavior stays as-is — server becomes the canonical conversion point.
 - **D-03:** iCloud placeholder / non-downloaded HEIC behavior stays **log + skip** (current `FolderWatcherService.swift` iCloud guards). No menu-bar error badge change, no retry loop — the existing guards are working correctly per research.
-- **D-04:** HEIC files that exceed the 5 MB base64 cap still **reject with 413** (existing guard). No server-side downscaling — `sharp` converts HEIC to JPEG, which typically shrinks; genuinely oversize photos are a caller problem.
+- **D-04:** HEIC files that exceed the 5 MB base64 cap still **reject with 413** (existing guard). No server-side downscaling — `heic-convert` outputs JPEG, which typically shrinks; genuinely oversize photos are a caller problem.
 
 ### CAP-02 triage contract
 - **D-05:** `POST /v1/process-photo` commit path is **synchronous triage** — the response body contains each thought with its `category` already populated. Matches the success criterion verbatim; 30s request timeout stays in place.
@@ -40,7 +40,7 @@ Server-side foundations only: fix the two `vigil-core` photo capture defects (CA
 - **D-18:** Missing user (valid JWT but user row deleted) → **401** `{ error: 'invalid_user' }`. Treat as expired auth; PWA triggers re-auth flow. Not 404, not 500.
 
 ### Claude's Discretion
-- Exact sharp conversion params (quality level, output format specifics) — pick a sensible default that doesn't regress Claude OCR.
+- Exact `heic-convert` output params (quality `0..1`, output `'JPEG'`) — pick a sensible default that doesn't regress Claude OCR.
 - posthog-node `flushAt`, `flushInterval`, and `captureMode` tuning — use reasonable defaults; revisit in Phase 105 with real traffic.
 - `/v1/me` route file location (`routes/me.ts` vs folding into `routes/auth.ts`) — planner's call.
 - `before_send` hook implementation details (regex allowlist vs Set lookup, header blocklist contents).
@@ -57,7 +57,7 @@ Server-side foundations only: fix the two `vigil-core` photo capture defects (CA
 - `.planning/research/SUMMARY.md` — v3.5 research synthesis; root causes confirmed for CAP-01, CAP-02, PostHog singleton placement, JWT storage. Sections most relevant: "Recommended Stack" (posthog-node version pin), "Critical Pitfalls" #1, #2, #3, #4.
 - `.planning/research/ARCHITECTURE.md` — File-by-file fix locations; read before editing `process-photo.ts` or `index.ts`.
 - `.planning/research/PITFALLS.md` — Dev-event flooding, singleton leak, shutdown hook — all must be mitigated at init time.
-- `.planning/research/STACK.md` — posthog-node@^5.29.2 pin, sharp version.
+- `.planning/research/STACK.md` — posthog-node@^5.29.2 pin. (Note: STACK.md may still reference `sharp` — Phase 103 supersedes with `heic-convert@^2.1.0`, see D-01 revision.)
 - `.planning/REQUIREMENTS.md` §Capture Repair + §Analytics & Observability + §Authentication UI (AUTH-08 only) — authoritative requirement text.
 - `.planning/ROADMAP.md` §Phase 103 — success criteria 1-5 (every one has a literal verification step).
 
@@ -103,10 +103,10 @@ Server-side foundations only: fix the two `vigil-core` photo capture defects (CA
 
 ### Integration Points
 - `vigil-core/src/index.ts` — new imports (`posthog.ts`, `me.ts`), new `app.route("/v1", me)`, new `app.onError(...)`, `posthog.shutdown()` added to existing signal handlers.
-- `vigil-core/src/routes/process-photo.ts` — `VALID_MEDIA_TYPES` extension, sharp conversion step after mediaType validation, sync triage step after DB insert (steps 8.5 / 9.5 in the existing numbered flow).
+- `vigil-core/src/routes/process-photo.ts` — `VALID_MEDIA_TYPES` extension, `heic-convert` conversion step after mediaType validation (HEIC/HEIF only; non-HEIC passes through unchanged), sync triage step after DB insert (steps 8.5 / 9.5 in the existing numbered flow).
 - `vigil-core/src/analytics/posthog.ts` — NEW file. Exports `posthog` client (or null shim), `captureEvent(userId, event, props)`, `captureException(userId, err, context)`.
 - `vigil-core/src/routes/me.ts` — NEW file. Single `GET /me` handler; looks up user by `c.get("userId")`; 401 on missing row.
-- `package.json` — new deps: `posthog-node@^5.29.2`, `sharp` (pin via research recommendation).
+- `package.json` — new deps: `posthog-node@^5.29.2`, `heic-convert@^2.1.0` (pure-JS HEIC decoder — no native deps, no Dockerfile changes).
 
 </code_context>
 
