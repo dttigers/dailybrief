@@ -1,0 +1,30 @@
+# CAP-02 pre-fix diagnostic curl — Phase 103 D-09
+# Timestamp: 2026-04-19T18:14:46Z
+# Endpoint: https://api.vigilhub.io/v1/process-photo
+# Expected (pre-fix): thought row returned with `category`: null
+# Expected (post-Plan-02-fix): thought row returned with `category`: non-null enum
+
+## Response status + headers + body:
+HTTP/2 201 
+x-railway-cdn-edge: fastly/cache-bur-kbur8200146-BUR
+content-type: application/json
+date: Sun, 19 Apr 2026 18:14:49 GMT
+origin-agent-cluster: ?1
+referrer-policy: no-referrer
+server: railway-edge
+strict-transport-security: max-age=15552000; includeSubDomains
+vary: Origin
+x-content-type-options: nosniff
+x-dns-prefetch-control: off
+x-download-options: noopen
+x-frame-options: SAMEORIGIN
+x-permitted-cross-domain-policies: none
+x-railway-edge: railway/us-west2
+x-railway-request-id: 0UbQa6EORIGtF9vzxtoGcA
+x-xss-protection: 0
+x-cache: MISS
+x-cache-hits: 0
+x-served-by: cache-bur-kbur8200146-BUR
+content-length: 1939
+
+{"paperType":"lined","confidence":0.9,"thoughts":[{"id":552,"content":"- Call mom about thanksgiving dinner","category":null,"confidence":0.9,"source":"image","createdAt":"2026-04-19T18:14:49.496Z","modifiedAt":"2026-04-19T18:14:49.496Z","cloudKitRecordID":"8c5f0c77-1af6-404b-a2da-940ddc6d7e72","syncStatus":"pending","lastSyncedAt":null,"taskStatus":null,"therapyClassification":null,"tags":[],"isFavorited":false,"projectId":null},{"id":553,"content":"- Pick up dry cleaning","category":null,"confidence":0.9,"source":"image","createdAt":"2026-04-19T18:14:49.496Z","modifiedAt":"2026-04-19T18:14:49.496Z","cloudKitRecordID":"e9ce0282-ab1c-4bb7-adcd-78b07c859c90","syncStatus":"pending","lastSyncedAt":null,"taskStatus":null,"therapyClassification":null,"tags":[],"isFavorited":false,"projectId":null},{"id":554,"content":"- Buy groceries for weekend","category":null,"confidence":0.9,"source":"image","createdAt":"2026-04-19T18:14:49.496Z","modifiedAt":"2026-04-19T18:14:49.496Z","cloudKitRecordID":"f6526087-7a68-439c-8ba2-eab2c4af60cf","syncStatus":"pending","lastSyncedAt":null,"taskStatus":null,"therapyClassification":null,"tags":[],"isFavorited":false,"projectId":null},{"id":555,"content":"- Schedule dentist appointment","category":null,"confidence":0.9,"source":"image","createdAt":"2026-04-19T18:14:49.496Z","modifiedAt":"2026-04-19T18:14:49.496Z","cloudKitRecordID":"bd5f3711-937c-44e5-96a9-ff45901259d7","syncStatus":"pending","lastSyncedAt":null,"taskStatus":null,"therapyClassification":null,"tags":[],"isFavorited":false,"projectId":null},{"id":556,"content":"- Finish project report by Friday","category":null,"confidence":0.9,"source":"image","createdAt":"2026-04-19T18:14:49.496Z","modifiedAt":"2026-04-19T18:14:49.496Z","cloudKitRecordID":"2187d684-f5d6-4294-bab9-5acacf219065","syncStatus":"pending","lastSyncedAt":null,"taskStatus":null,"therapyClassification":null,"tags":[],"isFavorited":false,"projectId":null}]}
