@@ -298,7 +298,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 **Plans**: 3 plans
 Plans:
 - [x] 104-01-PLAN.md — Wave 0: Test scaffolds (sessionStorage shim + 3 updated test files + 3 new RED test stubs for AuthPage, ErrorBoundary, posthog)
-- [ ] 104-02-PLAN.md — Storage migration (client.ts) + AuthPage email/password form + posthog.ts singleton + ErrorBoundary + main.tsx wiring
+- [x] 104-02-PLAN.md — Storage migration (client.ts) + AuthPage email/password form + posthog.ts singleton + ErrorBoundary + main.tsx wiring
 - [ ] 104-03-PLAN.md — App.tsx identify wiring + SettingsPage Vigil Account section + human verification checkpoint
 
 ### Phase 105: Product Events, API Metrics & User Identity
@@ -441,7 +441,7 @@ Plans:
 | 101. Context Menu | v3.4 | 5/5 | Complete | 2026-04-18 |
 | 102. Multi-User Foundation | v3.4 | 6/6 | Complete | 2026-04-18 |
 | 103. Capture Repair & Server Observability Foundations | v3.5 | 5/5 | Complete   | 2026-04-19 |
-| 104. PWA Auth UI & Browser Observability | v3.5 | 1/3 | In Progress|  |
+| 104. PWA Auth UI & Browser Observability | v3.5 | 2/3 | In Progress|  |
 | 105. Product Events, API Metrics & User Identity | v3.5 | 0/TBD | Not started | - |
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 0/TBD | Not started | - |
 | 107. Safari Extension Persistence | v3.5 | 0/TBD | Not started | - |
