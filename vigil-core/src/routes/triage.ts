@@ -71,7 +71,8 @@ triage.post("/triage", async (c) => {
     try {
       result = parseAIJson<TriageResult>(raw);
     } catch {
-      return c.json({ error: "AI response parse error", raw }, 502);
+      console.error("[vigil-core] /v1/triage parse error, raw:", raw);
+      return c.json({ error: "AI response parse error" }, 502);
     }
 
     return c.json(result, 200);
