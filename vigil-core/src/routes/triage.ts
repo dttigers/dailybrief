@@ -4,7 +4,7 @@ import type { TriageResult } from "../ai/types.js";
 
 export const triage = new Hono();
 
-const TRIAGE_SYSTEM_PROMPT = `You are a thought categorizer and tagger. Categorize the user's thought into exactly one of these categories:
+export const TRIAGE_SYSTEM_PROMPT = `You are a thought categorizer and tagger. Categorize the user's thought into exactly one of these categories:
 
 - task: actionable to-do item, something to do or buy
 - therapy: feelings, emotions, therapy questions, mental health reflections
