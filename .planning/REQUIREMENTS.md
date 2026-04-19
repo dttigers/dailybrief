@@ -89,25 +89,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CAP-01 | TBD | Pending |
-| CAP-02 | TBD | Pending |
-| G2-01 | TBD | Pending |
-| G2-02 | TBD | Pending |
-| G2-03 | TBD | Pending |
-| ANLY-01 | TBD | Pending |
-| ANLY-02 | TBD | Pending |
-| ANLY-03 | TBD | Pending |
-| ANLY-04 | TBD | Pending |
-| AUTH-06 | TBD | Pending |
-| AUTH-07 | TBD | Pending |
-| AUTH-08 | TBD | Pending |
-| EXT-01 | TBD | Pending |
+| CAP-01 | Phase 103 | Pending |
+| CAP-02 | Phase 103 | Pending |
+| ANLY-01 | Phase 103 + Phase 104 | Pending |
+| AUTH-08 | Phase 103 | Pending |
+| AUTH-06 | Phase 104 | Pending |
+| AUTH-07 | Phase 104 | Pending |
+| ANLY-02 | Phase 105 | Pending |
+| ANLY-03 | Phase 105 | Pending |
+| ANLY-04 | Phase 105 | Pending |
+| G2-01 | Phase 106 | Pending |
+| G2-02 | Phase 106 | Pending |
+| G2-03 | Phase 106 | Pending |
+| EXT-01 | Phase 107 | Pending |
 
 **Coverage:**
 - v3.5 requirements: 13 total
-- Mapped to phases: 0 (roadmap pending)
-- Unmapped: 13 ⚠️ (will be resolved by roadmapper)
+- Mapped to phases: 13 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-19*
-*Last updated: 2026-04-19 after initial definition*
+*Last updated: 2026-04-19 — traceability completed by roadmapper*

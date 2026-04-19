@@ -22,6 +22,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v3.2 Freshness & Capture Parity** — Phases 88-95 (shipped 2026-04-16)
 - ✅ **v3.3 Stability & Chat Context** — Phases 96-98 (shipped 2026-04-17)
 - ✅ **v3.4 Multi-User Foundation & PWA Polish** — Phases 99-102 (shipped 2026-04-18)
+- 🚧 **v3.5 Observability, G2 Resubmit & Capture Repair** — Phases 103-107 (in progress)
 
 ## Completed Milestones
 
@@ -253,6 +254,76 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
+## 🚧 v3.5 Observability, G2 Resubmit & Capture Repair (In Progress)
+
+**Milestone Goal:** Fix the capture pipeline, unblock G2 store approval, and land analytics/error tracking so we stop debugging blind — plus close the multi-user loop with a real login UI.
+
+## Phases
+
+- [ ] **Phase 103: Capture Repair & Server Observability Foundations** - Fix photo pipeline bugs + PostHog singleton + /v1/me endpoint on vigil-core
+- [ ] **Phase 104: PWA Auth UI & Browser Observability** - Email/password login+register forms + posthog-js init + error boundary in PWA
+- [ ] **Phase 105: Product Events, API Metrics & User Identity** - Capture funnel events, per-route API metrics, and posthog.identify on login
+- [ ] **Phase 106: G2 Store Resubmit (Atomic)** - Screenshots + double-tap exit dialogue + brand-compliant WebView, all gated together
+- [ ] **Phase 107: Safari Extension Persistence** - Login Item registration so extension survives Mac reboots
+
+## Phase Details
+
+### Phase 103: Capture Repair & Server Observability Foundations
+**Goal**: The photo capture pipeline works correctly for all clients, and server exceptions are observable in PostHog
+**Depends on**: Phase 102 (multi-user foundation in production)
+**Requirements**: CAP-01, CAP-02, ANLY-01 (server half), AUTH-08
+**Success Criteria** (what must be TRUE):
+  1. A HEIC file dropped into the Mac watched folder (iCloud path) produces a thought with non-empty content — no silent failure
+  2. A photo uploaded via `POST /v1/process-photo` returns a thought with a non-null category field (verified via curl before any code is written)
+  3. Unhandled exceptions thrown in vigil-core routes appear in PostHog Cloud with stack traces (verified by intentionally triggering a test error)
+  4. `GET /v1/me` returns `{ userId, email }` for a valid JWT — prerequisite for Phase 104
+  5. Local `npm run dev` events do NOT appear in PostHog Cloud; Railway production events DO appear
+**Plans**: TBD
+
+### Phase 104: PWA Auth UI & Browser Observability
+**Goal**: PWA visitors can sign up and log in with email/password, and browser-side errors are tracked in PostHog
+**Depends on**: Phase 103 (needs /v1/me for posthog.identify, PostHog server singleton for env consistency)
+**Requirements**: AUTH-06, AUTH-07, ANLY-01 (browser half)
+**Success Criteria** (what must be TRUE):
+  1. A new user can complete the signup form (email + password) and land on the dashboard authenticated — no page reload or manual key entry required
+  2. An existing user can log in with email + password and is redirected to the dashboard with their email visible in the header or settings area
+  3. Wrong email and wrong password both display the identical generic error message — no user enumeration possible
+  4. React render errors caught by the error boundary appear in PostHog — verified by triggering a test throw
+  5. JWT is stored in sessionStorage, not localStorage — confirmed in DevTools Application tab
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 105: Product Events, API Metrics & User Identity
+**Goal**: The capture funnel, API error rates, and user identity are visible in the PostHog dashboard
+**Depends on**: Phase 103 + Phase 104 (both PostHog SDKs must be initialized before any capture() calls are written)
+**Requirements**: ANLY-02, ANLY-03, ANLY-04
+**Success Criteria** (what must be TRUE):
+  1. After capturing a thought and completing triage, two distinct events appear in PostHog with the same userId: `thought_created` (server) and `triage_completed` (server) — no double-counting from client
+  2. After a photo upload, a `photo_uploaded` event appears in PostHog filtered by the authenticated userId
+  3. Per-route API metrics (status code, latency, route name) are populated in PostHog for authenticated requests — visible in a dashboard query
+  4. No event property contains user-generated string content — grep of all `capture()` calls confirms the property allowlist (enums, booleans, numbers only)
+**Plans**: TBD
+
+### Phase 106: G2 Store Resubmit (Atomic)
+**Goal**: All three Even Hub store rejection items are resolved and verified on the simulator before a single resubmission is made
+**Depends on**: Nothing (independent of all server/PWA work)
+**Requirements**: G2-01, G2-02, G2-03
+**Success Criteria** (what must be TRUE):
+  1. Fresh simulator screenshots exist at the correct resolution from the current Even Realities iPhone app (v0.6.2+)
+  2. A double-tap on the G2 home screen shows a visible exit confirmation — a second double-tap within 3 seconds exits the plugin; waiting lets it reset to home (single-tap to task detail still works, swipe navigation still works)
+  3. The G2 plugin WebView renders Vigil brand colors and Inter font with no blank or placeholder states
+  4. All three items are verified on the simulator in a single session before the `.ehpk` is uploaded — no partial resubmission
+**Plans**: TBD
+
+### Phase 107: Safari Extension Persistence
+**Goal**: The Safari extension remains enabled after a Mac reboot without the user manually re-enabling it
+**Depends on**: Nothing (independent Xcode project, no server or PWA deps)
+**Requirements**: EXT-01
+**Success Criteria** (what must be TRUE):
+  1. After a full macOS restart (not just Safari restart), the Vigil Capture extension shows as enabled in Safari > Settings > Extensions — verified on physical hardware
+  2. `SMAppService.mainApp.register()` is called in `AppDelegate.applicationDidFinishLaunching` and the app suppresses its window on launch (no visible window on startup)
+**Plans**: TBD
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -357,10 +428,15 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 | 96. PWA Fixes | v3.3 | 2/2 | Complete | 2026-04-16 |
 | 97. Mac CLI Print Reliability | v3.3 | 2/2 | Complete | 2026-04-17 |
 | 98. Thought-Contextual Chat | v3.3 | 1/1 | Complete | 2026-04-17 |
-| 99. Brief History Fix | v3.4 | 3/3 | Complete    | 2026-04-18 |
-| 100. Edit-Refresh Pause | v3.4 | 1/1 | Complete    | 2026-04-18 |
-| 101. Context Menu | v3.4 | 5/5 | Complete    | 2026-04-18 |
-| 102. Multi-User Foundation | v3.4 | 6/6 | Complete    | 2026-04-18 |
+| 99. Brief History Fix | v3.4 | 3/3 | Complete | 2026-04-18 |
+| 100. Edit-Refresh Pause | v3.4 | 1/1 | Complete | 2026-04-18 |
+| 101. Context Menu | v3.4 | 5/5 | Complete | 2026-04-18 |
+| 102. Multi-User Foundation | v3.4 | 6/6 | Complete | 2026-04-18 |
+| 103. Capture Repair & Server Observability Foundations | v3.5 | 0/TBD | Not started | - |
+| 104. PWA Auth UI & Browser Observability | v3.5 | 0/TBD | Not started | - |
+| 105. Product Events, API Metrics & User Identity | v3.5 | 0/TBD | Not started | - |
+| 106. G2 Store Resubmit (Atomic) | v3.5 | 0/TBD | Not started | - |
+| 107. Safari Extension Persistence | v3.5 | 0/TBD | Not started | - |
 
 ## Backlog
 
