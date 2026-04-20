@@ -264,7 +264,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 104: PWA Auth UI & Browser Observability** - Email/password login+register forms + posthog-js init + error boundary in PWA (completed 2026-04-19)
 - [x] **Phase 105: Product Events, API Metrics & User Identity** - Capture funnel events, per-route API metrics, and posthog.identify on login (completed 2026-04-20)
 - [ ] **Phase 106: G2 Store Resubmit (Atomic)** - Screenshots + double-tap exit dialogue + brand-compliant WebView, all gated together
-- [ ] **Phase 107: Safari Extension Persistence** - Login Item registration so extension survives Mac reboots
+- [x] **Phase 107: Safari Extension Persistence** - Login Item registration so extension survives Mac reboots (completed 2026-04-20)
 
 ## Phase Details
 
@@ -344,7 +344,7 @@ Plans:
   - [x] 107-01-PLAN.md — Wave 1: Info.plist LSUIElement=true (accessory-mode window suppression)
   - [x] 107-02-PLAN.md — Wave 2: AppDelegate SMAppService status-guarded register() + first-launch NSAlert
   - [x] 107-03-PLAN.md — Wave 2: ViewController + Main.html + Script.js + Style.css persistence pill (D-04)
-  - [ ] 107-04-PLAN.md — Wave 3: full verify + HUMAN-UAT finalization + human eyeball checkpoint (Tests 3+4 pass; Tests 1/2/5 ship-with-uat-pending for reboot)
+  - [x] 107-04-PLAN.md — Wave 3: full verify + HUMAN-UAT finalization + human eyeball checkpoint (Tests 3+4 pass; Tests 1/2/5 ship-with-uat-pending for reboot)
 
 ## Progress
 
@@ -458,7 +458,7 @@ Plans:
 | 104. PWA Auth UI & Browser Observability | v3.5 | 3/3 | Complete    | 2026-04-19 |
 | 105. Product Events, API Metrics & User Identity | v3.5 | 3/3 | Complete    | 2026-04-20 |
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 4/5 | In Progress|  |
-| 107. Safari Extension Persistence | v3.5 | 5/6 | In Progress|  |
+| 107. Safari Extension Persistence | v3.5 | 6/6 | Complete   | 2026-04-20 |
 
 ## Backlog
 
