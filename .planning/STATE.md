@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
-status: verifying
-stopped_at: Phase 105 context gathered
-last_updated: "2026-04-19T22:32:46.494Z"
-last_activity: 2026-04-19
+status: executing
+stopped_at: Completed 105-01-PLAN.md
+last_updated: "2026-04-20T02:14:51.391Z"
+last_activity: 2026-04-20
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_plans: 11
+  completed_plans: 9
+  percent: 82
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-19)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 104 — pwa-auth-ui-browser-observability
+**Current focus:** Phase 105 — product-events-api-metrics-user-identity
 
 ## Current Position
 
-Phase: 105
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-19
+Phase: 105 (product-events-api-metrics-user-identity) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-20
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -54,6 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 104 P01 | 3min | 2 tasks | 7 files |
 | Phase 104 P02 | 3m 3s | 2 tasks | 7 files |
 | Phase 104 P03 | 24m 9s | 3 tasks | 5 files |
+| Phase 105 P01 | 37min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 104]: [Phase 104] Plan 104-01 — reused createMemoryStorage() factory with SEPARATE Map for sessionStorage shim (T-104-W0-01 isolation); migrated 3 existing test files to sessionStorage/vigil_jwt one plan ahead of client.ts (accepts 3 intentionally RED Bearer tests until Plan 02); exact-string assertion 'Invalid email or password. Please try again.' in AuthPage.test.tsx prevents user-enumeration regressions (T-104-W0-02)
 - [Phase 104]: Plan 104-02 — STORAGE_KEY value flipped ('vigil_api_key'→'vigil_jwt') while keeping the identifier name, minimizing blast radius on vigilFetch and all callers; clearKey idempotently cleans BOTH sessionStorage['vigil_jwt'] AND localStorage['vigil_api_key'] (D-10) so stale tabs opened after migration land clean; AuthPage onAuthSuccess signature expanded to (userId,email) in this plan to unblock Plan 03 identifyUser wiring without re-editing AuthPage; posthog.init(...) ?? null defends against builds that return undefined (Pitfall 6)
 - [Phase 104]: Plan 104-03 — centralized signOut() in api/client.ts + window 'vigil:signout' CustomEvent bus to sync App.tsx isAuthenticated with sessionStorage on sign-out (UAT-found redirect-loop fix); returning-session /v1/me identify swallows errors silently and relies on vigilFetch auth guard for stale-JWT redirect; Phase 104 complete, all 5 success criteria human-verified
+- [Phase 105]: [Phase 105] Plan 105-01 — BLOCKED_PROPERTY_NAMES Set + identifyUser wrapper land in vigil-core/src/analytics/posthog.ts; trackEvent partitions properties by name and emits posthog_property_blocked meta-event per drop (D-02 drop-the-property semantics); Phase 103 wrapper signature untouched (D-03); 9 existing + 10 new tests all pass under POSTHOG_API_KEY-unset shim
 
 ### Pending Todos
 
@@ -98,7 +100,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-19T22:32:46.488Z
-Stopped at: Phase 105 context gathered
-Resume file: .planning/phases/105-product-events-api-metrics-user-identity/105-CONTEXT.md
+Last session: 2026-04-20T02:14:51.386Z
+Stopped at: Completed 105-01-PLAN.md
+Resume file: None
 Next action: `/gsd-plan-phase 103`
