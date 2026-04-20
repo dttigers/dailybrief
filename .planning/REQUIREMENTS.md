@@ -43,7 +43,7 @@ Closes the v3.4 multi-user loop. Backend endpoints (`POST /v1/auth/register`, `P
 
 Safari extension disables on every Mac restart — breaking daily URL capture workflow.
 
-- [ ] **EXT-01**: Safari extension remains enabled after a Mac reboot without the user manually re-enabling it in Safari settings
+- [x] **EXT-01**: Safari extension remains enabled after a Mac reboot without the user manually re-enabling it in Safari settings
 
 ## Deferred to v3.6
 
@@ -101,7 +101,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | G2-01 | Phase 106 | Complete |
 | G2-02 | Phase 106 | Complete |
 | G2-03 | Phase 106 | Complete |
-| EXT-01 | Phase 107 | Pending |
+| EXT-01 | Phase 107 | Complete |
 
 **Coverage:**
 - v3.5 requirements: 13 total
