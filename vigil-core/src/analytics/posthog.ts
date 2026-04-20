@@ -135,6 +135,13 @@ export function trackEvent(
  * stay wrapper-only (Phase 103 D-14 — no direct singleton imports outside this
  * module). Plan 03 calls this from /v1/me on every successful response so the
  * PostHog person record stays fresh (D-09: email + createdAt).
+ *
+ * Properties are wrapped in `$set` explicitly. The posthog-node SDK autowraps
+ * flat properties into `$set` via a destructure in client.js, but that
+ * indirection is fragile — if the caller ever happens to pass a property named
+ * `$set`, `$set_once`, or `$anon_distinct_id`, it would hijack the destructure
+ * and silently drop the real person properties. Explicit `$set` avoids that
+ * footgun and matches the "advanced" JSDoc example in posthog-node's types.
  */
 export function identifyUser(
   userId: number | string,
@@ -142,7 +149,7 @@ export function identifyUser(
 ): void {
   posthog?.identify({
     distinctId: String(userId),
-    properties,
+    properties: { $set: properties },
   });
 }
 
