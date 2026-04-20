@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Completed 107-01-PLAN.md
-last_updated: "2026-04-20T18:58:32.773Z"
+stopped_at: Completed 107-02-PLAN.md
+last_updated: "2026-04-20T19:06:41.527Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 21
-  completed_plans: 17
-  percent: 81
+  completed_plans: 18
+  percent: 86
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 ## Current Position
 
 Phase: 107 (safari-extension-persistence) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-04-20
 
@@ -63,6 +63,7 @@ Progress: [████████░░] 80% (4/5 plans)
 | Phase 106 P04 | 3m 0s | 2 tasks | 4 files |
 | Phase 107 P00 | 2m 40s | 2 tasks | 2 files |
 | Phase 107 P01 | 2m 1s | 1 tasks | 1 files |
+| Phase 107 P02 | 3m 50s | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -101,6 +102,8 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 106]: Plan 106-04 — VITE_SCREENSHOT_MODE guard + 3 DEMO_* constants land in api.ts as module-scope const truthy-check (not === 'true') so Vite static-replacement + tree-shaker flatten each guard and drop DEMO_* from prod bundles. vite-env.d.ts augments ImportMetaEnv with VITE_SCREENSHOT_MODE?: string (interface merge with vite/client, no tsconfig edit). .env.screenshot gitignored via explicit new rule; .env.screenshot.example committed with T8-leak-1 security warning. .env.production untouched — grep confirms. DCE verified both directions: flag unset → no 'Follow up on PR-4827' / DEMO_BRIEF in dist/assets; VITE_SCREENSHOT_MODE=1 vite build → strings present. Exact demo strings locked for Plan 05 reproducibility.
 - [Phase 107]: Plan 107-00 — verification harness lands BEFORE implementation (RED-by-default at phase level). Scripts/verify-phase-107.sh (3 modes: --static/--runtime/--full) + 107-HUMAN-UAT.md (ship-with-uat-pending, 5 tests for SC#1 reboot + SC#2 no-window-flash). --static exits 1 today: Check 2 PASS (MACOSX_DEPLOYMENT_TARGET=15.7 already), Checks 1/3/4 FAIL pre-implementation. Script committed under Scripts/ (canonical git-tracked casing), not scripts/ as plan referenced — macOS case-insensitive fs masked this.
 - [Phase 107]: Plan 107-01 — literal Info.plist edit (not INFOPLIST_KEY_LSUIElement build setting) for git-diff visibility; storyboard + ViewController untouched so Plan 03 WKWebView prefs bridge still works; tab indentation preserved; Checks 1+2 of verify-phase-107.sh --static now green, 3+4 remain red pending Plan 02
+- [Phase 107]: Plan 107-02 — Aliased switch + literal register() + doc-comment .status literal reconciled Plan 00 harness literal-grep contract with plan frontmatter aliased key_link pattern; future AppDelegate edits must preserve both SMAppService.mainApp.register() and SMAppService.mainApp.status as literal substrings
+- [Phase 107]: Plan 107-02 — UserDefaults firstLaunchAlertShown flag set AFTER runModal() preserves at-least-once alert delivery if crash occurs mid-modal; informativeText pre-empts macOS BTM Background Items Added system notification (Open Question 3)
 
 ### Pending Todos
 
@@ -116,7 +119,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-20T18:58:32.767Z
-Stopped at: Completed 107-01-PLAN.md
+Last session: 2026-04-20T19:06:41.521Z
+Stopped at: Completed 107-02-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 103`
