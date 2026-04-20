@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Completed 105-01-PLAN.md
-last_updated: "2026-04-20T02:14:51.391Z"
+stopped_at: Completed 105-02-PLAN.md
+last_updated: "2026-04-20T02:22:44.727Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 5
   completed_phases: 2
   total_plans: 11
-  completed_plans: 9
-  percent: 82
+  completed_plans: 10
+  percent: 91
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 ## Current Position
 
 Phase: 105 (product-events-api-metrics-user-identity) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-20
 
@@ -55,6 +55,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 104 P02 | 3m 3s | 2 tasks | 7 files |
 | Phase 104 P03 | 24m 9s | 3 tasks | 5 files |
 | Phase 105 P01 | 37min | 2 tasks | 2 files |
+| Phase 105 P02 | 4m 7s | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 104]: Plan 104-02 — STORAGE_KEY value flipped ('vigil_api_key'→'vigil_jwt') while keeping the identifier name, minimizing blast radius on vigilFetch and all callers; clearKey idempotently cleans BOTH sessionStorage['vigil_jwt'] AND localStorage['vigil_api_key'] (D-10) so stale tabs opened after migration land clean; AuthPage onAuthSuccess signature expanded to (userId,email) in this plan to unblock Plan 03 identifyUser wiring without re-editing AuthPage; posthog.init(...) ?? null defends against builds that return undefined (Pitfall 6)
 - [Phase 104]: Plan 104-03 — centralized signOut() in api/client.ts + window 'vigil:signout' CustomEvent bus to sync App.tsx isAuthenticated with sessionStorage on sign-out (UAT-found redirect-loop fix); returning-session /v1/me identify swallows errors silently and relies on vigilFetch auth guard for stale-JWT redirect; Phase 104 complete, all 5 success criteria human-verified
 - [Phase 105]: [Phase 105] Plan 105-01 — BLOCKED_PROPERTY_NAMES Set + identifyUser wrapper land in vigil-core/src/analytics/posthog.ts; trackEvent partitions properties by name and emits posthog_property_blocked meta-event per drop (D-02 drop-the-property semantics); Phase 103 wrapper signature untouched (D-03); 9 existing + 10 new tests all pass under POSTHOG_API_KEY-unset shim
+- [Phase 105]: [Phase 105] Plan 105-02 — metricsMiddleware (MiddlewareHandler factory + dep-injected trackFn + statusClass enum helper) lands as the only /v1/* app.use between bearerAuth dispatcher (line 105) and first protected route (summary line 125); fires api_request with { route, method, status, duration_ms, status_class } on every authenticated request, skips on missing userId (D-05 — no anonymous metrics). 5 capture-funnel events wired at success points: thought_created (thoughts.ts), photo_uploaded + triage_completed (process-photo.ts, triage_completed strictly inside fulfilled-branch after dbUpdateTriageFn succeeds per D-15), brief_generated (brief-generate.ts with briefId hoisted outside tx closure), chat_sent (chat.ts after callClaudeConversation). Zero BLOCKED_PROPERTY_NAMES collisions; all properties are bounded enums/booleans/numbers.
 
 ### Pending Todos
 
@@ -100,7 +102,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-20T02:14:51.386Z
-Stopped at: Completed 105-01-PLAN.md
+Last session: 2026-04-20T02:22:44.722Z
+Stopped at: Completed 105-02-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 103`

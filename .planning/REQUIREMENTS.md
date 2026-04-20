@@ -28,7 +28,7 @@ PostHog Cloud integration (free tier sufficient at current scale). Unified vendo
 
 - [x] **ANLY-01**: Server-side and PWA exceptions are automatically captured in PostHog (stack traces, request context, userId when available)
 - [x] **ANLY-02**: Product events emit for the capture funnel (thought captured, triage completed, brief generated, photo uploaded, chat sent) with userId attached
-- [ ] **ANLY-03**: API middleware records per-route metrics (status code, latency, route name) for every authenticated request
+- [x] **ANLY-03**: API middleware records per-route metrics (status code, latency, route name) for every authenticated request
 - [x] **ANLY-04**: Authenticated users are identified to PostHog via `posthog.identify(userId)` on login so all events attribute to the right person
 
 ### Authentication UI
@@ -96,7 +96,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-06 | Phase 104 | Complete |
 | AUTH-07 | Phase 104 | Complete |
 | ANLY-02 | Phase 105 | Complete |
-| ANLY-03 | Phase 105 | Pending |
+| ANLY-03 | Phase 105 | Complete |
 | ANLY-04 | Phase 105 | Complete |
 | G2-01 | Phase 106 | Pending |
 | G2-02 | Phase 106 | Pending |

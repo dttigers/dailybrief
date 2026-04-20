@@ -313,7 +313,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 105-01-PLAN.md — Extend trackEvent with BLOCKED_PROPERTY_NAMES guard + add identifyUser wrapper
-- [ ] 105-02-PLAN.md — Metrics middleware (api_request) + wire 5 capture-funnel events into route handlers
+- [x] 105-02-PLAN.md — Metrics middleware (api_request) + wire 5 capture-funnel events into route handlers
 - [ ] 105-03-PLAN.md — Server-side identifyUser in /v1/me with email + createdAt person properties
 
 ### Phase 106: G2 Store Resubmit (Atomic)
@@ -446,7 +446,7 @@ Plans:
 | 102. Multi-User Foundation | v3.4 | 6/6 | Complete | 2026-04-18 |
 | 103. Capture Repair & Server Observability Foundations | v3.5 | 5/5 | Complete   | 2026-04-19 |
 | 104. PWA Auth UI & Browser Observability | v3.5 | 3/3 | Complete    | 2026-04-19 |
-| 105. Product Events, API Metrics & User Identity | v3.5 | 1/3 | In Progress|  |
+| 105. Product Events, API Metrics & User Identity | v3.5 | 2/3 | In Progress|  |
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 0/TBD | Not started | - |
 | 107. Safari Extension Persistence | v3.5 | 0/TBD | Not started | - |
 
