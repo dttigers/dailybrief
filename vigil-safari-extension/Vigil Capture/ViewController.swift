@@ -9,6 +9,7 @@ import Cocoa
 import SafariServices
 import WebKit
 import ServiceManagement
+import os.log
 
 let extensionBundleIdentifier = "io.vigilhub.extension.Extension"
 
@@ -42,6 +43,17 @@ class ViewController: NSViewController, WKNavigationDelegate, WKScriptMessageHan
                 // D-04: push live SMAppService persistence status to the pill.
                 let persistence = self.persistenceStateString()
                 webView.evaluateJavaScript("showPersistence('\(persistence)')")
+                // gap_107_1: AppDelegate.suppressStoryboardWindows() orders the
+                // storyboard window out unconditionally at launch. Re-show ONLY
+                // when the launch-source heuristic says this is user-initiated
+                // (Safari-prefs click or post-boot manual open). Login Item boot
+                // launches and first-install launches keep shouldRevealWindow
+                // at its default false — window stays hidden (D-01 compliance).
+                if let delegate = NSApp.delegate as? AppDelegate, delegate.shouldRevealWindow {
+                    webView.window?.makeKeyAndOrderFront(nil)
+                    os_log("ViewController: shouldRevealWindow=true, window surfaced",
+                           type: .info)
+                }
             }
         }
     }
