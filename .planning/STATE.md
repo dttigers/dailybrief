@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: verifying
-stopped_at: Completed 105-03-PLAN.md
-last_updated: "2026-04-20T02:57:26.926Z"
+stopped_at: Phase 106 context gathered
+last_updated: "2026-04-20T04:19:02.905Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 5
@@ -104,7 +104,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-20T02:28:53.947Z
-Stopped at: Completed 105-03-PLAN.md
-Resume file: None
+Last session: 2026-04-20T04:19:02.899Z
+Stopped at: Phase 106 context gathered
+Resume file: .planning/phases/106-g2-store-resubmit-atomic/106-CONTEXT.md
 Next action: `/gsd-plan-phase 103`
