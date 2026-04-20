@@ -65,7 +65,7 @@ Each task was committed atomically:
 
 1. **Task 1: Add LSUIElement=true to container Info.plist** — `44610e9` (feat)
 
-**Plan metadata:** [final commit hash recorded after this SUMMARY is written] (docs: complete plan)
+**Plan metadata:** `2957e2d` (docs: complete plan — SUMMARY.md + STATE.md + ROADMAP.md)
 
 ## Files Created/Modified
 
