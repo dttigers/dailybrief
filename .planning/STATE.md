@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
-status: executing
-stopped_at: Completed 106-04-PLAN.md (G2-01 VITE_SCREENSHOT_MODE demo-data short-circuit)
-last_updated: "2026-04-20T17:46:53.007Z"
+status: blocked
+stopped_at: Phase 106 partial — 106-05 deferred on G2 hardware (see HARDWARE-BLOCKED.md)
+last_updated: "2026-04-20T17:55:00.000Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 5
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-19)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 106 — g2-store-resubmit-atomic
+**Current focus:** Phase 106 partial (4/5) — 106-05 deferred on G2 hardware
 
 ## Current Position
 
-Phase: 106 (g2-store-resubmit-atomic) — EXECUTING
-Plan: 3 of 5
-Status: Ready to execute
+Phase: 106 (g2-store-resubmit-atomic) — BLOCKED (hardware)
+Plan: 5 of 5 — deferred (see .planning/phases/106-g2-store-resubmit-atomic/HARDWARE-BLOCKED.md)
+Status: Code side complete (G2-01/02/03 implemented); ship artifact blocked on G2 pairing
 Last activity: 2026-04-20
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [████████░░] 80% (4/5 plans)
 
 ## Performance Metrics
 
