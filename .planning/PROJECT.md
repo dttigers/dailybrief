@@ -4,6 +4,8 @@
 
 **In progress:** v3.5 Observability, G2 Resubmit & Capture Repair (started 2026-04-19) — fix broken photo capture, unblock G2 store approval, land PostHog analytics + error tracking, ship PWA login UI, persist Safari extension.
 
+**Phase 105 complete (2026-04-19):** Server-side PostHog product events (`thought_created`, `photo_uploaded`, `triage_completed`, `brief_generated`, `chat_sent`), per-route `api_request` metrics middleware, and `/v1/me` `identifyUser` with email + createdAt. ANLY-02/03/04 code-verified; 4 PostHog Cloud dashboard checks pending human verification (tracked in 105-HUMAN-UAT.md).
+
 **Shipped:** v3.4 Multi-User Foundation & PWA Polish (2026-04-18) — 4 phases, 15 plans, 14/14 requirements satisfied, live on api.vigilhub.io with 5/5 go/no-go curls GREEN.
 
 ## Current Milestone: v3.5 Observability, G2 Resubmit & Capture Repair
@@ -145,7 +147,7 @@ Capture every thought with zero friction and have the system organize it for you
 - [ ] G2 resubmit: latest-simulator screenshots (G2-01)
 - [ ] G2 resubmit: double-tap exit dialogue per lifecycle docs (G2-02)
 - [ ] G2 resubmit: WebView brand-compliant content (G2-03)
-- [ ] PostHog analytics integration — error tracking + product events + API metrics (ANLY-01..04) — browser half landed in Phase 104
+- [x] PostHog analytics integration — error tracking + product events + API metrics (ANLY-01 Phase 104, ANLY-02/03/04 code-verified Phase 105 2026-04-19; dashboard visibility pending human UAT)
 - [x] PWA login/register UI (AUTH-06 — validated in Phase 104 2026-04-19)
 - [x] PWA profile + change-password foundation (AUTH-07 — email display + sign out in Phase 104; full profile editing deferred)
 - [ ] Persistent Safari extension (EXT-01 — survives restarts without re-enabling)
