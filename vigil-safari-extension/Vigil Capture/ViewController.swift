@@ -8,6 +8,7 @@
 import Cocoa
 import SafariServices
 import WebKit
+import ServiceManagement
 
 let extensionBundleIdentifier = "io.vigilhub.extension.Extension"
 
@@ -38,7 +39,25 @@ class ViewController: NSViewController, WKNavigationDelegate, WKScriptMessageHan
                 } else {
                     webView.evaluateJavaScript("show(\(state.isEnabled), false)")
                 }
+                // D-04: push live SMAppService persistence status to the pill.
+                let persistence = self.persistenceStateString()
+                webView.evaluateJavaScript("showPersistence('\(persistence)')")
             }
+        }
+    }
+
+    /// Maps the live SMAppService.mainApp.status to one of four pill state strings
+    /// that Script.js's showPersistence() understands.
+    private func persistenceStateString() -> String {
+        switch SMAppService.mainApp.status {
+        case .enabled:
+            return "enabled"
+        case .notRegistered, .notFound:
+            return "not-registered"
+        case .requiresApproval:
+            return "requires-approval"
+        @unknown default:
+            return "failed"
         }
     }
 
