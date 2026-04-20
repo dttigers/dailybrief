@@ -116,6 +116,19 @@ export async function handleNavEvent(
     return
   }
 
+  // G2-02: home-screen double-tap hands off to the host-rendered exit-confirm dialog.
+  // Per D-01, we do NOT render a custom confirmation UI. Per RESEARCH Pitfall 3,
+  // we fire-and-forget — the SDK's Promise<boolean> semantics are undocumented,
+  // and lifecycle transitions (confirm/cancel) arrive via existing FOREGROUND_*
+  // listeners in main.ts (lines 75-82). exitMode=1 per D-01.
+  if (
+    currentScreen === Screen.HOME &&
+    eventType === OsEventTypeList.DOUBLE_CLICK_EVENT
+  ) {
+    void bridge.shutDownPageContainer(1)
+    return
+  }
+
   let target: ScreenName
 
   switch (eventType) {
