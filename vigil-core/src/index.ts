@@ -110,16 +110,21 @@ app.use("/v1/*", async (c, next) => {
   return bearerAuth(c, next);
 });
 
-// Google OAuth routes — initiation behind bearer, callback exempted above.
-app.route("/v1", googleAuth);
-
 // ── Phase 105 Plan 02 — ANLY-03 per-route API metrics ─────────────────────
-// Registered AFTER bearerAuth dispatcher (line ~104) and AFTER googleAuth
-// (above) so it sees only authenticated requests with c.var.userId set.
+// Registered AFTER the bearerAuth dispatcher (line ~105) and BEFORE every
+// protected route (googleAuth + the block below) so EVERY authenticated
+// request emits `api_request`. In Hono, `app.use(path, ...)` only applies to
+// routes registered AFTER the use() call at the same mount point — mounting
+// this before googleAuth is load-bearing (WR-02: previously googleAuth was
+// silently unmeasured because it was registered first).
 // D-05: public routes (health, register, login, OAuth callback) short-circuit
 // out of bearerAuth via `return next()` and never reach this middleware —
-// they are intentionally not measured.
+// they are intentionally not measured. The `if (userId == null) return;`
+// inside metricsMiddleware is a second belt on those suspenders.
 app.use("/v1/*", metricsMiddleware);
+
+// Google OAuth routes — initiation behind bearer, callback exempted above.
+app.route("/v1", googleAuth);
 
 // Protected routes
 app.route("/v1", summary);
