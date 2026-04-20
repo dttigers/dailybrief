@@ -20,7 +20,7 @@ Rejection feedback from Even Realities store review must be fully addressed befo
 
 - [ ] **G2-01**: Plugin screenshots regenerated at correct resolution using the current Even simulator (v0.6.2+)
 - [x] **G2-02**: Double-tap gesture on home screen triggers a visible exit confirmation dialogue with a short timeout window, per Even Hub page-lifecycle guidelines
-- [ ] **G2-03**: WebView content renders brand-compliant UI (colors, typography, spacing) following the Even Realities public software design guidelines — never blank
+- [x] **G2-03**: WebView content renders brand-compliant UI (colors, typography, spacing) following the Even Realities public software design guidelines — never blank
 
 ### Analytics & Observability
 
@@ -100,7 +100,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | ANLY-04 | Phase 105 | Complete |
 | G2-01 | Phase 106 | Pending |
 | G2-02 | Phase 106 | Complete |
-| G2-03 | Phase 106 | Pending |
+| G2-03 | Phase 106 | Complete |
 | EXT-01 | Phase 107 | Pending |
 
 **Coverage:**
