@@ -3,12 +3,12 @@ status: ship-with-uat-pending
 phase: 107-safari-extension-persistence
 source: [107-VALIDATION.md, 107-CONTEXT.md]
 started: 2026-04-20T00:00:00Z
-updated: 2026-04-20T00:00:00Z
+updated: 2026-04-20T19:17:11Z
 ---
 
 ## Current Test
 
-[awaiting user reboot — see Test 1]
+[ready for user reboot. Build artifact: /Users/jamesonmorrill/Library/Developer/Xcode/DerivedData/Vigil_Capture-ecqueqzbhctzqhcfrasvarwjuont/Build/Products/Debug/Vigil Capture.app. Automated checks (Plans 00-03, verify-phase-107.sh --full) exit 0. Tests 1, 2, 5 require physical reboot. Tests 3, 4 require eyeball check on first + second launch.]
 
 ## Tests
 
