@@ -5,7 +5,7 @@ import assert from "node:assert/strict";
 // Per 103-CONTEXT.md D-10: tests must run with POSTHOG_API_KEY unset to exercise the shim path.
 delete process.env["POSTHOG_API_KEY"];
 
-const { redactEvent, trackEvent, captureException, posthog } = await import(
+const { redactEvent, trackEvent, captureException, posthog, identifyUser, BLOCKED_PROPERTY_NAMES } = await import(
   "./posthog.js"
 );
 
@@ -85,5 +85,91 @@ describe("trackEvent / captureException — D-10 null-guard", () => {
 
   it("captureException normalizes non-Error throws (string) without throwing", () => {
     assert.doesNotThrow(() => captureException(1, "string-error" as unknown, {}));
+  });
+});
+
+describe("BLOCKED_PROPERTY_NAMES — D-04 denylist literal", () => {
+  it("exports a Set with exactly the 8 documented names", () => {
+    const expected = new Set([
+      "content",
+      "body",
+      "text",
+      "message",
+      "description",
+      "title",
+      "note",
+      "transcript",
+    ]);
+    assert.equal(BLOCKED_PROPERTY_NAMES.size, expected.size);
+    for (const name of expected) {
+      assert.ok(
+        BLOCKED_PROPERTY_NAMES.has(name),
+        `BLOCKED_PROPERTY_NAMES must contain "${name}"`,
+      );
+    }
+  });
+
+  it("matches property names case-sensitively (D-01 documented behaviour)", () => {
+    assert.equal(BLOCKED_PROPERTY_NAMES.has("content"), true);
+    assert.equal(BLOCKED_PROPERTY_NAMES.has("Content"), false);
+    assert.equal(BLOCKED_PROPERTY_NAMES.has("CONTENT"), false);
+  });
+});
+
+describe("trackEvent — D-01..D-03 property guard (shim path)", () => {
+  it("does not throw when called with a blocked property under shim (posthog === null)", () => {
+    assert.equal(posthog, null); // sanity: D-10 gate is engaged for tests
+    assert.doesNotThrow(() =>
+      trackEvent(1, "thought_created", {
+        category: "task",
+        content: "do laundry — should be dropped before emission",
+      }),
+    );
+  });
+
+  it("does not throw with empty properties (D-03 default arg)", () => {
+    assert.doesNotThrow(() => trackEvent(1, "thought_created"));
+    assert.doesNotThrow(() => trackEvent(1, "thought_created", {}));
+  });
+
+  it("accepts the legal property primitive types (string|number|boolean|null|undefined)", () => {
+    assert.doesNotThrow(() =>
+      trackEvent(1, "api_request", {
+        route: "/v1/thoughts",   // string — allowed
+        status: 200,             // number — allowed
+        cached: false,           // boolean — allowed
+        error_code: null,        // null — allowed
+        tag: undefined,          // undefined — allowed
+      }),
+    );
+  });
+
+  it("accepts both number and string userIds (D-03 signature unchanged)", () => {
+    assert.doesNotThrow(() => trackEvent(1, "e", {}));
+    assert.doesNotThrow(() => trackEvent("1", "e", {}));
+  });
+});
+
+describe("identifyUser — D-09..D-11 wrapper export", () => {
+  it("is exported and is a function", () => {
+    assert.equal(typeof identifyUser, "function");
+  });
+
+  it("does not throw under shim with email + createdAt", () => {
+    assert.doesNotThrow(() =>
+      identifyUser(1, {
+        email: "a@b.com",
+        createdAt: "2026-01-01T00:00:00.000Z",
+      }),
+    );
+  });
+
+  it("does not throw with no properties argument", () => {
+    assert.doesNotThrow(() => identifyUser(1));
+  });
+
+  it("accepts both number and string userIds", () => {
+    assert.doesNotThrow(() => identifyUser(42, { email: "x@y.com" }));
+    assert.doesNotThrow(() => identifyUser("42", { email: "x@y.com" }));
   });
 });
