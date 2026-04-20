@@ -262,7 +262,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 - [x] **Phase 103: Capture Repair & Server Observability Foundations** - Fix photo pipeline bugs + PostHog singleton + /v1/me endpoint on vigil-core (completed 2026-04-19)
 - [x] **Phase 104: PWA Auth UI & Browser Observability** - Email/password login+register forms + posthog-js init + error boundary in PWA (completed 2026-04-19)
-- [ ] **Phase 105: Product Events, API Metrics & User Identity** - Capture funnel events, per-route API metrics, and posthog.identify on login
+- [x] **Phase 105: Product Events, API Metrics & User Identity** - Capture funnel events, per-route API metrics, and posthog.identify on login (completed 2026-04-20)
 - [ ] **Phase 106: G2 Store Resubmit (Atomic)** - Screenshots + double-tap exit dialogue + brand-compliant WebView, all gated together
 - [ ] **Phase 107: Safari Extension Persistence** - Login Item registration so extension survives Mac reboots
 
@@ -314,7 +314,7 @@ Plans:
 Plans:
 - [x] 105-01-PLAN.md — Extend trackEvent with BLOCKED_PROPERTY_NAMES guard + add identifyUser wrapper
 - [x] 105-02-PLAN.md — Metrics middleware (api_request) + wire 5 capture-funnel events into route handlers
-- [ ] 105-03-PLAN.md — Server-side identifyUser in /v1/me with email + createdAt person properties
+- [x] 105-03-PLAN.md — Server-side identifyUser in /v1/me with email + createdAt person properties
 
 ### Phase 106: G2 Store Resubmit (Atomic)
 **Goal**: All three Even Hub store rejection items are resolved and verified on the simulator before a single resubmission is made
@@ -446,7 +446,7 @@ Plans:
 | 102. Multi-User Foundation | v3.4 | 6/6 | Complete | 2026-04-18 |
 | 103. Capture Repair & Server Observability Foundations | v3.5 | 5/5 | Complete   | 2026-04-19 |
 | 104. PWA Auth UI & Browser Observability | v3.5 | 3/3 | Complete    | 2026-04-19 |
-| 105. Product Events, API Metrics & User Identity | v3.5 | 2/3 | In Progress|  |
+| 105. Product Events, API Metrics & User Identity | v3.5 | 3/3 | Complete   | 2026-04-20 |
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 0/TBD | Not started | - |
 | 107. Safari Extension Persistence | v3.5 | 0/TBD | Not started | - |
 
