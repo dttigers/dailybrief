@@ -2,7 +2,7 @@
 phase: 106
 slug: g2-store-resubmit-atomic
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-04-19
 ---
@@ -12,7 +12,7 @@ created: 2026-04-19
 > Per-phase validation contract for feedback sampling during execution.
 > Derived from RESEARCH §Validation Architecture (2026-04-19).
 
----
+<!-- ─── -->
 
 ## Test Infrastructure
 
@@ -24,7 +24,7 @@ created: 2026-04-19
 | **Full suite command** | `cd vigil-g2-plugin && npm run package:ehpk` |
 | **Estimated runtime** | ~1s (quick tsc), ~5s (full build+pack+gate) |
 
----
+<!-- ─── -->
 
 ## Sampling Rate
 
@@ -33,34 +33,33 @@ created: 2026-04-19
 - **Before `/gsd-verify-work`:** `npm run package:ehpk` exits 0 with fresh `VERIFIED.md` AND `store-assets/*.png` at 576×288 AND all static grep assertions below pass
 - **Max feedback latency:** ~5 seconds (tsc + vite build)
 
----
+<!-- ─── -->
 
 ## Per-Task Verification Map
 
+> Task ID format: `106-<plan>-<task>` — maps 1:1 to the Nth `<task>` block in plan 106-<plan>-PLAN.md.
+
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 106-01-01 | 01 (Wave 0 scaffolding) | 0 | — | — | Gate infra present | static | `test -d vigil-g2-plugin/store-assets && test -f vigil-g2-plugin/scripts/check-verified.mjs` | ❌ W0 | ⬜ pending |
-| 106-01-02 | 01 | 0 | — | — | npm script wired | static | `grep -q '"package:ehpk"' vigil-g2-plugin/package.json` | ✅ | ⬜ pending |
-| 106-01-03 | 01 | 0 | — | — | VERIFIED.md template present | static | `test -f .planning/phases/106-g2-store-resubmit-atomic/VERIFIED.md` | ❌ W0 | ⬜ pending |
-| 106-02-01 | 02 (G2-02) | 1 | G2-02 | T8-leak | `shutDownPageContainer(1)` call exists, home branch only | static grep | `grep -cE 'shutDownPageContainer\(1\)' vigil-g2-plugin/src/navigation.ts` → ≥1 | ✅ | ⬜ pending |
-| 106-02-02 | 02 | 1 | G2-02 | — | Type-check passes after nav edit | static | `cd vigil-g2-plugin && npx tsc` exit 0 | ✅ | ⬜ pending |
-| 106-02-03 | 02 | 1 | G2-02 | — | Double-tap on home fires host dialog (simulator) | manual | Logged in VERIFIED.md with simulator screenshot | Manual | ⬜ pending |
-| 106-03-01 | 03 (G2-03) | 1 | G2-03 | — | All 4 screens reference `VIGIL` wordmark | static grep | `grep -l 'VIGIL' vigil-g2-plugin/src/screens/*.ts \| wc -l` → 4 | ✅ | ⬜ pending |
-| 106-03-02 | 03 | 1 | G2-03 | — | Body containers have `borderWidth: 1` | static grep | `grep -c 'borderWidth: 1' vigil-g2-plugin/src/screens/*.ts` → ≥4 | ✅ | ⬜ pending |
-| 106-03-03 | 03 | 1 | G2-03 | — | Empty-state fallback copy present per screen | static grep | `grep -E "No (open\|work orders\|tasks)\|Brief unavailable" vigil-g2-plugin/src/screens/*.ts` → ≥3 | ✅ | ⬜ pending |
-| 106-03-04 | 03 | 1 | G2-03 | — | Footer nav hint container exists per screen | static grep | `grep -c 'footer' vigil-g2-plugin/src/screens/*.ts` → ≥4 | ✅ | ⬜ pending |
-| 106-03-05 | 03 | 1 | G2-03 | — | No new `ContainerId` enum entries beyond 12 (budget cap) | static | `grep -cE '^\s+[A-Z_]+:\s*[0-9]+' vigil-g2-plugin/src/constants.ts` for ContainerId block → ≤12 | ✅ | ⬜ pending |
-| 106-04-01 | 04 (G2-01 code) | 1 | G2-01 | T8-leak | `VITE_SCREENSHOT_MODE` guard present in api.ts | static grep | `grep -c 'VITE_SCREENSHOT_MODE' vigil-g2-plugin/src/api.ts` → ≥1 | ✅ | ⬜ pending |
-| 106-04-02 | 04 | 1 | G2-01 | T8-leak | `.env.production` does NOT contain `VITE_SCREENSHOT_MODE` | static | `! grep -q 'VITE_SCREENSHOT_MODE' vigil-g2-plugin/.env.production 2>/dev/null` | ✅ | ⬜ pending |
-| 106-04-03 | 04 | 2 | G2-01 | — | Screenshots exist at 576×288 | script | `sips -g pixelWidth -g pixelHeight vigil-g2-plugin/store-assets/*.png` → all 576×288 | ❌ W0 dir | ⬜ pending |
-| 106-04-04 | 04 | 2 | G2-01 | — | Simulator version ≥ v0.6.2 confirmed in VERIFIED.md | manual | Logged in VERIFIED.md | Manual | ⬜ pending |
-| 106-05-01 | 05 (Atomic gate) | 2 | — | — | Fresh VERIFIED.md gates pack | script | `node vigil-g2-plugin/scripts/check-verified.mjs` → exit 0 | ❌ W0 | ⬜ pending |
-| 106-05-02 | 05 | 2 | — | — | `.ehpk` produced with `-o vigil.ehpk` | script | `cd vigil-g2-plugin && npm run package:ehpk && test -f vigil.ehpk` | ❌ W0 | ⬜ pending |
-| 106-05-03 | 05 | 2 | — | — | Stale VERIFIED.md correctly refuses pack | script (negative) | Backdate `Verified:` line >24h → `check-verified.mjs` → exit 1 | Manual | ⬜ pending |
+| 106-01-01 | 01 (Scaffold) | 0 | G2-01/02/03 | T8-leak-2 | store-assets/ + check-verified.mjs + VERIFIED.md present; fail-closed on placeholder | script (negative) | `test -d vigil-g2-plugin/store-assets && test -f vigil-g2-plugin/scripts/check-verified.mjs && test -f .planning/phases/106-g2-store-resubmit-atomic/VERIFIED.md && (node vigil-g2-plugin/scripts/check-verified.mjs; test $? -eq 1)` | ❌ W0 | ⬜ pending |
+| 106-01-02 | 01 | 0 | — | — | `package:ehpk` script wired, `pack` amended to `-o vigil.ehpk`, app.json → 0.2.0 | static | `grep -q '"package:ehpk":' vigil-g2-plugin/package.json && grep -q '"pack": "evenhub pack app.json dist -o vigil.ehpk"' vigil-g2-plugin/package.json && grep -q '"version": "0.2.0"' vigil-g2-plugin/app.json` | ✅ | ⬜ pending |
+| 106-02-01 | 02 (G2-02) | 1 | G2-02 | T-106-02-02 | Single `shutDownPageContainer(1)` call at home branch; fire-and-forget (void); existing branches intact | static grep | `test "$(grep -cE 'shutDownPageContainer\(1\)' vigil-g2-plugin/src/navigation.ts)" = "1" && grep -qE 'void bridge\.shutDownPageContainer\(1\)' vigil-g2-plugin/src/navigation.ts && grep -qE 'currentScreen === Screen\.HOME' vigil-g2-plugin/src/navigation.ts && cd vigil-g2-plugin && npx tsc` | ✅ | ⬜ pending |
+| — (manual) | 02 | 2 | G2-02 | — | Double-tap on home fires host dialog; non-home still navigates to home | manual | Logged in VERIFIED.md Task 3 of Plan 05 (see VALIDATION.md §Manual-Only Verifications rows 1-2) | Manual | ⬜ pending |
+| 106-03-01 | 03 (G2-03) | 1 | G2-03 | — | `buildVigilHeader` factory exported from screens/header.ts | static grep | `grep -q '^export function buildVigilHeader' vigil-g2-plugin/src/screens/header.ts && grep -q 'CHARS_PER_LINE' vigil-g2-plugin/src/screens/header.ts && cd vigil-g2-plugin && npx tsc` | ✅ (new file) | ⬜ pending |
+| 106-03-02 | 03 | 1 | G2-03 | — | home.ts + affirmation.ts: unified header + border + exit-gesture footer + Vigil-voice fallback | static grep | `grep -q 'buildVigilHeader(ContainerId.HOME_HEADER' vigil-g2-plugin/src/screens/home.ts && grep -q 'buildVigilHeader(ContainerId.AFFIRMATION_HEADER' vigil-g2-plugin/src/screens/affirmation.ts && grep -q "Brief unavailable. Retry when you're ready." vigil-g2-plugin/src/screens/affirmation.ts && grep -q '⌾ double-tap to exit' vigil-g2-plugin/src/screens/home.ts && grep -q 'borderColor: 15' vigil-g2-plugin/src/screens/home.ts` | ✅ | ⬜ pending |
+| 106-03-03 | 03 | 1 | G2-03 | — | work-orders.ts + task-detail.ts: unified header + border on list+empty body + Vigil-voice fallbacks + exit-gesture footers; 12-container budget preserved | static grep | `grep -q "No work orders open. Capture one when it finds you." vigil-g2-plugin/src/screens/work-orders.ts && grep -q "Task not found. Swipe to return." vigil-g2-plugin/src/screens/task-detail.ts && test "$(grep -c 'borderWidth: 1' vigil-g2-plugin/src/screens/work-orders.ts)" -ge "2" && test "$(grep -cE '^\s+[A-Z_]+:\s+[0-9]+,' vigil-g2-plugin/src/constants.ts)" = "12" && cd vigil-g2-plugin && npm run build:prod` | ✅ | ⬜ pending |
+| 106-04-01 | 04 (G2-01 code) | 1 | G2-01 | T8-leak-1 | `VITE_SCREENSHOT_MODE` const + 3 DEMO_* constants + 3 guard branches; demo data dead-code-eliminated in prod build; .env.production untouched | static + build | `grep -q 'const SCREENSHOT_MODE = import.meta.env.VITE_SCREENSHOT_MODE' vigil-g2-plugin/src/api.ts && test "$(grep -c 'if (SCREENSHOT_MODE) return DEMO_' vigil-g2-plugin/src/api.ts)" = "3" && grep -q 'Follow up on PR-4827 review' vigil-g2-plugin/src/api.ts && ! grep -q 'VITE_SCREENSHOT_MODE' vigil-g2-plugin/.env.production && cd vigil-g2-plugin && npm run build:prod && ! grep -q 'Follow up on PR-4827 review' dist/assets/*.js` | ✅ | ⬜ pending |
+| 106-04-02 | 04 | 1 | G2-01 | T8-leak-1 | `.env.screenshot.example` committed with security warning; actual `.env.screenshot` gitignored | static | `test -f vigil-g2-plugin/.env.screenshot.example && grep -q 'DO NOT set VITE_SCREENSHOT_MODE in' vigil-g2-plugin/.env.screenshot.example && (cd vigil-g2-plugin && touch .env.screenshot && git check-ignore .env.screenshot && rm -f .env.screenshot)` | ✅ | ⬜ pending |
+| 106-05-01 | 05 (Verify + Pack) | 2 | G2-01/02/03 | — | Prerequisites checkpoint (simulator ≥ v0.6.2, .env.production untouched) | checkpoint (manual) | user confirmation recorded in session; see VALIDATION.md §Manual-Only Verifications | Manual | ⬜ pending |
+| 106-05-02 | 05 | 2 | G2-01 | T-106-05-04 | Both PNGs captured at exact 576×288 | script | `test -f vigil-g2-plugin/store-assets/01-work-orders.png && test -f vigil-g2-plugin/store-assets/02-affirmation.png && test "$(sips -g pixelWidth vigil-g2-plugin/store-assets/01-work-orders.png \| grep pixelWidth \| awk '{print $2}')" = "576" && test "$(sips -g pixelHeight vigil-g2-plugin/store-assets/01-work-orders.png \| grep pixelHeight \| awk '{print $2}')" = "288" && test "$(sips -g pixelWidth vigil-g2-plugin/store-assets/02-affirmation.png \| grep pixelWidth \| awk '{print $2}')" = "576" && test "$(sips -g pixelHeight vigil-g2-plugin/store-assets/02-affirmation.png \| grep pixelHeight \| awk '{print $2}')" = "288"` | ❌ W2 | ⬜ pending |
+| 106-05-03 | 05 | 2 | G2-02 | — | G2-02 simulator observations (home dialog + non-home regression) recorded in VERIFIED.md | manual | Logged in VERIFIED.md `## Observed Behavior Notes` section — see VALIDATION.md §Manual-Only Verifications rows 1-2 | Manual | ⬜ pending |
+| 106-05-04 | 05 | 2 | G2-01/02/03 | T-106-05-01, T-106-05-02 | All G2 checkboxes ticked, real ISO timestamp, atomic pack produces vigil.ehpk, .env.production still clean | script | `cd vigil-g2-plugin && test $(grep -c '\[x\] \*\*G2-0[123]\*\*' ../.planning/phases/106-g2-store-resubmit-atomic/VERIFIED.md) = "3" && grep -qE '^Verified:\s*20[0-9]{2}-' ../.planning/phases/106-g2-store-resubmit-atomic/VERIFIED.md && node scripts/check-verified.mjs && npm run package:ehpk && test -f vigil.ehpk && test $(wc -c < vigil.ehpk) -gt 10000 && ! grep -q 'VITE_SCREENSHOT_MODE' .env.production && ! grep -q 'Follow up on PR-4827 review' dist/assets/*.js` | ❌ W2 | ⬜ pending |
+| 106-05-05 | 05 | 2 | — | — | Stale-gate negative test: backdated VERIFIED.md → `check-verified.mjs` exits 1; restored → exits 0 | script (negative) | Performed inline during Task 5; post-condition: `grep -q 'Stale-gate negative test' .planning/phases/106-g2-store-resubmit-atomic/VERIFIED.md && node vigil-g2-plugin/scripts/check-verified.mjs` | Manual | ⬜ pending |
+| 106-05-06 | 05 | 2 | G2-01/02/03 | T-106-05-01, T-106-05-02 | Final review checkpoint: user visually approves PNGs + VERIFIED.md + git status before commit | checkpoint (manual) | User "approved" recorded; `! git status --porcelain \| grep -qE '\.env\.screenshot$\|\.config/evenhub'` | Manual | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
----
+<!-- ─── -->
 
 ## Wave 0 Requirements
 
@@ -70,7 +69,7 @@ created: 2026-04-19
 - [ ] `vigil-g2-plugin/package.json` — `package:ehpk` script wired; `pack` script amended to `-o vigil.ehpk` (per RESEARCH Pitfall 1)
 - [ ] No framework install required
 
----
+<!-- ─── -->
 
 ## Manual-Only Verifications
 
@@ -82,7 +81,7 @@ created: 2026-04-19
 | Figma public spec doesn't contradict our border-weight / header choices | G2-03 (RESEARCH Q1) | Figma requires human eyes; file not scrapable. | Open https://www.figma.com/design/X82y5uJvqMH95jgOfmV34j/Even-Realities---Software-Design-Guidelines--Public-?node-id=2922-80782 → confirm ≥1-px borders + wordmark header pattern compliant; note divergences in VERIFIED.md. |
 | Simulator screenshot mechanism discovered + runbook documented | G2-01 (RESEARCH A2, Q2) | First-time discovery of Even iPhone simulator export path. | First plan captures the mechanism and writes it into VERIFIED.md's runbook section. |
 
----
+<!-- ─── -->
 
 ## Validation Sign-Off
 
