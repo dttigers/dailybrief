@@ -340,7 +340,7 @@ Plans:
   1. After a full macOS restart (not just Safari restart), the Vigil Capture extension shows as enabled in Safari > Settings > Extensions — verified on physical hardware
   2. `SMAppService.mainApp.register()` is called in `AppDelegate.applicationDidFinishLaunching` and the app suppresses its window on launch (no visible window on startup)
 **Plans**: 5 plans
-  - [ ] 107-00-PLAN.md — Wave 0: verify-phase-107.sh harness + 107-HUMAN-UAT.md scaffold (ship-with-uat-pending)
+  - [x] 107-00-PLAN.md — Wave 0: verify-phase-107.sh harness + 107-HUMAN-UAT.md scaffold (ship-with-uat-pending)
   - [ ] 107-01-PLAN.md — Wave 1: Info.plist LSUIElement=true (accessory-mode window suppression)
   - [ ] 107-02-PLAN.md — Wave 2: AppDelegate SMAppService status-guarded register() + first-launch NSAlert
   - [ ] 107-03-PLAN.md — Wave 2: ViewController + Main.html + Script.js + Style.css persistence pill (D-04)
@@ -458,7 +458,7 @@ Plans:
 | 104. PWA Auth UI & Browser Observability | v3.5 | 3/3 | Complete    | 2026-04-19 |
 | 105. Product Events, API Metrics & User Identity | v3.5 | 3/3 | Complete    | 2026-04-20 |
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 4/5 | In Progress|  |
-| 107. Safari Extension Persistence | v3.5 | 0/5 | Not started | - |
+| 107. Safari Extension Persistence | v3.5 | 1/5 | In Progress|  |
 
 ## Backlog
 
