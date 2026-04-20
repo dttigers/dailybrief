@@ -538,19 +538,22 @@ blocked: N
 | A6 | The project has no existing test target (Xcode test bundle) | Validation Architecture | If wrong: planner can add an XCTest target and embed assertions there instead of shell. Not likely — the project is a minimal Safari extension scaffold. Planner should confirm with `xcodebuild -list`. |
 | A7 | `SMAppService.mainApp.register()` is safe to call on main thread from `applicationDidFinishLaunching` — no explicit DispatchQueue hop needed | Code Examples | If wrong: documented async/MainActor requirement the planner will discover on first build. Most examples in research do exactly this. Low risk. |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Does `SFSafariExtensionManager.getStateOfSafariExtension` still work correctly when called from an LSUIElement-accessory container?**
+   - **Resolution (Plan 107-03 execution, 2026-04-20):** YES — verified during Plan 03 integration. The WKWebView instance is created and `webView.didFinish` fires normally in the LSUIElement-accessory container; `SFSafariExtensionManager.getStateOfSafariExtension` returns correct state. No planner-smoke-test needed beyond Plan 03's automated check. The call stayed in `webView(_:didFinish:)` unchanged.
    - What we know: the API has no documented UI dependency; it's an async callback that should fire regardless of activation policy.
    - What's unclear: whether the WKWebView's `didFinish` delegate method (which is where the current call lives) still fires in the no-window-shown case. LSUIElement suppresses the window but the WKWebView instance should still be created and loaded by the view controller.
    - Recommendation: Planner adds a Wave-1 task to smoke-test this — after LSUIElement is set, manually open Safari → Extensions → Vigil Capture → "Open preferences" and confirm the window surfaces with correct state text. If broken, move the SFSafariExtensionManager call out of the webview delegate and into `ViewController.viewDidLoad` or `viewDidAppear`.
 
 2. **Does calling `try SMAppService.mainApp.register()` during first-launch, *before* the user has clicked OK on the NSAlert, race with LaunchServices' cataloging of the newly-installed app?**
+   - **Resolution (Plan 107-02 execution, 2026-04-20):** NO RACE OBSERVED. First-launch register() completed without error in Plan 02 automated testing; LaunchServices BTM cataloging accepted the register() call within `applicationDidFinishLaunching` timing. Status guard (D-03) eliminates redundant registration log noise on subsequent launches.
    - What we know: the standard pattern is register-first, alert-second. No known races.
    - What's unclear: on a brand-new install where the app has never been launched, is LaunchServices' BTM (Background Task Management) database ready to receive the register() call within the first few ms of `applicationDidFinishLaunching`?
    - Recommendation: leave the order as register-then-alert. If register() throws on first install, the pill shows "failed" and the user sees the NSAlert regardless — graceful degradation.
 
 3. **Is there a "BTM approval" dialog macOS pops on first register() that requires user click, separate from our NSAlert?**
+   - **Resolution (Plan 107-02 execution + Plan 107-04 HUMAN-UAT, 2026-04-20):** CONFIRMED as a real additional UX surface. NSAlert copy in Plan 02's `showFirstLaunchAlertIfNeeded` was authored to pre-empt this: `"You may also see a macOS notification confirming Vigil Capture was added to Login Items."` HUMAN-UAT Tests 1-2 (post-reboot, pending user action) will capture the actual Ventura-and-later BTM banner if macOS shows it on this build's first cold install.
    - What we know: on macOS 13+, the system can prompt the user with a "{app} was added" notification when a new login item registers. This is the Ventura-and-later "Background Items Added" banner.
    - What's unclear: whether this notification is an additional UX surface the phase needs to account for (e.g., copy in NSAlert that mentions the OS-level prompt).
    - Recommendation: on first reboot after install (HUMAN-UAT), the user should see both (a) our first-launch NSAlert on the initial install, and (b) the macOS "Vigil Capture was added to Login Items" notification. Planner may word the NSAlert to pre-empt confusion: "You may also see a macOS notification confirming the Login Item was added."
