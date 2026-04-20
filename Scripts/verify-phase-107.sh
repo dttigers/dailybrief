@@ -61,6 +61,39 @@ check_first_launch_alert() {
   fi
 }
 
+check_window_suppression() {
+  info "Check 4b: AppDelegate + ViewController have gated window-suppression (gap_107_1)"
+  local appdelegate="$EXT_DIR/AppDelegate.swift"
+  local viewcontroller="$EXT_DIR/ViewController.swift"
+  local ok=1
+
+  # AppDelegate: suppress call + reveal gate + inbound hook + uptime heuristic.
+  grep -q 'NSApp.windows.forEach' "$appdelegate" || { red "    MISSING: NSApp.windows.forEach in AppDelegate"; ok=0; }
+  grep -q 'var shouldRevealWindow' "$appdelegate" || { red "    MISSING: shouldRevealWindow flag in AppDelegate"; ok=0; }
+  grep -q 'func application(_ application: NSApplication, open urls:' "$appdelegate" || { red "    MISSING: application(_:open:) hook in AppDelegate"; ok=0; }
+  grep -q 'ProcessInfo.processInfo.systemUptime' "$appdelegate" || { red "    MISSING: systemUptime heuristic in AppDelegate"; ok=0; }
+  grep -qE 'uptime\s*>=?\s*120' "$appdelegate" || { red "    MISSING: 120s uptime threshold in AppDelegate"; ok=0; }
+
+  # ViewController: gated re-show — makeKeyAndOrderFront MUST be reachable only via shouldRevealWindow.
+  grep -q 'shouldRevealWindow' "$viewcontroller" || { red "    MISSING: shouldRevealWindow read in ViewController"; ok=0; }
+  grep -q 'makeKeyAndOrderFront(nil)' "$viewcontroller" || { red "    MISSING: makeKeyAndOrderFront call in ViewController"; ok=0; }
+
+  # Regression guard: the makeKeyAndOrderFront call MUST be gated. The line immediately
+  # BEFORE makeKeyAndOrderFront should contain shouldRevealWindow (the if-let delegate guard).
+  if ! grep -B1 'makeKeyAndOrderFront(nil)' "$viewcontroller" | grep -q 'shouldRevealWindow'; then
+    red "    REGRESSION: makeKeyAndOrderFront is not gated by shouldRevealWindow"
+    red "                (unconditional re-show violates D-01 on Login Item boot launches)"
+    ok=0
+  fi
+
+  if [[ "$ok" -eq 1 ]]; then
+    green "  PASS — gated window-suppression present (orderOut + gated reveal)"
+  else
+    red "  FAIL — gap_107_1 regression (see MISSING/REGRESSION lines above)"
+    FAIL=1
+  fi
+}
+
 check_xcodebuild() {
   info "Check 5: xcodebuild build succeeds (clean Debug)"
   local build_log
@@ -118,6 +151,7 @@ run_static() {
   check_deployment_target
   check_appdelegate_register
   check_first_launch_alert
+  check_window_suppression
 }
 
 run_runtime() {
