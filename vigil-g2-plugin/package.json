@@ -7,9 +7,10 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:prod": "tsc && vite build --mode production",
-    "pack": "evenhub pack app.json dist",
+    "pack": "evenhub pack app.json dist -o vigil.ehpk",
     "release": "npm run build:prod && npm run pack",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "package:ehpk": "node scripts/check-verified.mjs && npm run release"
   },
   "devDependencies": {
     "typescript": "~5.9.3",
