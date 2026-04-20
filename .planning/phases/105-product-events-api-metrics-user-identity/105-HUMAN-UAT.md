@@ -3,7 +3,7 @@ status: complete
 phase: 105-product-events-api-metrics-user-identity
 source: [105-VERIFICATION.md]
 started: 2026-04-19T00:00:00Z
-updated: 2026-04-20T03:15:00Z
+updated: 2026-04-20T04:05:00Z
 ---
 
 ## Current Test
@@ -28,15 +28,14 @@ result: pass
 
 ### 4. Person record has email + createdAt
 expected: After PWA mount triggers GET /v1/me, the authenticated user's Person record in PostHog shows `email` = user's email and `createdAt` = ISO timestamp matching the DB row.
-result: issue
-reported: "Only 1 person in PostHog (PWA-side UUID distinct_id); no person with server distinct_id '1'; Properties tab shows only 'Creator event ID'. No email, no createdAt."
-severity: major
+result: pass
+note: "Initially reported as issue — `identifyUser` was passing flat properties that posthog-node's autowrap should have routed into `$set`, but nothing landed on the person. Fixed by wrapping properties explicitly (`properties: { $set: props }`) in `vigil-core/src/analytics/posthog.ts` (commit c40ad77). After Railway redeploy and a PWA hard-refresh, both `email` (jamesonmorrill1@gmail.com) and `createdAt` (2026-04-18T21:03:00.498Z) now appear on the person record."
 
 ## Summary
 
 total: 4
-passed: 2
-issues: 2
+passed: 3
+issues: 1
 pending: 0
 skipped: 0
 blocked: 0
@@ -53,12 +52,13 @@ blocked: 0
   missing: []
 
 - truth: "After GET /v1/me succeeds, the authenticated user's PostHog Person record has person properties `email` and `createdAt` set; distinct_id should be String(userId)"
-  status: failed
+  status: resolved
   reason: "User reported: Only 1 person in PostHog (PWA-side UUID distinct_id); no person with server distinct_id '1'; Properties tab shows only 'Creator event ID'. No email, no createdAt."
   severity: major
   test: 4
   artifacts:
     - vigil-core/src/routes/me.ts
     - vigil-core/src/analytics/posthog.ts
-  missing:
-    - "Server-side `identifyUser(userId, {email, createdAt})` call not propagating to PostHog Cloud — event reaches PostHog with distinct_id '1' (test 2 proves), but person properties aren't being set on that distinct_id"
+  resolution:
+    commit: c40ad77
+    summary: "Wrapped `identifyUser` properties in explicit `$set` to bypass posthog-node's flat-property autowrap. Verified live by user in PostHog after Railway redeploy — email + createdAt both land on person `1`."
