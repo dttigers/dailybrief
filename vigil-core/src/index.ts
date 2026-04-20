@@ -5,6 +5,7 @@ import { timeout } from "hono/timeout";
 import { serve } from "@hono/node-server";
 import { bearerAuth } from "./middleware/auth.js";
 import { rateLimiter } from "./middleware/rate-limit.js";
+import { metricsMiddleware } from "./middleware/metrics.js";
 import { health } from "./routes/health.js";
 import { summary } from "./routes/summary.js";
 import { thoughts } from "./routes/thoughts.js";
@@ -111,6 +112,14 @@ app.use("/v1/*", async (c, next) => {
 
 // Google OAuth routes — initiation behind bearer, callback exempted above.
 app.route("/v1", googleAuth);
+
+// ── Phase 105 Plan 02 — ANLY-03 per-route API metrics ─────────────────────
+// Registered AFTER bearerAuth dispatcher (line ~104) and AFTER googleAuth
+// (above) so it sees only authenticated requests with c.var.userId set.
+// D-05: public routes (health, register, login, OAuth callback) short-circuit
+// out of bearerAuth via `return next()` and never reach this middleware —
+// they are intentionally not measured.
+app.use("/v1/*", metricsMiddleware);
 
 // Protected routes
 app.route("/v1", summary);
