@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Completed 107-03-PLAN.md
-last_updated: "2026-04-20T19:12:32.149Z"
+stopped_at: Completed 107-05-PLAN.md (gap_107_1 closed)
+last_updated: "2026-04-20T22:40:55.781Z"
 last_activity: 2026-04-20
 progress:
   total_phases: 5
   completed_phases: 3
-  total_plans: 21
-  completed_plans: 19
-  percent: 90
+  total_plans: 22
+  completed_plans: 20
+  percent: 91
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 ## Current Position
 
 Phase: 107 (safari-extension-persistence) — EXECUTING
-Plan: 5 of 5
+Plan: 2 of 6
 Status: Ready to execute
 Last activity: 2026-04-20
 
@@ -65,6 +65,7 @@ Progress: [████████░░] 80% (4/5 plans)
 | Phase 107 P01 | 2m 1s | 1 tasks | 1 files |
 | Phase 107 P02 | 3m 50s | 2 tasks | 1 files |
 | Phase 107 P03 | 2m 18s | 4 tasks | 4 files |
+| Phase 107 P05 | 6m 55s | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -106,6 +107,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 107]: Plan 107-02 — Aliased switch + literal register() + doc-comment .status literal reconciled Plan 00 harness literal-grep contract with plan frontmatter aliased key_link pattern; future AppDelegate edits must preserve both SMAppService.mainApp.register() and SMAppService.mainApp.status as literal substrings
 - [Phase 107]: Plan 107-02 — UserDefaults firstLaunchAlertShown flag set AFTER runModal() preserves at-least-once alert delivery if crash occurs mid-modal; informativeText pre-empts macOS BTM Background Items Added system notification (Open Question 3)
 - [Phase 107]: Plan 107-03 — Persistence pill (D-04) lands additively: 4-file surgical diff (Main.html +6, Script.js +14, Style.css +23, ViewController.swift +19). showPersistence JS fn uses spread-remove + includes guard for graceful unknown-state handling. persistenceStateString @unknown default maps to "failed" (visible signal for new OS Status cases). No color styling — pills inherit native font, text distinguishes states. xcodebuild clean; verify-phase-107.sh --static still green; Open Question Q1 (does WKWebView didFinish fire under LSUIElement?) deferred to Plan 04 runtime UAT with viewDidAppear fallback documented.
+- [Phase 107]: [Phase 107] Plan 107-05 — gap_107_1 (storyboard window flash on first launch) closed via launch-source-gated window suppression: AppDelegate.suppressStoryboardWindows() orders NSApp.windows out unconditionally, then gates shouldRevealWindow on systemUptime >= 120 AND firstLaunchAlertShown. application(_:open:) inbound hook opportunistically overrides the gate for Safari-prefs click. ViewController.webView(_:didFinish:) makeKeyAndOrderFront now inside if-let delegate.shouldRevealWindow guard — D-01 preserved on Login Item boot, D-04 preserved on user-initiated launches. Runtime probe WINDOWS_FIRST=1 post-fix (was 2 before). tradeoff_107_1 documents the within-120s-of-boot Safari-prefs edge case as accepted/minor. check_window_suppression grep-only static check adds regression guard via grep -B1 line-before makeKeyAndOrderFront.
 
 ### Pending Todos
 
@@ -121,7 +123,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-20T19:12:32.144Z
-Stopped at: Completed 107-03-PLAN.md
+Last session: 2026-04-20T22:40:44.562Z
+Stopped at: Completed 107-05-PLAN.md (gap_107_1 closed)
 Resume file: None
 Next action: `/gsd-plan-phase 103`
