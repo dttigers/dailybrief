@@ -3,18 +3,10 @@ import {
   TextContainerProperty,
 } from '@evenrealities/even_hub_sdk'
 
-import { DISPLAY_WIDTH, DIVIDER, ContainerId } from '../constants.ts'
+import { DISPLAY_WIDTH, ContainerId } from '../constants.ts'
+import { buildVigilHeader } from './header.ts'
 
-function formatTime(): string {
-  const now = new Date()
-  const hours = now.getHours()
-  const minutes = now.getMinutes().toString().padStart(2, '0')
-  const period = hours >= 12 ? 'PM' : 'AM'
-  const h12 = hours % 12 || 12
-  return `${h12.toString().padStart(2, '0')}:${minutes} ${period}`
-}
-
-const FALLBACK_AFFIRMATION = 'You are capable, you are enough.'
+const FALLBACK_AFFIRMATION = "Brief unavailable. Retry when you're ready."
 
 /**
  * Build the affirmation screen for the G2 display.
@@ -27,23 +19,8 @@ export function buildAffirmationScreen(
 ): RebuildPageContainer {
   const displayText = affirmation || FALLBACK_AFFIRMATION
 
-  // Header: brand + time
-  const headerContent = `VIGIL              ${formatTime()}\n${DIVIDER}`
-
-  const header = new TextContainerProperty({
-    xPosition: 0,
-    yPosition: 0,
-    width: DISPLAY_WIDTH,
-    height: 40,
-    borderWidth: 0,
-    borderColor: 0,
-    borderRadius: 0,
-    paddingLength: 8,
-    containerID: ContainerId.AFFIRMATION_HEADER,
-    containerName: 'affirmation-header',
-    content: headerContent,
-    isEventCapture: 0,
-  })
+  // Unified VIGIL header (Phase 106 D-07 item 1)
+  const header = buildVigilHeader(ContainerId.AFFIRMATION_HEADER, 'affirmation-header')
 
   // Body: centered affirmation text
   const body = new TextContainerProperty({
@@ -51,8 +28,8 @@ export function buildAffirmationScreen(
     yPosition: 40,
     width: DISPLAY_WIDTH,
     height: 210,
-    borderWidth: 0,
-    borderColor: 0,
+    borderWidth: 1,      // Phase 106 D-07 item 4
+    borderColor: 15,
     borderRadius: 0,
     paddingLength: 8,
     containerID: ContainerId.AFFIRMATION_BODY,
@@ -73,7 +50,7 @@ export function buildAffirmationScreen(
     paddingLength: 8,
     containerID: ContainerId.AFFIRMATION_FOOTER,
     containerName: 'affirmation-footer',
-    content: '↑ work orders  ↓ home',
+    content: '↑ work orders   ⌾ double-tap to exit',
     isEventCapture: 0,
   })
 

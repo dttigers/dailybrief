@@ -6,15 +6,7 @@ import {
 
 import type { VigilSummary, VigilAffirmation } from '../types.ts'
 import { DISPLAY_WIDTH, DIVIDER, ContainerId } from '../constants.ts'
-
-function formatTime(): string {
-  const now = new Date()
-  const hours = now.getHours()
-  const minutes = now.getMinutes().toString().padStart(2, '0')
-  const period = hours >= 12 ? 'PM' : 'AM'
-  const h12 = hours % 12 || 12
-  return `${h12.toString().padStart(2, '0')}:${minutes} ${period}`
-}
+import { buildVigilHeader } from './header.ts'
 
 /**
  * Build the home screen container for the G2 display.
@@ -33,23 +25,9 @@ function buildHomeContainers(
   const pendingCount = (summary.tasksByStatus['open'] ?? 0) + (summary.tasksByStatus['inProgress'] ?? 0)
   const topPriority = summary.recent[0]?.content ?? 'No tasks'
 
-  // Header: brand + time
-  const headerContent = `VIGIL              ${formatTime()}\n${DIVIDER}`
-
-  const header = new TextContainerProperty({
-    xPosition: 0,
-    yPosition: 0,
-    width: DISPLAY_WIDTH,
-    height: 40,
-    borderWidth: 0,
-    borderColor: 0,
-    borderRadius: 0,
-    paddingLength: 8,
-    containerID: ContainerId.HOME_HEADER,
-    containerName: 'home-header',
-    content: headerContent,
-    isEventCapture: 0,
-  })
+  // Unified VIGIL header (Phase 106 D-07 item 1)
+  const header = buildVigilHeader(ContainerId.HOME_HEADER, 'home-header')
+  // rightSide omitted → falls back to HH:MM AM/PM (preserves existing home behavior)
 
   // Body: task count + top priority + affirmation
   const bodyContent = [
@@ -67,9 +45,9 @@ function buildHomeContainers(
     yPosition: 40,
     width: DISPLAY_WIDTH,
     height: 210,
-    borderWidth: 0,
-    borderColor: 0,
-    borderRadius: 0,
+    borderWidth: 1,      // Phase 106 D-07 item 4
+    borderColor: 15,     // max greyscale brightness
+    borderRadius: 0,     // sharp corners — consistent with divider row
     paddingLength: 8,
     containerID: ContainerId.HOME_BODY,
     containerName: 'home-body',
@@ -89,7 +67,7 @@ function buildHomeContainers(
     paddingLength: 8,
     containerID: ContainerId.HOME_FOOTER,
     containerName: 'home-footer',
-    content: '↓ swipe for work orders',
+    content: '↓ work orders   ⌾ double-tap to exit',
     isEventCapture: 0,
   })
 
