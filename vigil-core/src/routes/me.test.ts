@@ -6,7 +6,7 @@ import { Hono } from "hono";
 // Tests reuse the auth.test.ts env-setup pattern (line 21).
 process.env["JWT_SECRET"] = "test-secret-32-chars-minimum-value-xxxxxx";
 
-const { me } = await import("./me.js"); // Plan 03 creates this
+const { me, createMeRouter } = await import("./me.js"); // Plan 03 creates this
 
 function buildApp() {
   const app = new Hono();
@@ -69,5 +69,114 @@ describe("GET /v1/me with injected db (dep-injection pattern)", () => {
     const mod = await import("./me.js");
     // Soft-assert — PLANNER guidance to Plan 03: add a createMeRouter export.
     assert.ok(mod.me, "me router must be exported");
+  });
+});
+
+// ── Phase 105 Plan 03: D-09..D-11 identify emission contract ────────────────
+
+type IdentifyCall = {
+  userId: number | string;
+  properties: Record<string, unknown>;
+};
+
+/**
+ * Build a /me app with an injected userLookupFn AND an injected identifyFn spy.
+ * MeDeps exposes optional identifyFn so tests can assert the call shape directly
+ * without mocking the posthog module. Production default = the wrapper.
+ */
+function buildAppWithSpyDeps(opts: {
+  userId: number | null;
+  lookupResult: { id: number; email: string; createdAt: Date } | null;
+  identifyCalls: IdentifyCall[];
+}) {
+  const app = new Hono();
+  app.use("*", async (c, next) => {
+    if (opts.userId != null) c.set("userId" as never, opts.userId as never);
+    return next();
+  });
+  const router = createMeRouter({
+    userLookupFn: async () => opts.lookupResult,
+    identifyFn: (u: number | string, p?: Record<string, unknown>) => {
+      opts.identifyCalls.push({ userId: u, properties: p ?? {} });
+    },
+  });
+  app.route("/v1", router);
+  return app;
+}
+
+describe("GET /v1/me — D-09..D-11 identifyUser emission", () => {
+  it("calls identifyUser with {email, createdAt} on successful lookup (D-09)", async () => {
+    const calls: IdentifyCall[] = [];
+    const createdAt = new Date("2026-01-15T12:00:00.000Z");
+    const app = buildAppWithSpyDeps({
+      userId: 1,
+      lookupResult: { id: 1, email: "user@example.com", createdAt },
+      identifyCalls: calls,
+    });
+    const res = await app.fetch(new Request("http://x/v1/me", { method: "GET" }));
+    assert.equal(res.status, 200);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].userId, 1);
+    assert.equal(calls[0].properties["email"], "user@example.com");
+    assert.equal(calls[0].properties["createdAt"], "2026-01-15T12:00:00.000Z");
+  });
+
+  it("does NOT call identifyUser when row is missing (D-18 401 invalid_user)", async () => {
+    const calls: IdentifyCall[] = [];
+    const app = buildAppWithSpyDeps({
+      userId: 999,
+      lookupResult: null,
+      identifyCalls: calls,
+    });
+    const res = await app.fetch(new Request("http://x/v1/me", { method: "GET" }));
+    assert.equal(res.status, 401);
+    assert.equal(calls.length, 0);
+  });
+
+  it("does NOT call identifyUser when userId guard rejects (no row lookup attempted)", async () => {
+    const calls: IdentifyCall[] = [];
+    const app = buildAppWithSpyDeps({
+      userId: null, // bearerAuth would block this in prod; defensive recheck returns 401
+      lookupResult: null,
+      identifyCalls: calls,
+    });
+    const res = await app.fetch(new Request("http://x/v1/me", { method: "GET" }));
+    assert.equal(res.status, 401);
+    assert.equal(calls.length, 0);
+  });
+
+  it("response shape is unchanged (D-16: only {userId, email}; createdAt does NOT leak to API)", async () => {
+    const calls: IdentifyCall[] = [];
+    const createdAt = new Date("2026-01-15T12:00:00.000Z");
+    const app = buildAppWithSpyDeps({
+      userId: 1,
+      lookupResult: { id: 1, email: "u@e.com", createdAt },
+      identifyCalls: calls,
+    });
+    const res = await app.fetch(new Request("http://x/v1/me", { method: "GET" }));
+    const body = (await res.json()) as Record<string, unknown>;
+    assert.deepEqual(Object.keys(body).sort(), ["email", "userId"]);
+    assert.equal(body["userId"], "1");
+    assert.equal(body["email"], "u@e.com");
+    // createdAt is in PostHog identify, NOT in the API response
+    assert.equal(body["createdAt"], undefined);
+  });
+
+  it("vk_ → seed user attribution: identify fires with the resolved seed userId (D-11)", async () => {
+    // bearerAuth (Phase 103 D-17) maps vk_ keys to the seed user before the handler
+    // sees them. From /me's perspective, c.get("userId") is just the seed user id —
+    // no special branching here. This test asserts the identify call carries that
+    // resolved userId (seed user id = 1 in current Phase 102 wiring).
+    const calls: IdentifyCall[] = [];
+    const createdAt = new Date("2026-01-01T00:00:00.000Z");
+    const app = buildAppWithSpyDeps({
+      userId: 1, // simulated "vk_ resolved to seed user id 1"
+      lookupResult: { id: 1, email: "seed@vigil.dev", createdAt },
+      identifyCalls: calls,
+    });
+    const res = await app.fetch(new Request("http://x/v1/me", { method: "GET" }));
+    assert.equal(res.status, 200);
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].userId, 1);
   });
 });
