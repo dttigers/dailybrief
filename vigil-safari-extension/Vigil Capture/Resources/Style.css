@@ -43,3 +43,26 @@ body.state-off :is(.state-on, .state-unknown) {
 button {
     font-size: 1em;
 }
+
+/* Persistence pill (D-04): show exactly one of the four persistence-* paragraphs */
+/* based on the body's active persistence-* class. Default: all hidden. */
+body:not(.persistence-enabled, .persistence-not-registered, .persistence-requires-approval, .persistence-failed)
+    :is(.persistence-enabled, .persistence-not-registered, .persistence-requires-approval, .persistence-failed) {
+    display: none;
+}
+
+body.persistence-enabled :is(.persistence-not-registered, .persistence-requires-approval, .persistence-failed) {
+    display: none;
+}
+
+body.persistence-not-registered :is(.persistence-enabled, .persistence-requires-approval, .persistence-failed) {
+    display: none;
+}
+
+body.persistence-requires-approval :is(.persistence-enabled, .persistence-not-registered, .persistence-failed) {
+    display: none;
+}
+
+body.persistence-failed :is(.persistence-enabled, .persistence-not-registered, .persistence-requires-approval) {
+    display: none;
+}
