@@ -3,7 +3,8 @@ import {
   TextContainerProperty,
 } from '@evenrealities/even_hub_sdk'
 
-import { DISPLAY_WIDTH, DIVIDER, ContainerId } from '../constants.ts'
+import { DISPLAY_WIDTH, ContainerId } from '../constants.ts'
+import { buildVigilHeader } from './header.ts'
 
 /**
  * Build the task detail screen for the G2 display.
@@ -24,26 +25,16 @@ export function buildTaskDetailScreen(task: {
 }): RebuildPageContainer {
   const status = task.taskStatus || 'open'
 
-  // Header: title + status
-  const headerContent = `TASK DETAIL          ${status}\n${DIVIDER}`
-
-  const header = new TextContainerProperty({
-    xPosition: 0,
-    yPosition: 0,
-    width: DISPLAY_WIDTH,
-    height: 40,
-    borderWidth: 0,
-    borderColor: 0,
-    borderRadius: 0,
-    paddingLength: 8,
-    containerID: ContainerId.TASK_DETAIL_HEADER,
-    containerName: 'task-detail-header',
-    content: headerContent,
-    isEventCapture: 0,
-  })
+  // Unified VIGIL header (Phase 106 D-07 item 1) — screen label shows status
+  const header = buildVigilHeader(
+    ContainerId.TASK_DETAIL_HEADER,
+    'task-detail-header',
+    status,
+  )
 
   // Body: full task content (no truncation) + optional tags
-  let bodyContent = task.content
+  // Phase 106 D-07 item 2 / Pitfall 5: render-layer fallback when task.content is empty
+  let bodyContent = task.content?.trim() || 'Task not found. Swipe to return.'
   if (task.tags.length > 0) {
     bodyContent += `\n\nTags: ${task.tags.join(', ')}`
   }
@@ -53,8 +44,8 @@ export function buildTaskDetailScreen(task: {
     yPosition: 40,
     width: DISPLAY_WIDTH,
     height: 210,
-    borderWidth: 0,
-    borderColor: 0,
+    borderWidth: 1,      // Phase 106 D-07 item 4
+    borderColor: 15,
     borderRadius: 0,
     paddingLength: 8,
     containerID: ContainerId.TASK_DETAIL_BODY,
@@ -75,7 +66,7 @@ export function buildTaskDetailScreen(task: {
     paddingLength: 8,
     containerID: ContainerId.TASK_DETAIL_FOOTER,
     containerName: 'task-detail-footer',
-    content: '\u2191 back to list  \u2193 affirmation',
+    content: '↑ back to list   ⌾ double-tap for home',
     isEventCapture: 0,
   })
 

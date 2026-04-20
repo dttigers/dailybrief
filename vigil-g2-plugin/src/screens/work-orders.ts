@@ -6,7 +6,8 @@ import {
 } from '@evenrealities/even_hub_sdk'
 
 import type { VigilBrief } from '../types.ts'
-import { DISPLAY_WIDTH, DIVIDER, ContainerId } from '../constants.ts'
+import { DISPLAY_WIDTH, ContainerId } from '../constants.ts'
+import { buildVigilHeader } from './header.ts'
 
 const MAX_VISIBLE_ITEMS = 6
 const ITEM_CONTENT_MAX = 45
@@ -29,23 +30,12 @@ export function buildWorkOrdersScreen(
 ): RebuildPageContainer {
   lastFetchedTasks = tasks
 
-  // Header: title + count
-  const headerContent = `WORK ORDERS          ${tasks.length} open\n${DIVIDER}`
-
-  const header = new TextContainerProperty({
-    xPosition: 0,
-    yPosition: 0,
-    width: DISPLAY_WIDTH,
-    height: 40,
-    borderWidth: 0,
-    borderColor: 0,
-    borderRadius: 0,
-    paddingLength: 8,
-    containerID: ContainerId.WORK_ORDERS_HEADER,
-    containerName: 'work-orders-header',
-    content: headerContent,
-    isEventCapture: 0,
-  })
+  // Unified VIGIL header (Phase 106 D-07 item 1) — screen label shows open-task count
+  const header = buildVigilHeader(
+    ContainerId.WORK_ORDERS_HEADER,
+    'work-orders-header',
+    `${tasks.length} open`,
+  )
 
   // Footer: navigation hints
   const footer = new TextContainerProperty({
@@ -59,7 +49,7 @@ export function buildWorkOrdersScreen(
     paddingLength: 8,
     containerID: ContainerId.WORK_ORDERS_FOOTER,
     containerName: 'work-orders-footer',
-    content: 'tap task for details  \u229d home',
+    content: 'tap task for details   ⌾ double-tap to exit',
     isEventCapture: 0,
   })
 
@@ -70,13 +60,13 @@ export function buildWorkOrdersScreen(
       yPosition: 40,
       width: DISPLAY_WIDTH,
       height: 210,
-      borderWidth: 0,
-      borderColor: 0,
+      borderWidth: 1,      // Phase 106 D-07 item 4
+      borderColor: 15,
       borderRadius: 0,
       paddingLength: 8,
       containerID: ContainerId.WORK_ORDERS_LIST,
       containerName: 'work-orders-list',
-      content: 'No open tasks — nice work!',
+      content: 'No work orders open. Capture one when it finds you.',
       isEventCapture: 1,
     })
 
@@ -99,8 +89,8 @@ export function buildWorkOrdersScreen(
     yPosition: 40,
     width: DISPLAY_WIDTH,
     height: 210,
-    borderWidth: 0,
-    borderColor: 0,
+    borderWidth: 1,      // Phase 106 D-07 item 4
+    borderColor: 15,
     borderRadius: 0,
     paddingLength: 8,
     containerID: ContainerId.WORK_ORDERS_LIST,
