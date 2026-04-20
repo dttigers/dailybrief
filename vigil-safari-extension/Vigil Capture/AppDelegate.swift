@@ -52,9 +52,26 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    // MARK: - First-launch NSAlert (D-05) — body added in Task 2
+    // MARK: - First-launch NSAlert (D-05)
 
+    /// One-time informational alert on the very first launch after install.
+    /// LSUIElement apps (accessory activation policy) must explicitly activate
+    /// before showing a modal — without it, the alert can appear behind other
+    /// windows or fail to accept keyboard focus. See RESEARCH §Pitfall 3.
     private func showFirstLaunchAlertIfNeeded() {
-        // Implemented in Task 2 of this plan.
+        guard !UserDefaults.standard.bool(forKey: firstLaunchAlertKey) else { return }
+
+        // Pitfall 3: accessory-mode apps don't auto-activate; NSAlert needs explicit activation.
+        // API is deprecated in Sonoma 14+ but still functional; new NSApp.activate() is 14+ only.
+        NSApp.activate(ignoringOtherApps: true)
+
+        let alert = NSAlert()
+        alert.messageText = "Vigil Capture is installed."
+        alert.informativeText = "The extension will stay enabled across reboots. You may also see a macOS notification confirming Vigil Capture was added to Login Items."
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+
+        UserDefaults.standard.set(true, forKey: firstLaunchAlertKey)
     }
 }
