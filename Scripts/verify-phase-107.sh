@@ -91,9 +91,11 @@ check_smappservice_runtime() {
   open "$app_path"
   sleep 3
   # Probe sfltool (Background Task Management) registry for our bundle ID.
+  # Disposition line appears BEFORE the Identifier line in `sfltool dumpbtm` output,
+  # so grep -B5 captures it (grep -A was the original Plan 00 bug — wrong direction).
   # Fallback: launchctl print gui/$UID | grep vigil
   local found=0
-  if sfltool dumpbtm 2>/dev/null | grep -A3 'io.vigilhub.extension' | grep -qi 'enabled'; then
+  if sfltool dumpbtm 2>/dev/null | grep -B5 'io.vigilhub.extension' | grep -qi 'Disposition:.*enabled'; then
     found=1
   elif launchctl print "gui/$UID" 2>/dev/null | grep -qi 'vigilhub.extension'; then
     found=1
