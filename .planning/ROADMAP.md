@@ -326,7 +326,7 @@ Plans:
   3. The G2 plugin WebView renders brand-compliant UI on the 4-bit greyscale canvas (unified VIGIL wordmark header, 1px greyscale body borders, Vigil-voice copy) with no blank or placeholder states — amended from the original "Vigil brand colors and Inter font" wording per CONTEXT D-06 (teal/Inter cannot physically render on 4-bit greyscale)
   4. All three items are verified on the simulator in a single session before the `.ehpk` is uploaded — no partial resubmission
 **Plans**: 5 plans
-  - [ ] 106-01-PLAN.md — Wave 0: atomic-gate scaffold (store-assets/, check-verified.mjs, VERIFIED.md template, package:ehpk script, app.json v0.2.0)
+  - [x] 106-01-PLAN.md — Wave 0: atomic-gate scaffold (store-assets/, check-verified.mjs, VERIFIED.md template, package:ehpk script, app.json v0.2.0)
   - [ ] 106-02-PLAN.md — Wave 1: G2-02 home-branch exit-confirm edge in handleNavEvent (shutDownPageContainer(1))
   - [ ] 106-03-PLAN.md — Wave 1: G2-03 unified buildVigilHeader + greyscale body borders + exit-gesture footers + Vigil-voice fallbacks across all 4 screens
   - [ ] 106-04-PLAN.md — Wave 1: G2-01 code side — VITE_SCREENSHOT_MODE guard + DEMO_BRIEF/DEMO_AFFIRMATION/DEMO_SUMMARY constants in api.ts
@@ -452,7 +452,7 @@ Plans:
 | 103. Capture Repair & Server Observability Foundations | v3.5 | 5/5 | Complete   | 2026-04-19 |
 | 104. PWA Auth UI & Browser Observability | v3.5 | 3/3 | Complete    | 2026-04-19 |
 | 105. Product Events, API Metrics & User Identity | v3.5 | 3/3 | Complete    | 2026-04-20 |
-| 106. G2 Store Resubmit (Atomic) | v3.5 | 0/5 | Not started | - |
+| 106. G2 Store Resubmit (Atomic) | v3.5 | 1/5 | In Progress|  |
 | 107. Safari Extension Persistence | v3.5 | 0/TBD | Not started | - |
 
 ## Backlog

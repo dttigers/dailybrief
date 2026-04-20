@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Phase 106 context gathered
-last_updated: "2026-04-20T04:58:56.648Z"
-last_activity: 2026-04-20 -- Phase 106 planning complete
+stopped_at: Completed 106-01-PLAN.md (atomic-gate scaffold)
+last_updated: "2026-04-20T05:06:35.754Z"
+last_activity: 2026-04-20
 progress:
   total_phases: 5
   completed_phases: 3
   total_plans: 16
-  completed_plans: 11
-  percent: 69
+  completed_plans: 12
+  percent: 75
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-19)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 105 — product-events-api-metrics-user-identity
+**Current focus:** Phase 106 — g2-store-resubmit-atomic
 
 ## Current Position
 
-Phase: 106
-Plan: Not started
+Phase: 106 (g2-store-resubmit-atomic) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-04-20 -- Phase 106 planning complete
+Last activity: 2026-04-20
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 105 P01 | 37min | 2 tasks | 2 files |
 | Phase 105 P02 | 4m 7s | 2 tasks | 7 files |
 | Phase 105 P03 | 2m 37s | 1 tasks | 2 files |
+| Phase 106 P01 | 2m 0s | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -89,6 +90,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 105]: [Phase 105] Plan 105-01 — BLOCKED_PROPERTY_NAMES Set + identifyUser wrapper land in vigil-core/src/analytics/posthog.ts; trackEvent partitions properties by name and emits posthog_property_blocked meta-event per drop (D-02 drop-the-property semantics); Phase 103 wrapper signature untouched (D-03); 9 existing + 10 new tests all pass under POSTHOG_API_KEY-unset shim
 - [Phase 105]: [Phase 105] Plan 105-02 — metricsMiddleware (MiddlewareHandler factory + dep-injected trackFn + statusClass enum helper) lands as the only /v1/* app.use between bearerAuth dispatcher (line 105) and first protected route (summary line 125); fires api_request with { route, method, status, duration_ms, status_class } on every authenticated request, skips on missing userId (D-05 — no anonymous metrics). 5 capture-funnel events wired at success points: thought_created (thoughts.ts), photo_uploaded + triage_completed (process-photo.ts, triage_completed strictly inside fulfilled-branch after dbUpdateTriageFn succeeds per D-15), brief_generated (brief-generate.ts with briefId hoisted outside tx closure), chat_sent (chat.ts after callClaudeConversation). Zero BLOCKED_PROPERTY_NAMES collisions; all properties are bounded enums/booleans/numbers.
 - [Phase 105]: [Phase 105] Plan 105-03 — /v1/me now calls identifyUser(row.id, {email, createdAt: row.createdAt.toISOString()}) after successful lookup, inside a defensive try/catch; MeDeps widened to return createdAt + optional identifyFn spy; response body D-16 {userId, email} unchanged (createdAt travels only to PostHog person properties); vk_ legacy clients flow through existing Phase 103 D-17 seed-user mapping — no new code path. 5 new tests pass, all 8 me.test.ts + 19 posthog.test.ts tests green, tsc --noEmit clean.
+- [Phase 106]: [Phase 106] Plan 106-01 — scaffold lands atomic-gate: check-verified.mjs fail-closes on placeholder/stale/unparseable timestamp; package.json pack script amended with -o vigil.ehpk (Pitfall 1 fix); package:ehpk chain (gate → build:prod → pack); app.json version 0.1.0 → 0.2.0; VERIFIED.md template with G2-01/G2-02/G2-03 checkboxes + T8-leak-2 evenhub-creds reminder + Figma spec review Q1 + resubmission-readiness sublist. Verified locally: gate exits 1 with "Unparseable timestamp"; npm run package:ehpk aborts before release; tsc clean. Wave 1 (02/03/04) unblocked; Plan 05 pack gated.
 
 ### Pending Todos
 
@@ -104,7 +106,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-20T04:19:02.899Z
-Stopped at: Phase 106 context gathered
-Resume file: .planning/phases/106-g2-store-resubmit-atomic/106-CONTEXT.md
+Last session: 2026-04-20T05:06:35.749Z
+Stopped at: Completed 106-01-PLAN.md (atomic-gate scaffold)
+Resume file: None
 Next action: `/gsd-plan-phase 103`
