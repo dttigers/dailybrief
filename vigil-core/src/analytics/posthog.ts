@@ -88,45 +88,65 @@ export const posthog: PostHog | null = apiKey
  * meta-event is emitted with {event_name, property_name}. The user's event still emits
  * with the surviving allowed properties — drop-the-property, not drop-the-event (D-02).
  * Signature unchanged from Phase 103 (D-03) — zero call-site churn.
+ *
+ * Phase 105 WR-01 fix: the entire body is wrapped in try/catch so analytics
+ * failure NEVER breaks a real request. Previously this guarantee lived only in
+ * metricsMiddleware; centralizing here means every direct call site (thoughts,
+ * process-photo, brief-generate, chat) inherits the contract without each
+ * having to wrap on its own. The posthog-node SDK currently swallows capture
+ * errors internally, so this catch is defense-in-depth against future SDK
+ * regressions or malformed-property validation throws.
  */
 export function trackEvent(
   userId: number | string,
   event: string,
   properties: Record<string, string | number | boolean | null | undefined> = {},
 ): void {
-  // Partition properties into (allowed, blocked) in one pass.
-  const allowed: Record<string, string | number | boolean | null | undefined> = {};
-  const blocked: string[] = [];
-  for (const key of Object.keys(properties)) {
-    if (BLOCKED_PROPERTY_NAMES.has(key)) {
-      blocked.push(key);
-    } else {
-      allowed[key] = properties[key];
+  try {
+    // Partition properties into (allowed, blocked) in one pass.
+    const allowed: Record<string, string | number | boolean | null | undefined> = {};
+    const blocked: string[] = [];
+    for (const key of Object.keys(properties)) {
+      if (BLOCKED_PROPERTY_NAMES.has(key)) {
+        blocked.push(key);
+      } else {
+        allowed[key] = properties[key];
+      }
     }
-  }
 
-  // D-02: Emit one meta-event per blocked property name. These fire BEFORE the
-  // user's event so a downstream PostHog consumer always sees the canary first.
-  // No-op if posthog === null (D-10 gate).
-  for (const blockedName of blocked) {
+    // D-02: Emit one meta-event per blocked property name. These fire BEFORE the
+    // user's event so a downstream PostHog consumer always sees the canary first.
+    // No-op if posthog === null (D-10 gate).
+    for (const blockedName of blocked) {
+      posthog?.capture({
+        distinctId: String(userId),
+        event: "posthog_property_blocked",
+        properties: {
+          event_name: event,
+          property_name: blockedName,
+        },
+      });
+    }
+
+    // D-02: User's event still emits with surviving properties (drop the bad
+    // property, not the entire event). Even if `allowed` is empty, the event
+    // itself is still useful — `thought_created` with no props beats no event.
     posthog?.capture({
       distinctId: String(userId),
-      event: "posthog_property_blocked",
-      properties: {
-        event_name: event,
-        property_name: blockedName,
-      },
+      event,
+      properties: allowed,
     });
+  } catch (err) {
+    // WR-01: analytics failure must NEVER break a real request. All four direct
+    // call sites (thoughts.ts, process-photo.ts, brief-generate.ts, chat.ts)
+    // invoke trackEvent AFTER transactionally committing user work — a throw
+    // here would surface as a 5xx and prompt client-side retry, creating
+    // duplicate thought/brief/chat records. Log and swallow.
+    console.error(
+      "[posthog] trackEvent failed (non-fatal):",
+      err instanceof Error ? err.message : err,
+    );
   }
-
-  // D-02: User's event still emits with surviving properties (drop the bad
-  // property, not the entire event). Even if `allowed` is empty, the event
-  // itself is still useful — `thought_created` with no props beats no event.
-  posthog?.capture({
-    distinctId: String(userId),
-    event,
-    properties: allowed,
-  });
 }
 
 /**
