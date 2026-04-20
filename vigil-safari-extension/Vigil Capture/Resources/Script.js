@@ -15,6 +15,20 @@ function show(enabled, useSettingsInsteadOfPreferences) {
     }
 }
 
+function showPersistence(state) {
+    // state: 'enabled' | 'not-registered' | 'requires-approval' | 'failed'
+    const classes = [
+        'persistence-enabled',
+        'persistence-not-registered',
+        'persistence-requires-approval',
+        'persistence-failed'
+    ];
+    document.body.classList.remove(...classes);
+    if (classes.includes(`persistence-${state}`)) {
+        document.body.classList.add(`persistence-${state}`);
+    }
+}
+
 function openPreferences() {
     webkit.messageHandlers.controller.postMessage("open-preferences");
 }
