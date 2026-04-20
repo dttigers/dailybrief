@@ -6,6 +6,7 @@ import {
 import { db } from "../db/connection.js";
 import { thoughts as thoughtsTable } from "../db/schema.js";
 import { desc, ne, eq, and } from "drizzle-orm";
+import { trackEvent } from "../analytics/posthog.js";
 
 export const chat = new Hono();
 
@@ -100,6 +101,18 @@ chat.post("/chat", async (c) => {
       system,
       messages,
       maxTokens: 1024,
+    });
+
+    // D-14 (Phase 105): chat_sent emits AFTER Claude returns successfully —
+    // the event name reflects message-completed, not message-attempted. Failed
+    // chats are captured via captureException in app.onError (Phase 103 D-13)
+    // and MUST NOT emit chat_sent. Properties are bounded — NO messages, NO
+    // response text (BLOCKED_PROPERTY_NAMES would auto-drop, but never include).
+    trackEvent(userId, "chat_sent", {
+      conversation_length: messages.length,
+      context_used: contextUsed,
+      include_context_requested: includeContext,
+      model: "claude",
     });
 
     return c.json({ response, contextUsed });

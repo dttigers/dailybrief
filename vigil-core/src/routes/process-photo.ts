@@ -7,7 +7,7 @@ import { db } from "../db/connection.js";
 import { thoughts as thoughtsTable } from "../db/schema.js";
 import { toResponse, type ThoughtApiResponse } from "./thoughts.js";
 import type { DrizzleThought } from "../db/types.js";
-import { captureException } from "../analytics/posthog.js";
+import { captureException, trackEvent } from "../analytics/posthog.js";
 import { triageThought } from "./triage.js";
 import type { TriageResult } from "../ai/types.js";
 
@@ -465,6 +465,18 @@ export function createProcessPhotoRouter(
       return c.json({ error: "Create failed" }, 500);
     }
 
+    // D-15 (Phase 105): photo_uploaded emits once per successful POST /process-photo,
+    // BEFORE triage runs. Properties are bounded enums + numbers + booleans — never
+    // body.image (base64) or rawText (Claude transcription).
+    trackEvent(userId, "photo_uploaded", {
+      paper_type: transformed.paperType,
+      vision_confidence: transformed.confidence,
+      thought_count: insertedRows.length,
+      force_paper_type: forcePaperType ?? "none",
+      media_type: claudeMediaType,
+      was_heic: mediaType === "image/heic" || mediaType === "image/heif",
+    });
+
     // 9b. CAP-02 D-05/D-06/D-07 — Per-thought sync triage (Phase 103 Plan 02).
     //     Parallel via Promise.allSettled so one rejection does NOT short-circuit
     //     the batch (Pitfall 6). On per-thought failure: keep the row, leave
@@ -480,6 +492,16 @@ export function createProcessPhotoRouter(
           const t = outcome.value;
           try {
             await deps.dbUpdateTriageFn(row.id, userId, t);
+            // D-15 (Phase 105): triage_completed emits ONCE per thought whose triage succeeded
+            // AND whose DB update succeeded. Failed triages already report via captureException
+            // below and MUST NOT emit triage_completed (D-15: no completion = no completion event).
+            trackEvent(userId, "triage_completed", {
+              category: t.category,
+              confidence: t.confidence,
+              has_tags: (t.tags?.length ?? 0) > 0,
+              has_therapy_classification: t.therapyClassification != null,
+              batch_size: insertedRows.length,
+            });
             return {
               ...row,
               category: t.category,

@@ -11,6 +11,7 @@ import type * as schema from "../db/schema.js";
 import { createBriefAssemblyService } from "../services/brief-assembly-service.js";
 import { getAIClient, callClaude, parseAIJson } from "../ai/client.js";
 import { createSportsService } from "../services/sports-service.js";
+import { trackEvent } from "../analytics/posthog.js";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -62,6 +63,7 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
       // Phase 102: conflict target is composite (userId, date); briefPdfs.userId is
       // denormalized from parent briefs.userId.
       const summaryJson = { generatedAt: new Date().toISOString(), partial: false };
+      let briefId: number | null = null;
       await db.transaction(async (tx) => {
         const [briefRow] = await tx.insert(briefs).values({
           userId,
@@ -81,6 +83,8 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
           },
         }).returning({ id: briefs.id });
 
+        briefId = briefRow.id;
+
         // Upsert brief_pdfs row (bytes). PK is brief_id.
         await tx.insert(briefPdfs).values({
           userId,
@@ -97,6 +101,18 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
             createdAt: sql`now()`,
           },
         });
+      });
+
+      // D-12 (Phase 105): brief_generated emits once per successful POST /brief/generate.
+      // source is 'manual' for this HTTP route (D-12: scheduler is a separate code path
+      // that calls assembler directly, not via this handler — D-13 attribution stays
+      // correct because schedulers run as the seed user). Properties are bounded.
+      trackEvent(userId, "brief_generated", {
+        source: "manual",
+        date: dateStr,
+        brief_id: briefId,
+        thought_count: metadata.thoughtCount,
+        task_count: metadata.taskCount,
       });
 
       return new Response(new Uint8Array(buffer), {

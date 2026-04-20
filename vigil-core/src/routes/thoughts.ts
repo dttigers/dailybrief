@@ -8,6 +8,7 @@ import { callClaude, getAIClient, parseAIJson } from "../ai/client.js";
 import type { TriageResult } from "../ai/types.js";
 import type { DrizzleThought, PaginatedResponse } from "../db/types.js";
 import { TRIAGE_SYSTEM_PROMPT } from "./triage.js";
+import { trackEvent } from "../analytics/posthog.js";
 
 /**
  * Pure predicate: returns true if the caller has explicitly bypassed the
@@ -300,6 +301,15 @@ thoughts.post("/thoughts", async (c) => {
         cloudKitRecordID: crypto.randomUUID(),
       })
       .returning();
+
+    // D-15 (Phase 105): thought_created always emits when a thought row is inserted.
+    // Properties are bounded enums + booleans — never thought.content (BLOCKED_PROPERTY_NAMES
+    // would catch it anyway, but per code review hygiene, never include it).
+    trackEvent(userId, "thought_created", {
+      source: created.source,
+      has_category: category != null,
+      fire_and_forget_triage: !category && getAIClient() != null,
+    });
 
     // Fire-and-forget auto-triage when no category provided
     if (!category && getAIClient()) {
