@@ -3,9 +3,9 @@
 // Source-of-truth pattern: 103-RESEARCH.md §Pattern 1 + §Complete module example.
 // Verified against posthog-node@5.29.2 types.d.ts + client.d.ts.
 //
-// D-14: The ONLY public API is redactEvent / trackEvent / captureException /
-// shutdownPosthog. Call sites MUST NOT import { posthog } directly — the
-// singleton export exists only for test setup assertions.
+// D-14: The ONLY public API is redactEvent / trackEvent / identifyUser /
+// captureException / shutdownPosthog. Call sites MUST NOT import { posthog }
+// directly — the singleton export exists only for test setup assertions.
 
 import { PostHog, type EventMessage } from "posthog-node";
 
@@ -18,6 +18,26 @@ const SENSITIVE_ROUTES = new Set<string>([
   "/v1/thoughts",
   "/v1/therapy",
   "/v1/insights",
+]);
+
+// ── D-01..D-04: Property-name denylist for trackEvent runtime guard ──────────
+// The locked v3.5 rule: PostHog event properties MUST be enums/booleans/numbers
+// only — never user-generated string content. Type signatures intend this; the
+// runtime check enforces it. Any property whose NAME (case-sensitive) is in this
+// Set is silently dropped from the emitted event, and a `posthog_property_blocked`
+// meta-event is captured so leak attempts surface in PostHog itself (D-02).
+//
+// Exported for tests and to make the rule grep-visible.
+// Easy to extend — add a string, no type changes needed.
+export const BLOCKED_PROPERTY_NAMES = new Set<string>([
+  "content",
+  "body",
+  "text",
+  "message",
+  "description",
+  "title",
+  "note",
+  "transcript",
 ]);
 
 /**
@@ -62,18 +82,66 @@ export const posthog: PostHog | null = apiKey
 // ── D-14: Public wrapper API — the ONLY import path for call sites. ──────────
 
 /**
- * Capture a product event. No-op when posthog singleton is null (D-10 gate).
- * Properties MUST be enums/booleans/numbers only — never user-generated strings
- * (STATE.md locked decision enforced at call sites by code review, not here).
+ * Capture a product event. No-op when posthog singleton is null (Phase 103 D-10 gate).
+ * D-01..D-04: Properties whose NAME is in BLOCKED_PROPERTY_NAMES are dropped silently
+ * (case-sensitive match). For each dropped property, a `posthog_property_blocked`
+ * meta-event is emitted with {event_name, property_name}. The user's event still emits
+ * with the surviving allowed properties — drop-the-property, not drop-the-event (D-02).
+ * Signature unchanged from Phase 103 (D-03) — zero call-site churn.
  */
 export function trackEvent(
   userId: number | string,
   event: string,
   properties: Record<string, string | number | boolean | null | undefined> = {},
 ): void {
+  // Partition properties into (allowed, blocked) in one pass.
+  const allowed: Record<string, string | number | boolean | null | undefined> = {};
+  const blocked: string[] = [];
+  for (const key of Object.keys(properties)) {
+    if (BLOCKED_PROPERTY_NAMES.has(key)) {
+      blocked.push(key);
+    } else {
+      allowed[key] = properties[key];
+    }
+  }
+
+  // D-02: Emit one meta-event per blocked property name. These fire BEFORE the
+  // user's event so a downstream PostHog consumer always sees the canary first.
+  // No-op if posthog === null (D-10 gate).
+  for (const blockedName of blocked) {
+    posthog?.capture({
+      distinctId: String(userId),
+      event: "posthog_property_blocked",
+      properties: {
+        event_name: event,
+        property_name: blockedName,
+      },
+    });
+  }
+
+  // D-02: User's event still emits with surviving properties (drop the bad
+  // property, not the entire event). Even if `allowed` is empty, the event
+  // itself is still useful — `thought_created` with no props beats no event.
   posthog?.capture({
     distinctId: String(userId),
     event,
+    properties: allowed,
+  });
+}
+
+/**
+ * Set person properties for an authenticated user. No-op when posthog singleton
+ * is null (Phase 103 D-10 gate). Wraps `posthog.identify` so route call sites
+ * stay wrapper-only (Phase 103 D-14 — no direct singleton imports outside this
+ * module). Plan 03 calls this from /v1/me on every successful response so the
+ * PostHog person record stays fresh (D-09: email + createdAt).
+ */
+export function identifyUser(
+  userId: number | string,
+  properties: Record<string, string | number | boolean | null | undefined> = {},
+): void {
+  posthog?.identify({
+    distinctId: String(userId),
     properties,
   });
 }
