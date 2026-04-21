@@ -1,8 +1,9 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "iCloud photos (HEIC files) detected as placeholders but never download — startDownloadingUbiquitousItem silently failing"
 created: 2026-04-21T00:00:00Z
 updated: 2026-04-21T16:30:00Z
+resolved: 2026-04-21T19:45:00Z
 symptoms_prefilled: true
 goal: find_and_fix
 ---
@@ -86,5 +87,21 @@ started: iCloud Drive path configured 2026-04-11. Phase 58 merged 2026-04-09 str
 
 root_cause: FolderWatcherService calls FileManager.default.startDownloadingUbiquitousItem(at:) (line 354) on visible iCloud Drive HEIC stubs that report NSURLUbiquitousItemDownloadingStatusNotDownloaded. This API silently no-ops — returns without throwing, without queuing a download — when the calling process has no com.apple.developer.ubiquity-container-identifiers entitlement. The installed DailyBriefMonitor.app has an empty entitlements dict (Phase 58 stripped CloudKit entitlements; the ubiquity entitlement was never present). With no download triggered, iCloud never materializes the file, no VNODE_WRITE fires on the parent directory, and the watcher never re-queues the file → stuck indefinitely. brctl download from a shell process works because brctl uses a privileged system daemon path not gated by the process's own entitlements.
 fix: Option B applied — added brctl download fallback in processFile() after the existing startDownloadingUbiquitousItem call. Uses Process() with executableURL=/usr/bin/brctl, arguments=["download", url.path]. terminationHandler logs non-zero exit asynchronously without blocking the actor. startDownloadingUbiquitousItem retained for Option A future compatibility. swift build -c release clean.
-verification: awaiting human — run ./Scripts/install.sh, drop HEIC into iCloud Notebook, confirm "dispatched brctl download for" appears in monitor-stderr.log and file processes within ~10s.
+verification:
+  - timestamp: 2026-04-21T19:40:00Z
+    checked: ./Scripts/install.sh
+    found: swift build -c release succeeded (6.54s); Developer ID Application 5H57ADQS8G signed + verified on both CLI and .app; bootstrap failed once with "Bootstrap failed: 5: Input/output error" (old agent racing new bootstrap), succeeded on retry
+    implication: Install pipeline works but has a known race between bootout and bootstrap — ignorable on retry
+  - timestamp: 2026-04-21T19:42:00Z
+    checked: launchctl print gui/$(id -u)/com.jamesonmorrill.dailybriefmonitor
+    found: state = running, pid = 6682, "last exit code = (never exited)"
+    implication: New binary is live under launchd, no crash loop, no TCC regression
+  - timestamp: 2026-04-21T19:43:00Z
+    checked: codesign -dvv ~/.local/bin/DailyBriefMonitor.app + stat -f on Contents/MacOS/DailyBriefMonitor
+    found: Timestamp=Apr 21, 2026 at 4:06:50 PM on signature and binary mtime — matches install.sh run, not the previous 2026-04-15 install
+    implication: Running binary contains the fff8a15 brctl fallback code, not the old pre-fix code
+  - timestamp: 2026-04-21T19:44:00Z
+    checked: tail ~/Library/Logs/DailyBrief/monitor-stderr.log
+    found: "startup complete" → "FolderWatcherService: watching /Users/jamesonmorrill/Desktop/Voice Notes and /Users/jamesonmorrill/Library/Mobile Documents/com~apple~CloudDocs/Notebook"
+    implication: Watcher is in ready state on both paths. User approved — end-to-end HEIC drop will be validated organically by next real photo ingest (next new HEIC from iPhone → iCloud Notebook folder).
 files_changed: ["Sources/DailyBriefMonitor/FolderWatcherService.swift"]
