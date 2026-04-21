@@ -1,24 +1,27 @@
 ---
-status: partial
+status: complete
 phase: 107-safari-extension-persistence
 source: [107-VALIDATION.md, 107-CONTEXT.md]
 started: 2026-04-20T00:00:00Z
-updated: 2026-04-20T23:04:36Z
+updated: 2026-04-21T18:46:13Z
+completed: 2026-04-21T18:46:13Z
 ---
 
 ## Current Test
 
-[Tests 3 and 4 verified post-Plan-05 + storyboard hotfix. Build path: /Users/jamesonmorrill/Library/Developer/Xcode/DerivedData/Vigil_Capture-ecqueqzbhctzqhcfrasvarwjuont/Build/Products/Debug/Vigil Capture.app. Tests 1, 2, 5 remain pending user reboot (ship-with-uat-pending per D-06).]
+[All 5 tests passed post-reboot (2026-04-21). EXT-01 contract verified end-to-end. Phase complete.]
 
 ## Tests
 
 ### 1. Reboot persistence (SC#1)
 expected: After a full macOS restart (not just Safari restart, not just app relaunch), Safari → Settings → Extensions shows "Vigil Capture" toggle ON without the user touching the toggle. Steps: (a) ensure Vigil Capture.app has been launched at least once since this phase's build — confirm NSAlert was dismissed; (b) quit Vigil Capture; (c) `sudo reboot`; (d) after login, open Safari → Settings → Extensions; (e) confirm the "Vigil Capture" row is enabled.
-result: pending
+result: passed
+detail: User rebooted 2026-04-21, confirmed Vigil Capture extension remained enabled in Safari → Settings → Extensions without manual re-toggle. Required signing hotfix: DEVELOPMENT_TEAM=5H57ADQS8G added to 4 build config entries in project.pbxproj. Build now signed with Apple Development cert (TeamIdentifier=5H57ADQS8G, full cert chain Apple Development → WWDR → Apple Root CA, hardened runtime flag 0x10000); Safari no longer requires Develop menu "Allow Unsigned Extensions" toggle. SC#1 EXT-01 contract verified end-to-end.
 
 ### 2. Login Items entry (SC#1 corollary)
 expected: After the same reboot as Test 1, open System Settings → General → Login Items. Under "Open at Login", a "Vigil Capture" entry appears. Toggle is ON by default.
-result: pending
+result: passed
+detail: SMAppService.mainApp.register() BTM registration survived reboot; Vigil Capture row visible in System Settings → Login Items post-reboot. Pre-reboot evidence: `sfltool dumpbtm` showed `Identifier: 2.io.vigilhub.extension` row pointing at the .app bundle, confirming BTM accepted the register() call before reboot; post-reboot user confirmation closes the empirical loop.
 
 ### 3. First-launch NSAlert + no visible window (SC#2)
 expected: On the FIRST launch of the freshly-built Vigil Capture.app (UserDefaults flag `io.vigilhub.extension.firstLaunchAlertShown` absent), the user sees exactly one NSAlert with messageText "Vigil Capture is installed." and informativeText "The extension will stay enabled across reboots." — no storyboard window flashes into view before or after the alert, no Dock icon appears. After dismissing the alert, the app quits or stays in accessory mode with no visible surface.
@@ -32,14 +35,15 @@ detail: No NSAlert on subsequent `open` (user confirmed). Register status-guard 
 
 ### 5. End-to-end capture after reboot (EXT-01 behavioral)
 expected: After the reboot in Test 1, without manually toggling anything, use the Safari context-menu "Capture with Vigil" (or existing extension entry point) to save a URL. The URL arrives in vigil-core (/v1/thoughts GET confirms the capture).
-result: pending
+result: passed
+detail: User-confirmed together with Tests 1 + 2 post-reboot. End-to-end EXT-01 flow (container auto-launch via SMAppService → Safari loads signed extension without manual re-enable → context-menu capture → vigil-core /v1/thoughts ingestion) closed on the 2026-04-21 reboot session.
 
 ## Summary
 
 total: 5
-passed: 2
+passed: 5
 issues: 0
-pending: 3
+pending: 0
 skipped: 0
 blocked: 0
 
