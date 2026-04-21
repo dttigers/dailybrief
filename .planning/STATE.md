@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Completed 107-05-PLAN.md (gap_107_1 closed)
-last_updated: "2026-04-21T18:47:41.795Z"
+stopped_at: Phase 107.1 context gathered
+last_updated: "2026-04-21T22:37:25.259Z"
 last_activity: 2026-04-21
 progress:
-  total_phases: 5
+  total_phases: 7
   completed_phases: 4
   total_plans: 22
   completed_plans: 21
@@ -69,6 +69,10 @@ Progress: [████████░░] 80% (4/5 plans)
 
 ## Accumulated Context
 
+### Roadmap Evolution
+
+- Phase 107.1 inserted after Phase 107: local dev environment with Postgres and hot-reload stack (URGENT)
+
 ### Decisions
 
 All decisions logged in PROJECT.md Key Decisions table.
@@ -123,7 +127,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-20T22:40:44.562Z
-Stopped at: Completed 107-05-PLAN.md (gap_107_1 closed)
-Resume file: None
+Last session: 2026-04-21T22:37:25.111Z
+Stopped at: Phase 107.1 context gathered
+Resume file: .planning/phases/107.1-local-dev-environment-with-postgres-and-hot-reload-stack/107.1-CONTEXT.md
 Next action: `/gsd-plan-phase 103`
