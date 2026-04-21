@@ -464,4 +464,22 @@ Plans:
 
 Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
-_Backlog is currently empty. Add new ideas with `/gsd-add-backlog`._
+### Phase 999.1: Restore ubiquity entitlement for iCloud photo download (BACKLOG)
+
+**Goal:** DailyBriefMonitor.app can call `FileManager.startDownloadingUbiquitousItem` natively on iCloud Drive HEIC stubs, without relying on the `/usr/bin/brctl` shell-out hack shipped in `fff8a15` (2026-04-21) as Option B. Once this entitlement lands, the brctl fallback can optionally stay as belt-and-suspenders or be removed.
+
+**Why it's in backlog (not active):** The `fff8a15` Option B ship unblocks the daily photo-capture pipeline today. This phase is the proper long-term fix but requires (a) one-time App ID configuration at developer.apple.com to associate a ubiquity container, (b) careful validation that adding `com.apple.developer.ubiquity-container-identifiers` does not regress Developer ID signing — Phase 58 hit CloudKit-adjacent signing issues, so the entitlement family change needs empirical verification on a throwaway branch before landing.
+
+**Requirements:** TBD — candidates:
+- UBIQ-01: `codesign -d --entitlements -` on the installed `.app` shows `com.apple.developer.ubiquity-container-identifiers`
+- UBIQ-02: `url(forUbiquityContainerIdentifier: nil)` returns a non-nil URL inside the running Monitor process
+- UBIQ-03: Dropping a fresh `NotDownloaded` HEIC into `~/Library/Mobile Documents/com~apple~CloudDocs/Notebook` produces an end-to-end materialization within seconds, with `startDownloadingUbiquitousItem` being the driver (no "dispatched brctl download" log line — or if kept belt-and-suspenders, brctl exits 0 because the file is already `.current` by the time it runs)
+- UBIQ-04: Developer ID signature still verifies (`codesign --verify --verbose` passes)
+- UBIQ-05: LaunchAgent loads cleanly post-install; no TCC, keychain, or notarization regressions
+- UBIQ-06 (optional): remove the brctl fallback once UBIQ-01..05 are green
+
+**Plans:** 0 plans — promote with `/gsd-review-backlog` when ready to plan.
+
+**Context:** Full empirical diagnosis, Phase 58 rationale, and all five fix options evaluated in `.planning/debug/icloud-photos-never-download.md` (committed in `4f71366`). Key nuance: CloudKit entitlements (`icloud-services`, `icloud-container-identifiers`) that Phase 58 correctly removed are a **different entitlement family** from ubiquity — Phase 58's "dead code, incompatible with Developer ID" rationale applies to CloudKit only, not to ubiquity.
+
+**Depends on:** Nothing — independent of all server/PWA work.
