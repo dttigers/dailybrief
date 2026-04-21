@@ -350,8 +350,30 @@ public actor FolderWatcherService {
            status != .current {
             NSLog("FolderWatcherService: %@ not yet downloaded from iCloud (status: %@), deferring", url.lastPathComponent, status.rawValue)
             knownFiles.remove(url.lastPathComponent)
-            // Trigger download if not already in progress
+            // Belt-and-suspenders: call the API first (no-ops without the
+            // com.apple.developer.ubiquity-container-identifiers entitlement,
+            // but kept in case Option A is applied later).
             try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+            // Fallback: shell out to brctl download, which uses a privileged
+            // system-daemon path not gated by the process's own entitlements.
+            // Fire-and-forget — the VNODE_WRITE event on materialization will
+            // re-queue this file through the normal path.
+            let brctlProcess = Process()
+            brctlProcess.executableURL = URL(fileURLWithPath: "/usr/bin/brctl")
+            brctlProcess.arguments = ["download", url.path]
+            // Termination handler captures exit code without blocking the actor.
+            brctlProcess.terminationHandler = { p in
+                let exitCode = p.terminationStatus
+                if exitCode != 0 {
+                    NSLog("FolderWatcherService: brctl download failed for %@: exit=%d", url.path, exitCode)
+                }
+            }
+            do {
+                try brctlProcess.run()
+                NSLog("FolderWatcherService: dispatched brctl download for %@", url.path)
+            } catch {
+                NSLog("FolderWatcherService: brctl download failed for %@: exit=-1 (%@)", url.path, error.localizedDescription)
+            }
             return
         }
 
