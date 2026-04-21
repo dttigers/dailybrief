@@ -469,10 +469,10 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 **Goal:** Local Postgres + one-command dev orchestrator for vigil-core + vigil-pwa, with daemon retired and prod secrets off the dev disk — so `npm run dev` at repo root no longer mutates Railway.
 **Requirements**: REQ-DEV-LOCAL-ENV
 **Depends on:** Phase 107
-**Plans:** 7 plans
+**Plans:** 1/7 plans executed
 
 Plans:
-- [ ] 107.1-01-PLAN.md — Homebrew postgresql@16 provision + create vigil_dev + LOCAL-ONLY .env.example
+- [x] 107.1-01-PLAN.md — Homebrew postgresql@16 provision + create vigil_dev + LOCAL-ONLY .env.example
 - [ ] 107.1-02-PLAN.md — scripts/seed-local.ts fixture (idempotent) + seed:local npm script
 - [ ] 107.1-03-PLAN.md — scripts/dev-setup.sh + scripts/preflight-check.sh + scripts/dev-reset.sh
 - [ ] 107.1-04-PLAN.md — com.jamesonmorrill.vigilcore daemon retirement (iMac + MacBook Pro) with reversibility artifact

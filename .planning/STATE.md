@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Phase 107.1 context gathered
-last_updated: "2026-04-21T22:37:25.259Z"
+stopped_at: Completed 107.1-01-PLAN.md
+last_updated: "2026-04-21T23:35:14.031Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 7
   completed_phases: 4
-  total_plans: 22
-  completed_plans: 21
-  percent: 95
+  total_plans: 29
+  completed_plans: 22
+  percent: 76
 ---
 
 # Project State
@@ -21,12 +21,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-19)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 107 — safari-extension-persistence
+**Current focus:** Phase 107.1 — local-dev-environment-with-postgres-and-hot-reload-stack
 
 ## Current Position
 
-Phase: 107
-Plan: Not started
+Phase: 107.1 (local-dev-environment-with-postgres-and-hot-reload-stack) — EXECUTING
+Plan: 2 of 7
 Status: Ready to execute
 Last activity: 2026-04-21
 
@@ -66,6 +66,7 @@ Progress: [████████░░] 80% (4/5 plans)
 | Phase 107 P02 | 3m 50s | 2 tasks | 1 files |
 | Phase 107 P03 | 2m 18s | 4 tasks | 4 files |
 | Phase 107 P05 | 6m 55s | 3 tasks | 5 files |
+| Phase 107.1 P01 | 1m 34s | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -112,6 +113,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 107]: Plan 107-02 — UserDefaults firstLaunchAlertShown flag set AFTER runModal() preserves at-least-once alert delivery if crash occurs mid-modal; informativeText pre-empts macOS BTM Background Items Added system notification (Open Question 3)
 - [Phase 107]: Plan 107-03 — Persistence pill (D-04) lands additively: 4-file surgical diff (Main.html +6, Script.js +14, Style.css +23, ViewController.swift +19). showPersistence JS fn uses spread-remove + includes guard for graceful unknown-state handling. persistenceStateString @unknown default maps to "failed" (visible signal for new OS Status cases). No color styling — pills inherit native font, text distinguishes states. xcodebuild clean; verify-phase-107.sh --static still green; Open Question Q1 (does WKWebView didFinish fire under LSUIElement?) deferred to Plan 04 runtime UAT with viewDidAppear fallback documented.
 - [Phase 107]: [Phase 107] Plan 107-05 — gap_107_1 (storyboard window flash on first launch) closed via launch-source-gated window suppression: AppDelegate.suppressStoryboardWindows() orders NSApp.windows out unconditionally, then gates shouldRevealWindow on systemUptime >= 120 AND firstLaunchAlertShown. application(_:open:) inbound hook opportunistically overrides the gate for Safari-prefs click. ViewController.webView(_:didFinish:) makeKeyAndOrderFront now inside if-let delegate.shouldRevealWindow guard — D-01 preserved on Login Item boot, D-04 preserved on user-initiated launches. Runtime probe WINDOWS_FIRST=1 post-fix (was 2 before). tradeoff_107_1 documents the within-120s-of-boot Safari-prefs edge case as accepted/minor. check_window_suppression grep-only static check adds regression guard via grep -B1 line-before makeKeyAndOrderFront.
+- [Phase 107.1]: [Phase 107.1] Plan 107.1-01 — local postgresql@16 (16.13) installed + vigil_dev live on iMac and user-confirmed on MacBook Pro; vigil-core/.env.example expanded from 2 keys to the 6-key LOCAL-ONLY template (D-17) with VIGIL_ALLOWED_EMAILS pinned to the seed user, PORT=3001 matching retired daemon, POSTHOG_API_KEY blank for Phase 103 key-absence gate. Rule 1 auto-fix: plan action text used 'Railway proxy' and 'rlwy.net' in comments that the plan's own automated regex rejected — rephrased to 'remote production host' / 'remote hostname' preserving the T-LOCAL-1 intent without tripping acceptance checks.
 
 ### Pending Todos
 
@@ -127,7 +129,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-21T22:37:25.111Z
-Stopped at: Phase 107.1 context gathered
-Resume file: .planning/phases/107.1-local-dev-environment-with-postgres-and-hot-reload-stack/107.1-CONTEXT.md
+Last session: 2026-04-21T23:35:14.025Z
+Stopped at: Completed 107.1-01-PLAN.md
+Resume file: None
 Next action: `/gsd-plan-phase 103`
