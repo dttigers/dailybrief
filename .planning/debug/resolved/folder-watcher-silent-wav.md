@@ -1,8 +1,9 @@
 ---
-status: awaiting_human_verify
+status: resolved
 trigger: "FolderWatcherService doesn't process .WAV files dropped in ~/Desktop/Voice Notes/. No log output, file remains untouched. Completely silent failure."
 created: 2026-04-12T22:15:00Z
 updated: 2026-04-12T22:25:00Z
+resolved: 2026-04-21T18:55:00Z
 ---
 
 ## Current Focus
@@ -65,5 +66,21 @@ timeline: Broken after multiple install.sh rebuilds. The watcher was working for
 
 root_cause: The .app bundle's Info.plist (written by install.sh) is missing NSSpeechRecognitionUsageDescription. When TranscriptionService calls SFSpeechRecognizer.requestAuthorization, macOS TCC crashes the process with SIGABRT (OS_REASON_TCC) because the usage description key is absent. This happens on every launch, causing the 10-second crash loop observed in launchd (successive crashes = 15).
 fix: Add <key>NSSpeechRecognitionUsageDescription</key> and its string value to the Info.plist heredoc in install.sh
-verification: []
+verification:
+  - timestamp: 2026-04-21T18:55:00Z
+    checked: git log + git blame Scripts/install.sh L127-128
+    found: commit 430dfe9 "fix: add NSSpeechRecognitionUsageDescription to .app Info.plist" authored 2026-04-12 16:12 local, 13 min before the session's final update; key + description string present in current HEAD
+    implication: Fix committed within the original debug session, session was just never flipped to resolved
+  - timestamp: 2026-04-21T18:55:00Z
+    checked: /usr/libexec/PlistBuddy -c "Print :NSSpeechRecognitionUsageDescription" ~/.local/bin/DailyBriefMonitor.app/Contents/Info.plist
+    found: "Vigil transcribes voice notes you drop into the watched folder so they can be captured as thoughts." — installed bundle carries the key (bundle plist mtime 2026-04-15 15:26)
+    implication: Installed .app matches the fix — TCC has a valid usage description at SFSpeechRecognizer.requestAuthorization time
+  - timestamp: 2026-04-21T18:55:00Z
+    checked: launchctl print gui/$(id -u)/com.jamesonmorrill.dailybriefmonitor
+    found: state=running, pid=592, "last exit code = (never exited)" — no successive-crashes counter, no TCC exit reason
+    implication: Crash loop is gone; process is stable
+  - timestamp: 2026-04-21T18:55:00Z
+    checked: ~/Library/Logs/DailyBrief/monitor-stderr.log (tail of recent runs)
+    found: 2026-04-16 09:32–09:33 processed 5 WAV files (20260416072118.WAV … 20260416092423.WAV); each reached the server as "failed to process … HTTP 502" — i.e. past SFSpeechRecognizer auth, past transcription, all the way to upload
+    implication: Watcher is no longer silently failing — it is successfully reading voice notes and calling the server. The 502s are a separate Railway flake, unrelated to TCC.
 files_changed: [Scripts/install.sh]
