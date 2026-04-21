@@ -510,6 +510,74 @@ describe("mapWorkOrders", () => {
     assert.equal(result[1].caseNumber, "CS002");
     assert.equal(result[1].status, "open");
   });
+
+  // ── Bug fix: completed WOs must be excluded ──────────────────────────────
+
+  test("Test 7c: mapWorkOrders excludes work orders with status='done'", () => {
+    const workOrderRows = [
+      {
+        caseNumber: "CS010",
+        store: "Store A",
+        shortDescription: "Open issue",
+        trade: "HVAC",
+        location: "Roof",
+        equipment: "RTU",
+        priority: "High",
+        contact: "John",
+        state: "Open",
+        syncedAt: new Date(),
+      },
+      {
+        caseNumber: "CS011",
+        store: "Store B",
+        shortDescription: "Completed issue",
+        trade: "Plumbing",
+        location: "Kitchen",
+        equipment: "Sink",
+        priority: "Low",
+        contact: "Jane",
+        state: "Closed",
+        syncedAt: new Date(),
+      },
+    ];
+
+    const statusRows = [
+      { caseNumber: "CS010", status: "open", updatedAt: new Date() },
+      { caseNumber: "CS011", status: "done", updatedAt: new Date() },
+    ];
+
+    const result = mapWorkOrders(workOrderRows, statusRows);
+
+    // CS011 has status='done' — must not appear in brief output
+    assert.equal(result.length, 1, "completed WO must be excluded");
+    assert.equal(result[0].caseNumber, "CS010");
+    assert.equal(result[0].status, "open");
+  });
+
+  test("Test 7d: mapWorkOrders excludes WOs that default to 'done' (no status row present would default open, but explicit done is excluded)", () => {
+    const workOrderRows = [
+      {
+        caseNumber: "CS020",
+        store: "Store C",
+        shortDescription: "Done with no status row counterpart",
+        trade: "Electric",
+        location: "Panel",
+        equipment: "Breaker",
+        priority: "Medium",
+        contact: "Bob",
+        state: "Closed",
+        syncedAt: new Date(),
+      },
+    ];
+
+    // A status row explicitly marking it done
+    const statusRows = [
+      { caseNumber: "CS020", status: "done", updatedAt: new Date() },
+    ];
+
+    const result = mapWorkOrders(workOrderRows, statusRows);
+    assert.equal(result.length, 0, "a single done WO should produce empty array");
+  });
 });
 
 describe("mapThoughts", () => {
@@ -541,5 +609,174 @@ describe("mapThoughts", () => {
     assert.equal(result[0].source, "text");
     assert.equal(result[0].taskStatus, "open");
     assert.ok(result[0].createdAt.includes("2026-04-12"));
+  });
+});
+
+// ── Bug fix: soft-deleted thoughts must not appear in brief ─────────────────
+// Soft-delete sets syncStatus = 'pendingDeletion'. All three thought queries
+// (fetchTaskThoughts, fetchRecentThoughts, fetchUnprocessedThoughts) must
+// include ne(thoughtsTable.syncStatus, 'pendingDeletion') in their WHERE.
+//
+// Work orders must add isNull(workOrdersTable.archivedAt) to their WHERE.
+//
+// Strategy: Drizzle expression trees store SQL fragments in `queryChunks`.
+// Walk queryChunks recursively (avoiding circular refs) to collect the
+// operator/value strings that are *actually* in the expression — distinct from
+// column metadata that exists in every condition via the schema reference.
+// A ne(col, "pendingDeletion") expression produces chunks [" <> ", "pendingDeletion"].
+// An isNull(col) expression produces chunks [" is null"].
+
+/** Collect all string `value` entries from a Drizzle queryChunks tree. */
+function collectChunkValues(obj: unknown, seen = new Set<unknown>()): string[] {
+  if (obj === null || obj === undefined) return [];
+  if (seen.has(obj)) return [];
+  if (typeof obj !== "object") return [];
+  seen.add(obj);
+  const results: string[] = [];
+  if (Array.isArray(obj)) {
+    for (const item of obj) results.push(...collectChunkValues(item, seen));
+  } else {
+    const o = obj as Record<string, unknown>;
+    // queryChunks entries with { value: string } or { value: string[] }
+    if ("value" in o) {
+      if (typeof o.value === "string") results.push(o.value);
+      if (Array.isArray(o.value)) {
+        for (const v of o.value) if (typeof v === "string") results.push(v);
+      }
+    }
+    // Recurse into queryChunks and encoder fields only (avoid schema circular refs)
+    for (const key of ["queryChunks", "encoder", "expressions", "left", "right"]) {
+      if (key in o) results.push(...collectChunkValues(o[key], seen));
+    }
+  }
+  return results;
+}
+
+function conditionsHaveNeFilter(conditions: unknown[], value: string): boolean {
+  const chunks = conditions.flatMap((c) => collectChunkValues(c));
+  return chunks.includes(" <> ") && chunks.includes(value);
+}
+
+function conditionsHaveIsNullFilter(conditions: unknown[]): boolean {
+  const chunks = conditions.flatMap((c) => collectChunkValues(c));
+  return chunks.includes(" is null");
+}
+
+describe("assembleAndRender — soft-deleted thought exclusion (bug fix)", () => {
+  let tmpDir2: string;
+
+  beforeEach(() => {
+    tmpDir2 = fs.mkdtempSync(path.join(os.tmpdir(), "brief-softdel-test-"));
+  });
+
+  afterEach(() => {
+    try { fs.rmSync(tmpDir2, { recursive: true, force: true }); } catch {}
+  });
+
+  // Build a tracking DB that captures WHERE conditions per from()-table call.
+  // Returns both the db mock and a getter for captured conditions.
+  function makeTrackingDb(): { db: any; getConditions: () => unknown[] } {
+    const conditions: unknown[] = [];
+    const db = {
+      select: () => ({
+        from: (_table: any) => ({
+          where: (condition: any) => {
+            conditions.push(condition);
+            return {
+              orderBy: (..._args: any[]) => ({
+                limit: (_n: number) => Promise.resolve([]),
+              }),
+              limit: (_n: number) => Promise.resolve([]),
+            };
+          },
+          orderBy: (..._args: any[]) => ({
+            limit: (_n: number) => Promise.resolve([]),
+          }),
+          limit: (_n: number) => Promise.resolve([]),
+        }),
+      }),
+    };
+    return { db, getConditions: () => conditions };
+  }
+
+  test("Test 11: thought queries include ne(syncStatus, 'pendingDeletion') filter", async () => {
+    const { db, getConditions } = makeTrackingDb();
+
+    const deps: BriefAssemblyDeps = {
+      sportsService: { fetchAllLeagues: async () => makeSportsResponse() },
+      calendarService: { fetchTodaysEvents: async () => makeCalendarResponse() },
+      pdfRenderer: { renderBrief: async (_data: BriefRenderData, _config?: PdfConfig) => MOCK_PDF_BUFFER },
+      dbClient: db as unknown as PostgresJsDatabase<typeof schema>,
+      callClaudeFn: async () => "You are capable.",
+      parseAIJsonFn: <T>(raw: string) => JSON.parse(raw) as T,
+      getAIClientFn: () => null,
+      _cacheDir: tmpDir2,
+    };
+
+    await createBriefAssemblyService(deps).assembleAndRender(TEST_DATE, 1);
+
+    const conditions = getConditions();
+    // Filter out the appSettings query (user_timezone lookup) — it doesn't involve thoughts
+    // At least 3 conditions should be from thought queries; assert each has the ne filter.
+    assert.ok(
+      conditionsHaveNeFilter(conditions, "pendingDeletion"),
+      `Expected thought WHERE conditions to include ne(syncStatus, 'pendingDeletion') ` +
+      `(chunk values: " <> " and "pendingDeletion"). ` +
+      `Chunk values found: ${[...new Set(conditions.flatMap((c) => collectChunkValues(c)))].join(", ")}`,
+    );
+  });
+
+  test("Test 12: work order DB query includes isNull(archivedAt) filter", async () => {
+    // Use a table-aware tracking DB: record the WHERE condition only when the
+    // from() table has a "case_number" column (i.e. the work_orders table).
+    const woConditions: unknown[] = [];
+
+    const tableAwareDb = {
+      select: () => ({
+        from: (table: any) => {
+          // work_orders table has case_number; thoughts table has cloudkit_record_id
+          const isWorkOrdersTable = table && typeof table === "object" &&
+            "caseNumber" in table;
+          return {
+            where: (condition: any) => {
+              if (isWorkOrdersTable) woConditions.push(condition);
+              return {
+                orderBy: (..._args: any[]) => ({
+                  limit: (_n: number) => Promise.resolve([]),
+                }),
+                limit: (_n: number) => Promise.resolve([]),
+              };
+            },
+            orderBy: (..._args: any[]) => ({
+              limit: (_n: number) => Promise.resolve([]),
+            }),
+            limit: (_n: number) => Promise.resolve([]),
+          };
+        },
+      }),
+    };
+
+    const deps: BriefAssemblyDeps = {
+      sportsService: { fetchAllLeagues: async () => makeSportsResponse() },
+      calendarService: { fetchTodaysEvents: async () => makeCalendarResponse() },
+      pdfRenderer: { renderBrief: async (_data: BriefRenderData, _config?: PdfConfig) => MOCK_PDF_BUFFER },
+      dbClient: tableAwareDb as unknown as PostgresJsDatabase<typeof schema>,
+      callClaudeFn: async () => "You are capable.",
+      parseAIJsonFn: <T>(raw: string) => JSON.parse(raw) as T,
+      getAIClientFn: () => null,
+      _cacheDir: tmpDir2,
+    };
+
+    await createBriefAssemblyService(deps).assembleAndRender(TEST_DATE, 1);
+
+    assert.ok(
+      woConditions.length > 0,
+      "Expected at least one WHERE condition on the work_orders table",
+    );
+    assert.ok(
+      conditionsHaveIsNullFilter(woConditions),
+      `Expected work_orders WHERE condition to include isNull(archivedAt) (chunk value: " is null"). ` +
+      `Chunk values found: ${[...new Set(woConditions.flatMap((c) => collectChunkValues(c)))].join(", ")}`,
+    );
   });
 });

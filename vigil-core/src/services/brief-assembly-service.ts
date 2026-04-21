@@ -21,7 +21,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import * as crypto from "node:crypto";
 import { workOrders as workOrdersTable, workOrderStatuses as workOrderStatusesTable, thoughts as thoughtsTable, appSettings } from "../db/schema.js";
-import { desc, isNull, eq as drizzleEq, gte, lt, and } from "drizzle-orm";
+import { desc, isNull, eq as drizzleEq, gte, lt, and, ne } from "drizzle-orm";
 import { getCurrentWeekWindow } from "../utils/date-window.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type * as schema from "../db/schema.js";
@@ -155,17 +155,19 @@ export function mapWorkOrders(
     statusMap.set(sr.caseNumber, sr.status);
   }
 
-  return rows.map((row) => ({
-    caseNumber: row.caseNumber,
-    store: row.store,
-    shortDescription: row.shortDescription,
-    trade: row.trade,
-    location: row.location,
-    equipment: row.equipment,
-    priority: row.priority,
-    contact: row.contact,
-    status: (statusMap.get(row.caseNumber) ?? "open") as "open" | "inProgress" | "done",
-  }));
+  return rows
+    .map((row) => ({
+      caseNumber: row.caseNumber,
+      store: row.store,
+      shortDescription: row.shortDescription,
+      trade: row.trade,
+      location: row.location,
+      equipment: row.equipment,
+      priority: row.priority,
+      contact: row.contact,
+      status: (statusMap.get(row.caseNumber) ?? "open") as "open" | "inProgress" | "done",
+    }))
+    .filter((wo) => wo.status !== "done");
 }
 
 export function mapThoughts(
@@ -201,7 +203,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
       const rows = await db
         .select()
         .from(getThoughtsTable())
-        .where(and(drizzleEq(thoughtsTable.userId, userId), taskThoughtsFilter(), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
+        .where(and(drizzleEq(thoughtsTable.userId, userId), notPendingDeletion(), taskThoughtsFilter(), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
         .orderBy(thoughtsOrderDesc())
         .limit(8);
       return mapThoughts(rows);
@@ -215,7 +217,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
       const rows = await db
         .select()
         .from(getThoughtsTable())
-        .where(and(drizzleEq(thoughtsTable.userId, userId), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
+        .where(and(drizzleEq(thoughtsTable.userId, userId), notPendingDeletion(), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
         .orderBy(thoughtsOrderDesc())
         .limit(20);
       return mapThoughts(rows);
@@ -229,7 +231,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
       const rows = await db
         .select()
         .from(getThoughtsTable())
-        .where(and(drizzleEq(thoughtsTable.userId, userId), unprocessedFilter(), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
+        .where(and(drizzleEq(thoughtsTable.userId, userId), notPendingDeletion(), unprocessedFilter(), gte(thoughtsTable.createdAt, start), lt(thoughtsTable.createdAt, end)))
         .orderBy(thoughtsOrderDesc())
         .limit(20);
       return mapThoughts(rows);
@@ -245,7 +247,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
       return { workOrders: mapped, rawRows: deps._workOrderRows };
     }
     try {
-      const woRows = await db.select().from(getWorkOrdersTable()).where(drizzleEq(workOrdersTable.userId, userId)).limit(100);
+      const woRows = await db.select().from(getWorkOrdersTable()).where(and(drizzleEq(workOrdersTable.userId, userId), activeWorkOrderFilter())).limit(100);
       const statusRows = await db.select().from(getWorkOrderStatusesTable()).limit(100);
       const mapped = mapWorkOrders(woRows, statusRows);
       return { workOrders: mapped, rawRows: woRows };
@@ -413,6 +415,8 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
   function getWorkOrderStatusesTable() { return workOrderStatusesTable; }
   function taskThoughtsFilter() { return drizzleEq(thoughtsTable.category, "task"); }
   function unprocessedFilter() { return isNull(thoughtsTable.category); }
+  function notPendingDeletion() { return ne(thoughtsTable.syncStatus, "pendingDeletion"); }
+  function activeWorkOrderFilter() { return isNull(workOrdersTable.archivedAt); }
   function thoughtsOrderDesc() { return desc(thoughtsTable.createdAt); }
 
   // ── Main orchestration ─────────────────────────────────────────────────
