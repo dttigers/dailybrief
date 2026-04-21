@@ -15,6 +15,7 @@
     "db:migrate-102": "tsx scripts/migrate-102-seed.ts && tsx src/db/migrate.ts",
     "db:migrate-102-prod": "node dist/scripts/migrate-102-seed.js && node dist/db/migrate.js",
     "db:generate-key": "tsx scripts/generate-key.ts",
+    "seed:local": "tsx --env-file=.env scripts/seed-local.ts",
     "db:migrate-sqlite": "tsx scripts/migrate-sqlite.ts",
     "set-password": "tsx scripts/set-password.ts",
     "smoke-test": "tsx scripts/smoke-test.ts"
