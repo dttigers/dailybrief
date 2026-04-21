@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Completed 107.1-02-PLAN.md
-last_updated: "2026-04-21T23:44:00.302Z"
+stopped_at: Completed 107.1-04-PLAN.md
+last_updated: "2026-04-21T23:49:54.886Z"
 last_activity: 2026-04-21
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 29
-  completed_plans: 23
-  percent: 79
+  completed_plans: 24
+  percent: 83
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 ## Current Position
 
 Phase: 107.1 (local-dev-environment-with-postgres-and-hot-reload-stack) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
 Last activity: 2026-04-21
 
@@ -68,6 +68,7 @@ Progress: [████████░░] 80% (4/5 plans)
 | Phase 107 P05 | 6m 55s | 3 tasks | 5 files |
 | Phase 107.1 P01 | 1m 34s | 2 tasks | 1 files |
 | Phase 107.1 P02 | 5m 1s | 2 tasks | 2 files |
+| Phase 107.1 P04 | ~8m | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 107]: [Phase 107] Plan 107-05 — gap_107_1 (storyboard window flash on first launch) closed via launch-source-gated window suppression: AppDelegate.suppressStoryboardWindows() orders NSApp.windows out unconditionally, then gates shouldRevealWindow on systemUptime >= 120 AND firstLaunchAlertShown. application(_:open:) inbound hook opportunistically overrides the gate for Safari-prefs click. ViewController.webView(_:didFinish:) makeKeyAndOrderFront now inside if-let delegate.shouldRevealWindow guard — D-01 preserved on Login Item boot, D-04 preserved on user-initiated launches. Runtime probe WINDOWS_FIRST=1 post-fix (was 2 before). tradeoff_107_1 documents the within-120s-of-boot Safari-prefs edge case as accepted/minor. check_window_suppression grep-only static check adds regression guard via grep -B1 line-before makeKeyAndOrderFront.
 - [Phase 107.1]: [Phase 107.1] Plan 107.1-01 — local postgresql@16 (16.13) installed + vigil_dev live on iMac and user-confirmed on MacBook Pro; vigil-core/.env.example expanded from 2 keys to the 6-key LOCAL-ONLY template (D-17) with VIGIL_ALLOWED_EMAILS pinned to the seed user, PORT=3001 matching retired daemon, POSTHOG_API_KEY blank for Phase 103 key-absence gate. Rule 1 auto-fix: plan action text used 'Railway proxy' and 'rlwy.net' in comments that the plan's own automated regex rejected — rephrased to 'remote production host' / 'remote hostname' preserving the T-LOCAL-1 intent without tripping acceptance checks.
 - [Phase 107.1]: Plan 107.1-02 — seed-local.ts lands idempotent via onConflictDoNothing for unique-constrained cols (users.email, cloudKitRecordID, caseNumber) and count-guard for projects + api_keys (vk_ preservation > rotation). tsx --env-file=.env required for DATABASE_URL visibility per RESEARCH Pattern 6. Live end-to-end verification blocked by pre-existing schema-drift on work_orders (missing notes/archived_at/last_change_at/last_change_summary columns never migrated from schema.ts to drizzle/) — logged to deferred-items.md for follow-on plan; Plan 03 dev-setup.sh will hit the same wall until a 0013_work_orders_drift_repair migration is authored.
+- [Phase 107.1]: Plan 107.1-04 — Preserved plist XML to 107.1-daemon-retirement.md BEFORE bootout (T-LOCAL-6 reversibility gate). ANTHROPIC_API_KEY redacted inside preserved XML; restore path is Anthropic console, not VCS resurrection. Both machines retired in one session (iMac local, MacBook Pro over SSH at 192.168.1.136). RESEARCH Pitfall 2 (Aqua bootout over SSH) did NOT reproduce on macOS 15.x/gui-501 with a live UID session. Corrected stale memory: reference_macbook_pro.md said daemon was unloaded but live probe showed it was running (PID 740).
 
 ### Pending Todos
 
@@ -129,10 +131,11 @@ None.
 - Phase 106 research flag: confirm exact G2 double-press event name from Even Hub docs in-browser (WebFetch returned empty during research)
 - Phase 106 research flag: review Even Realities public Figma design spec before G2-03 CSS changes
 - Phase 107.1 work_orders schema drift — columns notes/archived_at/last_change_at/last_change_summary defined in schema.ts but never migrated; blocks Plan 02 live-seed e2e + Plan 03 final step. See deferred-items.md.
+- Memory update needed: reference_macbook_pro.md still says 'vigilcore unloaded by design'; as of 2026-04-21 Plan 107.1-04 retired the daemon on BOTH machines (MacBook Pro was actually running, PID 740). Preserved plist in 107.1-daemon-retirement.md.
 
 ## Session Continuity
 
-Last session: 2026-04-21T23:43:43.508Z
-Stopped at: Completed 107.1-02-PLAN.md
+Last session: 2026-04-21T23:49:46.702Z
+Stopped at: Completed 107.1-04-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 103`
