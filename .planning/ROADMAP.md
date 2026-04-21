@@ -458,7 +458,7 @@ Plans:
 | 104. PWA Auth UI & Browser Observability | v3.5 | 3/3 | Complete    | 2026-04-19 |
 | 105. Product Events, API Metrics & User Identity | v3.5 | 3/3 | Complete    | 2026-04-20 |
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 4/5 | In Progress|  |
-| 107. Safari Extension Persistence | v3.5 | 6/6 | Complete   | 2026-04-20 |
+| 107. Safari Extension Persistence | v3.5 | 6/6 | Complete    | 2026-04-21 |
 
 ## Backlog
 

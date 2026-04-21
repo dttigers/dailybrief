@@ -1,8 +1,8 @@
 ---
 phase: 107-safari-extension-persistence
 verified: 2026-04-20T23:45:00Z
-status: human_needed
-score: 7/10 must-haves verified (3 require physical reboot UAT)
+status: passed
+score: 10/10 must-haves verified (all reboot UAT items passed on 2026-04-21)
 overrides_applied: 0
 human_verification:
   - test: "Test 1 — Reboot persistence (SC#1, EXT-01 contract)"
