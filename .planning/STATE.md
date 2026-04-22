@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: verifying
-stopped_at: Completed 107.2-03-PLAN.md
-last_updated: "2026-04-22T14:58:16.723Z"
+stopped_at: Completed 107.3-02-PLAN.md
+last_updated: "2026-04-22T20:17:19Z"
 last_activity: 2026-04-22
 progress:
   total_phases: 8
   completed_phases: 6
-  total_plans: 32
-  completed_plans: 31
+  total_plans: 33
+  completed_plans: 32
   percent: 97
 ---
 
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
-Status: Phase complete — ready for verification
-Last activity: 2026-04-22
+Phase: 107.3
+Plan: 02 of 3 complete (wave 1 done)
+Status: In progress — Plan 03 (doctor stale-drift cleanup) unblocked
+Last activity: 2026-04-22 — Completed 107.3-02-PLAN.md
 
 Progress: [███████░░░] 71% (5/7 plans)
 
@@ -76,6 +76,7 @@ Progress: [███████░░░] 71% (5/7 plans)
 | Phase 107.2 P01 | 4m 13s | 3 tasks | 3 files |
 | Phase 107.2 P02 | 5m 6s | 2 tasks | 3 files |
 | Phase 107.2 P03 | 3m 9s | 1 tasks | 1 files |
+| Phase 107.3 P02 | 0m 57s | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -134,6 +135,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 107.2]: [Phase 107.2] Plan 107.2-01 — D-B2 default literal 127.0.0.1 (not 'localhost') per RESEARCH Pitfall 1 macOS/Linux IPv6 quirk; D-D2 prod CORS FATAL guard inserted between JWT_SECRET guard and Hono app declaration (src/index.ts:64-72), mirrors the JWT guard pattern exactly; process.env.NODE_ENV (not Vite-only import.meta.env.DEV, Pitfall 2). Task 3 committed empty (chore 8e555d4) because vigil-core/.env is gitignored — preserves atomic-per-task audit trail. Live probes: dev boot → 'Vigil Core API running on 0.0.0.0:3001'; prod NODE_ENV=production with CORS_ORIGINS unset → exit 1 with exact FATAL string; prod with CORS_ORIGINS=https://app.vigilhub.io → boots normally at 127.0.0.1:3001 (VIGIL_BIND_HOST not set in prod-shape env = Railway default path).
 - [Phase 107.2]: [Phase 107.2] Plan 107.2-02 — Vite config function-form rewrite with loadEnv(mode, process.cwd(), ''); server.host: true binds 0.0.0.0 for Tailscale peers; /v1 proxy target env-driven via VITE_DEV_API_TARGET (default http://localhost:3001). VitePWA manifest preserved byte-for-byte (only +2 indent diff). Pitfall 4 CLOSED — VITE_API_BASE commented out in vigil-pwa/.env.local; client.ts:3 fallback now wins and proxy routes same-origin fetches. E2E smoke GREEN: curl http://127.0.0.1:5173/v1/health returned vigil-core's real health payload through the proxy. Rule 2 auto-add: .gitignore extended with .env.local.bak* patterns (existing .env.bak.* family didn't cover the variant). Pre-existing tsc TS6305 noise logged as deferred — 64 errors identical before and after edit, npm run build exits 0 compensates.
 - [Phase 107.2]: [Phase 107.2] Plan 107.2-03 — Check 5 lands in Scripts/preflight-check.sh (+54/-3) with 5-branch logic: unset/localhost→PASS, unsupported→FAIL, 0.0.0.0+fw-off→PASS, 0.0.0.0+fw-on→yellow() WARN (D-B3 non-fatal), binary-missing→PASS. Firewall probe uses grep-pattern on socketfilterfw --getglobalstate stdout (NOT exit-code, NOT defaults-read — both verified broken on macOS 15). Rule 1 auto-fix: rephrased DO-NOT-USE comment to sidestep plan's own acceptance-regex self-collision (same pattern as Phase 107.1 Plan 01/03). Rule 2 auto-add: inserted reference-form comment so both literal-text and variable-form probe-regex acceptance checks resolve. Live run on iMac (firewall off): Check 5 PASS exit 0. Negative VIGIL_BIND_HOST=foo: Check 5 FAIL exit 1. Negative unset: Check 5 localhost-PASS exit 0. Firewall-on manual test deferred (requires sudo state mutation).
+- [Phase 107.3]: [Phase 107.3] Plan 107.3-02 — Scripts/install.sh lines 28-32 swapped from 4-stage `security | grep | head | grep | tr` pipeline to single `awk 'match/substr/exit'` (RESEARCH Fix 2 Option B locked over Option A `|| true`). Root cause closed: under `set -euo pipefail`, grep's exit-1 on no-match propagated and aborted the script before the `[[ -z "$IDENTITY" ]]` remediation block at line 34 could fire — observed silent-exit on fresh MacBook Pro bootstrap 2026-04-22. awk is pipefail-immune on no-match AND does not mask upstream `security`-binary failures the way blanket `|| true` would (awk simply won't run; upstream exit propagates correctly). 4-line rationale comment inserted citing Phase 107.3 Fix 2 to prevent regression. Verified: stub-security no-cert → `IDENTITY=[]` + `REMEDIATION FIRED`; positive path on iMac → resolves `Developer ID Application: Jameson Morrill (5H57ADQS8G)`. macOS-native lack of GNU `timeout` worked around with inline bash block that runs only identity-resolution logic. Plan 03 (doctor stale-drift cleanup) unblocked.
 
 ### Pending Todos
 
@@ -151,7 +153,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-22T13:09:02.037Z
-Stopped at: Completed 107.2-03-PLAN.md
+Last session: 2026-04-22T20:17:19Z
+Stopped at: Completed 107.3-02-PLAN.md
 Resume file: None
-Next action: `/gsd-plan-phase 103`
+Next action: Execute Plan 107.3-03 (doctor stale-drift cleanup) — unblocked by this plan
