@@ -178,12 +178,22 @@ app.onError((err, c) => {
 });
 
 const port = Number(process.env.PORT) || 3001;
-// Phase 107.2 D-B1/D-B2 — env-gated bind hostname. Default 127.0.0.1 (safe:
-// localhost-only). Local dev .env sets VIGIL_BIND_HOST=0.0.0.0 to expose on
-// Tailscale/LAN. Railway prod leaves VIGIL_BIND_HOST unset → defaults to
-// 127.0.0.1 behind Railway's proxy. Literal IPv4 (not 'localhost') avoids
-// the macOS/Linux IPv6 resolution quirk documented in Pitfall 1.
-const hostname = process.env.VIGIL_BIND_HOST ?? "127.0.0.1";
+// Phase 107.3 Fix 1: Bind host strategy.
+// Railway injects RAILWAY_SERVICE_ID (UUID) into every container; it is never
+// set locally. When running on Railway, force 0.0.0.0 so the proxy (external
+// to the container) can reach us. Default 127.0.0.1 for all non-Railway envs
+// (safe: localhost-only). Explicit VIGIL_BIND_HOST always wins so local dev
+// can override to 0.0.0.0 for Tailscale exposure.
+// Literal IPv4 (not 'localhost') avoids the macOS/Linux IPv6 resolution quirk
+// documented in Phase 107.2-01 Pitfall 1.
+// Prior claim ("Railway prod leaves VIGIL_BIND_HOST unset → defaults to
+// 127.0.0.1 behind Railway's proxy") was wrong and caused the 2026-04-22
+// 502 outage on api.vigilhub.io — the proxy cannot reach a loopback-bound
+// container. Verified via Railway docs
+// (https://docs.railway.com/reference/variables) that RAILWAY_SERVICE_ID
+// is always present in container runtime and never set locally.
+const isRailway = !!process.env.RAILWAY_SERVICE_ID;
+const hostname = process.env.VIGIL_BIND_HOST ?? (isRailway ? "0.0.0.0" : "127.0.0.1");
 
 serve({ fetch: app.fetch, port, hostname }, () => {
   console.log(`Vigil Core API running on ${hostname}:${port}`);
