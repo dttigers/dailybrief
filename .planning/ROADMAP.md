@@ -469,7 +469,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 **Goal:** Local Postgres + one-command dev orchestrator for vigil-core + vigil-pwa, with daemon retired and prod secrets off the dev disk — so `npm run dev` at repo root no longer mutates Railway.
 **Requirements**: REQ-DEV-LOCAL-ENV
 **Depends on:** Phase 107
-**Plans:** 6/7 plans executed
+**Plans:** 7/7 plans complete
 
 Plans:
 - [x] 107.1-01-PLAN.md — Homebrew postgresql@16 provision + create vigil_dev + LOCAL-ONLY .env.example
@@ -478,7 +478,7 @@ Plans:
 - [x] 107.1-04-PLAN.md — com.jamesonmorrill.vigilcore daemon retirement (iMac + MacBook Pro) with reversibility artifact
 - [x] 107.1-05-PLAN.md — Root package.json + concurrently + tsx --env-file fix + VITE_API_BASE verify
 - [x] 107.1-06-PLAN.md — vigil-core/.env LOCAL-only rewrite + Anthropic dev workspace ($20/mo) + sync-anthropic-key.sh update
-- [ ] 107.1-07-PLAN.md — dailybrief-doctor.sh D-19 INFORMATIONAL row + RUNBOOK/README docs + REQ-DEV-LOCAL-ENV traceability
+- [x] 107.1-07-PLAN.md — dailybrief-doctor.sh D-19 INFORMATIONAL row + RUNBOOK/README docs + REQ-DEV-LOCAL-ENV traceability
 
 ### Phase 999.1: Restore ubiquity entitlement for iCloud photo download (BACKLOG)
 
