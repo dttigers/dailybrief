@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Completed 107.2-01-PLAN.md
-last_updated: "2026-04-22T12:50:49.395Z"
+stopped_at: Completed 107.2-02-PLAN.md
+last_updated: "2026-04-22T13:00:56.155Z"
 last_activity: 2026-04-22
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 32
-  completed_plans: 29
-  percent: 91
+  completed_plans: 30
+  percent: 94
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 ## Current Position
 
 Phase: 107.2 (cross-machine-tailscale-dev-access-with-secure-bind-and-cors) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-22
 
@@ -74,6 +74,7 @@ Progress: [███████░░░] 71% (5/7 plans)
 | Phase 107.1 P06 | 2m 36s | 3 tasks | 1 files |
 | Phase 107.1 P07 | 4m 2s | 3 tasks | 4 files |
 | Phase 107.2 P01 | 4m 13s | 3 tasks | 3 files |
+| Phase 107.2 P02 | 5m 6s | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -129,6 +130,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 107.1]: Plan 107.1-06 — D-17/D-18 closed: vigil-core/.env is 6-key LOCAL-ONLY (localhost DATABASE_URL, 64-hex JWT_SECRET, dev-workspace Anthropic key sk-a...pAAA with $20/mo cap, blank POSTHOG_API_KEY, PORT=3001). Pre-rewrite backup vigil-core/.env.bak.20260421-184421 preserved (gitignored; user deletes after 24h stable). sync-anthropic-key.sh updated: plist sync block replaced with retirement notice (D-09 closed), --include-config-env opt-in added (default-off so local/prod key divergence is no longer treated as drift). No vigil-core/config.json exists — orchestrator 'clean config.json' instruction was moot; ~/.config/dailybrief/config.json remains canonical prod source (used by sync-anthropic-key.sh for Railway). Live preflight 4/4 PASS — Plan 05 Task 2 deferred dual-stream smoke now unblocked.
 - [Phase 107.1]: Plan 107.1-07 — D-19 closed: dailybrief-doctor.sh gained exit-code-neutral 'local vigil_dev DB' informational row with 3 branches (connected/unreachable/not-installed) each carrying actionable fix. RUNBOOK gained full Local Development section (first-time setup, daily loop, resync, reset, secret-drift policy amendment, preflight triage table, backup locations, Anthropic dev-key rotation). README gained concise Local Dev Quickstart. REQUIREMENTS.md gained REQ-DEV-LOCAL-ENV traceability row (13 → 14 total). Rule 2 auto-add: RUNBOOK expanded beyond plan's minimum 6 sections to include Known Issues cross-link + preflight triage + backups + key rotation per orchestrator critical_context 'practical first-person ops doc'. Live doctor row shows 'unreachable' on this iMac due to work_orders schema drift preventing migrations from applying — row behaves as designed; on a fully-migrated machine it reads 'connected (N users)'. Phase 107.1: 7/7 plans complete, ready for orchestrator verification.
 - [Phase 107.2]: [Phase 107.2] Plan 107.2-01 — D-B2 default literal 127.0.0.1 (not 'localhost') per RESEARCH Pitfall 1 macOS/Linux IPv6 quirk; D-D2 prod CORS FATAL guard inserted between JWT_SECRET guard and Hono app declaration (src/index.ts:64-72), mirrors the JWT guard pattern exactly; process.env.NODE_ENV (not Vite-only import.meta.env.DEV, Pitfall 2). Task 3 committed empty (chore 8e555d4) because vigil-core/.env is gitignored — preserves atomic-per-task audit trail. Live probes: dev boot → 'Vigil Core API running on 0.0.0.0:3001'; prod NODE_ENV=production with CORS_ORIGINS unset → exit 1 with exact FATAL string; prod with CORS_ORIGINS=https://app.vigilhub.io → boots normally at 127.0.0.1:3001 (VIGIL_BIND_HOST not set in prod-shape env = Railway default path).
+- [Phase 107.2]: [Phase 107.2] Plan 107.2-02 — Vite config function-form rewrite with loadEnv(mode, process.cwd(), ''); server.host: true binds 0.0.0.0 for Tailscale peers; /v1 proxy target env-driven via VITE_DEV_API_TARGET (default http://localhost:3001). VitePWA manifest preserved byte-for-byte (only +2 indent diff). Pitfall 4 CLOSED — VITE_API_BASE commented out in vigil-pwa/.env.local; client.ts:3 fallback now wins and proxy routes same-origin fetches. E2E smoke GREEN: curl http://127.0.0.1:5173/v1/health returned vigil-core's real health payload through the proxy. Rule 2 auto-add: .gitignore extended with .env.local.bak* patterns (existing .env.bak.* family didn't cover the variant). Pre-existing tsc TS6305 noise logged as deferred — 64 errors identical before and after edit, npm run build exits 0 compensates.
 
 ### Pending Todos
 
@@ -146,7 +148,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-22T12:50:49.388Z
-Stopped at: Completed 107.2-01-PLAN.md
+Last session: 2026-04-22T13:00:38.000Z
+Stopped at: Completed 107.2-02-PLAN.md
 Resume file: None
 Next action: `/gsd-plan-phase 103`
