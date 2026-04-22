@@ -4,6 +4,8 @@
 
 **In progress:** v3.5 Observability, G2 Resubmit & Capture Repair (started 2026-04-19) — fix broken photo capture, unblock G2 store approval, land PostHog analytics + error tracking, ship PWA login UI, persist Safari extension.
 
+**Phase 107.2 complete (2026-04-22):** Cross-machine Tailscale dev access — MacBook Pro browser → iMac's `npm run dev` stack via Vite proxy, without weakening prod. Env-gated VIGIL_BIND_HOST (default 127.0.0.1 safe), prod FATAL guard refuses to boot without CORS_ORIGINS, Vite `host: true` + `allowedHosts` + `/v1` proxy, preflight Check 5 surfaces bind + macOS firewall state. REQ-DEV-CROSS-MACHINE complete; 1 human UAT passed (cross-machine boot), 2 pending (firewall WARN branch, live Railway fail-closed observation).
+
 **Phase 105 complete (2026-04-19):** Server-side PostHog product events (`thought_created`, `photo_uploaded`, `triage_completed`, `brief_generated`, `chat_sent`), per-route `api_request` metrics middleware, and `/v1/me` `identifyUser` with email + createdAt. ANLY-02/03/04 code-verified; 4 PostHog Cloud dashboard checks pending human verification (tracked in 105-HUMAN-UAT.md).
 
 **Shipped:** v3.4 Multi-User Foundation & PWA Polish (2026-04-18) — 4 phases, 15 plans, 14/14 requirements satisfied, live on api.vigilhub.io with 5/5 go/no-go curls GREEN.
@@ -253,4 +255,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-19 — Phase 104 complete: PWA auth UI (email/password signup + login), sessionStorage JWT, PostHog browser error boundary, Vigil Account section in Settings. AUTH-06/AUTH-07/ANLY-01-browser shipped; 5/5 success criteria verified in browser.*
+*Last updated: 2026-04-22 — Phase 107.2 complete: cross-machine Tailscale dev access (REQ-DEV-CROSS-MACHINE). Env-gated VIGIL_BIND_HOST + prod CORS FATAL guard + Vite host:true/allowedHosts + /v1 proxy + preflight Check 5. Pushed to Railway; prod auto-deploy triggered with new CORS guard active.*
