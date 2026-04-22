@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: verifying
-stopped_at: Completed 107.3-03-PLAN.md
-last_updated: "2026-04-22T20:19:30Z"
+stopped_at: Completed 107.3-01-PLAN.md
+last_updated: "2026-04-22T20:28:26Z"
 last_activity: 2026-04-22
 progress:
   total_phases: 8
   completed_phases: 6
   total_plans: 34
-  completed_plans: 33
-  percent: 97
+  completed_plans: 34
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 ## Current Position
 
 Phase: 107.3
-Plan: 02, 03, 04 of 4 complete (install.sh awk + doctor three-way branch + verify --external)
-Status: In progress — Plan 01 (vigil-core Railway bind detection) still pending
-Last activity: 2026-04-22 — Completed 107.3-03-PLAN.md
+Plan: 01, 02, 03, 04 of 4 complete (vigil-core Railway bind + install.sh awk + doctor three-way branch + verify --external)
+Status: Phase complete — ready for orchestrator verification
+Last activity: 2026-04-22 — Completed 107.3-01-PLAN.md
 
-Progress: [████████░░] 75% (3/4 plans)
+Progress: [██████████] 100% (4/4 plans)
 
 ## Performance Metrics
 
@@ -79,6 +79,7 @@ Progress: [████████░░] 75% (3/4 plans)
 | Phase 107.3 P02 | 0m 57s | 1 tasks | 1 files |
 | Phase 107.3 P04 | 2m 11s | 1 tasks | 1 files |
 | Phase 107.3 P03 | 2m 25s | 1 tasks | 1 files |
+| Phase 107.3 P01 | 5m 3s | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 107.3]: [Phase 107.3] Plan 107.3-02 — Scripts/install.sh lines 28-32 swapped from 4-stage `security | grep | head | grep | tr` pipeline to single `awk 'match/substr/exit'` (RESEARCH Fix 2 Option B locked over Option A `|| true`). Root cause closed: under `set -euo pipefail`, grep's exit-1 on no-match propagated and aborted the script before the `[[ -z "$IDENTITY" ]]` remediation block at line 34 could fire — observed silent-exit on fresh MacBook Pro bootstrap 2026-04-22. awk is pipefail-immune on no-match AND does not mask upstream `security`-binary failures the way blanket `|| true` would (awk simply won't run; upstream exit propagates correctly). 4-line rationale comment inserted citing Phase 107.3 Fix 2 to prevent regression. Verified: stub-security no-cert → `IDENTITY=[]` + `REMEDIATION FIRED`; positive path on iMac → resolves `Developer ID Application: Jameson Morrill (5H57ADQS8G)`. macOS-native lack of GNU `timeout` worked around with inline bash block that runs only identity-resolution logic. Plan 03 (doctor stale-drift cleanup) unblocked.
 - [Phase 107.3]: [Phase 107.3] Plan 107.3-04 — Scripts/verify-phase-107.sh extended +26/-1 with `check_external_health` function + `run_external` runner + `--external` CLI mode; `--full|""` now runs static → runtime → external. RESEARCH Open Question 2 resolved: external probe kept separate from `--runtime` because --runtime (xcodebuild + SMAppService) needs no network while --external does — separating them keeps failure domains clean and lets Plan 107.3-01 invoke only `--external` post-Railway-redeploy without re-running Xcode. Pipefail-safe curl idiom: `HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 URL 2>/dev/null || echo "000")` — `|| echo` keeps the assignment successful when curl exits non-zero under set -euo pipefail (verified with https://127.0.0.1:1 probe). Live prod probe returned HTTP 200 PASS (exit 0). Default MODE line untouched (`MODE="${1:---static}"` preserved). Issue resolved during commit: pre-existing staged changes to Scripts/dailybrief-doctor.sh (sibling Fix 3 WIP) accidentally pulled into first commit — `git reset --soft HEAD~1` + `git restore --staged` + re-commit produced clean scoped commit `18054e3`. Plan 107.3-01 (vigil-core bind fix) now has its post-deploy verification gate; permanent 502-class regression guard installed in the verify suite.
 - [Phase 107.3]: [Phase 107.3] Plan 107.3-03 — Scripts/dailybrief-doctor.sh lines 113-126 replaced with three-way `if/elif/else` branch (present / retired / missing) closing the "doctor exits 1 on a healthy retired machine" paper-cut from fresh MacBook Pro bootstrap. Retirement signal is the in-repo presence-check `[[ -f "$REPO_DIR/.planning/phases/107.1-local-dev-environment-with-postgres-and-hot-reload-stack/107.1-daemon-retirement.md" ]]` — NOT env var, NOT external state (LOCKED by RESEARCH Fix 3 rationale: retirement record already lives in the repo from Phase 107.1-04, travels with clones, no host-specific config). Retired branch emits two-column `printf "%-38s | %s\n" "plist EnvironmentVariables" "retired Phase 107.1-04 (intentional)"` mirroring the D-13 local-DB informational row pattern (no MATCH column, no `DRIFT_COUNT` increment). Real-drift `else` branch preserved byte-for-byte so accidental plist deletion still fires `✗` (`marker-absent + plist-absent` remains the drift definition). Live iMac run: "Doctor: 0 drift found" exit 0 where pre-fix was non-zero. Parallel-agent noise during commit (sibling Plan 107.3-04 momentarily pulled + reset HEAD in reflog) did not affect scope — re-staged and committed `0005fb5` cleanly with 9+/1- delta. Phase 107.3: 3/4 plans done; only Plan 01 (vigil-core Railway bind detection) remains.
+- [Phase 107.3]: [Phase 107.3] Plan 107.3-01 — vigil-core/src/index.ts lines 180-197 now detect Railway via `const isRailway = !!process.env.RAILWAY_SERVICE_ID` (presence-only UUID check locked by RESEARCH over NODE_ENV user-convention and nonexistent `RAILWAY_ENVIRONMENT`) and set `hostname = process.env.VIGIL_BIND_HOST ?? (isRailway ? "0.0.0.0" : "127.0.0.1")`. Phase 107.2 security bias preserved (127.0.0.1 for all non-Railway envs); explicit VIGIL_BIND_HOST still wins. All 6 Task 1 verify checks PASS — tsc/build green after `npm install` restored partial node_modules (Rule 3 auto-fix, environmental only, no code change), three runtime simulations showed 127.0.0.1/0.0.0.0/192.168.1.1 bind flips correctly. Task 2 external probe PASS on first attempt 90s post-push: `bash Scripts/verify-phase-107.sh --external` exit 0, live /v1/health returned `{"status":"ok","timestamp":"2026-04-22T20:28:08.537Z","version":"0.1.0","database":"connected"}`. Phase 56 push-hook did NOT auto-push (9 commits local-ahead of origin when Task 2 started) — pushed explicitly; worth separate investigation whether hook is installed in this clone. Railway CLI unavailable locally so cannot confirm whether 2026-04-22 manual `VIGIL_BIND_HOST=0.0.0.0` Railway env-var override is still masking the code-level fix — per `safety.always_confirm_external_services=true` did NOT auto-unset; flagged in SUMMARY for user to audit via `railway variables | grep VIGIL_BIND_HOST` and pick belt-and-suspenders (keep) vs. code-only (unset + re-probe). Prod reachable either way. Phase 107.3: 4/4 plans done.
 
 ### Pending Todos
 
@@ -157,7 +159,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-22T20:19:30Z
-Stopped at: Completed 107.3-03-PLAN.md
+Last session: 2026-04-22T20:28:26Z
+Stopped at: Completed 107.3-01-PLAN.md — Phase 107.3 fully complete (4/4 plans)
 Resume file: None
-Next action: Execute Plan 107.3-01 (vigil-core Railway bind detection) — last remaining plan in Phase 107.3; post-deploy verification available via `bash Scripts/verify-phase-107.sh --external`
+Next action: Orchestrator verification of Phase 107.3; optional follow-up — audit Railway env vars for lingering manual VIGIL_BIND_HOST=0.0.0.0 override (requires railway CLI on a logged-in machine), see 107.3-01-SUMMARY.md "Issues Encountered"
