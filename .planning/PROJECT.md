@@ -2,34 +2,45 @@
 
 ## Current State
 
-**In progress:** v3.5 Observability, G2 Resubmit & Capture Repair (started 2026-04-19) — fix broken photo capture, unblock G2 store approval, land PostHog analytics + error tracking, ship PWA login UI, persist Safari extension.
+**In progress:** v3.6 Multi-User Completion, Auth UX & Safari Parity (started 2026-04-22) — close the v3.4 multi-user loop (per-user isolation + scheduler fan-out), complete auth UX (change-password, forgot-password, email verify), and bring Safari extension to Phase 94 quick-capture parity with Chrome.
 
-**Phase 107.2 complete (2026-04-22):** Cross-machine Tailscale dev access — MacBook Pro browser → iMac's `npm run dev` stack via Vite proxy, without weakening prod. Env-gated VIGIL_BIND_HOST (default 127.0.0.1 safe), prod FATAL guard refuses to boot without CORS_ORIGINS, Vite `host: true` + `allowedHosts` + `/v1` proxy, preflight Check 5 surfaces bind + macOS firewall state. REQ-DEV-CROSS-MACHINE complete; 1 human UAT passed (cross-machine boot), 2 pending (firewall WARN branch, live Railway fail-closed observation).
+**Paused:** v3.5 Observability, G2 Resubmit & Capture Repair — 34/34 plans complete but not shipped. Blocked only on G2 physical hardware UAT (device delivery date unknown). Phase 106-05 simulator-session `.ehpk` package + hardware retest carry forward; will close v3.5 when device arrives.
 
-**Phase 105 complete (2026-04-19):** Server-side PostHog product events (`thought_created`, `photo_uploaded`, `triage_completed`, `brief_generated`, `chat_sent`), per-route `api_request` metrics middleware, and `/v1/me` `identifyUser` with email + createdAt. ANLY-02/03/04 code-verified; 4 PostHog Cloud dashboard checks pending human verification (tracked in 105-HUMAN-UAT.md).
+**Phase 107.3 complete (2026-04-22):** Prod bind + install.sh + doctor cleanup — vigil-core Railway-aware bind via `RAILWAY_SERVICE_ID` (fixes 502 class of bug), install.sh awk-based identity resolution (pipefail-immune), dailybrief-doctor.sh three-way plist branch (retired/present/missing), verify-phase-107.sh `--external` live `api.vigilhub.io/v1/health` probe.
+
+**Phase 107.2 complete (2026-04-22):** Cross-machine Tailscale dev access — MacBook Pro browser → iMac's `npm run dev` stack via Vite proxy, without weakening prod. Env-gated VIGIL_BIND_HOST (default 127.0.0.1 safe), prod FATAL guard refuses to boot without CORS_ORIGINS, Vite `host: true` + `allowedHosts` + `/v1` proxy, preflight Check 5 surfaces bind + macOS firewall state.
 
 **Shipped:** v3.4 Multi-User Foundation & PWA Polish (2026-04-18) — 4 phases, 15 plans, 14/14 requirements satisfied, live on api.vigilhub.io with 5/5 go/no-go curls GREEN.
 
-## Current Milestone: v3.5 Observability, G2 Resubmit & Capture Repair
+## Current Milestone: v3.6 Multi-User Completion, Auth UX & Safari Parity
 
-**Goal:** Fix the capture pipeline, unblock G2 approval, and land analytics/error tracking so we stop debugging blind — plus close the multi-user loop with a real login UI.
+**Goal:** Close the v3.4 multi-user loop end-to-end (per-user isolation + scheduler fan-out), complete the auth UX flows (change password, forgot password, email verify), and bring the Safari extension up to Chrome's Phase 94 quick-capture feature parity.
 
 **Target features:**
-- Photo capture repair — folder watcher broken on iCloud path; manual uploads skipping triage
-- G2 store resubmit — fresh simulator screenshots, double-tap exit dialogue, brand-compliant WebView
-- PostHog analytics — error tracking, per-user product events, API metrics, traffic baseline
-- AUTH-06 PWA login/register UI — close the multi-user loop
-- EXT-01 Persistent Safari extension — survives restarts without re-enabling
 
-**Carry-forward (deferred to v3.6):**
-- W-01: `work_order_statuses` table userId scoping
-- W-02: GET /v1/brief/:date cross-user isolation test coverage
-- Per-user scheduler fan-out (schedulers still hard-scoped to seed user)
+*Multi-user completion (v3.4/v3.5 carry-forward):*
+- W-01: `work_order_statuses` userId column + migration + query scoping
+- W-02: cross-user isolation test for `GET /v1/brief/:date` PDF bytes path
+- SCHED-01: per-user scheduler fan-out — brief generation + prioritization cache iterate all users, not just seed
 
-**Still blocked:**
+*Auth UX completion:*
+- AUTH-09: change password from PWA profile (self-service, no email needed)
+- AUTH-10: forgot-password email link (introduces transactional email)
+- AUTH-11: verify email on signup (reuses AUTH-10 email provider)
+
+*Safari extension parity:*
+- EXT-02: Safari extension matches Chrome Phase 94 quick-capture — freeform text + URL checkbox + triage feedback + Cmd+Enter submit
+
+**New cross-cutting dependency:**
+- Transactional email provider (Resend / Postmark / SES / similar) — first outbound email in Vigil; provider choice falls out of research or the first auth phase plan
+
+**Paused from v3.5 (blocked on G2 hardware — delivery unknown):**
+- Phase 106-05: single simulator session to capture verified PNGs + package `.ehpk`
+- G2 physical device retest (tap-expand + swipe-out-of-list + resubmit UAT)
+
+**Still blocked (not in v3.6 scope):**
 - Phase 85 (iOS Shortcut) — Shortcuts.app bugs
 - Phase 80 (ServiceNow API work orders) — IT token
-- G2 hardware retest — device arriving ~2026-04-24
 
 ## What This Is
 
@@ -143,23 +154,32 @@ Capture every thought with zero friction and have the system organize it for you
 
 ### Active
 
-**v3.5 (in progress):**
-- [ ] Photo folder watcher repair — broken on iCloud path (CAP-01)
-- [ ] Manual photo upload triage — uploaded photos skipping AI categorization (CAP-02)
-- [ ] G2 resubmit: latest-simulator screenshots (G2-01)
-- [ ] G2 resubmit: double-tap exit dialogue per lifecycle docs (G2-02)
-- [ ] G2 resubmit: WebView brand-compliant content (G2-03)
-- [x] PostHog analytics integration — error tracking + product events + API metrics (ANLY-01 Phase 104, ANLY-02/03/04 code-verified Phase 105 2026-04-19; dashboard visibility pending human UAT)
-- [x] PWA login/register UI (AUTH-06 — validated in Phase 104 2026-04-19)
-- [x] PWA profile + change-password foundation (AUTH-07 — email display + sign out in Phase 104; full profile editing deferred)
-- [ ] Persistent Safari extension (EXT-01 — survives restarts without re-enabling)
-
-**Deferred to v3.6:**
-- [ ] `work_order_statuses` userId scoping (W-01 — tech debt from v3.4)
+**v3.6 (in progress):**
+- [ ] `work_order_statuses` userId scoping (W-01 — v3.4 tech debt)
 - [ ] GET /v1/brief/:date cross-user isolation test (W-02)
-- [ ] Per-user scheduler fan-out (schedulers hard-scoped to seed user with TODO markers)
-- [ ] iOS Shortcut quick-capture (IOS-01 — blocked by Shortcuts.app bugs)
-- [ ] ServiceNow API work order source (WO-01 — blocked on IT token)
+- [ ] Per-user scheduler fan-out (SCHED-01 — schedulers hard-scoped to seed user with TODO markers)
+- [ ] Change password from PWA profile (AUTH-09)
+- [ ] Forgot-password email link (AUTH-10 — introduces transactional email)
+- [ ] Verify email on signup (AUTH-11)
+- [ ] Safari extension Phase 94 quick-capture parity (EXT-02)
+
+**v3.5 paused (blocked on G2 hardware):**
+- [ ] G2 resubmit: latest-simulator screenshots (G2-01 — code side done, simulator session pending)
+- [ ] G2 resubmit: double-tap exit dialogue per lifecycle docs (G2-02 — code side done)
+- [ ] G2 resubmit: WebView brand-compliant content (G2-03 — code side done)
+- [x] Photo folder watcher repair — broken on iCloud path (CAP-01 — Phase 103)
+- [x] Manual photo upload triage — uploaded photos skipping AI categorization (CAP-02 — Phase 103)
+- [x] PostHog analytics integration — error tracking + product events + API metrics (ANLY-01 Phase 104, ANLY-02/03/04 Phase 105; dashboard visibility pending human UAT)
+- [x] PWA login/register UI (AUTH-06 — Phase 104)
+- [x] PWA profile + change-password foundation (AUTH-07 — email display + sign out; full profile editing now AUTH-09 in v3.6)
+- [x] Email display in PWA header (AUTH-08 — Phase 104)
+- [x] Persistent Safari extension survives restart (EXT-01 — Phase 107; ship-with-uat-pending on physical reboot)
+- [x] Local dev environment with Postgres + hot-reload stack (REQ-DEV-LOCAL-ENV — Phase 107.1)
+- [x] Cross-machine Tailscale dev access (REQ-DEV-CROSS-MACHINE — Phase 107.2)
+
+**Still blocked (future milestones):**
+- [ ] iOS Shortcut quick-capture (IOS-01 — Shortcuts.app bugs)
+- [ ] ServiceNow API work order source (WO-01 — IT token)
 
 ### Out of Scope
 
@@ -255,4 +275,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-22 — Phase 107.2 complete: cross-machine Tailscale dev access (REQ-DEV-CROSS-MACHINE). Env-gated VIGIL_BIND_HOST + prod CORS FATAL guard + Vite host:true/allowedHosts + /v1 proxy + preflight Check 5. Pushed to Railway; prod auto-deploy triggered with new CORS guard active.*
+*Last updated: 2026-04-22 — v3.6 Multi-User Completion, Auth UX & Safari Parity started. v3.5 paused at 34/34 plans complete, blocked only on G2 physical hardware UAT (device delivery unknown). v3.6 scope: W-01/W-02/SCHED-01 multi-user cleanup, AUTH-09/10/11 auth UX, EXT-02 Safari quick-capture parity.*
