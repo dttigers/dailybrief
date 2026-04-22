@@ -113,3 +113,102 @@ These endpoints are exempt from bearer authentication. Any expansion requires an
 
 - **Full-suite `npm test` produces a spurious EADDRINUSE file-level fail** on `src/integration/cross-user-isolation.test.ts` because it imports `src/index.ts` (which binds port 3001 at module load). The 11 test cases inside all pass; the failure is a post-hook uncaughtException from a subsequent test file's runner still holding the port. Workaround for hermetic validation: `npx tsx --test --test-force-exit src/integration/cross-user-isolation.test.ts`.
 - **`--test-force-exit` required** for any test importing `src/db/connection.js` — Drizzle's postgres pool singleton leaves the connection open; node refuses to exit without the flag.
+
+## Local Development (Phase 107.1)
+
+After Phase 107.1, local development no longer mutates prod. Identical setup on iMac and MacBook Pro (per D-03).
+
+### First-time setup per machine
+
+```bash
+# 1. Install Postgres 16 (pinned to match Railway prod — version 16.13)
+brew install postgresql@16
+brew services start postgresql@16   # one-time; sticky across reboots
+
+# 2. Run the bootstrap script from the repo root
+bash scripts/dev-setup.sh
+```
+
+The `dev-setup.sh` script:
+- Detects (but does NOT automate) the retired `com.jamesonmorrill.vigilcore` daemon — retirement happened in Phase 107.1 Plan 04. If it reappears, see [.planning/phases/107.1-local-dev-environment-with-postgres-and-hot-reload-stack/107.1-daemon-retirement.md](../.planning/phases/107.1-local-dev-environment-with-postgres-and-hot-reload-stack/107.1-daemon-retirement.md) for reversal / re-retire instructions.
+- Creates `vigil_dev` database if missing.
+- Runs Drizzle migrations (`npm --prefix vigil-core run db:migrate`).
+- Seeds fixtures (`npm --prefix vigil-core run seed:local` — 1 user, 1 vk_ key, 5 thoughts, 1 work order, 1 project).
+- Creates `vigil-core/.env` from `.env.example` (LOCAL-ONLY template) and `vigil-pwa/.env.local` with `VITE_API_BASE=http://localhost:3001`.
+- Prints manual follow-ups (Anthropic dev workspace + $20/mo cap — web UI only, no CLI).
+- Runs `scripts/preflight-check.sh` at the end to confirm health.
+
+### Daily workflow
+
+```bash
+# From repo root
+npm run dev
+```
+
+This runs:
+- `bash scripts/preflight-check.sh` (fails loud with exact fix commands on any precondition violation — daemon present, port 3001 occupied, Postgres stopped, DATABASE_URL not localhost)
+- `concurrently --kill-others` with streams `[core]` (blue) and `[pwa]` (magenta)
+
+Ctrl+C stops both servers.
+
+### Schema resync after `git pull`
+
+```bash
+git pull
+npm ci
+npm --prefix vigil-core run db:migrate   # applies any new Drizzle migrations locally
+```
+
+### Wipe + rebuild local DB
+
+```bash
+bash scripts/dev-reset.sh   # prompts for confirmation, then dropdb + createdb + migrate + seed
+```
+
+### Secret-drift policy (D-18 amendment)
+
+Before Phase 107.1, `ANTHROPIC_API_KEY` was expected to match across `config.json`, `~/.config/dailybrief/.env`, `~/Library/LaunchAgents/com.jamesonmorrill.vigilcore.plist`, and Railway. After Phase 107.1:
+
+- The plist is retired (Plan 04) — no longer a sync target.
+- `vigil-core/.env` ANTHROPIC_API_KEY is a DEV-workspace key with a $20/mo cap. It is EXPECTED to differ from the Railway prod key.
+- `scripts/sync-anthropic-key.sh` (Plan 06 amendment) no longer syncs the local .env by default — only Railway. Use `--include-config-env` to opt in to local sync when rotating the prod key on the Mac-app path.
+
+`scripts/dailybrief-doctor.sh` gained an INFORMATIONAL row for local `vigil_dev` DB reachability (D-19) that is exit-code-neutral.
+
+### What stays pointed at prod
+
+Phase 107.1 intentionally does NOT migrate these surfaces to localhost:
+- Mac apps (DailyBriefMonitor, DailyBrief CLI) → still `https://api.vigilhub.io/v1` (per [Sources/JarvisCore/Config/AppConfig.swift:28](../Sources/JarvisCore/Config/AppConfig.swift#L28))
+- Safari extension, G2 plugin → unchanged
+- Only **vigil-core + vigil-pwa** use the local stack (D-15)
+
+### Known Issues
+
+- **`work_orders` schema drift** (tracked in [.planning/phases/107.1-.../deferred-items.md](../.planning/phases/107.1-local-dev-environment-with-postgres-and-hot-reload-stack/deferred-items.md)): `vigil-core/src/db/schema.ts` defines `work_orders.notes`, `last_change_at`, `last_change_summary`, and `archived_at` but no migration in `drizzle/0000–0012` creates them. `seed:local` fails with Postgres `42703: column "notes" does not exist` at the work-order insert step on a freshly migrated DB. Fix: a follow-on plan runs `drizzle-kit generate` to author `drizzle/0013_work_orders_drift_repair.sql` (additive-only), then `npm run seed:local` completes end-to-end.
+
+### Preflight failure triage
+
+`scripts/preflight-check.sh` has 4 checks, each emitting the exact fix command on failure:
+
+| Check | Failure means | Fix |
+|-------|---------------|-----|
+| 1. daemon not registered | `com.jamesonmorrill.vigilcore` still loaded | `launchctl bootout gui/$UID/com.jamesonmorrill.vigilcore && rm ~/Library/LaunchAgents/com.jamesonmorrill.vigilcore.plist` (must run in Terminal.app, NOT SSH — Aqua session) |
+| 2. port 3001 free | another process is bound to :3001 | `lsof -iTCP:3001 -sTCP:LISTEN \| tail -n +2 \| awk '{print $2}' \| xargs kill` |
+| 3. postgresql@16 running | brew service not started, or not installed | `brew services start postgresql@16` — or `brew install postgresql@16` if formula absent |
+| 4. DATABASE_URL localhost | `vigil-core/.env` points at a Railway/proxy URL or is missing | `bash scripts/dev-setup.sh` (writes `.env` from template with timestamped backup); or edit `vigil-core/.env` directly — DATABASE_URL should be `postgresql://localhost:5432/vigil_dev` |
+
+There is NO bypass flag or env var. Fix the underlying issue, don't paper over it.
+
+### Where backups live
+
+- `vigil-core/.env.bak.YYYYMMDD-HHMMSS` — created by `scripts/dev-setup.sh` every time it runs over an existing `.env`. Gitignored via `.env.bak.*` + `*.env.bak.*` patterns. Safe to delete after ~24h of stable local dev.
+
+### Rotating the Anthropic dev-workspace key
+
+1. Anthropic Console → Settings → Workspaces → "Vigil Dev" workspace → API Keys → Create Key.
+2. Copy the new `sk-ant-...` key.
+3. Edit `vigil-core/.env` → replace the `ANTHROPIC_API_KEY=` line.
+4. Restart `npm run dev` (tsx watch picks up the new env on restart, not in-place).
+5. Revoke the old key in the Anthropic Console.
+
+Workspace spend cap lives at Workspace → Limits tab → Change Limit (default $20/mo for Vigil Dev).

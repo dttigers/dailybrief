@@ -60,6 +60,25 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 | Hosting | Railway (API + DB), Vercel (PWA) |
 | Auth | Bearer token (SHA-256 hashed, `vk_` prefix) |
 
+## Local Dev Quickstart (macOS)
+
+Local-only development (vigil-core + vigil-pwa) with no prod DB access required.
+
+```bash
+# One-time per machine
+brew install postgresql@16
+brew services start postgresql@16
+bash scripts/dev-setup.sh
+# Fill in vigil-core/.env — especially ANTHROPIC_API_KEY (see RUNBOOK → Local Development for the Anthropic dev workspace setup)
+
+# Daily
+npm run dev
+```
+
+See [vigil-core/RUNBOOK.md](vigil-core/RUNBOOK.md) → "Local Development" for the full workflow, daemon-retirement notes, and secret-drift policy updates. Dependencies: Homebrew, Node 20+, macOS 15+.
+
+Note: Mac apps, Safari extension, and the G2 plugin all continue to hit `api.vigilhub.io` — only `vigil-core` + `vigil-pwa` use the local stack (Phase 107.1 D-15).
+
 ## Setup
 
 ### Prerequisites
