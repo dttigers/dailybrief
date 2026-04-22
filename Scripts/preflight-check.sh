@@ -100,7 +100,12 @@ check_bind_and_firewall() {
   fi
 
   BIND_VALUE=$(grep -E '^VIGIL_BIND_HOST=' "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- || true)
-  BIND_VALUE="${BIND_VALUE// /}"   # strip whitespace
+  # Strip all ASCII whitespace (space/tab/CR/LF) — defends against CRLF-edited .env
+  # files where `\r` would otherwise leak into the comparison (e.g. "0.0.0.0\r").
+  BIND_VALUE="${BIND_VALUE//[$' \t\r\n']/}"
+  # Strip surrounding double or single quotes (dotenv-style `VIGIL_BIND_HOST="0.0.0.0"`).
+  BIND_VALUE="${BIND_VALUE#\"}"; BIND_VALUE="${BIND_VALUE%\"}"
+  BIND_VALUE="${BIND_VALUE#\'}"; BIND_VALUE="${BIND_VALUE%\'}"
 
   if [[ -z "$BIND_VALUE" ]] || [[ "$BIND_VALUE" == "127.0.0.1" ]] || [[ "$BIND_VALUE" == "localhost" ]]; then
     green "  PASS — vigil-core binds localhost only (cross-machine dev disabled)"
