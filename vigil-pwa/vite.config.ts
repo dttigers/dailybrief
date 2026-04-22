@@ -14,11 +14,22 @@ export default defineConfig(({ mode }) => {
   // vigil-core running in the same `npm run dev` concurrently stream.
   const apiTarget = env.VITE_DEV_API_TARGET ?? 'http://localhost:3001'
 
+  // Phase 107.2 hotfix — Vite 5+ DNS rebinding protection (server.allowedHosts)
+  // blocks any Host header not in the allowlist, even with host:true. MagicDNS
+  // hostnames like `jamesons-imac-2` get rejected by default. D-D1 already
+  // accepts Tailscale as the real perimeter (CORS='*' fallback), so the
+  // consistent default is `true` (permissive). Tighter scope via comma-separated
+  // VITE_ALLOWED_HOSTS in .env.local. Dev-only; Vite dev server never runs in prod.
+  const allowedHosts = env.VITE_ALLOWED_HOSTS
+    ? env.VITE_ALLOWED_HOSTS.split(',').map((h) => h.trim()).filter(Boolean)
+    : true
+
   return {
     server: {
       // D-E1 — bind 0.0.0.0 so Tailscale/LAN peers can reach :5173.
       // Safe in dev; Vite dev-server never runs in prod.
       host: true,
+      allowedHosts,
       proxy: {
         '/v1': {
           // D-C1 — proxy /v1/* to vigil-core. Browser sees same-origin traffic to :5173;
