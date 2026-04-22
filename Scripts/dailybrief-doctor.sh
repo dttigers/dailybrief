@@ -110,7 +110,10 @@ else
     DRIFT_COUNT=$((DRIFT_COUNT + 1))
 fi
 
-# 3. Plist EnvironmentVariables:ANTHROPIC_API_KEY
+# 3. Plist EnvironmentVariables:ANTHROPIC_API_KEY (three-way: present / retired / missing)
+# Phase 107.3 Fix 3: distinguish "retired by design" (Phase 107.1-04) from real drift.
+# Retirement marker presence-check uses the in-repo phase file — no external state.
+RETIREMENT_MARKER="$REPO_DIR/.planning/phases/107.1-local-dev-environment-with-postgres-and-hot-reload-stack/107.1-daemon-retirement.md"
 if [[ -f "$VIGILCORE_PLIST" ]]; then
     ANTHROPIC_PLIST=$(/usr/libexec/PlistBuddy -c "Print :EnvironmentVariables:ANTHROPIC_API_KEY" "$VIGILCORE_PLIST" 2>/dev/null || echo "")
     if [[ "$ANTHROPIC_PLIST" == "$ANTHROPIC_CANONICAL" ]]; then
@@ -120,7 +123,12 @@ if [[ -f "$VIGILCORE_PLIST" ]]; then
         DRIFT_COUNT=$((DRIFT_COUNT + 1))
     fi
     print_row "plist EnvironmentVariables" "$(prefix8 "$ANTHROPIC_PLIST")" "$(last_modified "$VIGILCORE_PLIST")" "$MATCH"
+elif [[ -f "$RETIREMENT_MARKER" ]]; then
+    # Plist absent AND retirement marker present → intentionally retired (Phase 107.1-04).
+    # Informational only — same pattern as D-13 local-DB row. Does NOT increment DRIFT_COUNT.
+    printf "%-38s | %s\n" "plist EnvironmentVariables" "retired Phase 107.1-04 (intentional)"
 else
+    # Plist absent AND no retirement record → unexpected absence, real drift.
     print_row "plist EnvironmentVariables" "(missing)" "(missing)" "✗"
     DRIFT_COUNT=$((DRIFT_COUNT + 1))
 fi
