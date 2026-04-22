@@ -1,20 +1,25 @@
 #!/bin/bash
 # Sync ANTHROPIC_API_KEY from ~/.config/dailybrief/config.json (the canonical
-# source of truth) into all the places that hold a duplicate copy:
+# PROD source of truth) into Railway (production vigil-core).
 #
-#   1. ~/.config/dailybrief/.env             (used by `npm run dev` for local vigil-core)
-#   2. LaunchAgent plist EnvironmentVariables (used by the LaunchAgent vigil-core process)
-#   3. Railway env var (production vigil-core)  — only if `railway` CLI is installed
-#                                                  and the cwd is linked to a project
+# Phase 107.1 D-18 change: local dev Anthropic key lives in vigil-core/.env
+# (sourced from a separate Anthropic dev workspace with $20/mo cap) and is
+# EXPECTED to differ from the prod Railway key. This script, by default,
+# does NOT touch local .env files — only Railway. Use --include-config-env
+# to also overwrite ~/.config/dailybrief/.env (rare — mostly used when
+# rotating the prod key on the Mac-app path).
 #
-# After updating each target, reloads the local LaunchAgent and (optionally)
-# triggers a Railway redeploy.
+# Targets:
+#   1. Railway env var (production vigil-core)                  — ALWAYS (unless --skip-railway)
+#   2. ~/.config/dailybrief/.env                                — ONLY with --include-config-env
 #
-# Run this whenever you rotate ai.claude_api_key in config.json.
+# Post-Phase-107.1: the launchd plist at ~/Library/LaunchAgents/com.jamesonmorrill.vigilcore.plist
+# is RETIRED (Plan 04). This script no longer writes to it.
 #
 # Flags:
-#   --skip-railway   Don't touch Railway even if the CLI is available
-#   --skip-launchagent  Don't reload the local LaunchAgent
+#   --skip-railway          Don't touch Railway even if the CLI is available
+#   --include-config-env    ALSO sync ~/.config/dailybrief/.env (off by default)
+#   --skip-launchagent      Accepted for backwards compat — now a no-op (plist was retired)
 
 set -euo pipefail
 
@@ -25,13 +30,14 @@ LABEL="com.jamesonmorrill.vigilcore"
 VIGIL_CORE_DIR="$(cd "$(dirname "$0")/.." && pwd)/vigil-core"
 
 SKIP_RAILWAY=0
-SKIP_LAUNCHAGENT=0
+INCLUDE_CONFIG_ENV=0
 for arg in "$@"; do
   case "$arg" in
-    --skip-railway) SKIP_RAILWAY=1 ;;
-    --skip-launchagent) SKIP_LAUNCHAGENT=1 ;;
+    --skip-railway)        SKIP_RAILWAY=1 ;;
+    --include-config-env)  INCLUDE_CONFIG_ENV=1 ;;
+    --skip-launchagent)    : ;; # accepted, no-op (Phase 107.1: plist retired)
     -h|--help)
-      sed -n '2,18p' "$0" | sed 's/^# \?//'
+      sed -n '2,22p' "$0" | sed 's/^# \?//'
       exit 0
       ;;
     *)
@@ -65,12 +71,18 @@ echo "source: ai.claude_api_key in $CONFIG_PATH (${KEY_PREFIX}…)"
 echo
 
 # ----------------------------------------------------------------------------
-# Step 2: Sync ~/.config/dailybrief/.env
+# Step 2 (Phase 107.1 D-18): Local config .env sync — OPT-IN ONLY
 # ----------------------------------------------------------------------------
+# Post-Phase-107.1 contract: local dev Anthropic key is SOURCED FROM A SEPARATE
+# Anthropic workspace ($20/mo cap) and lives in vigil-core/.env. The Mac-app
+# path's ~/.config/dailybrief/.env is historically synced with the prod key,
+# but we no longer overwrite it by default because it would re-introduce the
+# "local uses prod key" drift this phase eliminated.
 
-if [[ -f "$ENV_PATH" ]]; then
-  # Replace any existing ANTHROPIC_API_KEY line; preserve everything else.
-  /usr/bin/python3 - "$ENV_PATH" "$KEY" <<'PY'
+if [[ "$INCLUDE_CONFIG_ENV" -eq 1 ]]; then
+  if [[ -f "$ENV_PATH" ]]; then
+    # Replace any existing ANTHROPIC_API_KEY line; preserve everything else.
+    /usr/bin/python3 - "$ENV_PATH" "$KEY" <<'PY'
 import sys, pathlib
 path, key = sys.argv[1], sys.argv[2]
 p = pathlib.Path(path)
@@ -87,28 +99,24 @@ if not found:
     out.append(f"ANTHROPIC_API_KEY={key}")
 p.write_text("\n".join(out) + "\n")
 PY
-  echo "[1/3] synced .env             → $ENV_PATH"
+    echo "[1/2] synced .env             → $ENV_PATH (--include-config-env)"
+  else
+    echo "[1/2] skipped .env (not present at $ENV_PATH)"
+  fi
 else
-  echo "[1/3] skipped .env (not present at $ENV_PATH)"
+  echo "[1/2] skipped ~/.config/dailybrief/.env (Phase 107.1 D-18 — local dev key is EXPECTED to differ from prod)"
+  echo "      to force-sync anyway: ./scripts/sync-anthropic-key.sh --include-config-env"
 fi
 
 # ----------------------------------------------------------------------------
-# Step 3: Sync LaunchAgent plist + reload
+# Step 3 (Phase 107.1 D-09 retirement): LaunchAgent plist no longer exists
 # ----------------------------------------------------------------------------
-
+# The com.jamesonmorrill.vigilcore launchd daemon was retired in Phase 107.1
+# Plan 04. If someone resurrects it in a future phase, this block will need
+# to be re-enabled.
 if [[ -f "$PLIST_PATH" ]]; then
-  /usr/libexec/PlistBuddy -c "Set :EnvironmentVariables:ANTHROPIC_API_KEY $KEY" "$PLIST_PATH"
-  echo "[2/3] synced LaunchAgent plist → $PLIST_PATH"
-
-  if [[ "$SKIP_LAUNCHAGENT" -eq 0 ]]; then
-    launchctl unload "$PLIST_PATH" 2>/dev/null || true
-    launchctl load   "$PLIST_PATH"
-    echo "      reloaded $LABEL"
-  else
-    echo "      skipped reload (--skip-launchagent)"
-  fi
-else
-  echo "[2/3] skipped LaunchAgent plist (not present at $PLIST_PATH)"
+  echo "warning: plist at $PLIST_PATH exists but Phase 107.1 D-09 retired it."
+  echo "         This script is not syncing it. Re-enable this code block if the daemon is resurrected."
 fi
 
 # ----------------------------------------------------------------------------
@@ -116,21 +124,21 @@ fi
 # ----------------------------------------------------------------------------
 
 if [[ "$SKIP_RAILWAY" -eq 1 ]]; then
-  echo "[3/3] skipped Railway (--skip-railway)"
+  echo "[2/2] skipped Railway (--skip-railway)"
 elif ! command -v railway >/dev/null 2>&1; then
-  echo "[3/3] skipped Railway (railway CLI not installed — install via 'brew install railway')"
+  echo "[2/2] skipped Railway (railway CLI not installed — install via 'brew install railway')"
 elif [[ ! -d "$VIGIL_CORE_DIR" ]]; then
-  echo "[3/3] skipped Railway (vigil-core directory not found at $VIGIL_CORE_DIR)"
+  echo "[2/2] skipped Railway (vigil-core directory not found at $VIGIL_CORE_DIR)"
 else
   # railway commands need to run from a linked project directory.
   if (cd "$VIGIL_CORE_DIR" && railway status >/dev/null 2>&1); then
     (cd "$VIGIL_CORE_DIR" && railway variables --set "ANTHROPIC_API_KEY=$KEY" --skip-deploys >/dev/null)
-    echo "[3/3] synced Railway env var  → vigil-core service (production)"
+    echo "[2/2] synced Railway env var  → vigil-core service (production)"
     echo "      note: Railway will auto-redeploy on next push, OR you can"
     echo "      trigger a redeploy now with:"
     echo "        cd vigil-core && railway redeploy"
   else
-    echo "[3/3] skipped Railway ($VIGIL_CORE_DIR is not linked — run 'railway link' first)"
+    echo "[2/2] skipped Railway ($VIGIL_CORE_DIR is not linked — run 'railway link' first)"
   fi
 fi
 
