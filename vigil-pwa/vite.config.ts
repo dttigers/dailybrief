@@ -12,7 +12,10 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   // D-C2 — escape hatch for staging/integration targets. Default hits the local
   // vigil-core running in the same `npm run dev` concurrently stream.
-  const apiTarget = env.VITE_DEV_API_TARGET ?? 'http://localhost:3001'
+  // Logical-OR (not ??) so `VITE_DEV_API_TARGET=` (empty string) also falls through
+  // to the default — loadEnv() returns "" for key-present-but-empty, which would
+  // otherwise hand an empty target to the proxy and silently fail at request time.
+  const apiTarget = env.VITE_DEV_API_TARGET || 'http://localhost:3001'
 
   // Phase 107.2 hotfix — Vite 5+ DNS rebinding protection (server.allowedHosts)
   // blocks any Host header not in the allowlist, even with host:true. MagicDNS
