@@ -13,6 +13,8 @@ DerivedData/
 .env.*.local
 .env.bak.*
 *.env.bak.*
+.env.local.bak*
+*.env.local.bak*
 
 # IDE
 .idea/
