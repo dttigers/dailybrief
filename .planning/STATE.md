@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: verifying
-stopped_at: Completed 107.3-02-PLAN.md
-last_updated: "2026-04-22T20:17:19Z"
+stopped_at: Completed 107.3-03-PLAN.md
+last_updated: "2026-04-22T20:19:30Z"
 last_activity: 2026-04-22
 progress:
   total_phases: 8
   completed_phases: 6
-  total_plans: 33
-  completed_plans: 32
+  total_plans: 34
+  completed_plans: 33
   percent: 97
 ---
 
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 ## Current Position
 
 Phase: 107.3
-Plan: 02 of 3 complete (wave 1 done)
-Status: In progress — Plan 03 (doctor stale-drift cleanup) unblocked
-Last activity: 2026-04-22 — Completed 107.3-02-PLAN.md
+Plan: 02, 03, 04 of 4 complete (install.sh awk + doctor three-way branch + verify --external)
+Status: In progress — Plan 01 (vigil-core Railway bind detection) still pending
+Last activity: 2026-04-22 — Completed 107.3-03-PLAN.md
 
-Progress: [███████░░░] 71% (5/7 plans)
+Progress: [████████░░] 75% (3/4 plans)
 
 ## Performance Metrics
 
@@ -77,6 +77,8 @@ Progress: [███████░░░] 71% (5/7 plans)
 | Phase 107.2 P02 | 5m 6s | 2 tasks | 3 files |
 | Phase 107.2 P03 | 3m 9s | 1 tasks | 1 files |
 | Phase 107.3 P02 | 0m 57s | 1 tasks | 1 files |
+| Phase 107.3 P04 | 2m 11s | 1 tasks | 1 files |
+| Phase 107.3 P03 | 2m 25s | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -136,6 +138,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 107.2]: [Phase 107.2] Plan 107.2-02 — Vite config function-form rewrite with loadEnv(mode, process.cwd(), ''); server.host: true binds 0.0.0.0 for Tailscale peers; /v1 proxy target env-driven via VITE_DEV_API_TARGET (default http://localhost:3001). VitePWA manifest preserved byte-for-byte (only +2 indent diff). Pitfall 4 CLOSED — VITE_API_BASE commented out in vigil-pwa/.env.local; client.ts:3 fallback now wins and proxy routes same-origin fetches. E2E smoke GREEN: curl http://127.0.0.1:5173/v1/health returned vigil-core's real health payload through the proxy. Rule 2 auto-add: .gitignore extended with .env.local.bak* patterns (existing .env.bak.* family didn't cover the variant). Pre-existing tsc TS6305 noise logged as deferred — 64 errors identical before and after edit, npm run build exits 0 compensates.
 - [Phase 107.2]: [Phase 107.2] Plan 107.2-03 — Check 5 lands in Scripts/preflight-check.sh (+54/-3) with 5-branch logic: unset/localhost→PASS, unsupported→FAIL, 0.0.0.0+fw-off→PASS, 0.0.0.0+fw-on→yellow() WARN (D-B3 non-fatal), binary-missing→PASS. Firewall probe uses grep-pattern on socketfilterfw --getglobalstate stdout (NOT exit-code, NOT defaults-read — both verified broken on macOS 15). Rule 1 auto-fix: rephrased DO-NOT-USE comment to sidestep plan's own acceptance-regex self-collision (same pattern as Phase 107.1 Plan 01/03). Rule 2 auto-add: inserted reference-form comment so both literal-text and variable-form probe-regex acceptance checks resolve. Live run on iMac (firewall off): Check 5 PASS exit 0. Negative VIGIL_BIND_HOST=foo: Check 5 FAIL exit 1. Negative unset: Check 5 localhost-PASS exit 0. Firewall-on manual test deferred (requires sudo state mutation).
 - [Phase 107.3]: [Phase 107.3] Plan 107.3-02 — Scripts/install.sh lines 28-32 swapped from 4-stage `security | grep | head | grep | tr` pipeline to single `awk 'match/substr/exit'` (RESEARCH Fix 2 Option B locked over Option A `|| true`). Root cause closed: under `set -euo pipefail`, grep's exit-1 on no-match propagated and aborted the script before the `[[ -z "$IDENTITY" ]]` remediation block at line 34 could fire — observed silent-exit on fresh MacBook Pro bootstrap 2026-04-22. awk is pipefail-immune on no-match AND does not mask upstream `security`-binary failures the way blanket `|| true` would (awk simply won't run; upstream exit propagates correctly). 4-line rationale comment inserted citing Phase 107.3 Fix 2 to prevent regression. Verified: stub-security no-cert → `IDENTITY=[]` + `REMEDIATION FIRED`; positive path on iMac → resolves `Developer ID Application: Jameson Morrill (5H57ADQS8G)`. macOS-native lack of GNU `timeout` worked around with inline bash block that runs only identity-resolution logic. Plan 03 (doctor stale-drift cleanup) unblocked.
+- [Phase 107.3]: [Phase 107.3] Plan 107.3-04 — Scripts/verify-phase-107.sh extended +26/-1 with `check_external_health` function + `run_external` runner + `--external` CLI mode; `--full|""` now runs static → runtime → external. RESEARCH Open Question 2 resolved: external probe kept separate from `--runtime` because --runtime (xcodebuild + SMAppService) needs no network while --external does — separating them keeps failure domains clean and lets Plan 107.3-01 invoke only `--external` post-Railway-redeploy without re-running Xcode. Pipefail-safe curl idiom: `HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 URL 2>/dev/null || echo "000")` — `|| echo` keeps the assignment successful when curl exits non-zero under set -euo pipefail (verified with https://127.0.0.1:1 probe). Live prod probe returned HTTP 200 PASS (exit 0). Default MODE line untouched (`MODE="${1:---static}"` preserved). Issue resolved during commit: pre-existing staged changes to Scripts/dailybrief-doctor.sh (sibling Fix 3 WIP) accidentally pulled into first commit — `git reset --soft HEAD~1` + `git restore --staged` + re-commit produced clean scoped commit `18054e3`. Plan 107.3-01 (vigil-core bind fix) now has its post-deploy verification gate; permanent 502-class regression guard installed in the verify suite.
 
 ### Pending Todos
 
@@ -153,7 +156,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-22T20:17:19Z
-Stopped at: Completed 107.3-02-PLAN.md
+Last session: 2026-04-22T20:18:45Z
+Stopped at: Completed 107.3-04-PLAN.md
 Resume file: None
-Next action: Execute Plan 107.3-03 (doctor stale-drift cleanup) — unblocked by this plan
+Next action: Execute Plan 107.3-01 (vigil-core bind fix) — now has --external post-deploy verification target
