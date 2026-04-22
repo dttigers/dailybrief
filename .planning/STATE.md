@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: verifying
-stopped_at: Completed 107.1-07-PLAN.md — Phase 107.1 is now 7/7 plans complete; ready for orchestrator-level verification
-last_updated: "2026-04-22T01:36:24.879Z"
+stopped_at: Phase 107.2 context gathered
+last_updated: "2026-04-22T01:54:34.052Z"
 last_activity: 2026-04-22
 progress:
-  total_phases: 7
+  total_phases: 8
   completed_phases: 5
   total_plans: 29
   completed_plans: 28
@@ -79,6 +79,7 @@ Progress: [███████░░░] 71% (5/7 plans)
 ### Roadmap Evolution
 
 - Phase 107.1 inserted after Phase 107: local dev environment with Postgres and hot-reload stack (URGENT)
+- Phase 107.2 inserted after Phase 107: cross-machine Tailscale dev access with secure bind and CORS (URGENT)
 
 ### Decisions
 
@@ -143,7 +144,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-22T00:56:51.848Z
-Stopped at: Completed 107.1-07-PLAN.md — Phase 107.1 is now 7/7 plans complete; ready for orchestrator-level verification
-Resume file: None
+Last session: 2026-04-22T01:54:34.035Z
+Stopped at: Phase 107.2 context gathered
+Resume file: .planning/phases/107.2-cross-machine-tailscale-dev-access-with-secure-bind-and-cors/107.2-CONTEXT.md
 Next action: `/gsd-plan-phase 103`
