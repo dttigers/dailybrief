@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
 status: executing
-stopped_at: Completed 107.1-03-PLAN.md
-last_updated: "2026-04-21T23:58:22.929Z"
-last_activity: 2026-04-21
+stopped_at: Completed 107.1-05-PLAN.md (Task 2 live smoke deferred to Plan 06+07 per user path A)
+last_updated: "2026-04-22T00:06:45.593Z"
+last_activity: 2026-04-22
 progress:
   total_phases: 7
   completed_phases: 4
   total_plans: 29
-  completed_plans: 25
-  percent: 86
+  completed_plans: 26
+  percent: 90
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-04-19)
 ## Current Position
 
 Phase: 107.1 (local-dev-environment-with-postgres-and-hot-reload-stack) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
-Last activity: 2026-04-21
+Last activity: 2026-04-22
 
-Progress: [████████░░] 80% (4/5 plans)
+Progress: [███████░░░] 71% (5/7 plans)
 
 ## Performance Metrics
 
@@ -70,6 +70,7 @@ Progress: [████████░░] 80% (4/5 plans)
 | Phase 107.1 P02 | 5m 1s | 2 tasks | 2 files |
 | Phase 107.1 P04 | ~8m | 1 tasks | 1 files |
 | Phase 107.1 P03 | 3m 36s | 2 tasks | 4 files |
+| Phase 107.1 P05 | ~7 min | 1 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -120,6 +121,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 107.1]: Plan 107.1-02 — seed-local.ts lands idempotent via onConflictDoNothing for unique-constrained cols (users.email, cloudKitRecordID, caseNumber) and count-guard for projects + api_keys (vk_ preservation > rotation). tsx --env-file=.env required for DATABASE_URL visibility per RESEARCH Pattern 6. Live end-to-end verification blocked by pre-existing schema-drift on work_orders (missing notes/archived_at/last_change_at/last_change_summary columns never migrated from schema.ts to drizzle/) — logged to deferred-items.md for follow-on plan; Plan 03 dev-setup.sh will hit the same wall until a 0013_work_orders_drift_repair migration is authored.
 - [Phase 107.1]: Plan 107.1-04 — Preserved plist XML to 107.1-daemon-retirement.md BEFORE bootout (T-LOCAL-6 reversibility gate). ANTHROPIC_API_KEY redacted inside preserved XML; restore path is Anthropic console, not VCS resurrection. Both machines retired in one session (iMac local, MacBook Pro over SSH at 192.168.1.136). RESEARCH Pitfall 2 (Aqua bootout over SSH) did NOT reproduce on macOS 15.x/gui-501 with a live UID session. Corrected stale memory: reference_macbook_pro.md said daemon was unloaded but live probe showed it was running (PID 740).
 - [Phase 107.1]: Plan 107.1-03 — three local-dev shell scripts land (preflight-check.sh 4-check fail-loud doctor; dev-setup.sh idempotent bootstrap with T-LOCAL-2 timestamped .env backup, Aqua-daemon detect-only, VITE_API_BASE not VITE_API_URL; dev-reset.sh y/N confirmed dropdb+rebuild). Rule 1 auto-fix: removed literal 'VITE_API_URL' from comment — plan's own acceptance regex self-collides same as Plan 01's 'Railway proxy'. Rule 2 auto-add: .env.bak.* + *.env.bak.* added to .gitignore so dev-setup.sh's timestamped backups never pollute git status. Live preflight-check.sh smoke passed Checks 1-3, fired loud on Check 4 against the still-Railway vigil-core/.env (Plan 06 owns rewrite). T-LOCAL-2 backup verified byte-for-byte via SHA1 match.
+- [Phase 107.1]: [Phase 107.1] Plan 107.1-05 — thin-orchestrator root package.json (11 lines, no workspaces) + concurrently@9.2.1 locked via package-lock.json + vigil-core dev script upgraded to tsx --env-file=.env watch (RESEARCH finding #1 / Pitfall 1 closed before Plan 06 repoints .env). Task 2 live dual-stream smoke DEFERRED to Plan 06 first dev session + Plan 07 verify-phase-107.1.sh D4 test per user path A — running the smoke today would either fail at preflight Check 4 (Plan 06 hasn't rewritten .env yet) or require bypassing preflight (violates T-LOCAL-3). All 14 Task 1 static acceptance checks PASS live; preflight-gate live observation confirms Checks 1-3 PASS, Check 4 fails loud on Railway URL as expected pre-Plan-06 (fail-closed gate working as designed).
 
 ### Pending Todos
 
@@ -137,7 +139,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-21T23:58:22.923Z
-Stopped at: Completed 107.1-03-PLAN.md
+Last session: 2026-04-22T00:06:34.058Z
+Stopped at: Completed 107.1-05-PLAN.md (Task 2 live smoke deferred to Plan 06+07 per user path A)
 Resume file: None
 Next action: `/gsd-plan-phase 103`
