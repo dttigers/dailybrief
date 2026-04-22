@@ -61,6 +61,16 @@ if (!process.env["JWT_SECRET"] || (process.env["JWT_SECRET"] as string).length <
   process.exit(1);
 }
 
+// Phase 107.2 D-D2 — prod CORS fail-closed guard.
+// If a production build ever loses CORS_ORIGINS (env misconfiguration), the existing
+// `origin: corsOrigins ?? "*"` fallback at line ~74 would quietly ship wildcard CORS
+// to Railway. Refuse to boot instead. Modeled on the JWT_SECRET guard above.
+// Dev is unaffected: NODE_ENV is 'development' (or unset) under tsx/npm run dev.
+if (process.env.NODE_ENV === "production" && !process.env.CORS_ORIGINS) {
+  console.error("FATAL: CORS_ORIGINS must be set in production — refusing to boot with wildcard CORS");
+  process.exit(1);
+}
+
 export const app = new Hono();
 
 // CORS middleware — must run before auth so preflight OPTIONS requests are not rejected
@@ -168,9 +178,15 @@ app.onError((err, c) => {
 });
 
 const port = Number(process.env.PORT) || 3001;
+// Phase 107.2 D-B1/D-B2 — env-gated bind hostname. Default 127.0.0.1 (safe:
+// localhost-only). Local dev .env sets VIGIL_BIND_HOST=0.0.0.0 to expose on
+// Tailscale/LAN. Railway prod leaves VIGIL_BIND_HOST unset → defaults to
+// 127.0.0.1 behind Railway's proxy. Literal IPv4 (not 'localhost') avoids
+// the macOS/Linux IPv6 resolution quirk documented in Pitfall 1.
+const hostname = process.env.VIGIL_BIND_HOST ?? "127.0.0.1";
 
-serve({ fetch: app.fetch, port }, () => {
-  console.log(`Vigil Core API running on port ${port}`);
+serve({ fetch: app.fetch, port, hostname }, () => {
+  console.log(`Vigil Core API running on ${hostname}:${port}`);
 });
 
 // ── Generate scheduler (Phase 86) ──────────────────────────────────────────
