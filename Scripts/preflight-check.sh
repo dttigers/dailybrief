@@ -11,9 +11,10 @@ PG_BIN="/usr/local/opt/postgresql@16/bin"
 ENV_FILE="$REPO_ROOT/vigil-core/.env"
 
 FAIL=0
-red()   { printf '\033[31m%s\033[0m\n' "$*"; }
-green() { printf '\033[32m%s\033[0m\n' "$*"; }
-info()  { printf '[preflight] %s\n' "$*"; }
+red()    { printf '\033[31m%s\033[0m\n' "$*"; }
+green()  { printf '\033[32m%s\033[0m\n' "$*"; }
+yellow() { printf '\033[33m%s\033[0m\n' "$*"; }
+info()   { printf '[preflight] %s\n' "$*"; }
 
 check_daemon_gone() {
   info "Check 1: com.jamesonmorrill.vigilcore daemon not registered"
@@ -89,10 +90,60 @@ check_env_localhost() {
   fi
 }
 
+check_bind_and_firewall() {
+  info "Check 5: VIGIL_BIND_HOST sanity (and macOS firewall state if exposed)"
+
+  if [[ ! -f "$ENV_FILE" ]]; then
+    # Check 4 already failed; don't duplicate noise.
+    yellow "  SKIP — $ENV_FILE missing (see Check 4 failure above)"
+    return
+  fi
+
+  BIND_VALUE=$(grep -E '^VIGIL_BIND_HOST=' "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- || true)
+  BIND_VALUE="${BIND_VALUE// /}"   # strip whitespace
+
+  if [[ -z "$BIND_VALUE" ]] || [[ "$BIND_VALUE" == "127.0.0.1" ]] || [[ "$BIND_VALUE" == "localhost" ]]; then
+    green "  PASS — vigil-core binds localhost only (cross-machine dev disabled)"
+    return
+  fi
+
+  if [[ "$BIND_VALUE" != "0.0.0.0" ]]; then
+    # Anything else is a typo / unsupported value — fail loud per existing Phase 107.1 Plan 03 culture.
+    red "  FAIL — VIGIL_BIND_HOST='$BIND_VALUE' is not a supported value."
+    red "  Fix: set VIGIL_BIND_HOST=0.0.0.0 (cross-machine) or remove the line (localhost default)"
+    FAIL=1
+    return
+  fi
+
+  # 0.0.0.0 path — probe macOS Application Firewall state.
+  # Pitfall 3: socketfilterfw --getglobalstate ALWAYS exits 0 regardless of state.
+  # Reference probe form: socketfilterfw --getglobalstate 2>/dev/null | grep -q 'disabled'
+  # MUST grep the output; the legacy `defaults read ...alf globalstate` approach is UNRELIABLE
+  # on macOS 15 (returns "does not exist", verified live 2026-04-21) — do not reintroduce it.
+  FW_BIN="/usr/libexec/ApplicationFirewall/socketfilterfw"
+  if [[ ! -x "$FW_BIN" ]]; then
+    # Not macOS, or unusual install — informational only.
+    green "  PASS — 0.0.0.0 bind; socketfilterfw not found (assumed non-macOS)"
+    return
+  fi
+
+  if "$FW_BIN" --getglobalstate 2>/dev/null | grep -q 'disabled'; then
+    green "  PASS — 0.0.0.0 bind (macOS Application Firewall off — Tailscale peers can reach :3001 and :5173)"
+  else
+    yellow "  WARN — 0.0.0.0 bind with macOS Application Firewall ENABLED."
+    yellow "    If the laptop browser cannot load http://jamesons-imac-2:5173, allow node.js:"
+    yellow "      System Settings -> Network -> Firewall -> Options -> + Add -> /usr/local/bin/node (or nvm path)"
+    yellow "    OR turn off the firewall for dev (trusted Tailscale-only machine):"
+    yellow "      sudo $FW_BIN --setglobalstate off"
+    yellow "    This is a WARN, not a FAIL — preflight continues."
+  fi
+}
+
 check_daemon_gone
 check_port_free
 check_postgres_running
 check_env_localhost
+check_bind_and_firewall
 
 if [[ "$FAIL" -ne 0 ]]; then
   red ""
