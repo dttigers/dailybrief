@@ -464,6 +464,35 @@ Plans:
 
 Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
+### Phase 107.3: prod bind default + install.sh silent-fail + doctor stale-drift cleanup (INSERTED)
+
+**Goal:** Close three paper-cuts surfaced during a fresh MacBook Pro cross-machine bootstrap on 2026-04-22, so the next new-machine setup doesn't repeat them.
+
+**Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
+**Depends on:** Phase 107.2 (the bind-host bug originated there)
+**Plans:** 4 plans
+
+Plans:
+- [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
+- [ ] 107.3-02-PLAN.md — install.sh awk identity-resolution (pipefail-immune)
+- [ ] 107.3-03-PLAN.md — doctor three-way branch: retired vs present vs missing plist
+- [ ] 107.3-04-PLAN.md — verify-phase-107.sh --external mode (live prod /v1/health probe)
+
+**Details:**
+
+1. **vigil-core prod bind default is wrong** — [vigil-core/src/index.ts:186](../../vigil-core/src/index.ts#L186) defaults `VIGIL_BIND_HOST` to `127.0.0.1`. Comment at [vigil-core/src/index.ts:183-184](../../vigil-core/src/index.ts#L183-L184) incorrectly claims "Railway prod leaves VIGIL_BIND_HOST unset → defaults to 127.0.0.1 behind Railway's proxy." Railway's proxy cannot reach a container bound to loopback — container bound to 127.0.0.1 caused full 502 "Application failed to respond" on api.vigilhub.io (confirmed 2026-04-22, fixed by manually setting `VIGIL_BIND_HOST=0.0.0.0` in Railway env). Phase 107.2-01's local "prod probe" booted green because it ran `NODE_ENV=production` on localhost and never tested proxy reachability. Fix options:
+   - Flip default to `0.0.0.0` and require opt-in to `127.0.0.1` for dev (inverts the security bias — needs thought)
+   - Detect Railway via `RAILWAY_ENVIRONMENT` env var and force `0.0.0.0` when present
+   - Add an **external** HTTP probe against `https://api.vigilhub.io/v1/health` to Phase 107.2's verify harness so this class of bug can't ship quietly again
+
+2. **Scripts/install.sh silent-fails when Developer ID cert is missing** — the identity-resolution pipeline at [Scripts/install.sh:28-32](../../Scripts/install.sh#L28-L32) uses `security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | grep -o '...' | tr -d '"'`. With `set -euo pipefail`, if grep finds no match, the whole pipeline exits non-zero and the script aborts **before** reaching the `if [[ -z "$IDENTITY" ]]` branch that prints the remediation message. Observed symptom on MacBook Pro: script prints only `=== DailyBrief Installer ===` then exits silently. Fix: capture with `|| true`, or restructure the guard so the error message actually fires.
+
+3. **scripts/dailybrief-doctor.sh flags stale drift for retired daemon plist** — the doctor reports `plist EnvironmentVariables | (missing) | ✗` for `com.jamesonmorrill.vigilcore.plist`'s `ANTHROPIC_API_KEY`. But Phase 107.1-04 retired that plist **by design** on both machines. The ✗ is drift against a file that intentionally no longer exists. Fix: either drop the plist row, or demote to informational-only (like the local-DB row) with branch logic that detects the retired state.
+
+**Context:** All three discovered during a normal cross-machine bootstrap flow (pulled 957 commits from 2026-04-08 Phase 57 state to current). They're real paper-cuts for anyone setting up a fresh machine — including future-self.
+
+---
+
 ### Phase 107.2: cross-machine Tailscale dev access with secure bind and CORS (INSERTED)
 
 **Goal:** Make the iMac's local dev stack (vigil-core :3001 + Vite :5173) reachable from the MacBook Pro over Tailscale — thin-client model, single source of truth, without weakening prod. Prod refuses to boot without CORS_ORIGINS; dev opt-in via VIGIL_BIND_HOST; preflight Check 5 surfaces the bind+firewall state.

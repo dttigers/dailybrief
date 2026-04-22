@@ -83,6 +83,7 @@ Progress: [███████░░░] 71% (5/7 plans)
 
 - Phase 107.1 inserted after Phase 107: local dev environment with Postgres and hot-reload stack (URGENT)
 - Phase 107.2 inserted after Phase 107: cross-machine Tailscale dev access with secure bind and CORS (URGENT)
+- Phase 107.3 inserted after Phase 107 (2026-04-22): prod bind default + install.sh silent-fail + doctor stale-drift cleanup — three paper-cuts surfaced during fresh MacBook Pro bootstrap; 107.2 prod bind caused live api.vigilhub.io 502 outage, fixed via Railway `VIGIL_BIND_HOST=0.0.0.0` env var
 
 ### Decisions
 
