@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.5
 milestone_name: Observability, G2 Resubmit & Capture Repair
-status: verifying
-stopped_at: Phase 107.2 context gathered
-last_updated: "2026-04-22T01:54:34.052Z"
+status: executing
+stopped_at: Completed 107.2-01-PLAN.md
+last_updated: "2026-04-22T12:50:49.395Z"
 last_activity: 2026-04-22
 progress:
   total_phases: 8
   completed_phases: 5
-  total_plans: 29
-  completed_plans: 28
-  percent: 97
+  total_plans: 32
+  completed_plans: 29
+  percent: 91
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-19)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 107.1 — local-dev-environment-with-postgres-and-hot-reload-stack
+**Current focus:** Phase 107.2 — cross-machine-tailscale-dev-access-with-secure-bind-and-cors
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 107.2 (cross-machine-tailscale-dev-access-with-secure-bind-and-cors) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-04-22
 
 Progress: [███████░░░] 71% (5/7 plans)
@@ -73,6 +73,7 @@ Progress: [███████░░░] 71% (5/7 plans)
 | Phase 107.1 P05 | ~7 min | 1 tasks | 4 files |
 | Phase 107.1 P06 | 2m 36s | 3 tasks | 1 files |
 | Phase 107.1 P07 | 4m 2s | 3 tasks | 4 files |
+| Phase 107.2 P01 | 4m 13s | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -127,6 +128,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 107.1]: [Phase 107.1] Plan 107.1-05 — thin-orchestrator root package.json (11 lines, no workspaces) + concurrently@9.2.1 locked via package-lock.json + vigil-core dev script upgraded to tsx --env-file=.env watch (RESEARCH finding #1 / Pitfall 1 closed before Plan 06 repoints .env). Task 2 live dual-stream smoke DEFERRED to Plan 06 first dev session + Plan 07 verify-phase-107.1.sh D4 test per user path A — running the smoke today would either fail at preflight Check 4 (Plan 06 hasn't rewritten .env yet) or require bypassing preflight (violates T-LOCAL-3). All 14 Task 1 static acceptance checks PASS live; preflight-gate live observation confirms Checks 1-3 PASS, Check 4 fails loud on Railway URL as expected pre-Plan-06 (fail-closed gate working as designed).
 - [Phase 107.1]: Plan 107.1-06 — D-17/D-18 closed: vigil-core/.env is 6-key LOCAL-ONLY (localhost DATABASE_URL, 64-hex JWT_SECRET, dev-workspace Anthropic key sk-a...pAAA with $20/mo cap, blank POSTHOG_API_KEY, PORT=3001). Pre-rewrite backup vigil-core/.env.bak.20260421-184421 preserved (gitignored; user deletes after 24h stable). sync-anthropic-key.sh updated: plist sync block replaced with retirement notice (D-09 closed), --include-config-env opt-in added (default-off so local/prod key divergence is no longer treated as drift). No vigil-core/config.json exists — orchestrator 'clean config.json' instruction was moot; ~/.config/dailybrief/config.json remains canonical prod source (used by sync-anthropic-key.sh for Railway). Live preflight 4/4 PASS — Plan 05 Task 2 deferred dual-stream smoke now unblocked.
 - [Phase 107.1]: Plan 107.1-07 — D-19 closed: dailybrief-doctor.sh gained exit-code-neutral 'local vigil_dev DB' informational row with 3 branches (connected/unreachable/not-installed) each carrying actionable fix. RUNBOOK gained full Local Development section (first-time setup, daily loop, resync, reset, secret-drift policy amendment, preflight triage table, backup locations, Anthropic dev-key rotation). README gained concise Local Dev Quickstart. REQUIREMENTS.md gained REQ-DEV-LOCAL-ENV traceability row (13 → 14 total). Rule 2 auto-add: RUNBOOK expanded beyond plan's minimum 6 sections to include Known Issues cross-link + preflight triage + backups + key rotation per orchestrator critical_context 'practical first-person ops doc'. Live doctor row shows 'unreachable' on this iMac due to work_orders schema drift preventing migrations from applying — row behaves as designed; on a fully-migrated machine it reads 'connected (N users)'. Phase 107.1: 7/7 plans complete, ready for orchestrator verification.
+- [Phase 107.2]: [Phase 107.2] Plan 107.2-01 — D-B2 default literal 127.0.0.1 (not 'localhost') per RESEARCH Pitfall 1 macOS/Linux IPv6 quirk; D-D2 prod CORS FATAL guard inserted between JWT_SECRET guard and Hono app declaration (src/index.ts:64-72), mirrors the JWT guard pattern exactly; process.env.NODE_ENV (not Vite-only import.meta.env.DEV, Pitfall 2). Task 3 committed empty (chore 8e555d4) because vigil-core/.env is gitignored — preserves atomic-per-task audit trail. Live probes: dev boot → 'Vigil Core API running on 0.0.0.0:3001'; prod NODE_ENV=production with CORS_ORIGINS unset → exit 1 with exact FATAL string; prod with CORS_ORIGINS=https://app.vigilhub.io → boots normally at 127.0.0.1:3001 (VIGIL_BIND_HOST not set in prod-shape env = Railway default path).
 
 ### Pending Todos
 
@@ -144,7 +146,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-04-22T01:54:34.035Z
-Stopped at: Phase 107.2 context gathered
-Resume file: .planning/phases/107.2-cross-machine-tailscale-dev-access-with-secure-bind-and-cors/107.2-CONTEXT.md
+Last session: 2026-04-22T12:50:49.388Z
+Stopped at: Completed 107.2-01-PLAN.md
+Resume file: None
 Next action: `/gsd-plan-phase 103`

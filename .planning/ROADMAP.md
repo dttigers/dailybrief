@@ -464,6 +464,16 @@ Plans:
 
 Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
+### Phase 107.2: cross-machine Tailscale dev access with secure bind and CORS (INSERTED)
+
+**Goal:** [Urgent work - to be planned]
+**Requirements**: TBD
+**Depends on:** Phase 107
+**Plans:** 1/3 plans executed
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 107.2 to break down)
+
 ### Phase 107.1: local dev environment with Postgres and hot-reload stack (INSERTED)
 
 **Goal:** Local Postgres + one-command dev orchestrator for vigil-core + vigil-pwa, with daemon retired and prod secrets off the dev disk — so `npm run dev` at repo root no longer mutates Railway.
