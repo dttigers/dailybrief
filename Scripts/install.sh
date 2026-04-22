@@ -25,11 +25,14 @@ echo ""
 # (which would silently reset TCC permissions on every rebuild, the exact
 # failure Phase 58 is fixing).
 # ========================================================================
+# Phase 107.3 Fix 2: pipefail-immune Developer ID resolution. awk returns exit 0
+# even when no match is found (grep returns 1 on no-match, which pipefail would
+# propagate and abort the script before the [[ -z "$IDENTITY" ]] remediation
+# block below could fire). awk prints the identity WITHOUT surrounding quotes.
 IDENTITY=$(security find-identity -v -p codesigning \
-           | grep "Developer ID Application" \
-           | head -1 \
-           | grep -o '"Developer ID Application: [^"]*"' \
-           | tr -d '"')
+           | awk 'match($0, /"Developer ID Application: [^"]*"/) {
+               s=substr($0, RSTART+1, RLENGTH-2); print s; exit
+             }')
 
 if [[ -z "$IDENTITY" ]]; then
     echo "ERROR: No Developer ID Application certificate found in login keychain." >&2
