@@ -88,12 +88,19 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // 1. Upsert seed user (Pitfall 6 — user must exist before api_key FK is satisfied)
+  // 1. Upsert seed user (Pitfall 6 — user must exist before api_key FK is satisfied).
+  // onConflictDoUpdate overwrites migrate-102-seed.ts's PLACEHOLDER_HASH (which always
+  // fails verify()) with a real argon2 hash of SEED_PASSWORD. Without this the login
+  // flow silently breaks on every fresh local DB because migrate-102 seeds the user
+  // row BEFORE seed-local gets a chance to set a real password.
   const passwordHash = await argon2Hash(SEED_PASSWORD);
   await db
     .insert(users)
     .values({ email: SEED_EMAIL, passwordHash })
-    .onConflictDoNothing({ target: users.email });
+    .onConflictDoUpdate({
+      target: users.email,
+      set: { passwordHash },
+    });
 
   const [seedUser] = await db
     .select()
