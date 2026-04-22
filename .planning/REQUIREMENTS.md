@@ -45,6 +45,12 @@ Safari extension disables on every Mac restart — breaking daily URL capture wo
 
 - [x] **EXT-01**: Safari extension remains enabled after a Mac reboot without the user manually re-enabling it in Safari settings
 
+### Developer Environment (Infra hygiene — v3.5 late addition)
+
+Phase 107.1 added because every local edit was silently mutating Railway prod. Not a user-facing requirement but gates every future phase's development velocity.
+
+- [x] **REQ-DEV-LOCAL-ENV**: Local development for vigil-core + vigil-pwa runs against a LOCAL Postgres instance with LOCAL secrets — no prod DATABASE_URL or prod ANTHROPIC_API_KEY on the dev disk. Unified `npm run dev` at repo root boots both servers with pre-flight safety check. Setup is a one-command bootstrap (`bash scripts/dev-setup.sh`). Documented once in RUNBOOK.md.
+
 ## Deferred to v3.6
 
 Tracked but not in the v3.5 roadmap.
@@ -102,12 +108,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | G2-02 | Phase 106 | Complete |
 | G2-03 | Phase 106 | Complete |
 | EXT-01 | Phase 107 | Complete |
+| REQ-DEV-LOCAL-ENV | Phase 107.1 | Complete |
 
 **Coverage:**
-- v3.5 requirements: 13 total
-- Mapped to phases: 13 ✓
+- v3.5 requirements: 13 user-facing + 1 infra hygiene (REQ-DEV-LOCAL-ENV) = 14 total
+- Mapped to phases: 14 ✓
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-19*
-*Last updated: 2026-04-19 — traceability completed by roadmapper*
+*Last updated: 2026-04-21 — REQ-DEV-LOCAL-ENV added for Phase 107.1 infra hygiene*
