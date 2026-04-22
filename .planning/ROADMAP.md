@@ -466,13 +466,15 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 ### Phase 107.2: cross-machine Tailscale dev access with secure bind and CORS (INSERTED)
 
-**Goal:** [Urgent work - to be planned]
-**Requirements**: TBD
+**Goal:** Make the iMac's local dev stack (vigil-core :3001 + Vite :5173) reachable from the MacBook Pro over Tailscale — thin-client model, single source of truth, without weakening prod. Prod refuses to boot without CORS_ORIGINS; dev opt-in via VIGIL_BIND_HOST; preflight Check 5 surfaces the bind+firewall state.
+**Requirements**: REQ-DEV-CROSS-MACHINE
 **Depends on:** Phase 107
 **Plans:** 3/3 plans complete
 
 Plans:
-- [x] TBD (run /gsd-plan-phase 107.2 to break down) (completed 2026-04-22)
+- [x] 107.2-01: env-gated bind hostname + prod CORS FATAL guard (completed 2026-04-22)
+- [x] 107.2-02: Vite proxy rewrite with loadEnv + host:true + Pitfall 4 closure (completed 2026-04-22)
+- [x] 107.2-03: preflight Check 5 — VIGIL_BIND_HOST + macOS firewall state (completed 2026-04-22)
 
 ### Phase 107.1: local dev environment with Postgres and hot-reload stack (INSERTED)
 

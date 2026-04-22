@@ -50,6 +50,7 @@ Safari extension disables on every Mac restart — breaking daily URL capture wo
 Phase 107.1 added because every local edit was silently mutating Railway prod. Not a user-facing requirement but gates every future phase's development velocity.
 
 - [x] **REQ-DEV-LOCAL-ENV**: Local development for vigil-core + vigil-pwa runs against a LOCAL Postgres instance with LOCAL secrets — no prod DATABASE_URL or prod ANTHROPIC_API_KEY on the dev disk. Unified `npm run dev` at repo root boots both servers with pre-flight safety check. Setup is a one-command bootstrap (`bash scripts/dev-setup.sh`). Documented once in RUNBOOK.md.
+- [x] **REQ-DEV-CROSS-MACHINE**: Local development is reachable from a second machine on the same Tailscale tailnet without weakening production. A MacBook Pro browser pointed at `http://jamesons-imac-2:5173` loads the Vigil PWA served by the iMac's `npm run dev`, and `/v1/*` calls proxy server-side through Vite to vigil-core on the iMac — no second DB, no second vigil-core process. Prod stays safe: vigil-core defaults to `127.0.0.1` bind unless `VIGIL_BIND_HOST` is set, and refuses to boot in production without `CORS_ORIGINS`. Preflight Check 5 surfaces the dev bind state + macOS firewall state before `npm run dev` starts.
 
 ## Deferred to v3.6
 
@@ -109,12 +110,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | G2-03 | Phase 106 | Complete |
 | EXT-01 | Phase 107 | Complete |
 | REQ-DEV-LOCAL-ENV | Phase 107.1 | Complete |
+| REQ-DEV-CROSS-MACHINE | Phase 107.2 | Complete |
 
 **Coverage:**
-- v3.5 requirements: 13 user-facing + 1 infra hygiene (REQ-DEV-LOCAL-ENV) = 14 total
-- Mapped to phases: 14 ✓
+- v3.5 requirements: 13 user-facing + 2 infra hygiene (REQ-DEV-LOCAL-ENV, REQ-DEV-CROSS-MACHINE) = 15 total
+- Mapped to phases: 15 ✓
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-04-19*
-*Last updated: 2026-04-21 — REQ-DEV-LOCAL-ENV added for Phase 107.1 infra hygiene*
+*Last updated: 2026-04-22 — REQ-DEV-CROSS-MACHINE added for Phase 107.2 Tailscale thin-client dev*
