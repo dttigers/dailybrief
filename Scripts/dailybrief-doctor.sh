@@ -223,6 +223,20 @@ else
     printf "%-38s | %s\n" "Developer ID Application cert" "MISSING — run: security import /path/cert.p12 -k ~/Library/Keychains/login.keychain-db"
 fi
 
+# Local vigil_dev DB reachability (Phase 107.1 D-19) — INFORMATIONAL, does NOT affect exit code.
+# Mirrors the existing vigil-core /v1/health row pattern: connection probe + actionable fix on failure.
+PG_BIN_107_1="/usr/local/opt/postgresql@16/bin"
+if [[ -x "$PG_BIN_107_1/psql" ]]; then
+    DB_STATUS=$("$PG_BIN_107_1/psql" -h localhost -d vigil_dev -c "SELECT COUNT(*) FROM users" -t -q 2>/dev/null | tr -d ' \n' || echo "unreachable")
+    if [[ "$DB_STATUS" =~ ^[0-9]+$ ]]; then
+        printf "%-38s | %s\n" "local vigil_dev DB" "connected (${DB_STATUS} users)"
+    else
+        printf "%-38s | %s\n" "local vigil_dev DB" "unreachable — run: bash scripts/dev-setup.sh"
+    fi
+else
+    printf "%-38s | %s\n" "local vigil_dev DB" "postgresql@16 not installed — run: brew install postgresql@16"
+fi
+
 echo ""
 
 # ----------------------------------------------------------------------------
