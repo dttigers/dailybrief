@@ -146,6 +146,21 @@ check_smappservice_runtime() {
   fi
 }
 
+check_external_health() {
+  info "Check N: External prod health probe — https://api.vigilhub.io/v1/health"
+  local HTTP_STATUS
+  HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 10 \
+    "https://api.vigilhub.io/v1/health" 2>/dev/null || echo "000")
+  if [[ "$HTTP_STATUS" == "200" ]]; then
+    green "  PASS — api.vigilhub.io/v1/health returned HTTP 200"
+  else
+    red "  FAIL — api.vigilhub.io/v1/health returned HTTP $HTTP_STATUS"
+    red "         Check VIGIL_BIND_HOST in Railway dashboard — must be 0.0.0.0"
+    red "         (This probe catches the 502 class that a local NODE_ENV=production probe misses.)"
+    FAIL=1
+  fi
+}
+
 run_static() {
   check_lsuielement
   check_deployment_target
@@ -159,6 +174,10 @@ run_runtime() {
   check_smappservice_runtime
 }
 
+run_external() {
+  check_external_health
+}
+
 case "$MODE" in
   --static)
     run_static
@@ -166,12 +185,18 @@ case "$MODE" in
   --runtime)
     run_runtime
     ;;
+  --external)
+    # Phase 107.3 Fix 4: live Railway prod reachability. Separate mode because it
+    # requires a deployed build and an outbound network; --static/--runtime do not.
+    run_external
+    ;;
   --full|"")
     run_static
     run_runtime
+    run_external
     ;;
   *)
-    echo "usage: $0 [--static|--runtime|--full]" >&2
+    echo "usage: $0 [--static|--runtime|--external|--full]" >&2
     exit 2
     ;;
 esac
