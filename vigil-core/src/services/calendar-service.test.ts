@@ -322,7 +322,7 @@ test("CAL-03-calendar-list: fetchCalendarList returns CalendarInfo[] with id, na
   };
 
   const service = createCalendarService(deps);
-  const result = await service.fetchCalendarList() as {
+  const result = await service.fetchCalendarList(1) as {
     status: "ok";
     calendars: Array<{ id: string; name: string; color: string | null; primary: boolean }>;
   };
@@ -341,4 +341,29 @@ test("CAL-03-calendar-list: fetchCalendarList returns CalendarInfo[] with id, na
   assert.equal(work.id, "work@company.com");
   assert.equal(work.name, "Work");
   assert.equal(work.primary, false);
+});
+
+test("CAL-SCHED-01-userid-required: fetchTodaysEvents requires a userId parameter (Phase 109 D-11)", async () => {
+  // Signature-level test: fetchTodaysEvents/fetchCalendarList take a userId.
+  // The internal seed-user resolver was removed; callers must supply userId.
+  // This is a forcing-function test — if the signature regresses to zero-arg,
+  // TypeScript compile fails before this test can run.
+  const deps: CalendarServiceDeps = {
+    dbSelectFn: async () => ({ ...VALID_TOKEN_ROW, calendarSelections: ["primary@gmail.com"] }),
+    dbUpdateFn: async () => {},
+    fetchFn: async () =>
+      new Response(JSON.stringify(CALENDAR_EVENTS_RESPONSE), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }),
+  };
+
+  const service = createCalendarService(deps);
+
+  // Verify the runtime signature accepts a numeric userId without throwing.
+  const eventsResult = await service.fetchTodaysEvents(42);
+  assert.equal(eventsResult.status, "ok");
+
+  const listResult = await service.fetchCalendarList(42);
+  assert.equal(listResult.status, "ok");
 });
