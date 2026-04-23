@@ -1,94 +1,84 @@
-# Requirements: Vigil v3.5 — Observability, G2 Resubmit & Capture Repair
+# Requirements: Vigil v3.6 — Multi-User Completion, Auth UX & Safari Parity
 
-**Defined:** 2026-04-19
+**Defined:** 2026-04-23
 **Core Value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
 
-**Milestone Goal:** Fix the capture pipeline, unblock G2 store approval, and land analytics/error tracking so we stop debugging blind — plus close the multi-user loop with a real login UI.
+**Milestone Goal:** Close the v3.4 multi-user loop end-to-end (per-user isolation + scheduler fan-out), complete the auth UX flows (change password, forgot password, email verify), and bring the Safari extension up to Chrome's Phase 94 quick-capture feature parity.
 
-## v3.5 Requirements
+## v3.6 Requirements
 
-### Capture Repair
+### Multi-User Completion
 
-Capture pipeline regressions discovered in daily use after v3.4 shipped. Both bugs silently drop thoughts — highest-priority fix.
+Tech debt carried forward from v3.4. The multi-user foundation shipped, but three correctness gaps remain: one table never got userId scoping, the cross-user isolation test missed a PDF-bytes path, and the scheduler is still hardcoded to a single seed user. These close the loop.
 
-- [x] **CAP-01**: HEIC photos dropped into the Mac watched folder (iCloud path) are triaged instead of silently ignored
-- [x] **CAP-02**: Photos uploaded through the API are AI-triaged automatically — the category field is populated on the returned thought, not left null
+- [ ] **W-01**: A user can set / view / change work order status without leaking to or colliding with any other user — the `work_order_statuses` table gains a `user_id` FK, every query scopes by the authenticated user, and upserts cannot cross users via `caseNumber` collision
+- [ ] **W-02**: The cross-user isolation test suite asserts that user A cannot retrieve user B's brief PDF bytes via `GET /v1/brief/:date` (extends the existing briefs-list isolation test)
+- [ ] **SCHED-01**: The scheduler generates a daily brief + prioritization cache for every registered user, not just the seed user — one user's failure (API error, stale data) does not block other users, and the prioritization filesystem cache is keyed by userId so no cross-user data leaks across scheduler runs
 
-### G2 Store Resubmit
+### Auth UX
 
-Rejection feedback from Even Realities store review must be fully addressed before resubmit — partial fixes trigger full re-rejection cycle. All three items ship together.
+Closes the auth surface. AUTH-06/07/08 shipped login/register/email-display in Phase 104. This milestone adds self-service password management and the forgot-password flow — which introduces Vigil's first outbound email.
 
-- [x] **G2-01**: Plugin screenshots regenerated at correct resolution using the current Even simulator (v0.6.2+)
-- [x] **G2-02**: Double-tap gesture on home screen triggers a visible exit confirmation dialogue with a short timeout window, per Even Hub page-lifecycle guidelines
-- [x] **G2-03**: WebView content renders brand-compliant UI (colors, typography, spacing) following the Even Realities public software design guidelines — never blank
+- [ ] **AUTH-09**: An authenticated user can change their password from the PWA profile page — re-entering their current password, setting a new one, and remaining logged in on success; confirmation email sent to the same address as an anti-hijack signal
+- [ ] **AUTH-10**: An unauthenticated user who forgot their password can request a reset link from the login page, always sees "check your inbox" regardless of whether the email exists (enumeration-safe), receives an opaque single-use token via email (expires 1 hour), and can set a new password by clicking the link — after reset, old JWTs from before the reset no longer authenticate
+- [ ] **AUTH-11**: A newly-registered user receives a verification email at signup, sees a non-blocking banner in the PWA until verified, can click the verification link to clear the banner (token expires 24 hours, single-use), and can resend the verification email (rate-limited 3 / hour) — users who registered before AUTH-11 shipped are grandfathered as verified on deploy
 
-### Analytics & Observability
+### Transactional Email Infrastructure
 
-PostHog Cloud integration (free tier sufficient at current scale). Unified vendor for error tracking + product events + API metrics.
+Prerequisite for AUTH-10 + AUTH-11. First outbound email in Vigil. Called out as its own requirement because DNS + domain verification + deliverability hygiene is independent of code and has to happen before any auth email flow can be tested against a real inbox.
 
-- [x] **ANLY-01**: Server-side and PWA exceptions are automatically captured in PostHog (stack traces, request context, userId when available)
-- [x] **ANLY-02**: Product events emit for the capture funnel (thought captured, triage completed, brief generated, photo uploaded, chat sent) with userId attached
-- [x] **ANLY-03**: API middleware records per-route metrics (status code, latency, route name) for every authenticated request
-- [x] **ANLY-04**: Authenticated users are identified to PostHog via `posthog.identify(userId)` on login so all events attribute to the right person
+- [ ] **EMAIL-01**: Vigil can send authenticated, deliverable email from `noreply@vigilhub.io` via Resend — DKIM + SPF + DMARC records live on `vigilhub.io` DNS, domain verified in Resend dashboard, link tracking disabled per-send to avoid Apple Mail pre-fetch consuming single-use tokens, `RESEND_API_KEY` on Railway, email-service module in `vigil-core/src/services/` mirrors the dep-injected pattern used by other services
 
-### Authentication UI
+### Safari Extension Parity
 
-Closes the v3.4 multi-user loop. Backend endpoints (`POST /v1/auth/register`, `POST /v1/auth/login`, JWT) already shipped.
+Safari extension still ships the Phase 84 one-click URL capture only. Chrome got the Phase 94 quick-capture upgrade (freeform text + URL + triage feedback + Cmd+Enter) and daily use shows the gap. Safari-specific UX port of existing Chrome popup code.
 
-- [x] **AUTH-06**: PWA visitor can sign up with email + password and is logged in on success (JWT stored, subsequent API calls authenticated)
-- [x] **AUTH-07**: PWA visitor can log in with existing email + password and is redirected to the dashboard
-- [x] **AUTH-08**: PWA shows authenticated user's email in the header/settings area via a `GET /v1/me` endpoint
+- [ ] **EXT-02**: The Safari extension popup offers Chrome Phase 94 quick-capture parity — freeform text input (pre-filled empty, not with URL), optional "Include page URL" checkbox, Cmd+Enter keyboard shortcut to submit, and a triage feedback badge displaying the AI-assigned category after submit — verified working on physical Mac hardware
 
-### Extension Persistence
+## Deferred to v3.7
 
-Safari extension disables on every Mac restart — breaking daily URL capture workflow.
+Tracked but not in the v3.6 roadmap.
 
-- [x] **EXT-01**: Safari extension remains enabled after a Mac reboot without the user manually re-enabling it in Safari settings
+### Auth surface
 
-### Developer Environment (Infra hygiene — v3.5 late addition)
+- **AUTH-12**: User can change their registered email address (triggers AUTH-11 re-verification on the new address)
+- **AUTH-13**: "Sign out all other sessions" button on profile page — requires a JWT revocation list / `token_version` counter (stateless JWTs today)
+- **AUTH-14**: Passkey / WebAuthn authentication option
 
-Phase 107.1 added because every local edit was silently mutating Railway prod. Not a user-facing requirement but gates every future phase's development velocity.
+### Extensions
 
-- [x] **REQ-DEV-LOCAL-ENV**: Local development for vigil-core + vigil-pwa runs against a LOCAL Postgres instance with LOCAL secrets — no prod DATABASE_URL or prod ANTHROPIC_API_KEY on the dev disk. Unified `npm run dev` at repo root boots both servers with pre-flight safety check. Setup is a one-command bootstrap (`bash scripts/dev-setup.sh`). Documented once in RUNBOOK.md.
-- [x] **REQ-DEV-CROSS-MACHINE**: Local development is reachable from a second machine on the same Tailscale tailnet without weakening production. A MacBook Pro browser pointed at `http://jamesons-imac-2:5173` loads the Vigil PWA served by the iMac's `npm run dev`, and `/v1/*` calls proxy server-side through Vite to vigil-core on the iMac — no second DB, no second vigil-core process. Prod stays safe: vigil-core defaults to `127.0.0.1` bind unless `VIGIL_BIND_HOST` is set, and refuses to boot in production without `CORS_ORIGINS`. Preflight Check 5 surfaces the dev bind state + macOS firewall state before `npm run dev` starts.
+- **EXT-03**: Chrome + Safari extensions migrate off hardcoded `vk_` bearer to PWA JWT — requires a refresh-token endpoint + extension sign-in UI (scope creep for v3.6)
 
-## Deferred to v3.6
+### v3.5 hardware gate
 
-Tracked but not in the v3.5 roadmap.
+- **G2-HW-01**: Phase 106-05 single simulator session + `.ehpk` package — unblocks v3.5 ship (pending device delivery, unknown date)
+- **G2-HW-02**: Physical Even G2 hardware retest of plugin UX (tap-expand, swipe-out-of-list, resubmit UAT)
 
-### Authentication
-
-- **AUTH-09**: User can change password from PWA profile page
-- **AUTH-10**: User can request forgot-password email link
-- **AUTH-11**: User can verify email address after signup
-
-### Multi-user tech debt
-
-- **W-01**: `work_order_statuses` table gains userId column with migration
-- **W-02**: Cross-user isolation test covers `GET /v1/brief/:date` PDF bytes path
-- **SCHED-01**: Scheduler fans out per-user (brief generation, prioritization cache) instead of hard-scoping to seed user
-
-### Blocked
+### Still blocked
 
 - **IOS-01**: iOS Shortcut quick-capture — blocked by Shortcuts.app bugs
 - **WO-01**: ServiceNow API work order source — blocked on IT token
 
 ## Out of Scope
 
-Explicitly excluded from v3.5 with reasoning.
+Explicitly excluded from v3.6 with reasoning.
 
 | Feature | Reason |
 |---------|--------|
-| PostHog self-hosting | Cloud free tier covers 1M events + 100k exceptions/month; self-hosting adds ops burden without benefit at current scale |
-| Sentry integration | PostHog exception autocapture covers all error tracking; two vendors would be redundant |
-| PostHog feature flags | No rollout decisions needed in v3.5; defer to when the need is real |
-| PostHog session recording | Privacy risk on a personal-thoughts/therapy app; defer until allowlist/blocklist strategy is designed |
-| Mac Swift PostHog SDK | Server-side posthog-node captures Mac-originated events by userId; Swift SDK adds a 3rd integration with little marginal value |
-| Refresh token rotation | v3.4 stateless JWT is fine; rotation adds complexity without a current threat model |
-| Passkeys / magic link auth | Email + password is sufficient baseline; passkeys are a nice-to-have, not a v3.5 blocker |
-| Safari App Store submission | Scope of submission process (provisioning, App Review) is its own milestone; Login-Item persistence is the pragmatic v3.5 fix |
-| G2 hardware physical retest | Device arrives ~2026-04-24 mid-milestone; simulator-verified submission is the critical path, hardware testing adds confidence but does not gate resubmit |
-| Non-iCloud folder watcher rewrite | Existing DispatchSource path works for local folders; don't break what isn't broken while fixing iCloud |
+| Migrate off argon2id + HS256 JWT to Lucia / Auth.js / better-auth | Research (STACK.md) estimates the migration cost vastly exceeds adding 2 endpoints + 5 columns; current stack is working and will keep working |
+| Self-hosted SMTP (Postfix, etc.) | Resend free tier covers the volume indefinitely; self-hosting adds deliverability ops burden without benefit at current scale |
+| Postmark or AWS SES as email provider | Postmark's 100/month free tier exhausts in a week of testing; SES requires 4 env vars + IAM setup — both fail the solo-founder ops constraint |
+| Auto-login after password reset | OWASP explicit recommendation against — user should re-authenticate manually with new password |
+| Auto-login after email verify | Embedding JWT in URL / auto-issuing session on verify click is a CVE pattern (referrer leak); user is already logged in from registration anyway |
+| JWT revocation list / token_version counter | Needed to invalidate arbitrary sessions on demand, but v3.6 only needs to invalidate JWTs issued before a password reset — solved with a cheaper `password_changed_at` gate |
+| "Sign out all other sessions" UI | Requires infrastructure from AUTH-13; deferred to v3.7 |
+| Email change flow (AUTH-12) | Orthogonal to forgot-password; deferred to v3.7 along with AUTH-11 re-verify |
+| Password strength meter | Argon2id with no explicit rules is fine; adding a strength meter is scope creep |
+| Confirm-password field on change | CXL data: 56% conversion hit; use show/hide toggle instead |
+| Chrome / Safari extension JWT migration | Extensions stay on `vk_` bearer in v3.6; extension JWT requires refresh-token endpoint + sign-in UI (deferred to v3.7 as EXT-03) |
+| Safari photo upload from page context | Not Phase 94 scope; Chrome doesn't have it either — deferred until users actually ask |
+| `webextension-polyfill` for cross-browser compat | Safari MV3 supports `chrome.*` namespace directly; polyfill adds dep for zero benefit |
+| Non-iCloud folder watcher rewrite | v3.5 Phase 103 fixed iCloud path; existing DispatchSource path for local folders stays untouched |
 
 ## Traceability
 
@@ -96,27 +86,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CAP-01 | Phase 103 | Complete |
-| CAP-02 | Phase 103 | Complete |
-| ANLY-01 | Phase 103 + Phase 104 | Complete |
-| AUTH-08 | Phase 103 | Complete |
-| AUTH-06 | Phase 104 | Complete |
-| AUTH-07 | Phase 104 | Complete |
-| ANLY-02 | Phase 105 | Complete |
-| ANLY-03 | Phase 105 | Complete |
-| ANLY-04 | Phase 105 | Complete |
-| G2-01 | Phase 106 | Complete |
-| G2-02 | Phase 106 | Complete |
-| G2-03 | Phase 106 | Complete |
-| EXT-01 | Phase 107 | Complete |
-| REQ-DEV-LOCAL-ENV | Phase 107.1 | Complete |
-| REQ-DEV-CROSS-MACHINE | Phase 107.2 | Complete |
-
-**Coverage:**
-- v3.5 requirements: 13 user-facing + 2 infra hygiene (REQ-DEV-LOCAL-ENV, REQ-DEV-CROSS-MACHINE) = 15 total
-- Mapped to phases: 15 ✓
-- Unmapped: 0 ✓
-
----
-*Requirements defined: 2026-04-19*
-*Last updated: 2026-04-22 — REQ-DEV-CROSS-MACHINE added for Phase 107.2 Tailscale thin-client dev*
+| W-01 | TBD | Pending |
+| W-02 | TBD | Pending |
+| SCHED-01 | TBD | Pending |
+| AUTH-09 | TBD | Pending |
+| AUTH-10 | TBD | Pending |
+| AUTH-11 | TBD | Pending |
+| EMAIL-01 | TBD | Pending |
+| EXT-02 | TBD | Pending |
