@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
-status: executing
-stopped_at: Completed 109-02-PLAN.md
-last_updated: "2026-04-23T19:11:53.488Z"
+status: verifying
+stopped_at: Plan 109-03 complete (human-verify Path B PASS); running phase-level gates
+last_updated: "2026-04-23T23:31:13.863Z"
 last_activity: 2026-04-23
 progress:
   total_phases: 5
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 
 Phase: 109 (per-user-scheduler-fan-out) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-23
 
 ```
@@ -62,6 +62,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 108 P03 | 12 | 1 tasks | 1 files |
 | Phase 109 P01 | 12min | 3 tasks | 2 files |
 | Phase 109 P02 | 18min | 2 tasks | 2 files |
+| Phase 109 P3 | 11min | 4 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 108]: W-02: used date 2099-12-28 (D-13), single 404-only scenario (D-14), briefPdfs lazily imported inside it() body matching aiCache pattern
 - [Phase 109]: Plan 01: scheduler fan-out removes seedUserId hard-scope; default getAllUsersFn closes over deps.db; per-user try/catch uses continue (never return); SCH-09 regression guards SC#1/SC#2/SC#4
 - [Phase 109]: Plan 02: /prioritize cache filename scoped to userId (wo-priority-${userId}-${today}-${hash}.json); getCacheKey userId-first positional; no runtime 401 guard (D-09 — global bearerAuth dispatcher) and no startup sweep of pre-migration files (D-10)
+- [Phase 109]: Plan 03: calendar-service userId-required + atomic two-site wiring (9054a5d); first time calendar events reach brief PDF from either path — D-11 makes fetchTodaysEvents/fetchCalendarList require userId (TypeScript build is the forcing function); D-12 commits index.ts + routes/brief-generate.ts wiring atomically; D-13 rewrites TODO(AUTH-06+) in-place (dropped in calendar-service, retained + DEFERRED marker in gmail-workorder-service). Human-verify Path B confirmed graceful degradation: HTTP 200, 19KB PDF, no "No calendar service" log, no stack traces. Path A deferred to post-v3.6 production smoke-test (no local OAuth row on fresh 107.1 dev DB).
 
 ### Pending Todos
 
@@ -124,7 +126,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-23T19:11:53.482Z
-Stopped at: Completed 109-02-PLAN.md
+Last session: 2026-04-23T23:31:01.374Z
+Stopped at: Plan 109-03 complete (human-verify Path B PASS); running phase-level gates
 Resume file: None
 Next action: /gsd-plan-phase 108
