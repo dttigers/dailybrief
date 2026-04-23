@@ -219,13 +219,25 @@ export const chatSessions = pgTable("chat_sessions", {
   index("idx_chat_sessions_user_id").on(table.userId),
 ]);
 
-// ── work_order_statuses table ───────────────────────────────────────────────
+// ── work_order_statuses table (Phase 108 — W-01 user scoping) ──────────────
+// Composite PK (userId, caseNumber) prevents cross-user caseNumber collisions
+// on upsert. D-23 from Phase 102 reversed here — see migrate.test.ts:13.
 
-export const workOrderStatuses = pgTable("work_order_statuses", {
-  caseNumber: text("case_number").primaryKey(),
-  status: text("status").notNull().default("open"),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
-});
+export const workOrderStatuses = pgTable(
+  "work_order_statuses",
+  {
+    caseNumber: text("case_number").notNull(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    status: text("status").notNull().default("open"),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.caseNumber] }),
+    index("idx_work_order_statuses_user_id").on(table.userId),
+  ],
+);
 
 // ── work_orders table ───────────────────────────────────────────────────────
 
