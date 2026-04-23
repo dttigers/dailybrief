@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: executing
-stopped_at: Completed 109-01-PLAN.md
-last_updated: "2026-04-23T18:49:54.616Z"
+stopped_at: Completed 109-02-PLAN.md
+last_updated: "2026-04-23T19:11:53.488Z"
 last_activity: 2026-04-23
 progress:
   total_phases: 5
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 ## Current Position
 
 Phase: 109 (per-user-scheduler-fan-out) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-23
 
@@ -61,6 +61,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 108 P02 | 4 | 3 tasks | 4 files |
 | Phase 108 P03 | 12 | 1 tasks | 1 files |
 | Phase 109 P01 | 12min | 3 tasks | 2 files |
+| Phase 109 P02 | 18min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 108]: seed-work-order-statuses.ts fixed to look up seed user by email and include userId in inserts — required by NOT NULL constraint added in Plan 01
 - [Phase 108]: W-02: used date 2099-12-28 (D-13), single 404-only scenario (D-14), briefPdfs lazily imported inside it() body matching aiCache pattern
 - [Phase 109]: Plan 01: scheduler fan-out removes seedUserId hard-scope; default getAllUsersFn closes over deps.db; per-user try/catch uses continue (never return); SCH-09 regression guards SC#1/SC#2/SC#4
+- [Phase 109]: Plan 02: /prioritize cache filename scoped to userId (wo-priority-${userId}-${today}-${hash}.json); getCacheKey userId-first positional; no runtime 401 guard (D-09 — global bearerAuth dispatcher) and no startup sweep of pre-migration files (D-10)
 
 ### Pending Todos
 
@@ -114,6 +116,7 @@ None — ready to plan Phase 108.
 
 - DNS propagation for vigilhub.io DKIM/SPF/DMARC (Phase 111) is variable — start DNS config early, do not block Phase 112 planning on propagation completion
 - Safari Cmd+Enter keyboard priority: must be empirically tested as step 1 of Phase 114 before any implementation — if swallowed, fallback UX must be designed upfront
+- Pre-existing npm test suite hang in vigil-core: src/integration/cross-user-isolation.test.ts imports ../index.js which spawns generate-scheduler (60s) + gmail-workorders (5m) setInterval loops at module load, keeping the tsx child process alive after the final assertion. Individual test files run fine via npx tsx --test <file>. Fix candidate: gate scheduler start-up in index.ts on NODE_ENV !== test, or split into buildApp() + bootstrap entrypoint.
 
 ### Memory drift flagged
 
@@ -121,7 +124,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-23T18:49:54.610Z
-Stopped at: Completed 109-01-PLAN.md
+Last session: 2026-04-23T19:11:53.482Z
+Stopped at: Completed 109-02-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 108

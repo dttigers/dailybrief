@@ -462,7 +462,7 @@ Plans:
 | 107. Safari Extension Persistence | v3.5 | 6/6 | Complete    | 2026-04-21 |
 
 | 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 3/3 | Complete    | 2026-04-23 |
-| 109. Per-User Scheduler Fan-Out | v3.6 | 1/3 | In Progress|  |
+| 109. Per-User Scheduler Fan-Out | v3.6 | 2/3 | In Progress|  |
 | 110. Change Password + password_changed_at Gate | v3.6 | 0/0 | Not started | - |
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 0/0 | Not started | - |
 | 112. Forgot-Password Email Flow | v3.6 | 0/0 | Not started | - |
@@ -515,7 +515,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 109-01-PLAN.md — Scheduler fan-out: getAllUsersFn DI seam + per-user try/catch+continue + SCH-09 two-user test (D-01..D-07, D-14)
-- [ ] 109-02-PLAN.md — Prioritize cache-key: getCacheKey(userId, wo) + wo-priority-${userId}-${today}-${hash}.json + CACHE-01 isolation test (D-08..D-10, D-15)
+- [x] 109-02-PLAN.md — Prioritize cache-key: getCacheKey(userId, wo) + wo-priority-${userId}-${today}-${hash}.json + CACHE-01 isolation test (D-08..D-10, D-15)
 - [ ] 109-03-PLAN.md — Calendar fold-in + atomic wiring: fetchTodaysEvents(userId) + createCalendarService() wired into BOTH scheduler and on-demand brief paths (D-11..D-13)
 **UI hint**: no
 
@@ -593,7 +593,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
