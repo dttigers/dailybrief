@@ -7,7 +7,7 @@ import * as os from "os";
 
 export const prioritize = new Hono();
 
-interface WorkOrder {
+export interface WorkOrder {
   caseNumber: string;
   store: string;
   shortDescription: string;
@@ -24,11 +24,18 @@ Respond with ONLY a JSON array of case numbers in priority order (highest urgenc
 
 const CACHE_DIR = path.join(os.homedir(), ".cache", "dailybrief");
 
-function getCacheKey(workOrders: WorkOrder[]): string {
+/**
+ * Phase 109 (SCHED-01 D-08): cache filename is scoped by authenticated userId
+ * to prevent cross-user cache line sharing. userId is FIRST positional to
+ * mirror the assembleAndRender(date, userId) ordering convention elsewhere
+ * in the codebase. Pre-migration unscoped files age out at server-TZ
+ * midnight naturally (D-10 — no startup sweep).
+ */
+export function getCacheKey(userId: number, workOrders: WorkOrder[]): string {
   const caseNumbers = workOrders.map((wo) => wo.caseNumber).sort();
   const hash = crypto.createHash("md5").update(JSON.stringify(caseNumbers)).digest("hex");
   const today = new Date().toISOString().slice(0, 10);
-  return `wo-priority-${today}-${hash}.json`;
+  return `wo-priority-${userId}-${today}-${hash}.json`;
 }
 
 function formatWorkOrders(workOrders: WorkOrder[]): string {
@@ -50,6 +57,12 @@ function formatWorkOrders(workOrders: WorkOrder[]): string {
 
 // POST /prioritize — Rank work orders by urgency via Claude
 prioritize.post("/prioritize", async (c) => {
+  // Phase 109 (SCHED-01 D-09): userId is non-null because /v1/prioritize is
+  // registered after the global bearerAuth dispatcher at index.ts:151. See
+  // CONTEXT §Deferred Ideas for rationale of not adding a redundant explicit
+  // null-check here.
+  const userId = c.get("userId") as number;
+
   let body: { workOrders?: WorkOrder[] };
   try {
     body = await c.req.json();
@@ -69,7 +82,7 @@ prioritize.post("/prioritize", async (c) => {
   }
 
   // Check cache
-  const cacheFile = path.join(CACHE_DIR, getCacheKey(body.workOrders));
+  const cacheFile = path.join(CACHE_DIR, getCacheKey(userId, body.workOrders));
   try {
     if (fs.existsSync(cacheFile)) {
       const cached = JSON.parse(fs.readFileSync(cacheFile, "utf-8")) as string[];
