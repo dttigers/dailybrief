@@ -14,10 +14,13 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import { briefs, briefPdfs, appSettings, users } from "../db/schema.js";
 import type * as schema from "../db/schema.js";
 
-// TODO(AUTH-06+): Per-user scheduler fan-out. For Phase 102 the scheduler is
-// hard-scoped to the seed user (VIGIL_SEED_USER_EMAIL). Future phase: iterate
-// over all users' appSettings and dispatch a brief-generate per user per
-// schedule window. Captured in RESEARCH Open Q4.
+// Phase 109 (SCHED-01): scheduler now iterates all users via `getAllUsersFn`
+// (DI seam, defaults to `SELECT id, email FROM users ORDER BY id`). Per-user
+// try/catch uses `continue` so one user's failure does not block others in
+// the same tick. Seed-user hard-scope from Phase 102 removed. Sibling
+// services gmail-workorder-service.ts + calendar-service.ts carry analogous
+// AUTH-06+ markers which are addressed in their own changes (calendar in
+// Phase 109, gmail deferred to a future phase per CONTEXT §Deferred Ideas).
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -49,8 +52,12 @@ export interface GenerateSchedulerDeps {
     taskCount: number;
     summary: object;
   }) => Promise<void>;
-  // Optional DI seam: resolve seed user id synchronously for tests.
-  seedUserId?: number;
+
+  /**
+   * Phase 109 (SCHED-01) DI seam: return every registered user for fan-out.
+   * When absent, the scheduler reads `users` directly via `deps.db` ordered by id ASC.
+   */
+  getAllUsersFn?: () => Promise<Array<{ id: number; email: string }>>;
 }
 
 export interface GenerateScheduler {
@@ -101,27 +108,18 @@ export function createGenerateScheduler(deps: GenerateSchedulerDeps): GenerateSc
   const tickIntervalMs = deps.tickIntervalMs ?? DEFAULT_TICK_INTERVAL_MS;
   const dedupeWindowMs = deps.dedupeWindowMs ?? DEFAULT_DEDUPE_WINDOW_MS;
 
-  // Phase 102 RESEARCH Open Q4: hard-scope to seed user at service start.
-  // Resolved lazily on first tick so tests that inject seedUserId can skip the DB lookup.
-  let resolvedSeedUserId: number | null = deps.seedUserId ?? null;
-  async function getSeedUserId(): Promise<number | null> {
-    if (resolvedSeedUserId !== null) return resolvedSeedUserId;
-    if (!deps.db) return null;
-    const seedEmail = (process.env["VIGIL_SEED_USER_EMAIL"] ?? "jamesonmorrill1@gmail.com").trim().toLowerCase();
-    const rows = await deps.db
-      .select({ id: users.id })
-      .from(users)
-      .where(eq(users.email, seedEmail))
-      .limit(1);
-    if (rows.length === 0) {
-      log("error", `seed user not found: ${seedEmail} — run migration first`);
-      return null;
-    }
-    resolvedSeedUserId = rows[0].id;
-    return resolvedSeedUserId;
-  }
-
   // ── Real drizzle implementations (used if caller did not inject fn) ────
+
+  // Phase 109 (SCHED-01): default getAllUsersFn closes over deps.db.
+  // Test DI path overrides via deps.getAllUsersFn.
+  async function getAllUsersViaDb(): Promise<Array<{ id: number; email: string }>> {
+    if (deps.getAllUsersFn) return deps.getAllUsersFn();
+    if (!deps.db) return [];
+    return deps.db
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .orderBy(users.id);
+  }
 
   async function getSettingViaDb(key: string, userId: number): Promise<unknown | null> {
     if (deps.getSettingFn) return deps.getSettingFn(key);
