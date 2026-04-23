@@ -1,405 +1,487 @@
 # Pitfalls Research
 
-**Domain:** v3.5 Observability, G2 Resubmit & Capture Repair — adding analytics, store resubmit, PWA auth UI, Safari extension persistence, photo pipeline repair to existing Vigil platform
-**Researched:** 2026-04-19
-**Confidence:** HIGH (codebase-verified pitfalls) / MEDIUM (PostHog docs + known GitHub issues) / LOW (Even Hub store policy — not publicly documented)
+**Domain:** v3.6 — Multi-User Completion, Auth UX & Safari Parity (adding features to existing Vigil architecture)
+**Researched:** 2026-04-22
+**Confidence:** HIGH — all pitfalls verified against direct code inspection of vigil-core source
 
 ---
 
 ## Critical Pitfalls
 
-### Pitfall 1: PostHog Flooding Dev Events into Production Project
+### Pitfall 1: Reset Token Stored Plaintext in DB
 
 **What goes wrong:**
-`posthog-node` initialized once at server startup in `vigil-core/src/index.ts`. Without a `NODE_ENV` guard, every `npm run dev`, local curl, and automated test run pollutes the production PostHog project with synthetic events. Funnels, retention charts, and cohort analyses become permanently corrupted — PostHog Cloud has no bulk delete for individual events.
+`POST /v1/auth/forgot-password` generates a random token, stores the raw bytes in a `password_reset_tokens` table, and emails a link containing that token verbatim. A DB read (Railway credential leak, SQL injection, insider access) immediately yields usable reset tokens for every account that requested a reset in the last N hours — full account takeover without ever knowing the password.
 
 **Why it happens:**
-Developers wire up PostHog to get a "works in dev" green light, then ship without the env guard because Railway uses `NODE_ENV=production` so the dev machine never triggers the production issue. Corruption is invisible until weekly active user counts include localhost sessions.
+Developers treat it as a "short-lived token, no need to hash." This is wrong — a reset token is a temporary password equivalent. The same threat model applies: the DB must not contain anything that lets an attacker act.
 
 **How to avoid:**
-Use **separate PostHog API keys per environment** (not one project with internal filters). Gate at init time, before any route is wired:
+Mirror the existing `vk_` key pattern already in the codebase: `crypto.randomBytes(32)` → send `hex`-encoded token in the email link → store `crypto.createHash('sha256').update(token).digest('hex')` in DB. The `token-crypto.ts` module proves the team already knows this discipline. The `password_reset_tokens` table column must be named `token_hash TEXT NOT NULL`, never `token TEXT`.
+
+**Warning signs:**
+Any migration adding a `reset_token`, `token`, or similar column in `password_reset_tokens` that is NOT suffixed `_hash`.
+
+**Phase to address:**
+AUTH-10 — data model must specify `token_hash` before any implementation starts.
+
+---
+
+### Pitfall 2: JWT Issued Before Reset Token Is Verified
+
+**What goes wrong:**
+`POST /v1/auth/reset-password` with `{ token, newPassword }` calls `signToken()` to return a JWT immediately after hashing the new password — before verifying that `SHA-256(token)` matches a valid, unexpired, single-use DB row. An attacker who can observe the response or exploit a race window receives a valid JWT for an account they do not own.
+
+**Why it happens:**
+Developers write the "happy path" top-down: hash password → update user → sign JWT → return. Token verification is added as a guard but ends up after the DB writes in a refactor.
+
+**Concrete wrong pattern:**
 ```typescript
-// vigil-core: PostHog init guard
-const posthog = process.env.NODE_ENV === 'production' && process.env.POSTHOG_API_KEY
-  ? new PostHog(process.env.POSTHOG_API_KEY, { host: 'https://us.i.posthog.com' })
-  : null;
+// WRONG: JWT issued before token is verified
+const passwordHash = await hashPassword(newPassword);
+await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+const jwt = await signToken(userId, email); // issued too early
+const row = await verifyResetToken(token); // too late
+if (!row) return c.json({ error: "Invalid token" }, 400);
 ```
-Never call `posthog.capture()` directly at call sites. Always use a `trackEvent(name, props)` wrapper that applies the null check so the guard is enforced everywhere automatically.
+
+**How to avoid:**
+Mandatory order enforced in the plan task sequence: (1) hash incoming token, (2) SELECT + check expiry + check `used_at IS NULL`, (3) update password, (4) mark token `used_at = now()`, (5) ONLY THEN issue JWT. The plan must include an integration test: tampered token → 400, no JWT emitted.
 
 **Warning signs:**
-- PostHog dashboard shows events timestamped during local dev sessions or CI runs
-- `distinct_id` values contain `localhost` or a developer's email
-- Event count spikes that align with deploy times rather than real usage windows
+Any `signToken()` call appearing before the reset token validation SELECT in the handler.
 
-**Phase to address:** ANLY-01 (PostHog integration setup) — env guard must exist before the first `capture()` call
+**Phase to address:**
+AUTH-10.
 
 ---
 
-### Pitfall 2: PII in Event Properties — Therapy Notes, Thought Content, Emails
+### Pitfall 3: Stateless JWT Stays Valid After Password Reset
 
 **What goes wrong:**
-Vigil's core data is highly sensitive: therapy notes, personal thoughts, mood states, handwritten journal transcriptions. If a developer passes `thought.content` or email subjects as an event property when tracking "thought captured," that text goes to PostHog Cloud verbatim and is stored indefinitely. This is not a GDPR technicality — it is actual private health-adjacent information.
+A user's account is compromised. The real user resets their password via forgot-password. The attacker holds a valid 30-day JWT (from before the compromise) and continues to access the API. `verifyToken()` in `jwt.ts` only checks the signature and expiry — it has no knowledge of password changes. The attacker is not logged out.
 
 **Why it happens:**
-When debugging capture pipeline metrics, the instinct is to add thought content to the event to correlate events with specific thoughts in PostHog. The same reflex leaks work email subjects, therapy session prep text, and handwritten note transcriptions.
+The v3.4 decision of stateless JWT (no refresh token rotation) was correct for single-user at the time. Forgot-password introduces a new implication that was not present when that decision was made: there is now a meaningful "session invalidation" event.
 
 **How to avoid:**
-Define a **property allowlist before writing any `capture()` calls**. Safe properties for thought events are structural metadata only:
-```typescript
-posthog?.capture('thought_created', {
-  distinct_id: userId,          // OK: opaque ID
-  category: result.category,   // OK: enum value
-  source: thought.source,       // OK: enum (voice/image/text)
-  confidence: result.confidence, // OK: number
-  has_image: true,              // OK: boolean
-  // NEVER: content, transcript, email_subject, rawText, notes
-})
+Add `password_changed_at TIMESTAMP WITH TIME ZONE` to the `users` table. In the `bearerAuth` JWT path, after `verifyToken()` succeeds, add one DB lookup: `SELECT password_changed_at FROM users WHERE id = $userId`. If `jwt.claims.iat < password_changed_at`, reject with 401. This is one indexed DB query per JWT request — acceptable at current scale. Add to the v3.4 Key Decisions addendum: "After AUTH-10, `password_changed_at` gate is required; stateless JWT alone is insufficient post-reset."
+
+This fix applies to BOTH AUTH-09 (change-password) and AUTH-10 (reset-password) — both events must update `password_changed_at`.
+
+**Warning signs:**
+After a successful password reset, the old JWT still returns 200 from any authenticated endpoint.
+
+**Phase to address:**
+AUTH-09 and AUTH-10 — both must update `password_changed_at`; bearerAuth middleware updated in whichever phase ships first.
+
+---
+
+### Pitfall 4: Timing-Attack Email Enumeration on Forgot-Password
+
+**What goes wrong:**
+`POST /v1/auth/forgot-password` with an unknown email returns in ~1ms (no DB row, early return). The same call with a known email takes ~15ms (DB lookup + token generation). An attacker scripts this to enumerate which emails are registered. This is the exact threat the `DUMMY_HASH` constant in `auth.ts` already guards on the login path — the forgot-password endpoint needs its own version.
+
+**How to avoid:**
+Always return HTTP 200 with `{ message: "If that address is registered, a reset link has been sent." }` regardless of whether the email exists. Internally, only generate and send a token if the user row exists. The response body, status code, and approximate response time must be identical for known and unknown emails. A constant-time floor (e.g., minimum 50ms via a fixed `await setTimeout`) absorbs DB lookup variance.
+
+**Warning signs:**
+`POST /v1/auth/forgot-password` returns different HTTP status codes or distinct response bodies when the email is unknown vs. known.
+
+**Phase to address:**
+AUTH-10.
+
+---
+
+### Pitfall 5: Per-IP Rate Limiting Only, No Per-Email Counter on Auth Endpoints
+
+**What goes wrong:**
+The existing `rateLimiter` middleware uses in-memory per-IP counters. Applied to forgot-password, an attacker behind a residential proxy rotates IPs and sends hundreds of reset requests for a specific target email, flooding the inbox and amplifying any side-channel leak. The same applies to the verify-email resend endpoint.
+
+**How to avoid:**
+Add a second in-memory counter keyed on `SHA-256(email.toLowerCase())` (not raw email — avoid storing PII in the rate-limit store). Allow maximum 3 requests per email per 15-minute window. Use a simple `Map<string, { count: number; windowStart: number }>` with TTL cleanup — the existing in-memory rate-limit pattern is the right model. Keep the per-IP counter as-is; add the per-email counter as a second check.
+
+**Warning signs:**
+Four or more `POST /v1/auth/forgot-password` calls with the same email in 5 minutes all return 200.
+
+**Phase to address:**
+AUTH-10 (same guard reused for AUTH-11 resend).
+
+---
+
+### Pitfall 6: Email Address in Reset Link URL — Referrer Leak
+
+**What goes wrong:**
+Reset link: `https://app.vigilhub.io/reset?token=abc&email=user@example.com`. When the PWA loads and triggers any request to an external resource (analytics, fonts, a CDN), the `Referer` header on that request contains the full URL including the email address. Even without external requests, the email appears in browser history. The email field was added "for convenience" to pre-fill the form.
+
+**How to avoid:**
+Token-only URL: `https://app.vigilhub.io/reset?token=abc`. The reset endpoint looks up the associated email from the token server-side. The PWA clears the token from the URL after reading it via `history.replaceState({}, '', '/reset')`. This prevents the token from appearing in PostHog page-view captures (PostHog is already shipped — it will capture the page URL).
+
+**Warning signs:**
+Reset link URL contains `email=` as a query parameter. PostHog session replay shows URLs containing `email=` in the reset page view.
+
+**Phase to address:**
+AUTH-10.
+
+---
+
+### Pitfall 7: Reset Token Single-Use Race Condition
+
+**What goes wrong:**
+User double-clicks the reset link. Two simultaneous requests hit `POST /v1/auth/reset-password`. Both SELECT the token row. Both see `used_at IS NULL`. Both proceed. Result: password set twice (probably harmless), `used_at` guarantee broken. Worse variant: legitimate use + attacker replay within the same 200ms concurrency window.
+
+**How to avoid:**
+Atomic UPDATE pattern — no separate SELECT:
+```sql
+UPDATE password_reset_tokens
+SET used_at = now()
+WHERE token_hash = $1
+  AND expires_at > now()
+  AND used_at IS NULL
+RETURNING user_id;
 ```
-Add a code review checklist item: "No string properties from user-generated content in PostHog calls."
+If the UPDATE returns no row, the token was invalid, expired, or already consumed. PostgreSQL's UPDATE is atomic. No separate SELECT is needed or safe.
 
 **Warning signs:**
-- Any PostHog event property with a string value longer than ~20 characters
-- Properties named `content`, `text`, `transcript`, `subject`, `body`, `notes`
-- PostHog People page showing personal details about the real user
+Handler does a SELECT followed by a separate UPDATE in two queries without a transaction.
 
-**Phase to address:** ANLY-01 (property schema must be documented before any capture call is written)
+**Phase to address:**
+AUTH-10 — include the atomic UPDATE pattern as the canonical implementation in the plan.
 
 ---
 
-### Pitfall 3: Double-Counting When Server and PWA Both Track the Same Event
+### Pitfall 8: vk_ Key User Triggers Forgot-Password — Seed User Placeholder Hash Overwritten
 
 **What goes wrong:**
-`thought_captured` (or any user action) can be emitted from both the PWA's CaptureBar submit handler AND from `vigil-core`'s `POST /v1/thoughts` route. Same `distinct_id` on both events. PostHog counts two events per user action. Retention, funnel, and cohort analyses are permanently doubled with no way to fix historical data.
-
-**Why it happens:**
-PostHog's documentation recommends tracking on both client and server "for reliability" but buries the critical caveat: use different event names. Developers read "track everywhere" and implement identical event names on both layers.
+The Mac app, CLI, and browser extensions use `vk_` keys. These clients authenticate as the seed user. If `POST /v1/auth/forgot-password` is called with the seed user's email, a reset token is generated and a new password hash set via the reset flow. The seed user's `PLACEHOLDER_HASH_PREFIX` row (which gates the claim-flow and blocks direct password login) could be overwritten with a real hash — accidentally enabling JWT login for the seed account or breaking the D-11 claim-flow detection.
 
 **How to avoid:**
-Name events by layer and semantic role:
-- Server: `thought_created` (fires when DB insert succeeds — ground truth for successful capture)
-- Client: `capture_submitted` (fires when user presses submit — measures UI engagement)
-
-These are distinct moments. Document the naming convention in the ANLY-01 phase plan before any implementation starts.
+(1) Apply the `VIGIL_ALLOWED_EMAILS` check to the forgot-password endpoint — only allowlisted emails can request a reset (already enforced on registration). (2) Add an explicit check: if the user's `passwordHash` starts with `PLACEHOLDER_HASH_PREFIX`, return generic 200 with the standard "link sent" message but do NOT create a reset token. vk_-only users cannot set a password via forgot-password. Document this guard explicitly in the AUTH-10 plan.
 
 **Warning signs:**
-- Event counts are exactly double expected values
-- Two events appear in the same PostHog session within milliseconds with identical properties
-- Server and client both emit an event named `thought_captured`
+`POST /v1/auth/forgot-password` with the seed user's email produces a `password_reset_tokens` row.
 
-**Phase to address:** ANLY-01 (naming convention document created before any implementation)
+**Phase to address:**
+AUTH-10.
 
 ---
 
-### Pitfall 4: Session Recording Capturing the "Show Password" Toggle
+### Pitfall 9: Verify-Email Token Leak via Referrer
 
 **What goes wrong:**
-PostHog session replay masks `type="password"` inputs by default. But the common UX pattern of a "show password" eye button temporarily changes `input.type` from `"password"` to `"text"`. The moment the type switches to `"text"`, PostHog's default masking no longer applies — the actual password is recorded in plaintext in session replays.
-
-**Why it happens:**
-Developers test that the field is masked on initial load (`type="password"` → masked, looks good), then ship without testing the revealed state. The PostHog GitHub issue tracker documents this as a known gotcha: masking checks `type` attribute, not semantic purpose.
+Verification link: `https://app.vigilhub.io/verify?token=abc123`. User clicks. PWA reads the token, posts to `POST /v1/auth/verify-email`, then navigates to dashboard. The next request from the PWA to any API endpoint carries `Referer: https://app.vigilhub.io/verify?token=abc123`. PostHog (already shipped) captures the page view URL including the token. If the token is still valid at the time of the Referer leak, an attacker who reads PostHog can replay it.
 
 **How to avoid:**
-Option A — Do not implement a show/hide password toggle in AUTH-06 (simplest, appropriate for a private app with one user). Option B — Use `maskInputFn` to unconditionally mask by element `id`:
+PWA must call `history.replaceState({}, '', '/verify')` before making any subsequent navigation or API calls after reading the token from the URL. Use single-use enforcement (same atomic UPDATE pattern as Pitfall 7) so even a replayed token fails. The `verifyEmail` Hono handler can also set `Referrer-Policy: no-referrer` on the response.
+
+**Phase to address:**
+AUTH-11.
+
+---
+
+### Pitfall 10: Auto-Login After Verify Embeds JWT in URL
+
+**What goes wrong:**
+After email verification, the server redirects to `https://app.vigilhub.io/dashboard?token=eyJhbGci...`. The JWT is now in browser history, server access logs, and every Referer header for the next 30 days. This is a documented CVE class — JWTs in URLs are visible across the entire request chain. PostHog captures page URLs; this would log the raw JWT into PostHog.
+
+**How to avoid:**
+Do not auto-login via URL. Two safe options:
+1. Redirect to login page with `?verified=true` — user logs in normally. Simple, zero security surface. Correct choice for v3.6 at N=1 real user.
+2. Short-lived (60-second TTL) opaque exchange code — redirect to `/verify-success?code=<opaque>`, PWA exchanges for JWT via `POST /v1/auth/exchange` (atomic single-use). More complex, only warranted if seamless UX is required.
+
+**Warning signs:**
+Any redirect URL after email verification contains `token=` as a query or fragment parameter.
+
+**Phase to address:**
+AUTH-11.
+
+---
+
+### Pitfall 11: Existing Users Locked Out After AUTH-11 Ships — email_verified_at Not Backfilled
+
+**What goes wrong:**
+AUTH-11 migration adds `email_verified_at TIMESTAMP` to `users` with `DEFAULT NULL`. The seed user (jamesonmorrill1@gmail.com) has `email_verified_at = NULL`. AUTH-11 gates certain actions on verification status. The seed user is now locked out of their own production data the moment the migration deploys to Railway.
+
+**Why it happens:**
+Same root cause as the v3.4 work that prompted the 0012 migration's DO $$ backfill block. New timestamp/boolean columns default to NULL/false and break existing rows without an explicit backfill.
+
+**How to avoid:**
+Follow the 0012 migration pattern exactly: ADD COLUMN nullable, then DO $$ UPDATE users SET email_verified_at = created_at WHERE email_verified_at IS NULL $$, then optionally index. All existing users are treated as verified as of their account creation date. New users after AUTH-11 ship have `email_verified_at = NULL` until they click the link.
+
+**Warning signs:**
+Any AUTH-11 migration that adds `email_verified_at` or `email_verified` without a follow-up `UPDATE` backfill for existing rows.
+
+**Phase to address:**
+AUTH-11.
+
+---
+
+### Pitfall 12: W-01 Migration FK Constraint Added Before Backfill
+
+**What goes wrong:**
+The W-01 migration adds `user_id` to `work_order_statuses`. If the `ALTER COLUMN "user_id" SET NOT NULL` statement runs before the `DO $$ UPDATE work_order_statuses SET user_id = seed_id WHERE user_id IS NULL $$` block, PostgreSQL's table scan finds NULL rows and fails with a constraint violation. The Railway deploy fails mid-migration, leaving `work_order_statuses` in a partially-migrated state.
+
+**Why it happens:**
+The Drizzle migration file uses `statement-breakpoint` comments. Developers accidentally reorder blocks without realizing the ordering is load-bearing.
+
+**How to avoid:**
+Follow the 0012 migration's exact five-step sequence: (1) ADD COLUMN nullable, (2) DO $$ UPDATE backfill, (3) ALTER COLUMN SET NOT NULL, (4) ADD CONSTRAINT FK (in DO $$ exception guard), (5) CREATE INDEX. Any deviation breaks Railway deploys. Test on a fresh local DB via `docker-compose up` before pushing.
+
+**Warning signs:**
+W-01 migration file has `ALTER COLUMN "user_id" SET NOT NULL` appearing before the DO $$ UPDATE block.
+
+**Phase to address:**
+W-01.
+
+---
+
+### Pitfall 13: work_order_statuses Cross-User Data Leak — Four Call Sites Must All Be Scoped
+
+**What goes wrong:**
+After W-01 adds `user_id` to `work_order_statuses`, every SELECT/INSERT/UPDATE/DELETE on that table must include `WHERE user_id = $userId`. Missing even one creates a data leak. There are at least four call sites today:
+
+1. `work-order-status.ts` `dbSelectFn` — currently `db.select().from(workOrderStatuses)` (no userId filter)
+2. `work-order-status.ts` `dbUpsertFn` — currently `INSERT ... ON CONFLICT (caseNumber)` (no userId on conflict target)
+3. `work-orders.ts` GET route line 93-94 — `db.select().from(workOrderStatuses)` builds a `statusMap` with ALL users' statuses
+4. `work-orders.ts` DELETE route — deletes statuses by `inArray(workOrderStatuses.caseNumber, ...)` without userId scope
+
+Sites 3 and 4 in `work-orders.ts` are the most likely to be overlooked because they appear far from the status-specific route file.
+
+**How to avoid:**
+After W-01 migration, run: `grep -rn "workOrderStatuses" vigil-core/src/routes/` and verify every reference includes `eq(workOrderStatuses.userId, userId)`. Write an explicit cross-user isolation test: User A sets a status; assert User B's API call cannot read or modify it.
+
+**Warning signs:**
+Any `db.select().from(workOrderStatuses)` without a `.where(eq(workOrderStatuses.userId, ...))` clause after W-01 ships.
+
+**Phase to address:**
+W-01.
+
+---
+
+### Pitfall 14: W-01 conflict-target on upsert breaks with composite PK
+
+**What goes wrong:**
+The current `work_order_statuses` table has `caseNumber` as the sole primary key. The current upsert in `work-order-status.ts` uses `onConflictDoUpdate({ target: workOrderStatuses.caseNumber, ... })`. After W-01 adds `user_id` and the PK becomes composite `(user_id, case_number)`, the existing `onConflictDoUpdate` target points to a constraint that no longer uniquely identifies a row. Drizzle will emit invalid SQL or the upsert will silently insert duplicates.
+
+**How to avoid:**
+After W-01, the upsert conflict target must reference the composite PK: `onConflictDoUpdate({ target: [workOrderStatuses.userId, workOrderStatuses.caseNumber], ... })`. The W-01 plan must include updating this upsert in `work-order-status.ts` as an explicit task, not an afterthought.
+
+**Warning signs:**
+`onConflictDoUpdate({ target: workOrderStatuses.caseNumber, ... })` remains unchanged after W-01 adds the composite PK.
+
+**Phase to address:**
+W-01.
+
+---
+
+### Pitfall 15: SCHED-01 — One User's Error Blocks All Remaining Users
+
+**What goes wrong:**
+The current `generate-scheduler.ts` `tick()` has a single try/catch around the generate call for the seed user. After SCHED-01 fans out to all users via a loop:
 ```typescript
-maskInputFn: (text, element) => {
-  if ((element as HTMLElement).id === 'password') return '*'.repeat(text.length);
-  return text;
+for (const user of allUsers) {
+  await generateForUser(user); // throws for user 3
+  // users 4..N never run
 }
 ```
-Option C — Use CSS `-webkit-text-security` to show bullets without changing `input.type`.
-
-**Warning signs:**
-- Session replay shows password field unmasked after user clicks the show/hide toggle
-- `input.type` is changed to `"text"` programmatically anywhere in the auth form code
-
-**Phase to address:** AUTH-06 (PWA login/register UI) — before session recording is enabled
-
----
-
-### Pitfall 5: posthog-node Memory Leak in Long-Running Vigil Core
-
-**What goes wrong:**
-posthog-node v5.4.0 has a documented memory leak in long-running Node.js services using feature flag evaluation — reported August 2025 on the PostHog GitHub tracker. Memory grows steadily over days until OOM or Railway restarts the container. Even without feature flags, if `shutdown()` is not called on SIGTERM, the SDK's `setInterval` flush timer and pending HTTP connections are never cleaned up, and queued events since the last flush are silently dropped.
-
-**Why it happens:**
-The SDK batches events via `setInterval`. Vigil Core is a persistent server (not serverless), started once by Railway. The current `SIGTERM`/`SIGINT` handlers in `vigil-core/src/index.ts` call `generateScheduler.stop()` and `closeConnection()` but there is no `posthog.shutdown()` call — it simply does not exist yet because PostHog is not integrated yet.
+User 3's transient Claude timeout or calendar OAuth failure silently blocks brief generation for all subsequent users. The outer `tick()` catch logs an error but does not indicate which users succeeded or how many were skipped.
 
 **How to avoid:**
-- Do not use PostHog **feature flags** — Vigil Core has no feature flag requirements; skip that SDK capability entirely (avoids the leak entirely)
-- Create the PostHog client as a singleton at module scope in `index.ts` — one instance, not per-request
-- Add `await posthog?.shutdown()` to the existing SIGTERM and SIGINT handlers before `process.exit(0)`
-- In Vitest tests: mock the PostHog client entirely; never initialize a real SDK instance in test files (leaked intervals cause `--detectOpenHandles` failures)
-
-**Warning signs:**
-- Railway memory graph shows steady upward trend decoupled from request volume
-- Vitest output shows open handle warnings mentioning PostHog timers
-- posthog-node version is 5.x and feature flags are configured
-
-**Phase to address:** ANLY-01 (SDK initialization) — shutdown hook must be added at the same time
-
----
-
-### Pitfall 6: PostHog in the Safari Extension Blocked as a Tracker
-
-**What goes wrong:**
-If the Safari extension content script sends events to `us.i.posthog.com`, Safari's Intelligent Tracking Prevention (ITP) will block the request. PostHog's domain is on major tracker blocklists (uBlock Origin, AdGuard). The request is silently dropped — no error surfaced to the developer. The extension's analytics appear to work in Chrome (where the developer tested) and silently fail in Safari (where the extension actually lives).
-
-**Why it happens:**
-Developers test PostHog in a Chrome extension context and assume the same code works in Safari. ITP is stricter. Also, MV3 content scripts cannot load remote scripts, so posthog-js must be bundled locally — but even bundled, outbound requests to posthog.com are blocked by tracker lists.
-
-**How to avoid:**
-Do not add PostHog to the Safari extension content script at all. The extension's purpose is URL capture and quick thought submission — not analytics. Track extension-sourced events server-side in Vigil Core: when `POST /v1/thoughts` arrives with a `User-Agent` header identifying the extension (or an `X-Client: safari-extension` header), emit the server-side `thought_created` event with `source: 'extension'`. Zero client-side PostHog in the extension.
-
-**Warning signs:**
-- `posthog` imported anywhere in the extension's `src/` directory
-- Extension analytics appear in Chrome but not Safari PostHog sessions
-- Safari Network Inspector shows blocked requests to `*.posthog.com` from extension context
-
-**Phase to address:** ANLY-01/ANLY-02 — explicitly exclude extension from client-side PostHog scope in the phase plan
-
----
-
-### Pitfall 7: G2 Resubmit With Only 2 of 3 Rejection Items Fixed
-
-**What goes wrong:**
-The three G2 rejection items (G2-01: screenshots, G2-02: double-tap exit, G2-03: WebView brand compliance) must all be resolved before resubmission. Even Hub reviewers re-reject on the first unresolved item without checking the others. A partial fix wastes a full review cycle — Even's small team means review turnaround is measured in days.
-
-**Why it happens:**
-Developers fix the easiest items first (G2-01 screenshots is purely mechanical: take new screenshots) and resubmit hoping to get confirmation before tackling harder items. This is an optimization trap: partial fixes get a full-cycle rejection, same wait as the original.
-
-**How to avoid:**
-All three G2 items must be gated together in a single phase. The phase cannot be marked complete or submitted until all three checklist items are verified on the simulator:
-- [ ] Simulator screenshots captured from the current Even Realities iPhone app version
-- [ ] Double-tap exit implemented via `DOUBLE_CLICK_EVENT` in the Even Hub SDK lifecycle (not a custom setTimeout hack)
-- [ ] WebView content uses Vigil brand colors (`#1D9E75` teal, Inter font) with no blank or placeholder states
-
-**Warning signs:**
-- Phase plan separates G2-01, G2-02, G2-03 into separate phases with separate "done" criteria
-- A G2 item is marked complete before the others are verified on the simulator
-- Phase plan says "submit after screenshots are ready" without waiting for the full set
-
-**Phase to address:** Dedicated G2 resubmit phase — all three items gated together before submission
-
----
-
-### Pitfall 8: Double-Tap Gesture Collision with Existing Tap-Expand / Swipe UX
-
-**What goes wrong:**
-The v2.2 G2 plugin uses `CLICK_EVENT` (single tap) to navigate to task detail, and `SCROLL_TOP_EVENT`/`SCROLL_BOTTOM_EVENT` (swipe) to navigate between screens. Adding a `DOUBLE_CLICK_EVENT` handler for exit creates a timing conflict: the SDK fires `CLICK_EVENT` first, then `DOUBLE_CLICK_EVENT` ~300ms later. If the existing `CLICK_EVENT` handler in `vigil-g2-plugin/src/main.ts` runs before the double-tap is recognized, the user is navigated into task detail and then immediately exited — a visible flash of incorrect state.
-
-**Why it happens:**
-The `DOUBLE_CLICK_EVENT` docs are read in isolation without mapping timing against the existing unconditional `CLICK_EVENT` handler. The current `main.ts` has: `if (event.listEvent?.eventType === OsEventTypeList.CLICK_EVENT)` — this fires immediately on every click with no double-tap window.
-
-**How to avoid:**
-Implement a debounce at the event handler level: on `CLICK_EVENT`, set a 300ms timer before navigating; if `DOUBLE_CLICK_EVENT` arrives within that window, cancel the single-tap action and execute exit instead. Alternatively, check whether the Even Hub SDK fires `DOUBLE_CLICK_EVENT` as a distinct event that does not also fire `CLICK_EVENT` — if so, no debounce is needed.
-
-Verify on the simulator before submission:
-1. Single tap on a work order → task detail (no double-tap bleed)
-2. Double tap on home screen → exit plugin (confirmed via lifecycle event log)
-3. Swipe still navigates between home/affirmation screens (no regression)
-
-**Warning signs:**
-- Task detail screen opens and immediately closes when double-tapping
-- The Even Hub simulator event log shows CLICK_EVENT firing milliseconds before DOUBLE_CLICK_EVENT on the same gesture
-- Swipe navigation stops working after the double-tap handler is added
-
-**Phase to address:** G2-02 (double-tap exit dialogue)
-
----
-
-### Pitfall 9: JWT Stored in localStorage — XSS Exposure on PWA Login
-
-**What goes wrong:**
-The existing `AuthPage.tsx` calls `storeKey()` to persist the API key, almost certainly in localStorage or sessionStorage. When AUTH-06 adds email+password login with JWT, extending the same storage pattern to the JWT means any XSS vulnerability in the PWA (including in a third-party dependency) can exfiltrate the token. With a JWT, an attacker can authenticate as the user to Vigil Core for the full token lifetime — hours, potentially.
-
-**Why it happens:**
-localStorage is the path of least resistance in React: synchronous, persists across refresh, zero config. The existing vk_ API key is already stored there, so the pattern feels established. Developers extend it without considering that a JWT has different attack surface (no allowlist check on every request, longer blast radius) than a static API key.
-
-**How to avoid:**
-For AUTH-06, store the JWT in **sessionStorage** (tab-scoped, cleared on browser close) as an explicit tradeoff: persists across tab reloads within a session but not across browser restarts. This is an acceptable compromise for a single-user private app.
-
-Do NOT implement refresh tokens or httpOnly cookies in v3.5 — that complexity belongs in AUTH-07 or later. Document the decision explicitly in the phase plan: "JWT stored in sessionStorage for v3.5; httpOnly cookie migration is a future milestone."
-
-**Warning signs:**
-- `localStorage.setItem('vigil_jwt', ...)` anywhere in the codebase
-- JWT visible in DevTools Application → Local Storage tab
-- Token persists after closing all browser windows and reopening
-
-**Phase to address:** AUTH-06 — storage decision documented before any JWT-handling code is written
-
----
-
-### Pitfall 10: Login Error Messages Leaking User Existence
-
-**What goes wrong:**
-If the PWA login form displays "Email not found" vs "Incorrect password" as separate error states, an attacker can enumerate valid Vigil accounts. The server already implements timing-safe login with a `DUMMY_HASH` constant in `vigil-core/src/routes/auth.ts` (line 141-144) specifically to prevent response-time user enumeration. If the PWA client interprets different HTTP response bodies as different error messages, it breaks the server-side protection even though the server is doing the right thing.
-
-**Why it happens:**
-The backend returns `{ error: "Invalid credentials" }` with HTTP 401 for all auth failures. A developer adding the login UI creates distinct error messages for each HTTP status code they imagine (404 for unknown user, 403 for wrong password, 401 for generic), breaking the server's intentional ambiguity.
-
-**How to avoid:**
-For any 4xx response from `POST /v1/auth/login`, the PWA displays exactly one message: "Invalid email or password." No differentiation by status code, no differentiation by response body content. The server's `auth.ts` already enforces this on the backend — the client must not add specificity.
-
-**Warning signs:**
-- PWA shows "Email not found" or "No account with that email" for 401 responses
-- Client-side code checks for specific string patterns in the `error` response body
-- Different error messages appear for wrong email vs wrong password
-
-**Phase to address:** AUTH-06 (error message copy must be reviewed before login UI ships)
-
----
-
-### Pitfall 11: Forgot Password Link Added Without Email Infrastructure
-
-**What goes wrong:**
-AUTH-06 is the login/register UI — the backend was shipped in v3.4. If a "Forgot Password?" link is added to the login form, users will click it. Vigil Core has no email-sending infrastructure (no Resend/Nodemailer/SendGrid) and no password reset endpoint as of v3.4. Clicking the link either errors silently, navigates to a non-existent route, or results in a 404 from the API — leaving the user with no account recovery path.
-
-**Why it happens:**
-"Forgot Password" is expected UX on any login form. Developers add it reflexively without verifying whether the backend reset flow exists. The link ships; the backend does not; the user clicks it and cannot recover.
-
-**How to avoid:**
-Explicitly exclude "Forgot Password" from AUTH-06 scope. The login form ships with no reset link in v3.5. Document this in the phase plan: "Password reset requires email infrastructure (Resend or Nodemailer) — deferred to AUTH-07." The developer (also the only user) can reset their password directly via the database if ever needed.
-
-**Warning signs:**
-- Phase plan includes "forgot password" link on the login form
-- AUTH-06 scope creeps to include `POST /v1/auth/reset-password` endpoint
-- A route named `/forgot-password` or `/reset-password` appears in the router
-
-**Phase to address:** AUTH-06 — explicitly gated out of scope in the plan before implementation starts
-
----
-
-### Pitfall 12: Safari Extension Disabled After macOS Restart — Extension State Not Restored
-
-**What goes wrong:**
-Safari can reset extension enabled/disabled state after a macOS restart, Safari update, or extension host app re-launch. The extension appears enabled in Safari preferences before restart, disabled after. This is a known behavioral difference from Chrome extensions and is the most likely root cause of EXT-01.
-
-**Why it happens:**
-The `DailyBriefMonitor.app` bundle is the extension host. If the host app does not explicitly re-enable the extension on each launch via `SFSafariExtensionManager.setStateOfSafariExtension`, Safari may not automatically restore the enabled state — especially if the host app's signature changed (e.g., after a rebuild via `install.sh`).
-
-**How to avoid:**
-In `AppDelegate.swift` (or `DailyBriefMonitorApp.swift`), call `SFSafariExtensionManager.getStateOfSafariExtension` on launch and, if disabled, prompt the user or call `setStateOfSafariExtension` to re-enable. For the persistence fix, the correct approach is to call the enable API on every app launch, not only when the user manually toggles.
-
-Additionally: verify the LaunchAgent that starts `DailyBriefMonitor.app` is using the correct `.app` bundle path. If `install.sh` rebuilds the binary to a different location than the LaunchAgent points to, the extension host never launches, which means Safari's extension process has no host and disables the extension.
-
-**Warning signs:**
-- Extension status is "enabled" before restart but "disabled" after in Safari → Settings → Extensions
-- Console.app shows `SFSafariExtensionManager` errors mentioning invalid bundle or missing host
-- LaunchAgent plist path does not match current `DailyBriefMonitor.app` install location
-
-**Phase to address:** EXT-01 (Safari extension persistence)
-
----
-
-### Pitfall 13: MV3 Service Worker Termination Causing Extension State Loss
-
-**What goes wrong:**
-Safari MV3 extensions use a non-persistent background (service worker). The service worker is terminated after ~30 seconds of inactivity. Any state stored in the service worker's module scope (API key, auth token, request cache) is lost on termination. When the extension popup is next opened, it wakes the service worker from scratch — potentially showing a "not configured" state or needing to re-authenticate.
-
-**Why it happens:**
-The MV3 mandate for non-persistent backgrounds is a relatively recent change from MV2's persistent background pages. State stored in background script module scope worked reliably in MV2. The current extension may store the API key in `chrome.storage.local` (correct) or in a module-level variable in the background script (incorrect). If the latter, the key evaporates with the service worker.
-
-**How to avoid:**
-All persistent state (API key, auth token, last-captured URL) must live in `browser.storage.local` — not in background script module scope. The content script and popup must read from storage on every activation, not assume the background script is alive. Verify:
+Each user iteration must be wrapped in its own try/catch with `continue`, not `return`:
 ```typescript
-// Correct pattern for persistent API key in MV3
-browser.storage.local.get(['vigil_api_key']).then(({ vigil_api_key }) => {
-  // use the key from storage, not from a module variable
-})
+for (const user of allUsers) {
+  try {
+    await generateForUser(user.id, todayInTz);
+    trackEvent("scheduler_brief_generated", user.id, { date: todayInTz });
+  } catch (err) {
+    log("error", `brief generation failed for user ${user.id}`, String(err));
+    trackEvent("scheduler_brief_failed", user.id, { date: todayInTz, error: String(err) });
+    // continue — do not block remaining users
+  }
+}
+log("info", `scheduler tick complete: ${succeeded}/${allUsers.length} succeeded`);
 ```
-`browser.storage.local` survives service worker termination, macOS restarts, and Safari restarts.
 
 **Warning signs:**
-- Extension popup shows "not configured" or blank state after idle period
-- API key must be re-entered after Safari restarts
-- Background script logs only appear at browser startup, then nothing for hours
+A `for` loop over users in `tick()` where the error handler calls `return` instead of `continue`.
 
-**Phase to address:** EXT-01 (Safari extension persistence)
+**Phase to address:**
+SCHED-01.
 
 ---
 
-### Pitfall 14: iCloud Folder Watcher Race Condition — Event Fires Before File Materializes
+### Pitfall 16: SCHED-01 — Prioritization Cache Not Keyed by userId, Cross-User Data Leak
 
 **What goes wrong:**
-When a photo syncs from iPhone to iCloud Drive, macOS fires a VNODE_WRITE event on the watch folder as soon as the `.icloud` placeholder is replaced by the real file path. However, there is a window where `ubiquitousItemDownloadingStatus` reports `.downloading` even though the file appears to exist. If `processFile()` reads the bytes during this window, it gets a partial or zero-byte file. The Claude vision API returns 400 or produces a degraded/empty transcription.
-
-The current `FolderWatcherService.swift` already implements `waitForStable()` (size stabilization) and the `ubiquitousItemDownloadingStatus != .current` check. However, `waitForStable()` measures size changes, not iCloud's internal download state machine — a file can appear size-stable at an intermediate size before full download.
-
-**Why it happens:**
-The repair may inadvertently remove or break the existing iCloud download guards. Or the bug manifests after the repair because the new code path (e.g., a different trigger for the watcher) doesn't call `triggerICloudDownloads()` before scanning.
+`prioritize.ts` `getCacheKey()` currently generates a cache filename from `today + hash(caseNumbers)`. After SCHED-01, multiple users' work orders are prioritized in the same scheduler tick. User A's prioritization result (based on their work order content) is cached with a key that only includes the case numbers. User B with overlapping case numbers (or the same numbers if they share a work environment) gets User A's prioritization order from cache — wrong ranking, potential content exposure in the log entry.
 
 **How to avoid:**
-Before modifying `FolderWatcherService.swift`, verify the iCloud path end-to-end: drop an image from iPhone to the iCloud-watched folder, observe the VNODE events, and confirm `ubiquitousItemDownloadingStatus` reaches `.current` before `processFile()` proceeds. Add an explicit size-zero guard after `waitForStable()`:
-```swift
-if size == 0 {
-    knownFiles.remove(url.lastPathComponent)
-    return // re-queued on next VNODE event when download completes
+Add `userId` to the cache key: `wo-priority-${today}-${userId}-${hash}.json`. One line change in `getCacheKey()`. This must be done in the SCHED-01 phase before fan-out ships.
+
+**Warning signs:**
+`getCacheKey()` signature in `prioritize.ts` does not include a `userId` parameter after SCHED-01 ships.
+
+**Phase to address:**
+SCHED-01 (fix `getCacheKey()` as part of the fan-out work).
+
+---
+
+### Pitfall 17: Transactional Email Provider Link Tracking Breaks Reset/Verify Tokens
+
+**What goes wrong:**
+Postmark, Resend, and Sendgrid have "link tracking" enabled by default. Every URL in the email body is rewritten to proxy through the provider's click-tracking domain. The user clicks the tracking URL, gets redirected, then hits the actual reset/verify URL. Apple Mail on iOS (with Mail Privacy Protection) pre-fetches all links in an email when it arrives — this pre-fetch hits the tracking URL, which hits the actual token URL, which consumes the single-use token. The user opens the email and clicks "Reset Password" — the token is already used. They see "Invalid or expired token."
+
+**Why it happens:**
+Link tracking is default-on and is never mentioned in the getting-started quick-start docs. Developers test in a non-Mail Privacy Protection environment and the bug is invisible until a real iOS user tries it.
+
+**How to avoid:**
+Disable link tracking for every transactional email containing a token link. For Resend: include `clickTracking: false` in the send call options. For Postmark: disable "Track Links" per message stream. Verify by inspecting the raw email source after a test send — the href value must be verbatim `https://app.vigilhub.io/reset?token=...`, not a tracking domain URL.
+
+**Warning signs:**
+Raw email source shows a click-tracking domain (e.g., `click.postmarkapp.com`, `r.resend.com`) in the href of reset/verify links.
+
+**Phase to address:**
+AUTH-10 (first transactional email) — establish the no-link-tracking policy before AUTH-11 reuses the email service.
+
+---
+
+### Pitfall 18: Railway Env Var Shape — Provider API Key with Trailing Newline
+
+**What goes wrong:**
+Railway's "Variables" panel accepts multi-line values. A paste operation from the browser or `cat` output adds a trailing newline. The email SDK initializes with `new Resend("re_abc123\n")`. Every send call returns HTTP 401. The server starts successfully — no startup crash — but every email silently fails. This is the exact pattern documented in `project_vigil_core_env_gates.md`: "tsx doesn't auto-load .env; vigil-core env gates fail-closed."
+
+**How to avoid:**
+Strip whitespace at initialization:
+```typescript
+const apiKey = (process.env["RESEND_API_KEY"] ?? "").trim();
+if (!apiKey) {
+  console.error("FATAL: RESEND_API_KEY not configured");
+  process.exit(1);
 }
 ```
-The `triggerICloudDownloads()` call in `handleDirectoryChange()` must remain as the first step before the file scan.
+This mirrors the JWT_SECRET pattern in `jwt.ts` exactly. Add a startup smoke test: verify that an email service instance was created without throwing.
 
 **Warning signs:**
-- Triage produces empty or garbled thoughts from iCloud-sourced photos
-- Claude API logs show 400 "invalid image" errors in folder watcher output
-- File moves to `done/` subfolder but the resulting thought has no content
+Email sends return 401 from the provider despite the key appearing correct in Railway's Variables UI.
 
-**Phase to address:** CAP-01 (folder watcher repair) — iCloud end-to-end test required before phase close
+**Phase to address:**
+AUTH-10 (EmailService module initialization).
 
 ---
 
-### Pitfall 15: Manual Upload Triage Bug Fixed in the Wrong Layer
+### Pitfall 19: Silent Send Failure — Provider Returns 200, Email Never Arrives
 
 **What goes wrong:**
-CAP-02 is "manual uploads skipping AI categorization." The bug could live in three places:
-1. **PWA layer**: `PhotoUploadPage.tsx` uploads but does not call the triage endpoint afterward
-2. **Server layer**: `POST /v1/process-photo` does not include triage in its response or does not call `/v1/triage`
-3. **Mac app layer**: the Mac dashboard's batch upload bypasses the server triage path
-
-If the fix is applied at the wrong layer (PWA calls triage explicitly, but the actual bug is that the server's `process-photo` route never triages), the symptom appears fixed via one path while remaining broken through another (Mac app batch upload, folder watcher re-ingest).
-
-**Why it happens:**
-"Manual upload triage" is ambiguous — it could refer to the PWA's PhotoUploadPage, the Mac app's batch import, or the server's process-photo response. Without layer-by-layer diagnosis, developers patch the most visible surface.
+The send API returns HTTP 200 with a message ID. `POST /v1/auth/forgot-password` returns 200 to the caller. The email is never delivered because the sending domain lacks DKIM/SPF/DMARC records and the recipient's mail server silently drops or quarantines the message. There is no error in Railway logs. The user sees "check your email" and nothing arrives.
 
 **How to avoid:**
-The CAP-02 phase plan must include a diagnosis step before any code is written. Execute this curl against Railway:
-```bash
-curl -X POST https://api.vigilhub.io/v1/process-photo \
-  -H "Authorization: Bearer $VIGIL_KEY" \
-  -F "image=@test.jpg"
-```
-Inspect the response for `thoughts[].category`. If `category` is null in the response, the bug is server-side. If `category` is present in the response but the PWA doesn't display it, the bug is client-side. This one check locates the bug layer before any fix code is written.
+Before AUTH-10 ships to prod: (1) Verify DKIM/SPF/DMARC on `vigilhub.io` — `dig TXT vigilhub.io` and `dig TXT _dmarc.vigilhub.io`. If missing, configure them first. Start with `p=none` (report-only) DMARC and upgrade after two weeks of clean reports. (2) Send a manual test email to `jamesonmorrill1@gmail.com` via the provider dashboard and confirm it lands in inbox (not spam). (3) Subscribe to provider bounce/complaint webhooks and emit a PostHog event (`email_bounced`, userId) for observability. (4) Log the provider's returned message ID for every send so bounces can be correlated.
 
 **Warning signs:**
-- Phase plan says "fix the PWA upload flow" without a server-side investigation step
-- Fix is applied only in PWA without checking Mac app upload path
-- After the fix, PWA uploads are triaged but Mac Dashboard uploads still skip categorization
+`dig TXT _dmarc.vigilhub.io` returns NXDOMAIN at AUTH-10 ship time. This is a blocking prerequisite.
 
-**Phase to address:** CAP-02 (manual upload triage repair) — diagnosis step is the first task in the phase plan
+**Phase to address:**
+AUTH-10 — DKIM/SPF/DMARC setup is a hard prerequisite, not a nice-to-have.
 
 ---
 
-### Pitfall 16: HEIC Files Sent to Claude Without Server-Side Conversion
+### Pitfall 20: Email SDK Initialized at Module Load — Test Suite Requires Prod Credentials
 
 **What goes wrong:**
-The Mac folder watcher includes `.heic` in `imageExtensions` and sends HEIC files to `POST /v1/process-photo`. If the server passes raw HEIC bytes to Claude's vision API with `image/heic` as the media type, Claude may return a 400 error or silently produce a degraded/empty transcription. This was a documented pain point in v1.1 (CoreGraphics conversion added locally) and v2.4 (photo endpoint). After migration to server-side processing, HEIC conversion responsibility shifted to the server — but it may not have been implemented.
-
-**Why it happens:**
-The Mac app handled HEIC conversion locally (CoreGraphics). When the photo endpoint was moved server-side, the conversion was not ported. Developers assume Claude supports HEIC (it sometimes does, partially) and don't add an explicit test case with a real HEIC file.
-
-**How to avoid:**
-In the CAP-01 phase, verify `vigil-core/src/routes/process-photo.ts` converts HEIC to JPEG before the Claude API call. If conversion is missing, add `sharp` (handles HEIC via libvips on Railway's Linux environment):
 ```typescript
-import sharp from 'sharp'
-const jpeg = await sharp(buffer).toFormat('jpeg').toBuffer()
+// top of emailService.ts — module-load-time init
+const resend = new Resend(process.env.RESEND_API_KEY);
 ```
-Add a test: upload a real `.heic` file to `POST /v1/process-photo`, assert the returned thought has non-empty `content`.
+Any test file that imports a route that imports `emailService.ts` now requires `RESEND_API_KEY` to be set. Tests fail with SDK constructor errors in every CI run and local dev environment that doesn't have email credentials configured. The existing PostHog module avoids this via `apiKey ? new PostHog(apiKey) : null` — apply the same pattern.
+
+**How to avoid:**
+```typescript
+const apiKey = (process.env["RESEND_API_KEY"] ?? "").trim();
+const resend = apiKey ? new Resend(apiKey) : null;
+
+async function sendEmail(opts: SendEmailOpts): Promise<void> {
+  if (!resend) {
+    log("warn", "email service not configured, skipping send");
+    return;
+  }
+  // ...
+}
+```
+Email becomes a gracefully-degraded optional feature rather than a hard startup dependency. Local dev works without Resend credentials.
 
 **Warning signs:**
-- Folder watcher processes HEIC files without error (moves to `done/`) but thoughts have empty content
-- Claude API logs show `image/heic` or `image/heif` in request content type
-- `process-photo.ts` passes `buffer` directly to Claude without a format check
+`vitest` output shows errors about Resend SDK initialization when `RESEND_API_KEY` is unset. Tests that have nothing to do with email fail when run without email credentials.
 
-**Phase to address:** CAP-01 (folder watcher repair) — HEIC verification as part of the fix
+**Phase to address:**
+AUTH-10 (EmailService module design).
+
+---
+
+### Pitfall 21: Template Injection — User-Controlled Content in Email Subject or Body
+
+**What goes wrong:**
+Email subject line: `"Password reset for " + user.email`. If `user.email` contains HTML characters and the email body is rendered as HTML, it can inject markup into the email. More critically: SMTP header injection via newlines in the `to:` or `from:` fields can be attempted if raw email headers are constructed via string concatenation rather than through an SDK's type-checked fields.
+
+**How to avoid:**
+Use the transactional email SDK's typed `to:`, `from:`, `subject:` fields — never raw header concatenation. The SDK constructs MIME internally and handles escaping. For any user-controlled value in the HTML body, use the provider's template variable interpolation (Resend's `react` component or HTML with escaped variables) rather than template literals. The `user.email` value has already passed `isValidEmailShape()` at registration time but that regex does not exclude all problematic characters.
+
+**Phase to address:**
+AUTH-10.
+
+---
+
+### Pitfall 22: Deliverability — First Emails from New Sending Domain Land in Spam
+
+**What goes wrong:**
+The first 50 emails from a brand-new sending domain land in spam for a significant fraction of recipients. For v3.6 at N=1 real user, the only recipient is `jamesonmorrill1@gmail.com`, so this is low-stakes now. It becomes high-stakes when a second user registers and cannot verify their email or reset their password because the email landed in spam silently.
+
+**How to avoid:**
+(1) Use `noreply@mail.vigilhub.io` as the sending address (dedicated subdomain keeps the main domain's reputation clean). (2) Verify deliverability manually before AUTH-10 ships to prod: send a test email to `jamesonmorrill1@gmail.com` and confirm inbox placement. (3) Resend's free tier includes `onboarding@resend.dev` for testing — use it in local dev; switch to the real domain only for production.
+
+**Phase to address:**
+AUTH-10 — include a "deliverability test send" step in the UAT checklist.
+
+---
+
+### Pitfall 23: New Auth Events Not Wired Through PostHog trackEvent Wrapper
+
+**What goes wrong:**
+AUTH-09/10/11 add multiple new user-affecting events: password changed, reset requested, reset completed, email verified, verification resent. Developers new to the codebase call `posthog.capture()` directly instead of the `trackEvent()` wrapper in `posthog.ts`. The `BLOCKED_PROPERTY_NAMES` allowlist check is bypassed, the `NODE_ENV` production gate is bypassed, and PII can leak into PostHog.
+
+**How to avoid:**
+Every new auth event must use `trackEvent(eventName, userId, properties)`. Run `grep -rn "posthog\.capture" vigil-core/src/` — the result should be empty (all calls go through the wrapper). Add this grep as a CI check or code review checklist item for auth-related PRs.
+
+**Phase to address:**
+AUTH-09, AUTH-10, AUTH-11 (cross-cutting — apply to all three).
+
+---
+
+### Pitfall 24: EXT-02 Safari — CMD+Enter Swallowed by Browser Before Extension JS Fires
+
+**What goes wrong:**
+The Chrome extension uses `Cmd+Enter` (macOS) to submit quick-capture. In Safari's extension popup, `Cmd+Enter` may trigger Safari's own form submission or shortcut at the browser level before the extension's JavaScript event listener fires. Safari WebKit-based popup context differs from Chrome's isolated popup window in keyboard event priority.
+
+**How to avoid:**
+Test `Cmd+Enter` in the Safari extension popup as the FIRST step in the EXT-02 implementation — before writing any other code. If it is swallowed, design the fallback (visible Submit button as primary affordance, `Cmd+Enter` as secondary) into the initial build rather than retrofitting. The Chrome extension's `Cmd+Enter` must remain unchanged — this is a Safari-specific accommodation only.
+
+**Warning signs:**
+EXT-02 plan includes `Cmd+Enter` as a requirement but has no explicit Safari-specific keyboard test step before the implementation tasks.
+
+**Phase to address:**
+EXT-02 — keyboard test must be step 1 in the plan.
+
+---
+
+### Pitfall 25: EXT-02 Safari Manifest Changes Invalidate Code Signing
+
+**What goes wrong:**
+Phase 107 / EXT-01 established Safari extension persistence. That work may have involved `manifest.json` changes and was followed by a signing step. Any changes to `manifest.json` for EXT-02 (new permissions, updated browser action keys, content script changes) can invalidate the existing signing. A Safari extension with a changed unsigned manifest is silently disabled or blocked by Safari on next launch with no user-visible error message.
+
+**How to avoid:**
+Before EXT-02 implementation: verify current signing state with `spctl --assess --type execute /path/to/Safari\ Extension.app`. After EXT-02 manifest changes: include "re-sign extension with Xcode" as an explicit named task in the plan, not an implied afterthought. Test the signed extension in Safari after signing before UAT begins.
+
+**Phase to address:**
+EXT-02.
 
 ---
 
@@ -407,12 +489,12 @@ Add a test: upload a real `.heic` file to `POST /v1/process-photo`, assert the r
 
 | Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
 |----------|-------------------|----------------|-----------------|
-| PostHog at call sites without a wrapper | Works immediately in dev | PII leaks the moment anyone adds thought content; no env gate | Never — always use a `trackEvent()` wrapper |
-| Single PostHog project for all envs | One dashboard to check | Dev/test events permanently corrupt production funnels | Never — separate API keys per env minimum |
-| JWT in localStorage instead of sessionStorage | Persists across refreshes | XSS blast radius includes full auth token | Never in v3.5 — sessionStorage is the right tradeoff |
-| G2 submit before all 3 items verified on simulator | Faster to submit | Wastes a full review cycle (days of wait time) | Never |
-| Triage fix in PWA only without server diagnosis | Quickest path to "fixed" | Mac app uploads remain broken; server path remains untriaged | Never — diagnose before fixing |
-| posthog.shutdown() not in SIGTERM handler | Saves 3 lines of code | Events since last flush lost on every Railway deploy/restart | Never — add to existing handler at SDK initialization time |
+| Stateless JWT with no `password_changed_at` gate | Zero DB lookups per request | Compromised accounts stay accessible for up to 30 days after reset | Never once AUTH-10 ships |
+| Per-IP rate limiting only (no per-email counter) | One middleware handles everything | Email flooding on target accounts | Never for auth endpoints |
+| Prioritization cache not keyed by userId | Works at N=1 | Cross-user data leak and wrong rankings after SCHED-01 | Must be fixed before SCHED-01 ships |
+| Sequential scheduler fan-out without error isolation | Simple and readable | One user error blocks all others | Never — per-user try/catch is equally simple |
+| Email SDK at module load (not lazy null-guarded) | Fewer null checks at call sites | Test suite requires prod credentials; crashes if key missing | Never — follow PostHog pattern |
+| Link tracking enabled on transactional emails | Provider analytics "for free" | Tokens consumed by Apple Mail pre-fetch; users see "invalid token" | Never for reset/verify links |
 
 ---
 
@@ -420,24 +502,12 @@ Add a test: upload a real `.heic` file to `POST /v1/process-photo`, assert the r
 
 | Integration | Common Mistake | Correct Approach |
 |-------------|----------------|------------------|
-| PostHog + Hono | Initializing PostHog inside a route handler (new instance per request) | Singleton initialized once in `index.ts`, nullable if not production |
-| PostHog + Vitest | Real PostHog client initialized at test module scope; setInterval leaks between tests | `vi.mock('posthog-node', () => ({ PostHog: vi.fn(() => ({ capture: vi.fn(), shutdown: vi.fn() })) }))` |
-| Even Hub SDK + double-tap | CLICK_EVENT fires before DOUBLE_CLICK_EVENT; existing handler navigates before double-tap is recognized | 300ms debounce on CLICK_EVENT, cancel on DOUBLE_CLICK_EVENT; or use SDK's native double-tap event if it fires distinctly |
-| Safari MV3 + extension state | State in background service worker module scope evaporates on termination | `browser.storage.local` for all persistent state; read on every activation |
-| iCloud folder watcher + HEIC | HEIC bytes sent to Claude without format conversion | `sharp` conversion to JPEG server-side before Claude API call |
-| argon2id + PWA login form | Password field `type="text"` accidentally set during dev | Always `type="password"` on password inputs; never toggle type for show/hide |
-| PostHog + Safari extension content script | Outbound requests to posthog.com blocked by ITP + tracker blocklists | No PostHog in content scripts; track extension events server-side via a source header |
-
----
-
-## Performance Traps
-
-| Trap | Symptoms | Prevention | When It Breaks |
-|------|----------|------------|----------------|
-| posthog-node feature flags enabled in long-running Vigil Core | Memory grows 10-50MB/day; Railway OOMs | Don't use feature flags at all in v3.5 | Immediately with flag polling; gradually otherwise |
-| posthog.shutdown() missing on SIGTERM | Events since last flush lost on every Railway deploy | Add shutdown() to existing SIGTERM handler | Every Railway deploy that kills the process mid-interval |
-| iCloud watcher initial scan floods Claude on first launch | Startup spikes Claude API usage if folder has many images | `knownFiles` set prevents reprocessing; verify it persists across restarts if needed | First launch after clearing knownFiles state |
-| Double-tap debounce adds latency to every single tap | G2 navigation feels sluggish (every tap delayed 300ms) | Check if SDK fires DOUBLE_CLICK_EVENT distinctly (no debounce needed); only debounce if CLICK_EVENT fires before double-tap recognition | Immediately if naive 300ms timer is used for all CLICK_EVENTs |
+| Resend / Postmark SDK | `new Resend(key)` at module load | Lazy init: `apiKey ? new Resend(apiKey) : null`; null-guard all call sites |
+| Resend / Postmark SDK | Link tracking on by default | Explicitly disable per send: `clickTracking: false` (Resend) |
+| Railway env vars | API key pasted with trailing newline | `.trim()` on all env var reads; startup FATAL if empty after trim |
+| PostHog (already shipped) | New auth events using `posthog.capture()` directly | All events through `trackEvent()` wrapper — enforce with grep in code review |
+| PostHog (already shipped) | New auth events with `email` or `reset_email` properties | Check `BLOCKED_PROPERTY_NAMES`; add auth-specific names if needed |
+| jose JWT library (already shipped) | Changing `algorithms: ["HS256"]` when adding new token verification | Never change — algorithm pinning is a security requirement, not a style choice |
 
 ---
 
@@ -445,55 +515,36 @@ Add a test: upload a real `.heic` file to `POST /v1/process-photo`, assert the r
 
 | Mistake | Risk | Prevention |
 |---------|------|------------|
-| Thought content in PostHog event properties | Therapy notes, personal thoughts, emails stored in PostHog Cloud indefinitely | Property allowlist: structural metadata only (enums, booleans, numbers) |
-| JWT in localStorage | XSS exfiltration of auth token; attacker authenticates as user until token expires | sessionStorage (tab-scoped) or React context; document the tradeoff |
-| Login error message differentiating "unknown email" from "wrong password" | User enumeration — server already prevents this with timing-safe login | Single generic error message for all 4xx auth responses |
-| Session recording enabled before auth form masking verified | Password captured in plaintext if show/hide toggle changes input type | Verify masking with `maskInputFn` by element ID; or avoid show/hide toggle entirely |
-| Safari extension sending analytics from content script | ITP blocks requests; data partially captured before block depending on user's blocklist | No PostHog in extension content scripts; track via server-side source header |
-
----
-
-## UX Pitfalls
-
-| Pitfall | User Impact | Better Approach |
-|---------|-------------|-----------------|
-| Login form with "Forgot Password" link that leads nowhere | User locked out with no recovery path | Omit the link in AUTH-06; add it only when email infrastructure exists |
-| No loading state on JWT login (argon2id verify takes ~100ms) | UI appears frozen on submit | Disable submit button + show spinner immediately on form submit |
-| Tab order broken on login form | Keyboard/autofill users frustrated; 1Password won't fill correctly | Correct DOM order: email → password → submit; no explicit tabIndex manipulation needed |
-| G2 double-tap exit with no visual feedback | User unsure if the gesture was recognized | Even Hub's expected UX is minimal — implement as the SDK specifies; don't add confirmation dialogs to glasses UX |
-| PostHog analytics showing 0 events from Railway (integration appears broken) | Developer wastes time debugging when env gate is correctly blocking dev events | Add one test event in the dev environment before env-gating; verify it appears, then add the gate |
+| Reset token stored plaintext in DB | Account takeover on DB read | SHA-256 hash at rest; column named `token_hash` |
+| JWT issued before token verification | Valid JWT without knowing password | Verification-first order enforced in plan and integration test |
+| No `password_changed_at` gate in bearerAuth | Compromised sessions persist 30 days post-reset | Add to users table; check `iat < password_changed_at` in JWT path |
+| Email enumeration via timing on forgot-password | Attacker maps registered emails | Always-200 response; constant-time floor |
+| Email in reset link URL | Email + token leak via Referer | Token-only URL; `history.replaceState` in PWA |
+| Auto-login via JWT in URL after verify | JWT in browser history, PostHog, server logs | Redirect to login with `?verified=true` only |
+| work_order_statuses unscoped after W-01 | Cross-user status data leak | grep all call sites; cross-user isolation test |
+| prioritize.ts cache not keyed by userId | Wrong rankings + data leak cross-user | Add userId to `getCacheKey()` before SCHED-01 ships |
 
 ---
 
 ## "Looks Done But Isn't" Checklist
 
-- [ ] **PostHog env guard:** Railway events appear in PostHog Cloud; local `npm run dev` does NOT produce events — verify both
-- [ ] **PostHog PII audit:** grep all `posthog?.capture()` calls; no string properties contain user-generated content
-- [ ] **PostHog shutdown:** `await posthog?.shutdown()` present in BOTH the SIGTERM and SIGINT handlers in `index.ts`
-- [ ] **G2 checklist complete:** G2-01 + G2-02 + G2-03 all verified on simulator before the resubmission button is clicked
-- [ ] **G2 double-tap regression:** single tap still navigates to task detail after double-tap handler is added — manual simulator test required
-- [ ] **AUTH-06 JWT storage:** JWT is in sessionStorage, NOT localStorage — verify in DevTools Application tab
-- [ ] **AUTH-06 error message:** wrong email and wrong password both produce identical error message — test both cases
-- [ ] **AUTH-06 no forgot password link:** no "Forgot Password" link on the shipped login form
-- [ ] **AUTH-06 password field type:** `type="password"` on the password input — verify in DOM inspector
-- [ ] **EXT-01 persistence:** extension remains enabled after full macOS restart (not just Safari restart) — test on physical machine
-- [ ] **CAP-02 diagnosis:** `curl POST /v1/process-photo` response inspected for `category` before any fix code is written
-- [ ] **CAP-01 HEIC end-to-end:** real `.heic` file dropped to watched folder produces a thought with non-empty content
-- [ ] **CAP-01 iCloud round-trip:** photo dropped from iPhone to iCloud-backed folder produces a thought (end-to-end, not mocked)
-
----
-
-## Recovery Strategies
-
-| Pitfall | Recovery Cost | Recovery Steps |
-|---------|---------------|----------------|
-| Dev events polluted PostHog production project | HIGH — no bulk delete by property in PostHog Cloud | Create new PostHog project; update POSTHOG_API_KEY in Railway env; accept data loss for the polluted window |
-| PII captured in PostHog event properties | HIGH — PostHog does not support selective property deletion | File PostHog data deletion request; implement property scrubbing immediately; rotate any sensitive identifiers |
-| G2 re-rejected for partial fix | MEDIUM — days of wait time lost | Fix remaining items immediately; resubmit with explicit notes listing all three fixed items |
-| JWT in localStorage, XSS discovered | MEDIUM — all active sessions compromised | Rotate `JWT_SECRET` in Railway env; all existing tokens immediately invalidated; users must re-login |
-| posthog-node memory leak OOMs Railway | LOW — Railway auto-restarts; events since last flush lost | Add `shutdown()` to SIGTERM handler; avoid feature flags; upgrade posthog-node if patch released |
-| iCloud race condition produces empty thought | LOW — thought exists but has no content | User re-triages via existing re-triage button; delete and re-drop the file to the watch folder |
-| Manual upload bug fixed in wrong layer | MEDIUM — bug returns via alternate client path | Revert the misplaced fix; run the diagnostic curl; fix at the correct layer |
+- [ ] **AUTH-10 token storage:** `password_reset_tokens` table has `token_hash` column (not `token`) — verify in migration SQL
+- [ ] **AUTH-10 response timing:** `POST /v1/auth/forgot-password` with unknown email returns 200 in approximately the same time as known email
+- [ ] **AUTH-10 password_changed_at:** Column added to `users`; bearerAuth JWT path rejects tokens with `iat < password_changed_at`
+- [ ] **AUTH-10 reset flow order:** `signToken()` call appears AFTER the token validation UPDATE RETURNING in the handler
+- [ ] **AUTH-10 link tracking:** Raw email source shows verbatim `app.vigilhub.io` URL, not a tracking domain
+- [ ] **AUTH-10 DKIM/SPF/DMARC:** `dig TXT _dmarc.vigilhub.io` returns a valid record before first production send
+- [ ] **AUTH-10 deliverability test:** Manual test email to `jamesonmorrill1@gmail.com` confirmed in inbox (not spam) before AUTH-10 sign-off
+- [ ] **AUTH-11 email_verified_at backfill:** Migration includes `UPDATE users SET email_verified_at = created_at WHERE email_verified_at IS NULL`
+- [ ] **AUTH-11 no JWT in URL:** Post-verify redirect URL contains no `token=` parameter
+- [ ] **AUTH-11 PWA token cleanup:** `history.replaceState` called after reading verify token from URL
+- [ ] **W-01 backfill order:** Migration DO $$ UPDATE block appears BEFORE `ALTER COLUMN SET NOT NULL` in the SQL file
+- [ ] **W-01 scope coverage:** `grep -rn "workOrderStatuses" vigil-core/src/routes/` — every occurrence has `eq(workOrderStatuses.userId, ...)` guard
+- [ ] **W-01 upsert conflict target:** `onConflictDoUpdate` target updated to composite `[userId, caseNumber]` after PK change
+- [ ] **SCHED-01 error isolation:** Per-user try/catch uses `continue`, not `return` — verify by test that injects a throw for user 2 of 3
+- [ ] **SCHED-01 cache key:** `getCacheKey()` in `prioritize.ts` includes `userId` parameter
+- [ ] **EXT-02 Cmd+Enter:** Tested in Safari popup as step 1 before any EXT-02 implementation code is written
+- [ ] **EXT-02 signing:** Extension re-signed after manifest changes; `spctl --assess` passes
 
 ---
 
@@ -501,48 +552,44 @@ Add a test: upload a real `.heic` file to `POST /v1/process-photo`, assert the r
 
 | Pitfall | Prevention Phase | Verification |
 |---------|------------------|--------------|
-| PostHog dev event flooding | ANLY-01 (PostHog setup) | Railway events appear in PostHog; `npm run dev` events do NOT appear |
-| PII in event properties | ANLY-01 (property schema) | Grep all `capture()` calls; code review checklist signed off |
-| Double-counting client + server | ANLY-01 (naming convention) | Event name registry documented before any implementation |
-| Session recording + password reveal | AUTH-06 (login UI) | Test show/hide toggle in session replay; field stays masked |
-| posthog-node memory leak | ANLY-01 (SDK init + shutdown) | `shutdown()` in SIGTERM handler; no feature flags configured |
-| PostHog in Safari extension | ANLY-01 (scope definition) | No posthog import in extension `src/`; grep confirms |
-| G2 partial resubmit | G2 resubmit phase (all items) | All three G2 checklist items green on simulator before submission |
-| Double-tap gesture collision | G2-02 (exit dialogue) | Single tap navigates; double tap exits; swipe still works |
-| JWT in localStorage | AUTH-06 (storage decision) | DevTools Application: JWT in sessionStorage, absent from localStorage |
-| Login error message specificity | AUTH-06 (error copy review) | Wrong email and wrong password produce identical error message |
-| Forgot password without email infrastructure | AUTH-06 (scope gating) | No "Forgot Password" link in shipped UI |
-| Safari extension disabled after restart | EXT-01 (persistence fix) | Extension enabled after full macOS restart on physical machine |
-| MV3 service worker state loss | EXT-01 (persistence fix) | API key accessible after Safari idle period + restart |
-| iCloud watcher race condition | CAP-01 (folder watcher repair) | iPhone-sourced HEIC photo produces thought with content (end-to-end) |
-| Triage fix in wrong layer | CAP-02 (diagnosis first) | Curl `POST /v1/process-photo` inspected before any code change |
-| HEIC not converted server-side | CAP-01 (HEIC verification) | Real HEIC file produces non-empty thought content |
+| Reset token stored plaintext | AUTH-10 | Migration column is `token_hash`; code review |
+| JWT issued before token verified | AUTH-10 | Integration test: tampered token → 401, no JWT |
+| Old JWT valid after reset | AUTH-09 + AUTH-10 | Integration test: old JWT rejected after password change/reset |
+| Email enumeration via timing | AUTH-10 | Test: unknown email returns 200 in ≥ same time as known |
+| Per-email rate limit missing | AUTH-10 | Test: 4+ same-email requests in 10 min returns 429 |
+| Email in reset URL | AUTH-10 | Review link construction; no `email=` param |
+| Single-use race condition | AUTH-10 | DB: UPDATE uses `WHERE used_at IS NULL RETURNING` |
+| vk_ user triggers reset | AUTH-10 | Test: seed user email → generic 200, no token row created |
+| Verify token referrer leak | AUTH-11 | `history.replaceState` in PWA; no Referer with token |
+| Auto-login via JWT in URL | AUTH-11 | No `token=` in post-verify redirect |
+| Existing users locked out | AUTH-11 | Seed user has `email_verified_at` backfilled; integration test |
+| W-01 FK ordering error | W-01 | Migration runs on fresh local DB and Railway |
+| work_order_statuses cross-user leak | W-01 | Cross-user isolation test; grep confirms all call sites scoped |
+| upsert conflict target stale | W-01 | Code review: conflict target updated to composite PK |
+| SCHED-01 one user blocks others | SCHED-01 | Test: thrown error for user 2 does not prevent user 3 |
+| Prioritize cache cross-user leak | SCHED-01 | `getCacheKey()` includes userId; code review |
+| Provider link tracking breaks tokens | AUTH-10 | Raw email inspection: verbatim URL in href |
+| Railway env var newline | AUTH-10 | `.trim()` in EmailService init; test with trailing space |
+| Silent email bounce | AUTH-10 | DKIM/SPF/DMARC verified; deliverability test to inbox |
+| SDK module-load crash | AUTH-10 | Test suite passes with `RESEND_API_KEY` unset |
+| Template injection | AUTH-10 | SDK typed fields; no string concatenation for headers |
+| New events bypass trackEvent | AUTH-09 + AUTH-10 + AUTH-11 | `grep -rn "posthog\.capture" vigil-core/src/` returns empty |
+| EXT-02 Cmd+Enter swallowed | EXT-02 | First UAT step before implementation |
+| EXT-02 manifest signing | EXT-02 | Re-sign task in plan; `spctl --assess` passes |
 
 ---
 
 ## Sources
 
-- PostHog Node.js SDK docs: https://posthog.com/docs/libraries/node
-- PostHog multiple environments guide: https://posthog.com/tutorials/multiple-environments
-- PostHog privacy controls (session replay masking): https://posthog.com/docs/session-replay/privacy
-- PostHog data collection controls: https://posthog.com/docs/privacy/data-collection
-- PostHog browser extension analytics guide: https://posthog.com/docs/advanced/browser-extension
-- PostHog PII hashing transformations: https://posthog.com/docs/cdp/transformations/template-pii-hashing
-- PostHog event tracking guide (double-counting, naming): https://posthog.com/tutorials/event-tracking-guide
-- posthog-node v5.4.0 memory leak (feature flags, long-running services): https://github.com/PostHog/posthog-js/issues/2206
-- Safari extension MV3 background page issues: https://developer.apple.com/forums/thread/709349
-- Safari extension MV3 service worker background: https://discussions.apple.com/thread/256156284
-- iCloud Drive FSEvents race condition: https://github.com/fsevents/fsevents/issues/285
-- iCloud Drive Sonoma mechanisms + throttling: https://eclecticlight.co/2024/03/05/icloud-drive-in-sonoma-mechanisms-throttling-and-system-limits/
-- JWT localStorage vs sessionStorage security (2025): https://www.cyberchief.ai/2023/05/secure-jwt-token-storage.html
-- Even Hub developer docs: https://hub.evenrealities.com/docs/
-- Even toolkit (gestures + debounce patterns): https://github.com/fabioglimb/even-toolkit
-- Codebase: `vigil-core/src/routes/auth.ts` — DUMMY_HASH timing-safe login, D-10/D-11 claim flow, generic 401
-- Codebase: `vigil-core/src/index.ts` — existing SIGTERM/SIGINT handlers, scheduler lifecycle
-- Codebase: `Sources/DailyBriefMonitor/FolderWatcherService.swift` — iCloud download trigger, HEIC extension set, waitForStable, ubiquitousItemDownloadingStatus check
-- Codebase: `vigil-g2-plugin/src/main.ts` — CLICK_EVENT + DOUBLE_CLICK_EVENT + FOREGROUND_ENTER/EXIT handlers
-- Codebase: `vigil-pwa/src/pages/AuthPage.tsx` — existing API key auth pattern (basis for AUTH-06 JWT extension)
+- Direct code inspection: `vigil-core/src/middleware/auth.ts`, `routes/auth.ts`, `utils/jwt.ts`, `utils/password.ts`, `utils/token-crypto.ts`, `db/schema.ts`, `drizzle/0012_multi_user_foundation.sql`, `drizzle/0013_work_orders_drift_repair.sql`, `routes/work-order-status.ts`, `routes/work-orders.ts`, `services/generate-scheduler.ts`, `routes/prioritize.ts`, `analytics/posthog.ts`, `routes/me.ts`
+- Existing code comments referencing "Pitfall 1..9" in `auth.ts`, `jwt.ts`, `password.ts` — team's documented prior art on timing-safe auth
+- v3.4 claim-flow and 0012 migration pattern — reference model for W-01 and AUTH-11 backward-compat migrations
+- Railway deployment constraints: `project_railway_deploy.md`, `project_vigil_core_env_gates.md` (project memory)
+- OWASP Password Reset Cheat Sheet — token storage, timing enumeration, single-use enforcement
+- Apple Mail Privacy Protection behavior — link pre-fetching consumes single-use tokens before user clicks
+- RFC 7519 JWT spec — `iat` semantics for `password_changed_at` comparison
+- PostHog `trackEvent` wrapper and `BLOCKED_PROPERTY_NAMES` — `analytics/posthog.ts` lines 38-51
 
 ---
-*Pitfalls research for: Vigil v3.5 — PostHog analytics, G2 resubmit, PWA login/register, Safari extension persistence, photo capture repair*
-*Researched: 2026-04-19*
+*Pitfalls research for: v3.6 Multi-User Completion, Auth UX & Safari Parity*
+*Researched: 2026-04-22*

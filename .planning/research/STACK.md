@@ -1,326 +1,284 @@
 # Stack Research
 
-**Domain:** Observability, G2 resubmit, capture repair, PWA auth UI, Safari extension persistence — Vigil v3.5
-**Researched:** 2026-04-19
-**Confidence:** HIGH — SDK versions verified via npm registry; lifecycle APIs verified via official Even Hub docs; iCloud watcher behavior verified via Apple Developer documentation and multiple community sources
+**Domain:** Multi-user auth flows + transactional email + cross-browser extension parity — Vigil v3.6
+**Researched:** 2026-04-22
+**Confidence:** HIGH (email provider, reset-token pattern, templating); MEDIUM (Safari extension parity specifics — confirmed working patterns from community + Apple forums)
 
 ---
 
 ## Existing Stack Baseline (Do NOT re-install)
 
-The following are already installed and available — do not add them again:
+Already installed and validated. Do not add again:
 
-| Package | Location | Current Version | Relevant to v3.5 |
+| Package | Location | Current Version | Relevant to v3.6 |
 |---------|----------|-----------------|------------------|
-| `react` | vigil-pwa | ^19.2.5 | Auth UI forms, login/register pages |
-| `react-router` | vigil-pwa | ^7.14.0 | Auth route guarding |
-| `tailwindcss` | vigil-pwa (dev) | ^4.2.2 | Form styling — no UI framework needed |
-| `hono` | vigil-core | ^4.7.0 | API routing for PostHog proxy endpoint |
-| `drizzle-orm` | vigil-core | ^0.45.2 | No new schema needed for v3.5 |
-| `@evenrealities/even_hub_sdk` | vigil-g2-plugin | ^0.0.9 | Already one minor behind latest (0.0.10) |
+| `@node-rs/argon2` | vigil-core | ^2.0.2 | AUTH-09/10/11 — password hashing, already in use |
+| `jose` | vigil-core | ^6.2.2 | JWT signing, already in use |
+| `hono` | vigil-core | ^4.7.0 | New auth routes follow existing pattern |
+| `drizzle-orm` | vigil-core | ^0.45.2 | New columns on users table via migration |
+| `react` | vigil-pwa | ^19.2.5 | Auth UI already wired |
+| `react-hook-form` | vigil-pwa | ^7.72.1 | Form validation from v3.5 |
+| `zod@3` | vigil-pwa | 3.x (pinned) | Schema validation from v3.5 |
+| `posthog-node` | vigil-core | ^5.29.2 | Analytics from v3.5 |
 
 ---
 
-## New Dependencies Required for v3.5
+## New Dependencies Required for v3.6
 
 ### vigil-core (Node.js/Hono API)
 
-| Library | Install Version | Purpose | Why |
-|---------|----------------|---------|-----|
-| `posthog-node` | `^5.29.2` | Server-side analytics + error capture | PostHog's official Node.js SDK; error autocapture requires `enableExceptionAutocapture: true`; minimum required for API metrics and server error tracking |
+| Package | Version to Install | Purpose | Why |
+|---------|-------------------|---------|-----|
+| `resend` | `^6.12.2` | Transactional email sending | Official Node.js SDK for Resend; TypeScript-native; single env var `RESEND_API_KEY`; natively integrates with react-email via `react` param on `emails.send()` |
+| `@react-email/components` | `^0.x` (current stable) | Pre-built email-safe HTML components | Html, Head, Body, Section, Text, Link, Button components that compile to inline-CSS email-compatible HTML |
+| `@react-email/render` | `^2.0.4` | Server-side render React email templates → HTML string | Pure function `render(Component)` → string; called in Hono route, passes result to resend |
+| `react` | `^18.x` | React runtime (peer dep for react-email) | react-email requires React runtime; vigil-core does not currently have React installed |
+| `react-dom` | `^18.x` | React DOM (peer dep for react-email) | Required by @react-email/render internals |
 
-That is the only new server-side package. No additional error-tracking library (e.g., Sentry) is needed.
+**No new vigil-pwa dependencies for v3.6.** The PWA already has react-hook-form + zod from v3.5.
 
-### vigil-pwa (React/Vite PWA)
-
-| Library | Install Version | Purpose | Why |
-|---------|----------------|---------|-----|
-| `posthog-js` | `^1.369.3` | Browser analytics + error tracking | PostHog's JS SDK; `capture_exceptions: true` enables `window.onerror` / `unhandledrejection` wrapping; `PostHogErrorBoundary` component catches React render errors |
-| `react-hook-form` | `^7.72.1` | Login/register form state | Uncontrolled components; minimal re-renders; pairs with zod resolver; standard for TypeScript React forms in 2026 |
-| `zod` | `^3.x` (pin to 3.x, NOT 4.x) | Schema validation + TypeScript type inference | Zod v4 has active breaking changes with `@hookform/resolvers`; v3 is stable and widely deployed; `z.infer<>` drives both form types and API validation types |
-| `@hookform/resolvers` | `^3.10.x` (NOT ^5.x) | Bridges react-hook-form + zod | v5.x introduces Zod v4 peer dep and type mismatches; v3.x is the last stable version for Zod v3 |
-
-**Critical version constraint:** Pin `zod` to `^3.x` and `@hookform/resolvers` to `^3.x`. The v5 resolvers and Zod v4 have documented type errors as of July 2025 that are not yet fully resolved. Use `npm install zod@3 @hookform/resolvers@3` to install the stable pair.
-
-### vigil-g2-plugin (Even Hub TypeScript plugin)
-
-| Package | Install Version | Purpose | Why |
-|---------|----------------|---------|-----|
-| `@evenrealities/even_hub_sdk` | `^0.0.10` | Even Hub SDK with lifecycle event API | Current installed version is 0.0.9; latest published is 0.0.10 (published ~April 12, 2026); update to get `FOREGROUND_EXIT_EVENT` and `DOUBLE_CLICK_EVENT` constants if not already present in 0.0.9 — confirm before assuming the update is required |
-
-**G2 lifecycle API clarification** (HIGH confidence — verified against official Even Hub docs):
-
-The G2 SDK uses an event-driven model via `bridge.onEvenHubEvent()`. The events relevant to G2-02 (double-tap exit dialogue) are:
-
-- `DOUBLE_CLICK_EVENT` — fires on double-press of G2 or R1 button; use this to trigger the exit confirmation dialogue
-- `FOREGROUND_EXIT_EVENT` — fires when the user navigates away from the plugin (moves to background); use for cleanup (clear timers, stop refresh)
-- `ABNORMAL_EXIT_EVENT` — fires on unexpected Bluetooth disconnect
-
-The "exit dialogue" per Even Hub store review requirements is implemented by calling `shutDownPageContainer()` with an optional confirmation UI layer before the call — not a separate SDK method. Pattern: on `DOUBLE_CLICK_EVENT`, show a "Leave Vigil?" prompt rendered in the plugin's page; on confirm, call `bridge.shutDownPageContainer()`.
-
-There is NO `onExit` callback-style API. All events are dispatched through the single `onEvenHubEvent()` listener and identified by type string.
-
-**No SDK version change is strictly required for the exit dialogue** if 0.0.9 already exposes `DOUBLE_CLICK_EVENT`. Upgrade to 0.0.10 to stay current and get any patch fixes.
+**No new Safari extension npm packages.** EXT-02 is a UI port, not a library addition.
 
 ---
 
-## PostHog Integration Details by Client
+## Installation
 
-### Cloud-hosted vs self-hosted
-
-**Use PostHog Cloud (us.i.posthog.com). Do not self-host.**
-
-PostHog Cloud gives 1M events, 100K exceptions, and 5K session recordings free per month. Self-hosting requires ClickHouse + Kafka + PostgreSQL + Redis — infrastructure that would outweigh the entire Vigil platform. Solo developer at this scale: cloud is the right call.
-
-### vigil-core — posthog-node (server)
-
-Minimum integration for error tracking + API metrics:
-
-```typescript
-import { PostHog } from 'posthog-node'
-
-const posthog = new PostHog(process.env.POSTHOG_API_KEY!, {
-  host: 'https://us.i.posthog.com',
-  enableExceptionAutocapture: true,   // wraps uncaughtException + unhandledRejection
-})
-
-// Per-route event capture (API metrics)
-posthog.capture({ distinctId: userId ?? 'anonymous', event: '$pageview', properties: { path: req.path } })
-
-// Error capture (call explicitly in route catch blocks too)
-posthog.captureException(error, userId ?? 'anonymous')
-
-// On shutdown
-await posthog.shutdown()
-```
-
-Source maps upload is NOT required for server-side Node.js — stack traces are unminified.
-
-### vigil-pwa — posthog-js (browser)
-
-Minimum integration for product events + error tracking:
-
-```typescript
-import posthog from 'posthog-js'
-
-posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
-  api_host: 'https://us.i.posthog.com',
-  defaults: '2026-01-30',
-  capture_exceptions: true,    // auto-wraps window.onerror + unhandledrejection
-  autocapture: false,          // keep it explicit; avoid noise at early stage
-})
-
-// In React root, wrap with PostHogErrorBoundary for render errors
-import { PostHogErrorBoundary } from 'posthog-js/react'
-```
-
-Minimum SDK version for error tracking: `posthog-js` v1.207.8+. Current latest is 1.369.3 — well above minimum.
-
-Identify users after login:
-```typescript
-posthog.identify(userId, { email })
-```
-
-### vigil-g2-plugin — posthog-js (browser, same package)
-
-Minimal: only `posthog.capture()` for plugin-open and plugin-exit events. No session recording, no error boundary (no React). Load posthog-js from CDN or bundle it with the Vite build.
-
-```typescript
-posthog.init(POSTHOG_KEY, { api_host: 'https://us.i.posthog.com', autocapture: false })
-posthog.capture('g2_plugin_opened')
-posthog.capture('g2_plugin_exited', { trigger: 'double_tap' })
-```
-
-### vigil-safari-extension / vigil-extension — posthog-js
-
-Optional. The extension already captures to the API, so server-side posthog-node in vigil-core will log those events by userId. Adding posthog-js to the extension is low-value for v3.5. Defer to v3.6.
-
-### Mac app (Swift) — PostHog iOS SDK
-
-The PostHog iOS Swift SDK (`posthog-ios`, latest: v3.50.0) supports macOS via Swift Package Manager:
-
-```
-https://github.com/PostHog/posthog-ios — from 3.50.0
-```
-
-However, **defer the Mac app PostHog integration to v3.6.** Rationale:
-- The Mac app already communicates through vigil-core (API calls), so server-side posthog-node in vigil-core will capture most Mac-originated events via userId context
-- Adding the Swift SDK to DailyBriefMonitor requires SPM updates, provisioning profile changes, and macOS-specific SDK surface testing
-- There is an open GitHub issue tracking macOS-specific feature gaps in the PostHog Swift SDK
-- v3.5 is already scoped for five feature areas; adding a sixth client is scope creep
-
----
-
-## PostHog Reverse Proxy — Nice-to-Have, Not Required
-
-The PostHog Railway reverse proxy is a **separate Railway service** (nginx-based) that routes browser events through your domain instead of `us.i.posthog.com`, bypassing ad blockers.
-
-**Decision for v3.5: Skip the proxy.**
-
-Rationale:
-- Vigil's users are the developer and a handful of trusted accounts — not a consumer product with ad-block-heavy users
-- Ad blockers blocking PostHog would affect event volume, not correctness; the developer's own events (the most valuable ones at this stage) come from authenticated sessions where ad blockers are less likely to interfere with API calls
-- Setting up a proxy as a separate Railway service adds operational surface (another deploy to manage, another domain to configure)
-- Revisit in v3.6 if event capture rates appear lower than expected
-
-If you ever need it, PostHog provides a one-click Railway template (`posthog-proxy` or `posthog-proxy-advance`) with a single env var (`POSTHOG_CLOUD_REGION=us`). The implementation cost is low; there is no urgency.
-
----
-
-## iCloud Folder Watching — Replace DispatchSource with NSMetadataQuery
-
-**The core issue:** DispatchSource (`DISPATCH_SOURCE_TYPE_VNODE`) watches a file descriptor on the filesystem. When iCloud Drive optimizes storage and evicts a file, it replaces the real file with a `.icloud` placeholder. The placeholder has a different file descriptor and a different filename (`.FileName.ext.icloud` with a leading dot). DispatchSource:
-1. May not fire when the placeholder is created (different descriptor)
-2. Will give a wrong filename (`FileName.jpg.icloud` instead of `FileName.jpg`)
-3. Cannot distinguish "file is available" from "file is a stub that needs download"
-
-**Recommended approach: NSMetadataQuery as the iCloud-aware watcher.**
-
-NSMetadataQuery is the Apple-documented method for watching iCloud-managed directories. It queries Spotlight metadata (not the filesystem directly), so it:
-- Returns the canonical filename without the `.icloud` stub extension
-- Exposes `NSMetadataUbiquitousItemDownloadingStatusKey` to check if a file is fully downloaded (`NSMetadataUbiquitousItemDownloadingStatusCurrent`) or still a placeholder
-- Fires `NSMetadataQueryDidUpdateNotification` when files appear or change state
-
-**Architecture for the folder watcher repair:**
-
-```swift
-// Replace DispatchSource watcher with NSMetadataQuery
-let query = NSMetadataQuery()
-query.searchScopes = [NSMetadataQueryUbiquitousDocumentsScope]
-// or use the specific iCloud container path
-query.predicate = NSPredicate(format: "%K LIKE '*.jpg' OR %K LIKE '*.png' OR %K LIKE '*.heic'",
-                              NSMetadataItemFSNameKey, NSMetadataItemFSNameKey)
-
-NotificationCenter.default.addObserver(
-  forName: .NSMetadataQueryDidUpdate,
-  object: query,
-  queue: .main
-) { [weak self] _ in
-  self?.handleQueryResults(query)
-}
-
-func handleQueryResults(_ query: NSMetadataQuery) {
-  query.disableUpdates()
-  for item in query.results as! [NSMetadataItem] {
-    let downloadStatus = item.value(forAttribute: NSMetadataUbiquitousItemDownloadingStatusKey) as? String
-    guard downloadStatus == NSMetadataUbiquitousItemDownloadingStatusCurrent else {
-      // Trigger download and wait
-      try? FileManager.default.startDownloadingUbiquitousItem(at: url)
-      continue
-    }
-    // File is local — safe to read and upload
-  }
-  query.enableUpdates()
-}
-```
-
-**For non-iCloud local paths** (e.g., `~/Desktop/Vigil Drops/`): DispatchSource remains valid and can stay as-is. The repair only needs to apply when the configured watch path is inside iCloud Drive (`/Users/*/Library/Mobile Documents/`).
-
-**NSFileCoordinator is not the watcher replacement** — it is a read/write coordinator used when actually reading or writing the file to avoid conflicts with iCloud sync. Use it when opening the file content for upload, not for directory monitoring.
-
-**Practical heuristic for the fix:** Check if the configured `watchFolder` path contains `Mobile Documents`. If yes, use NSMetadataQuery. If no, keep DispatchSource. This avoids rearchitecting the happy path.
-
----
-
-## PWA Auth UI — No UI Framework, react-hook-form + zod
-
-The existing PWA has zero form validation infrastructure. It uses direct React state and tailwindcss for styling. For AUTH-06 (login/register UI), two patterns are viable:
-
-**Bare React forms (no library):** Valid for two simple forms (email + password). No new dependencies. But: no native validation error handling, manual `useState` per field, no type inference from schema.
-
-**react-hook-form + zod (recommended):** Three new packages, but the combination gives:
-- Zero-boilerplate type inference: `z.infer<typeof loginSchema>` drives both form types and what the API expects
-- Built-in error message surfacing via `formState.errors`
-- Uncontrolled inputs (no re-render on keystroke) — fast even with React 19
-- Standard pattern across the React ecosystem in 2026; well understood
-
-For just login + register (two forms, ~4 fields total), the library overhead is worth it because:
-1. Password validation (min length, complexity) is non-trivial to write correctly without a schema library
-2. More forms are coming: AUTH-07 profile + change-password is already deferred to v3.6
-3. Zod is already planned for vigil-core type sharing; having it in the PWA aligns the stack
-
-**Install the safe combination:**
 ```bash
-cd vigil-pwa
-npm install react-hook-form zod@3 @hookform/resolvers@3
+# In vigil-core/
+npm install resend @react-email/components @react-email/render react@18 react-dom@18
 ```
 
-Do NOT install `zod@latest` (which resolves to v4 as of mid-2025) — Zod v4 has unresolved type conflicts with `@hookform/resolvers` v5. Pin to Zod v3 and resolvers v3 for a stable pairing.
+Pin to React 18 (not 19) in vigil-core to avoid any peer dep mismatches with @react-email. vigil-pwa is a separate package with React 19 — no conflict.
 
 ---
 
-## Safari Extension Persistence — Reality Check
+## New Environment Variables
 
-**The current extension manifest (verified):**
+| Variable | Service | Value Shape | Purpose |
+|----------|---------|-------------|---------|
+| `RESEND_API_KEY` | Railway + vigil-core/.env | `re_xxxxxxxxx` | Resend API authentication |
+
+One new variable total. The `from` address (`noreply@vigilhub.io`) is a code constant, not a runtime env var. No other email credentials needed.
+
+---
+
+## 1. Transactional Email Provider — Resend
+
+### Decision: Resend
+
+**Resend free tier (verified 2026-04-22):**
+- 3,000 emails/month
+- 100 emails/day
+- 1 domain
+- 30-day data retention
+- Ticket support
+
+This covers the v3.6 use case (password reset + email verify emails) indefinitely. At 10 emails/day max, monthly volume is ~300 emails — well inside the 3,000 free cap.
+
+**SDK:** npm package `resend`, version `^6.12.2` (latest release 2026-04-20). Key format: `re_xxxxxxxxx`.
+
+**Integration with Hono:**
+
+```typescript
+import { Resend } from "resend";
+import { render } from "@react-email/render";
+import { PasswordResetEmail } from "../email/PasswordResetEmail.js";
+
+const resend = new Resend(process.env["RESEND_API_KEY"]);
+
+// In a Hono route:
+const html = await render(<PasswordResetEmail resetUrl={resetUrl} />);
+const { data, error } = await resend.emails.send({
+  from: "Vigil <noreply@vigilhub.io>",
+  to: [user.email],
+  subject: "Reset your Vigil password",
+  html,
+});
+```
+
+The SDK returns `{ data, error }` — never throws. Match the existing Hono pattern of checking `error` and returning early.
+
+**Why not Postmark:**
+- Free tier is 100 emails/month — a single week of testing active new users exhausts it
+- Paid starts at $15/month for 10k emails; Vigil never needs 10k emails at this scale
+- Postmark's deliverability advantage (fastest median inbox delivery, no marketing-mail co-mingling) is real but irrelevant for a personal tool sending to ~5 addresses
+
+**Why not AWS SES:**
+- Requires `AWS_ACCESS_KEY_ID` + `AWS_SECRET_ACCESS_KEY` + `AWS_REGION` + SES-specific IAM policy — four variables and an IAM setup for what Resend does in one variable
+- Not Railway-native; free tier expires after 12 months unless traffic comes from EC2/Lambda
+- No React Email native integration; no dashboard for deliverability monitoring
+- Solo-founder ops overhead is the explicit constraint; SES fails it
+
+### DNS Records for vigilhub.io
+
+Add these four records in your DNS provider when setting up the Resend domain. Resend's dashboard generates the exact DKIM key value after domain registration — the shapes below are what you will configure.
+
+| Type | Name | Value | Notes |
+|------|------|-------|-------|
+| TXT | `send.vigilhub.io` | `v=spf1 include:amazonses.com ~all` | SPF — Resend uses Amazon SES infrastructure under the hood |
+| TXT | `resend._domainkey.vigilhub.io` | Dashboard-generated public key | DKIM — exact value shown in Resend dashboard after domain add |
+| MX | `send.vigilhub.io` | Resend bounce host (dashboard) | Bounce processing — same subdomain as SPF |
+| TXT | `_dmarc.vigilhub.io` | `v=DMARC1; p=reject; adkim=s; rua=mailto:jamesonmorrill1@gmail.com` | DMARC — `adkim=s` (strict) compensates for SPF subdomain misalignment |
+
+**Key architectural point:** Resend sends from `send.vigilhub.io` as the envelope-from (Return-Path) domain, not `vigilhub.io`. The display `From:` can be `noreply@vigilhub.io`. SPF strict alignment (`aspf=s`) is not possible when the envelope subdomain differs from the header domain — this is Resend's standard architecture, not a bug. DKIM strict alignment (`adkim=s`) covers the gap because the DKIM `d=` tag matches `vigilhub.io` exactly.
+
+**Time-to-first-send estimate:** < 20 minutes from Resend account creation to first email from your domain (DNS propagation is usually fast for new subdomains on Cloudflare/Railway DNS).
+
+---
+
+## 2. Email Templates — @react-email/components + @react-email/render
+
+### Decision: react-email
+
+**Why react-email over alternatives:**
+- Same JSX/TypeScript component model as vigil-pwa — no syntax context switch
+- `@react-email/render` runs server-side in the Hono process; no separate rendering service
+- Template variables (reset URL, user email) are typed props — compiler catches missing data at build time
+- Resend's Hono integration guide uses react-email as the documented path
+- 2 emails needed (password-reset, email-verify) — enough to justify components, not enough to warrant a custom template engine
+
+**Why not MJML:** XML syntax with no TypeScript type safety on template variables. react-email is the standard Resend pairing.
+
+**Why not plain HTML strings:** HTML email requires inline CSS and table-based layout to render in Gmail, Outlook, and Apple Mail. Hand-writing this for even 2 emails creates unmaintainable markup. react-email auto-handles this.
+
+### JSX Conflict with Hono — Resolution
+
+vigil-core's `tsconfig.json` uses `"jsxImportSource": "hono/jsx"` for Hono's JSX rendering. react-email templates need `"jsxImportSource": "react"`. These conflict at the tsconfig level.
+
+**Resolution: per-directory tsconfig override.**
+
+Create `vigil-core/src/email/tsconfig.json`:
 
 ```json
 {
-  "manifest_version": 3,
-  "permissions": ["activeTab", "storage"],
-  "action": { "default_popup": "popup.html" }
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "react"
+  },
+  "include": ["./**/*.tsx"]
 }
 ```
 
-The extension has **no background script** — it is purely popup-driven. This is actually the correct architecture for a popup-only MV3 extension and sidesteps the persistent background script problem entirely.
-
-**Why extensions "don't persist" across restarts:**
-
-On macOS, Safari Web Extensions wrapped in a native app container (`.app`) require the user to enable them in Safari Preferences once after initial install. They **do** persist across Safari restarts on macOS if:
-1. The extension was properly enabled by the user
-2. The host app (the macOS `.app` wrapper) is correctly signed and has a valid provisioning profile
-
-The "re-enable after restart" complaint is one of two problems:
-1. **Signing/provisioning issue:** If the `.app` wrapper is ad-hoc signed or has an expired/missing provisioning profile, Gatekeeper may revoke trust on relaunch, causing Safari to disable the extension
-2. **Development build vs distribution build:** Xcode development builds use a different signing identity than the App Store or Developer ID builds; Safari may treat them differently
-
-**What EXT-01 likely needs (not an SDK change):**
-
-- Confirm the Xcode project is signed with `Developer ID Application` certificate (same pattern as DailyBriefMonitor.app, which uses Developer ID signing per the project's v2.4 history)
-- Ensure the extension target has a matching `Developer ID Application` entitlement
-- The `.xcodeproj` file at `vigil-safari-extension/Vigil Capture.xcodeproj` contains both the host app target (`Vigil Capture`) and the extension target (`Vigil Capture Extension`) — both need consistent signing
-
-**There is no MV3 API change needed.** The fix is in Xcode project settings and signing, not in the extension manifest or JavaScript code.
-
-**Known unresolvable limitation:** On iOS (not macOS), MV3 service workers are killed after 30-45 seconds and cannot be revived — this is an Apple platform constraint with no workaround. The Vigil extension targets macOS only and has no service worker, so this limitation does not apply.
+Email template files (`PasswordResetEmail.tsx`, `EmailVerifyEmail.tsx`) live in `vigil-core/src/email/` and are compiled with this override. Route files that call `render()` import the result as a string — no JSX in route files, so no conflict at the callsite. This requires no monorepo setup.
 
 ---
 
-## Installation Summary
+## 3. Password Reset Token — Node.js `node:crypto` (no new package)
 
-```bash
-# vigil-core — PostHog server analytics
-cd vigil-core
-npm install posthog-node
+### Decision: Built-in `node:crypto` — zero new dependencies
 
-# vigil-pwa — PostHog browser analytics + auth form validation
-cd vigil-pwa
-npm install posthog-js react-hook-form zod@3 @hookform/resolvers@3
+**Why no npm package is needed:**
 
-# vigil-g2-plugin — update Even Hub SDK
-cd vigil-g2-plugin
-npm install @evenrealities/even_hub_sdk@latest
+`crypto.randomBytes(32)` is a CSPRNG producing 256 bits of entropy. Reset tokens are single-use, short-lived credentials with a 2^256 search space — SHA-256 hashing at rest is sufficient. There is no benefit to argon2id key-stretching on reset tokens (argon2id protects passwords because humans choose low-entropy strings; a CSPRNG token already has maximum entropy).
+
+**Standard pattern (AUTH-10 / AUTH-11):**
+
+```typescript
+import { randomBytes, createHash, timingSafeEqual } from "node:crypto";
+
+// On forgot-password request
+const rawToken = randomBytes(32).toString("hex");        // send this in the email URL
+const tokenHash = createHash("sha256").update(rawToken).digest("hex");  // store this in DB
+
+// On reset-link click
+function verifyToken(incoming: string, stored: string): boolean {
+  const incomingHash = createHash("sha256").update(incoming).digest("hex");
+  const a = Buffer.from(incomingHash, "utf8");
+  const b = Buffer.from(stored, "utf8");
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 ```
 
-No new dependencies for:
-- Mac app folder watcher repair (NSMetadataQuery is part of Foundation, no SPM package needed)
-- Safari extension persistence (fix is Xcode signing settings, not a library)
-- PostHog Mac Swift SDK (deferred to v3.6)
+**DB schema additions (users table):**
+
+```typescript
+// Add to users table in schema.ts
+resetTokenHash:              text("reset_token_hash"),
+resetTokenExpiresAt:         timestamp("reset_token_expires_at", { withTimezone: true }),
+emailVerifiedAt:             timestamp("email_verified_at", { withTimezone: true }),
+emailVerifyTokenHash:        text("email_verify_token_hash"),
+emailVerifyTokenExpiresAt:   timestamp("email_verify_token_expires_at", { withTimezone: true }),
+```
+
+All five columns are nullable — no existing rows break. One Drizzle migration adds them all; the programmatic `migrate()` on Railway deploy picks it up automatically.
+
+**Token TTLs:**
+- Password reset: 15 minutes (short window; resets are intentional, user-initiated)
+- Email verification: 24 hours (user may not check email immediately after signup)
+
+**Single-use enforcement:** NULL out `resetTokenHash` and `resetTokenExpiresAt` on successful use. Re-requesting a reset token overwrites the previous one.
+
+**Constant-time comparison:** Use `timingSafeEqual` on the hash bytes (not the raw token) to prevent timing side-channels.
+
+### Why NOT to migrate to Lucia / Auth.js / better-auth
+
+Do not replace the existing auth stack for v3.6. Cost is not justified:
+
+| Framework | Migration cost | Why not |
+|-----------|---------------|---------|
+| Lucia | DB-backed sessions replace stateless JWTs; new session middleware; retire three-path bearerAuth dispatcher | Requires schema changes across 11 tables with userId FKs plus new middleware layer |
+| Auth.js (NextAuth) | React/Next-centric; Hono adapter is community-maintained, not official | Adapter quality risk; designed around Next.js request lifecycle |
+| better-auth | Has a Hono adapter; still requires replacing token/session model and DB schema | Full session model replacement; no net gain over current HS256 JWT approach |
+
+The existing auth foundation (argon2id + HS256 JWT + three-path bearerAuth dispatcher) ships in production today. AUTH-09/10/11 add 3 new endpoints and 5 new columns to an existing table. Rolling the reset-token pattern with `node:crypto` is ~50 lines and zero new dependencies.
+
+---
+
+## 4. Safari Extension — Quick-Capture Parity (EXT-02)
+
+### Decision: Direct `chrome.*` calls — no polyfill, no new packages
+
+**Safari WebExtension API compatibility (macOS, Manifest V3):**
+
+Safari exposes both `browser.*` (W3C Promise-based) and `chrome.*` (Chrome-compatible) namespaces. The Chrome quick-capture extension uses `chrome.runtime.sendMessage`, `chrome.storage.local`, and `chrome.action` — all work in Safari under the `chrome.*` namespace without modification.
+
+**Confirmed compatible APIs for the quick-capture feature set:**
+
+| API Used in Chrome Extension | Safari Behavior | Impact |
+|------------------------------|-----------------|--------|
+| `chrome.runtime.sendMessage` | Works — popup → service worker messaging | No change needed |
+| `chrome.storage.local.get/set` | Works — quirks (storage.onChanged not firing, empty-key edge) do not affect quick-capture use case | No change needed |
+| `chrome.action.openPopup` | Works in Safari MV3 | No change needed |
+| `manifest.json` `"action"` key | Supported since Safari 15.4 | No change needed |
+| Background service worker | Service worker only in Safari MV3 (no persistent background pages) | Current extension has no background script; no change |
+
+**What IS different between Chrome and Safari that affects EXT-02:**
+
+| Area | Chrome | Safari | Impact |
+|------|--------|--------|--------|
+| CSP in popup HTML | Permissive — inline scripts allowed | Strict — no inline `<script>` or `eval` in popup.html | Must ensure popup.js is an external file (already true for Chrome extension) |
+| Background service worker debugging | Full DevTools inspector | No debugging window available in Safari | Developer inconvenience only; does not block shipping |
+| Xcode wrapper | Not required | Required — Safari extensions ship inside a macOS `.app` bundle | Already handled in EXT-01; Xcode project exists |
+
+**Why NOT webextension-polyfill (`webextension-polyfill` npm package):**
+- The polyfill wraps `chrome.*` callbacks into `browser.*` promises. In Safari MV3, `chrome.*` already returns Promises — the polyfill adds an indirection layer for zero benefit.
+- The polyfill's Manifest V3 support is officially documented as incomplete (open issue #329 on mozilla/webextension-polyfill as of 2025).
+- Direct `chrome.*` calls are the working pattern for Safari MV3 extensions in 2025.
+
+**EXT-02 is a UI-only port:**
+
+The Chrome Phase 94 quick-capture popup (freeform textarea + URL checkbox + triage feedback + Cmd+Enter) is a self-contained `popup.html` + `popup.js` + `popup.css`. To bring this to Safari:
+
+1. Copy the updated popup files to the Safari extension's `Resources/` directory (replacing the Phase 84 popup)
+2. Confirm `popup.js` uses no inline scripts in HTML (CSP compliance)
+3. `manifest.json` `"action.default_popup"` already points to `popup.html` — no change
+4. The background service worker message handler (if any) that calls the Vigil API is identical
+
+No new npm packages. No polyfill. No manifest changes.
 
 ---
 
 ## Alternatives Considered
 
-| Recommended | Alternative | Why Not |
-|-------------|-------------|---------|
-| PostHog Cloud | Self-hosted PostHog | Requires ClickHouse + Kafka + PostgreSQL + Redis; ops overhead far exceeds benefit at solo dev scale |
-| PostHog (all-in-one) | Sentry for errors + Mixpanel for events | Two vendors vs one; PostHog error tracking is sufficient for this scale; Sentry adds $0 initially but diverges the stack |
-| PostHog (all-in-one) | Plausible / Fathom | Analytics-only; no error tracking; no session replay; PostHog free tier is more capable |
-| `react-hook-form` + zod@3 | Bare React state | Bare state works for 2 forms but adds no type safety and doesn't scale to AUTH-07 (v3.6) |
-| `react-hook-form` + zod@3 | Formik + Yup | Formik is older, controlled components (more re-renders); Yup is less TypeScript-native than Zod |
-| `zod@3` | `zod@4` | Zod v4 breaks @hookform/resolvers as of mid-2025; wait for stable resolvers@5.x before upgrading |
-| NSMetadataQuery | DispatchSource on iCloud paths | DispatchSource operates on file descriptors; iCloud placeholders have different descriptors; cannot detect download status; NSMetadataQuery is the Apple-documented replacement |
-| `DOUBLE_CLICK_EVENT` + `shutDownPageContainer()` | Custom exit gesture | Even Hub SDK does not expose a hook for arbitrary gestures; the double-tap event is the platform-provided exit signal |
-| Proxy deferred | PostHog Railway proxy now | Proxy is optional; adds operational overhead; not worth it before there is meaningful user traffic |
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| Resend | Postmark | When deliverability SLA and inbox speed are critical (high-stakes transactional > 10k/month and paying users); Postmark's segregated infrastructure delivers median < 10 seconds |
+| Resend | AWS SES | When already on AWS with IAM infrastructure and sending > 100k emails/month at $0.10/1000 |
+| `node:crypto` reset tokens | Lucia auth library | Only if starting a new project from scratch with no existing auth stack |
+| `@react-email/render` | Plain HTML strings | Only for a single email with no brand styling where maintenance time is not a concern |
+| `@react-email/render` | MJML | If not using React anywhere in the stack and needing maximum Outlook compatibility on complex layouts |
+| Direct `chrome.*` namespace | webextension-polyfill | Only if adding Firefox as a third browser target — polyfill smooths Firefox callback-vs-promise divergences that Safari does not have |
 
 ---
 
@@ -328,53 +286,46 @@ No new dependencies for:
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| `sentry` | Redundant with PostHog error tracking; adds a second vendor and a second initialization path | `posthog-node` with `enableExceptionAutocapture: true` |
-| `zod@latest` (resolves to v4) | Type conflicts with @hookform/resolvers documented through July 2025 | `zod@3` pinned |
-| `@hookform/resolvers@latest` (resolves to v5) | Introduces zod/v4/core dependency; type errors with Zod v3 | `@hookform/resolvers@3` pinned |
-| PostHog Swift SDK in v3.5 | Adds SPM target changes + macOS-specific testing surface; Mac events visible via vigil-core server-side posthog-node | Defer to v3.6 |
-| Background service worker in Safari extension | Non-persistent in MV3 on both iOS and macOS; debugging window broken in Safari | Popup-only architecture (already in place — no change needed) |
-| `NSFileCoordinator` as watcher | NSFileCoordinator coordinates reads/writes; it is not a change notification mechanism | `NSMetadataQuery` for iCloud paths; `DispatchSource` for local paths |
-| `posthog-js` in vigil-safari-extension | Low event volume; server-side capture via vigil-core already covers it; adds bundle size to extension | Defer to v3.6 |
+| Nodemailer | Requires SMTP server credentials (host, port, user, pass — 4+ env vars); no built-in deliverability monitoring; more config for less reliability on Railway | `resend` SDK |
+| SendGrid | Free tier eliminated in 2024; pricing increased significantly; DX is mediocre vs Resend | Resend |
+| `bcrypt` on reset tokens | Wasted key-stretching — argon2id/bcrypt benefit is for low-entropy human passwords; CSPRNG tokens have 2^256 entropy and don't need stretching | `crypto.createHash("sha256")` |
+| Lucia / Auth.js / better-auth | Migration from shipped argon2id + HS256 JWT + three-path bearerAuth across 11-table schema is costly; no net benefit for adding 2 auth flow endpoints | Extend existing auth routes with `node:crypto` |
+| `webextension-polyfill` | MV3 support incomplete; Safari already returns Promises from `chrome.*`; polyfill adds indirection for zero gain | Direct `chrome.*` calls |
+| `mjml-react` | Abandoned — last release 2021 | `@react-email/components` |
+| `react@19` in vigil-core | Introduces peer dep complexity with react-email; vigil-pwa (React 19) is a separate package | `react@18` as peer dep in vigil-core |
 
 ---
 
 ## Version Compatibility
 
-| Package | Requires | Notes |
-|---------|----------|-------|
-| `posthog-node@5.29.2` | Node.js 18+ | Railway runs Node 20; fully compatible |
-| `posthog-js@1.369.3` | Browser/Web | No SSR needed for Vite PWA; standard browser bundle |
-| `react-hook-form@7.72.1` | React 16.8+ | React 19 compatible; verified |
-| `zod@3.x` | TypeScript 4.5+ | vigil-pwa uses TypeScript ^6.0.2; compatible |
-| `@hookform/resolvers@3.x` | react-hook-form v7, zod v3 | Stable pairing; v5 breaks with zod v3 |
-| `@evenrealities/even_hub_sdk@0.0.10` | Browser (Vite bundle) | Drop-in update from 0.0.9; MIT license |
-| `NSMetadataQuery` | macOS 10.10+ / Foundation | Available in Swift 6.2 on macOS 14+; no import needed beyond `Foundation` |
+| Package | Compatible With | Notes |
+|---------|-----------------|-------|
+| `resend@^6.12.2` | Node.js 18+, TypeScript 4.5+ | Railway runs Node 22 LTS; fully compatible |
+| `@react-email/render@^2.0.4` | React 18, React 19 | Install React 18 in vigil-core; no conflict with vigil-pwa React 19 (separate package.json) |
+| `react@18.x` in vigil-core | `@react-email/components` latest | Peer dep requirement; render() is pure; no browser APIs used |
+| `resend@^6.x` + `@react-email/render` | Used together | Pass `html` string from `render()` to `resend.emails.send({ html })`; Resend also accepts `react` param directly if tsconfig conflict is resolved |
 
 ---
 
 ## Sources
 
-- `vigil-pwa/package.json` — confirmed no existing form validation deps; react ^19.2.5, tailwind ^4.2.2 present; HIGH confidence (live codebase)
-- `vigil-core/package.json` — confirmed no PostHog installed; hono ^4.7.0, drizzle-orm present; HIGH confidence (live codebase)
-- `vigil-g2-plugin/package.json` — confirmed `@evenrealities/even_hub_sdk@^0.0.9` installed; HIGH confidence (live codebase)
-- `vigil-safari-extension/Vigil Capture Extension/Resources/manifest.json` — confirmed MV3, popup-only, no background script; HIGH confidence (live codebase)
-- `npm info posthog-node version` → 5.29.2; HIGH confidence (npm registry, live)
-- `npm info posthog-js version` → 1.369.3; HIGH confidence (npm registry, live)
-- `npm info react-hook-form version` → 7.72.1; HIGH confidence (npm registry, live)
-- `npm info zod version` → 4.3.6 (latest); pin to `zod@3` — HIGH confidence on version, HIGH confidence on v4 breakage
-- `npm info @hookform/resolvers version` → 5.2.2 (latest); pin to `@hookform/resolvers@3` — HIGH confidence on breakage
-- `npm info @evenrealities/even_hub_sdk` → 0.0.10, published ~April 12 2026; HIGH confidence (npm registry, live)
-- [hub.evenrealities.com/docs/guides/page-lifecycle](https://hub.evenrealities.com/docs/guides/page-lifecycle) — confirmed `shutDownPageContainer` as exit method; HIGH confidence (official docs)
-- [hub.evenrealities.com/docs/guides/input-events](https://hub.evenrealities.com/docs/guides/input-events) — confirmed `DOUBLE_CLICK_EVENT`, `FOREGROUND_EXIT_EVENT` event constants; HIGH confidence (official docs)
-- [posthog.com/docs/error-tracking/installation/node](https://posthog.com/docs/error-tracking/installation/node) — confirmed `enableExceptionAutocapture: true` pattern; MEDIUM confidence (WebFetch, official docs)
-- [posthog.com/docs/error-tracking/installation/react](https://posthog.com/docs/error-tracking/installation/react) — confirmed `PostHogErrorBoundary`, min version v1.207.8 for error tracking; MEDIUM confidence (WebSearch + official URL)
-- [posthog.com/docs/advanced/proxy/railway](https://posthog.com/docs/advanced/proxy/railway) — confirmed proxy is a separate Railway service, optional; MEDIUM confidence (WebFetch, official docs)
-- [fatbobman.com/en/posts/advanced-icloud-documents/](https://fatbobman.com/en/posts/advanced-icloud-documents/) — confirmed NSMetadataQuery recommended over direct filesystem access for iCloud; placeholder behavior; MEDIUM confidence (expert blog, well-sourced)
-- [github.com/react-hook-form/resolvers/issues/799](https://github.com/react-hook-form/resolvers/issues/799) — confirmed Zod v4 breaks resolvers; LOW confidence individually, MEDIUM confidence corroborated by multiple GH issues
-- Apple Developer Forum thread 709349 — Safari MV3 background service worker non-persistence; MEDIUM confidence (community + Apple engineer responses)
-- [posthog.com/docs/self-host](https://posthog.com/docs/self-host) — self-hosting complexity confirmed ("We've literally never seen the self-hosting math work out"); MEDIUM confidence (official docs)
+- Resend pricing (resend.com/pricing, 2026-04-22) — free tier verified: 3,000/month, 100/day, 1 domain; HIGH confidence
+- Resend Node.js docs (resend.com/docs/send-with-nodejs) — SDK `resend`, key format `re_*`, env var `RESEND_API_KEY`; HIGH confidence (official docs)
+- Resend Hono integration docs (resend.com/docs/send-with-hono) — TSX integration pattern; HIGH confidence (official docs)
+- Resend GitHub releases (github.com/resend/resend-node/releases) — latest v6.12.2 released 2026-04-20; HIGH confidence
+- dmarc.wiki/resend — SPF `v=spf1 include:amazonses.com ~all`; DKIM `resend._domainkey` TXT; MX bounce subdomain; DMARC `adkim=s` note; HIGH confidence (technical reference)
+- Postmark pricing (postmarkapp.com/pricing, 2026-04-22) — free tier 100/month; paid from $15/month (10k emails); HIGH confidence (official pricing page)
+- npm registry: `postmark@4.0.7` — Axios 1.13.5 dep; Node 14+ minimum; MEDIUM confidence
+- react-email GitHub (github.com/resend/react-email) — react-email 6.0.0, @react-email/render 2.0.4; npm weekly downloads 920k+; HIGH confidence (official repo)
+- Hono GitHub issue #3197 (github.com/honojs/hono/issues/3197) — JSX conflict root cause: `jsxImportSource` mismatch; per-directory tsconfig override as resolution; MEDIUM confidence (community-verified pattern)
+- DEV article: Resend + react-email + Hono (dev.to/reubenwedson, 2025) — monorepo tsconfig override pattern; MEDIUM confidence (community, corroborated by official Hono docs)
+- thelinuxcode.com + logrocket.com (2025) — `crypto.randomBytes(32)` + SHA-256 + `timingSafeEqual` pattern for reset tokens; MEDIUM confidence (multiple sources agree)
+- MDN WebExtensions: Chrome incompatibilities — `browser.*` vs `chrome.*` namespace; Promise support in Safari MV3; HIGH confidence (official MDN)
+- webextension-polyfill GitHub issue #329 — MV3 support documented as incomplete as of 2025; MEDIUM confidence
+- Apple Developer Forums + lapcatsoftware.com (2025) — `storage.local.onChanged` Safari quirks; storage.local async behavior differences; MEDIUM confidence (community + Apple forum responses)
+- buildmvpfast.com email API cost comparison (April 2026) — Resend vs Postmark vs SES pricing cross-check; MEDIUM confidence (third-party, matches official pricing)
 
 ---
 
-*Stack research for: Vigil v3.5 — Observability, G2 Resubmit & Capture Repair*
-*Researched: 2026-04-19*
+*Stack research for: Vigil v3.6 — Multi-User Completion, Auth UX & Safari Parity*
+*Researched: 2026-04-22*

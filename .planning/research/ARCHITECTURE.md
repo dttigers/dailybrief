@@ -1,466 +1,710 @@
-# Architecture Research — v3.5 Integration Points
+# Architecture Research: v3.6 Multi-User Completion, Auth UX & Safari Parity
 
-**Domain:** Multi-surface ambient AI platform (Vigil)
-**Researched:** 2026-04-19
-**Confidence:** HIGH — all findings from live codebase inspection
-
----
-
-## System Overview
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                         Clients (5 surfaces)                           │
-│  ┌──────────────┐  ┌──────────┐  ┌────────────┐  ┌──────────────────┐ │
-│  │ Mac App      │  │ PWA      │  │ G2 Plugin  │  │ Browser Ext.     │ │
-│  │ (Swift/SPM)  │  │ React/   │  │ Vite/TS    │  │ Chrome + Safari  │ │
-│  │ DailyBrief   │  │ Vite/TS  │  │ Even SDK   │  │ MV3 popup-only   │ │
-│  │ Monitor      │  │ Vercel   │  │ Even Store │  │ no background SW │ │
-│  └──────┬───────┘  └────┬─────┘  └─────┬──────┘  └────────┬─────────┘ │
-└─────────┼───────────────┼──────────────┼───────────────────┼───────────┘
-          │               │              │                   │
-          │         HTTPS Bearer / JWT   │                   │
-          └───────────────┴──────────────┴───────────────────┘
-                                  │
-                    ┌─────────────▼──────────────┐
-                    │     Vigil Core API          │
-                    │  Node.js / Hono / TypeScript│
-                    │  Railway — api.vigilhub.io  │
-                    │  25+ REST endpoints /v1/*   │
-                    │  bearerAuth 3-path dispatch │
-                    │    vk_ → api_keys table     │
-                    │    JWT → jose.jwtVerify      │
-                    │    else → 401               │
-                    └─────────────┬──────────────┘
-                                  │
-                    ┌─────────────▼──────────────┐
-                    │   PostgreSQL (Railway)      │
-                    │   Drizzle ORM + migrations  │
-                    │   tsvector FTS              │
-                    │   users + 11 scoped tables  │
-                    └────────────────────────────┘
-```
+**Domain:** Vigil Core API — Node.js / Hono / Drizzle / PostgreSQL
+**Researched:** 2026-04-22
+**Confidence:** HIGH — derived from reading actual source files, not summaries
 
 ---
 
-## PostHog Analytics Integration Points
-
-### Initialization Location in Vigil Core
-
-**Decision: bootstrap singleton in `vigil-core/src/index.ts`, not middleware.**
-
-Rationale: `index.ts` is the single startup file. Initializing `posthog-node` there (before `serve()` is called) guarantees the client is ready before any route handles a request. Middleware would create the client on every import or require complex singleton plumbing.
+## System Overview (existing, confirmed)
 
 ```
-index.ts (startup)
-  → import posthog from './analytics/posthog.js'
-  → posthog.init()                         // singleton initialized once
-  → app = new Hono()
-  → app.use('*', bearerAuth middleware)    // userId set here via c.set('userId', ...)
-  → routes mount
+Clients
+  vigil-pwa (React/Vite)         sessionStorage JWT
+  Mac app / CLI                  vk_ bearer key
+  vigil-extension (Chrome)       chrome.storage vk_ bearer key
+  vigil-safari-extension         chrome.storage vk_ bearer key (Safari WebExtension API)
+  vigil-g2-plugin                vk_ bearer key
+           |
+           |  HTTPS -> api.vigilhub.io
+           v
++------------------------------------------------------------------+
+|  vigil-core/src/index.ts                                         |
+|  CORS -> secureHeaders -> timeout(30s) -> rateLimiter            |
+|  /v1/health            <- public                                 |
+|  /v1/auth/register     <- public                                 |
+|  /v1/auth/login        <- public                                 |
+|  /v1/auth/google/callback <- public (OAuth return)              |
+|  /v1/*                 <- bearerAuth (3-path: vk_/JWT/malformed) |
+|      |                                                           |
+|      v                                                           |
+|  routes/auth.ts        <- register / login                       |
+|  routes/me.ts          <- GET /v1/me                             |
+|  routes/brief-generate.ts <- POST /v1/brief/generate            |
+|                            GET /v1/brief/:date (PDF bytes)       |
+|  routes/brief-history.ts  <- GET/POST /v1/briefs                 |
+|  routes/work-order-status.ts <- GET/PUT /v1/work-orders/statuses |
+|  routes/work-orders.ts    <- GET/PUT/DELETE /v1/work-orders      |
+|  ... 20+ other routes                                            |
+|                                                                  |
+|  services/generate-scheduler.ts  setInterval(60s) -- SEED ONLY  |
+|  services/gmail-workorder-service.ts  setInterval(5m)           |
++------------------------------------------------------------------+
+           |
+           v
++------------------------------+
+|  PostgreSQL (Railway)        |
+|  users                       |
+|  api_keys (userId FK)        |
+|  thoughts (userId FK)        |
+|  projects (userId FK)        |
+|  briefs (userId FK)          |
+|  brief_pdfs (userId FK)      |
+|  chat_sessions (userId FK)   |
+|  work_orders (userId FK)     |
+|  work_order_statuses  <- NO userId FK  <- W-01                  |
+|  oauth_tokens (userId FK)    |
+|  app_settings (userId+key PK)|
+|  ai_cache (userId+type PK)   |
+|  thought_links (userId FK)   |
++------------------------------+
 ```
-
-**Per-user identification chain:**
-```
-POST /v1/thoughts
-  → bearerAuth runs → c.set('userId', row.userId)
-  → route handler reads c.get('userId')
-  → posthog.capture({ distinctId: String(userId), event: 'thought_created', ... })
-```
-
-The `userId` is available on every protected route via `c.get('userId')` (declared in `auth.ts` via `ContextVariableMap`). No separate identify step is needed per request — PostHog uses `distinctId` on each event. A one-time `posthog.identify()` call can be emitted at login (POST /v1/auth/login success path) with user properties (email).
-
-**New file: `vigil-core/src/analytics/posthog.ts`**
-- Exports: `captureEvent(userId, event, props)`, `captureError(userId, error, context)`
-- Uses `posthog-node` package (server SDK)
-- Init reads `POSTHOG_API_KEY` and `POSTHOG_HOST` env vars
-- When env vars absent: no-op shim (safe for local dev with no key)
-
-**Error tracking wiring in Vigil Core:**
-- Hono has no built-in error boundary. Add a `app.onError()` handler in `index.ts` after all routes mount. This catches unhandled exceptions thrown by route handlers.
-- Also add `process.on('uncaughtException', ...)` and `process.on('unhandledRejection', ...)` in `index.ts` alongside the existing SIGTERM/SIGINT handlers.
-
-### PWA Error Boundaries
-
-**Current state:** No React error boundaries exist. `App.tsx` renders `<Routes>` directly under `<StrictMode>`.
-
-**Integration point:** Wrap the authenticated layout subtree in a new `ErrorBoundary` class component. React class component `componentDidCatch` is the only place React errors can be caught. The boundary should call `posthog.capture('frontend_error', ...)` via `posthog-js`.
-
-**Placement:** Between `<ToastProvider>` and `<Layout>` in `App.tsx`:
-```
-<GoogleStatusProvider>
-  <ToastProvider>
-    <ErrorBoundary>       <- NEW
-      <Layout>
-        <Routes>...</Routes>
-      </Layout>
-    </ErrorBoundary>
-    <ToastHost />
-  </ToastProvider>
-</GoogleStatusProvider>
-```
-
-**PWA init:** `posthog-js` initializes in `vigil-pwa/src/main.tsx` (before `createRoot`). It receives anonymous events until the user loads an authenticated session, then `posthog.identify(userId)` can be called after a successful API response includes the userId.
-
-**Problem:** The PWA currently stores the raw bearer token (vk_ key or JWT string) in `localStorage` as `vigil_api_key`. The decoded userId is NOT stored client-side. For `posthog.identify()`, either:
-1. Decode the JWT client-side (if token is a JWT) — `jose` decodes without verification in browser.
-2. Add a `/v1/me` endpoint that returns `{ userId, email }` on valid auth.
-
-Option 2 is cleaner and is needed anyway for the profile page (AUTH-07). Add it in v3.5 as part of AUTH-06 since the login flow needs to surface user info.
-
-### Mac App / Swift — No PostHog SDK
-
-**Finding:** There is no official PostHog Swift SDK for macOS menu bar apps that is production-ready as of 2026-04-19 without CocoaPods (which conflicts with SPM-only setup). `posthog-ios` exists but targets iOS/tvOS; the macOS support is beta.
-
-**Recommendation:** Instrument the Mac app by calling a thin wrapper endpoint on Vigil Core instead of using a native SDK. Add `POST /v1/analytics/event` (bearer-authenticated, fire-and-forget) that proxies to PostHog server-side. This keeps the Mac app free of new Swift dependencies and routes all analytics through the single PostHog project key.
-
-**New Vigil Core route:** `vigil-core/src/routes/analytics.ts` — thin POST handler, reads `{ event, properties }` from body, calls `captureEvent(userId, event, properties)`, returns `204`.
-
-### G2 Plugin — Network Constraints
-
-**Finding from codebase inspection:** The G2 plugin calls `fetch()` directly to `api.vigilhub.io`. The Even Hub SDK (`@evenrealities/even_hub_sdk` v0.0.9) does not appear to sandbox outbound HTTP. The plugin is a Vite/TypeScript bundle served to the Even G2 glasses via the Even app ecosystem.
-
-**Confidence:** LOW — Even's sandboxing policy is not documented in the SDK and the behavior has not been empirically tested. The current plugin successfully calls `api.vigilhub.io` for data (confirmed by shipping v2.0), so outbound fetch works. PostHog can use the same pattern: call `posthog.capture()` from the bundle. However, if the bundle size is constrained (Even has a 512KB ehpk limit for plugins), adding `posthog-js` (~60KB minified) may hit limits.
-
-**Recommendation:** Do not integrate PostHog directly in the G2 plugin. Instead, instrument the Vigil Core API endpoints the G2 plugin calls (summary, brief, affirmation) — those calls are already authenticated and the server-side PostHog client will fire on each API hit. G2 user events are thus captured server-side at zero plugin cost.
-
-### Browser Extension — Content vs Background Script
-
-**Current architecture:** Both Chrome and Safari extensions are popup-only MV3 with no background service worker and no content script. The `manifest.json` declares only `action.default_popup`. Events fire only when the popup is open.
-
-**For event capture:** Use the popup script directly. `posthog-js` cannot be imported into an MV3 extension popup without bundling (since popup.js is a raw script, not a module). Instead, use the same thin-wrapper approach: when a thought is captured successfully, `fetch` the `/v1/analytics/event` endpoint alongside the `/v1/thoughts` POST. No PostHog SDK needed in the extension.
-
-**Safari persistence issue (EXT-01):** The Safari extension requires the native wrapper app (`Vigil Capture.app`) to be running for the extension to remain enabled. On reboot, if the app is not in Login Items, Safari disables the extension. The fix is to add `Vigil Capture.app` to Login Items (macOS `SMLoginItemSetEnabled` or the newer `ServiceManagement.framework` API). The Xcode project already has `AppDelegate.swift` with a minimal implementation — add the Login Item registration there.
-
-The extension's `chrome.storage.local` correctly persists the API key across popup opens. The "not surviving restart" bug is specifically the Safari extension being disabled by Safari, not a storage issue.
-
-### PostHog Cloud vs Self-Hosted
-
-**Recommendation: PostHog Cloud (free tier).**
-
-Self-hosting PostHog on Railway adds a second Railway service with Postgres + Redis + ClickHouse-equivalent — significant operational overhead for a solo dev. PostHog Cloud free tier is 1M events/month. At current scale (1 user), Cloud is appropriate. Self-host only if data sovereignty becomes a requirement.
 
 ---
 
-## G2 Resubmit Architecture
+## Feature-by-Feature Integration Analysis
 
-### Double-Tap Exit Dialogue Placement
+### W-01: work_order_statuses userId Scoping
 
-**Current behavior (from `main.ts` and `navigation.ts`):**
-- `DOUBLE_CLICK_EVENT` from the temple touchpad is handled in `handleNavEvent` in `navigation.ts`.
-- On all screens: double-tap navigates to `Screen.HOME`.
-- On `TASK_DETAIL`: double-tap navigates to `Screen.HOME`.
-- There is no exit dialogue — double-tap is used for navigation, not exit.
+**Problem confirmed from schema.ts:224-228:** `work_order_statuses` has `caseNumber TEXT PRIMARY KEY`, `status TEXT`, `updatedAt TIMESTAMP`. No `userId` column, no FK, no index.
 
-**G2 lifecycle exit event:** The Even SDK fires `FOREGROUND_EXIT_EVENT` (via `sysEvent`) when the user presses the R1 ring button or the G2 OS exits the plugin. This is handled in `main.ts` (stops the refresh timer) but does not show a dialogue.
+**Problem confirmed from routes/work-order-status.ts:64-83:** The production `dbSelectFn` does a bare `db.select().from(workOrderStatuses)` — returns ALL rows for ALL users. The `dbUpsertFn` conflicts on `caseNumber` alone — User A can overwrite User B's status for the same case number.
 
-**Even store requirement:** The store reviewer requires a "press twice to exit" confirmation pattern. This means: on first double-tap on the home screen, show a "Press again to exit" confirmation screen. On second double-tap within a timeout, the plugin should signal exit (if the SDK provides an exit API) or navigate back.
+**Integration points:**
+- `vigil-core/src/db/schema.ts` — workOrderStatuses table definition (line 224)
+- `vigil-core/src/routes/work-order-status.ts` — production route + dbSelectFn + dbUpsertFn (lines 64-83)
+- `vigil-core/drizzle/` — new migration file needed (next in sequence after `0013_*.sql`)
 
-**Integration point:** Add logic to `handleNavEvent` in `navigation.ts`. When `currentScreen === Screen.HOME` and `eventType === DOUBLE_CLICK_EVENT`, instead of re-navigating to HOME (currently a no-op), transition to a new `Screen.EXIT_CONFIRM` state. On the second double-tap within 3 seconds, call whatever Even SDK exit signal is available. The `Screen.EXIT_CONFIRM` is not in `SCREEN_ORDER` (not part of circular navigation), analogous to how `TASK_DETAIL` is handled.
+**New components:**
+- `vigil-core/drizzle/0014_work_order_statuses_user_scoping.sql` — migration
 
-**New screen file:** `vigil-g2-plugin/src/screens/exit-confirm.ts` — renders a simple text container: "Double-tap again to exit Vigil."
+**Modified components:**
+- `vigil-core/src/db/schema.ts` — add `userId integer NOT NULL REFERENCES users(id) ON DELETE RESTRICT` + `index("idx_work_order_statuses_user_id").on(table.userId)` + change primary key from bare `caseNumber` to composite or surrogate
+- `vigil-core/src/routes/work-order-status.ts` — add `userId` parameter to `dbSelectFn` / `dbUpsertFn` signatures; update production implementations to filter by `c.get("userId")`; update `WorkOrderStatusDeps` interface
 
-**Timeout reset:** If 3 seconds pass without a second double-tap, navigate back to `Screen.HOME`.
+**Data flow (after fix):**
+```
+PUT /v1/work-orders/:caseNumber/status
+  -> bearerAuth -> userId = c.get("userId")
+  -> validate status in {open, inProgress, done}
+  -> upsert(caseNumber, userId, status)     <- conflict on (userId, caseNumber)
+  -> 200 { caseNumber, status }
 
-**Note on Even SDK exit API:** The SDK v0.0.9 does not expose an explicit `exitApp()` call in the public types (confirmed by package inspection). The exit confirmation dialogue may be the entire deliverable — demonstrating the pattern to the reviewer — without an actual programmatic exit call.
+GET /v1/work-orders/statuses
+  -> bearerAuth -> userId = c.get("userId")
+  -> SELECT WHERE userId = ?
+  -> 200 { [caseNumber]: status, ... }
+```
 
-### Brand Colors in G2 Plugin
+**Migration strategy — backfill decision:**
+The `caseNumber` primary key is text (e.g. `INC0012345`). Case numbers are company-global, so the same caseNumber legitimately exists for different users. Because v3.4 backfilled all work_orders to the seed user, all existing work_order_statuses rows are also the seed user's. Safe migration plan:
 
-**Current state:** The G2 plugin targets a **greyscale** e-ink display (576x288 pixels). The `constants.ts` file defines only display geometry and container IDs — no color values. Screen builders in `src/screens/*.ts` build text-only containers using the Even Hub SDK's layout primitives, which render in grayscale.
+```sql
+-- Step 1: add nullable user_id
+ALTER TABLE work_order_statuses ADD COLUMN IF NOT EXISTS user_id integer;
 
-**Finding:** There are no scattered hex color values in the G2 plugin source. The display is greyscale-only. "WebView brand compliance" requested by the store reviewer likely refers to the plugin's **WebView** (the HTML page rendered in the Even G2 app's native browser, distinct from the plugin's primary SDK-rendered display). The `index.html` at the Vite project root is the WebView entry point.
+-- Step 2: backfill to seed user (same GUC pattern as 0012)
+UPDATE work_order_statuses SET user_id = (
+  SELECT id FROM users WHERE email = LOWER(COALESCE(
+    current_setting('vigil.seed_email', true), 'jamesonmorrill1@gmail.com'
+  )) LIMIT 1
+) WHERE user_id IS NULL;
 
-**Integration point:** `vigil-g2-plugin/index.html` — add Vigil brand colors as CSS custom properties mirroring `vigil-pwa/src/index.css` (`--color-teal-400: #1D9E75`, etc.) and the Inter typeface via Google Fonts or bundled font. This WebView is likely shown as a loading screen or settings page within the Even app.
+-- Step 3: NOT NULL + FK
+ALTER TABLE work_order_statuses ALTER COLUMN user_id SET NOT NULL;
+ALTER TABLE work_order_statuses ADD CONSTRAINT wos_user_id_fk
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT;
+CREATE INDEX IF NOT EXISTS idx_wos_user_id ON work_order_statuses (user_id);
 
-**Brand token source of truth:** `vigil-pwa/src/index.css` `@theme` block. Copy the relevant CSS variables into a shared `brand.css` that both the PWA and G2 plugin WebView can reference, or duplicate the minimal set into `vigil-g2-plugin/index.html`.
+-- Step 4: the existing caseNumber PRIMARY KEY becomes a per-user unique constraint
+-- Drop old PK; add surrogate id PK; add composite unique index
+ALTER TABLE work_order_statuses DROP CONSTRAINT IF EXISTS work_order_statuses_pkey;
+ALTER TABLE work_order_statuses ADD COLUMN IF NOT EXISTS id serial;
+ALTER TABLE work_order_statuses ADD CONSTRAINT work_order_statuses_pkey PRIMARY KEY (id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_wos_user_case
+  ON work_order_statuses (user_id, case_number);
+```
 
-### Screenshot Generation
+v3.4 claim-flow interaction: a new user who claims an existing email gets the seed user's `work_orders` rows (via the seed-user backfill). Their `work_order_statuses` rows will also be seed-user-owned after migration. When they PUT a status, the upsert conflicts on `(userId, caseNumber)` not on `caseNumber` alone — no cross-user collision.
 
-**Current state:** No CI/CD screenshot automation exists. The `vigil-g2-plugin/dist/` folder contains the built bundle and a `vigil.ehpk` package. Screenshots are captured manually from the Even G2 simulator (Even Studio desktop app).
+**Test strategy:** Add a case to `cross-user-isolation.test.ts` (existing file at `vigil-core/src/integration/cross-user-isolation.test.ts`). Pattern mirrors the `work-orders isolation` test at line 349: seed a `work_order_statuses` row for userA, verify userB's GET `/v1/work-orders/statuses` does not include it; verify userB's PUT cannot overwrite userA's status for the same caseNumber.
 
-**Integration point:** Screenshots for the store submission live outside the codebase — they are uploaded directly to the Even developer portal. The repo does not store them. The task (G2-01) requires:
-1. Running `npm run build:prod` in `vigil-g2-plugin/`
-2. Loading the `.ehpk` in Even Studio simulator
-3. Capturing screenshots of each screen at the required dimensions
-4. Uploading screenshots to the portal
-
-No code change is required for G2-01. It is a process task.
+Also update `vigil-core/src/routes/work-order-status.test.ts` — the existing unit test passes fake deps; update `dbSelectFn` / `dbUpsertFn` signatures to accept userId.
 
 ---
 
-## PWA Login/Register UI (AUTH-06)
+### W-02: GET /v1/brief/:date PDF Bytes Cross-User Isolation Test
 
-### Route Location
-
-**Existing file to modify:** `vigil-pwa/src/pages/AuthPage.tsx`
-
-**Current `AuthPage.tsx`:** Accepts only a `vk_` API key via a single password input. Has no email/password form. The backend endpoints `POST /v1/auth/register` and `POST /v1/auth/login` shipped in v3.4 are unused from the PWA.
-
-**Decision:** Extend `AuthPage.tsx` to a two-tab layout: "Sign In" (email + password, returns JWT) and "API Key" (legacy `vk_` path preserved for vk_ clients). The seed-user claim flow is transparent — first login for the seed account's email claims ownership server-side.
-
-**Router integration:** No router change needed. `/auth` already maps to `AuthPage` in `App.tsx`. The auth page gate in `App.tsx` is:
+**Gap confirmed:** `cross-user-isolation.test.ts` (line 305) covers `GET /v1/briefs` (list). It does NOT cover `GET /v1/brief/:date` (PDF bytes from `brief-generate.ts`). The route at `vigil-core/src/routes/brief-generate.ts:158` already scopes the query by `userId`:
 ```typescript
-const [isAuthenticated, setIsAuthenticated] = useState(() => getStoredKey() !== null)
+.where(and(eq(briefs.userId, userId), eq(briefs.date, date)))
 ```
-
-### JWT Storage Decision
-
-**Current:** `vk_` API key stored in `localStorage` as `vigil_api_key` via `storeKey()`.
-
-**For JWTs:** Store the JWT string in the same `localStorage` slot via the existing `storeKey()` function. No new storage key needed. The `vigilFetch()` wrapper reads `vigil_api_key` and sends it as `Authorization: Bearer <value>`. The `bearerAuth` middleware's `looksLikeJwt()` branch handles JWT tokens — the three-part dot structure is detected automatically.
-
-**Security tradeoff:** localStorage JWTs are XSS-vulnerable. For the current threat model (personal single-user tool, trusted domain, no PII beyond therapy notes already stored), this is acceptable. An `httpOnly` cookie approach would require CORS credential changes, same-site config, and a `/v1/auth/refresh` endpoint. Defer to v3.6.
-
-### Auth State Management
-
-**Pattern:** Keep existing `isAuthenticated` useState in `App.tsx`. The `handleAuthSuccess` callback is already wired. On successful `POST /v1/auth/login`, call `storeKey(jwt)` then `onAuthSuccess()`. No Zustand, no new React Context needed.
-
-**userId for PostHog identify:** After storing the JWT, call `GET /v1/me` (new endpoint) to get `{ userId, email }`. Store userId in module scope in `api/client.ts` or call `posthog.identify(String(userId))` once at auth success. Do not store userId in localStorage separately — derive it on demand from `/v1/me`.
-
-### Protected Route Wrapper
-
-**Current:** All routes inside the `isAuthenticated ? <Layout>...</Layout> : <Navigate to="/auth" />` gate in `App.tsx`. This top-level gate is equivalent to a protected route wrapper. No per-route auth check exists or is needed.
-
-**For AUTH-06:** No routing structure changes. New routes (if any for profile/settings expansion) just add `<Route>` elements inside the authenticated `<Routes>`.
-
-### Seed-User Claim Flow UI Surface
-
-The backend detects the seed-user's `PLACEHOLDER_HASH_PREFIX` and replaces the hash on first real login. No special PWA path is needed. First login for the seed account's email runs transparently through the standard email/password flow. Server returns a normal JWT on success.
-
----
-
-## Safari Extension Persistence (EXT-01)
-
-### Root Cause
-
-Safari MV3 web extensions on macOS require a native host app wrapper. Safari disables the extension if the host app is not running at startup (not in Login Items). The `Vigil Capture.app` wrapper has an `AppDelegate.swift` that does nothing on launch — the app launches, shows nothing, and if closed, Safari stops the extension.
-
-### Code Split — Shared Core vs Safari Shim
-
-- **Shared web extension code:** `popup.js`, `popup.html`, `popup.css`, `manifest.json`, `icons/` — identical copies in `vigil-extension/` (Chrome) and `vigil-safari-extension/Vigil Capture Extension/Resources/` (Safari). Both use `chrome.storage.local` (Safari bridges the `chrome` namespace via its WebExtension polyfill).
-- **Safari-specific shim:** `SafariWebExtensionHandler.swift` — native message bridge, echoes messages back. Currently minimal/default implementation.
-- **Native wrapper:** `AppDelegate.swift` and `ViewController.swift` — the native macOS app that hosts the extension.
-
-### Fix Location
-
-**File:** `vigil-safari-extension/Vigil Capture/AppDelegate.swift`
-
-Add `ServiceManagement.framework` import and `SMAppService.mainApp.register()` call in `applicationDidFinishLaunching`. For macOS 12 fallback, use `SMLoginItemSetEnabled`. The app should also suppress its window on launch (it is a background helper — set `LSUIElement = YES` in `Info.plist` or call `NSApp.setActivationPolicy(.prohibited)` in `applicationDidFinishLaunching`).
-
-### Signing Chain Reality
-
-- **Current state:** The Xcode project is built locally. Sideloading Safari extensions requires "Allow Unsigned Extensions" in Safari > Develop, which resets every time Safari relaunches.
-- **For persistence without developer mode:** The app must be code-signed with a Developer ID Application certificate. This allows `gatekeeper` to accept the app on reboot without user intervention, and Safari to keep the extension enabled.
-- **TestFlight:** Not applicable for macOS Safari extensions (TestFlight is for iOS app betas and macOS notarized apps, but extension distribution is separate).
-- **Mac App Store:** Full App Store distribution would require App Store distribution certificate, sandboxing, and entitlements review. Defer unless the extension needs public distribution.
-
----
-
-## Photo Capture Repair
-
-### DispatchSource Event Handler Chain (CAP-01)
-
-**File:** `Sources/DailyBriefMonitor/FolderWatcherService.swift`
-
-**Confirmed chain:**
-```
-start()
-  → open(O_EVTONLY) on directory
-  → DispatchSource.makeFileSystemObjectSource(eventMask: .write)
-  → source.setEventHandler { Task { await self.handleDirectoryChange(dirURL) } }
-  → initial scan calls handleDirectoryChange() immediately
-
-handleDirectoryChange()
-  → triggerICloudDownloads()    // triggers .icloud placeholder downloads
-  → scanForNewFiles()           // skips hidden files, skips done/ subfolder
-  → for each new file: knownFiles.insert + pendingQueue.append
-  → startProcessingLoop() if not already running
-
-processFile()
-  → waitForStable()             // polls until file size stable (30s timeout)
-  → check ubiquitousItemDownloadingStatus (defer if not .current)
-  → classify() → .image or .audio
-  → imageService.processPhoto(imageURL:, preview:false, forcePaperType:)
-  → triageThoughts(response.thoughts)
-  → postProcess() → move to done/ or delete
-```
-
-**Root cause of CAP-01 (iCloud path broken):**
-
-The `imageFolderPath` is configured as `~/Library/Mobile Documents/com~apple~CloudDocs/Notebook` (confirmed in `~/.config/dailybrief/config.json`). The path decodes correctly via `convertFromSnakeCase` (JSON key `image_folder_path` maps to `imageFolderPath`). The directory exists and contains materialized HEIC files (`IMG_0452.HEIC`, `IMG_0453.HEIC` — confirmed).
-
-**Most probable root cause: HEIC rejection at the API level.**
-
-`FolderWatcherService.imageExtensions` includes `heic`. The file reaches `APIImageDescriptionService.processPhoto(imageURL:)` in `JarvisCore`. If that service sends raw HEIC bytes to `/v1/process-photo`, the API rejects them: `VALID_MEDIA_TYPES` in `vigil-core/src/routes/process-photo.ts` only accepts `image/jpeg`, `image/png`, `image/gif`, `image/webp`. The rejection produces an HTTP error, which is caught in `processFile()` and the file is added to `_failedFiles`. The failure is tracked in the menu bar error state (WATCH-06) but may not be prominently surfaced.
-
-**Secondary cause to verify:** Whether `APIImageDescriptionService.processPhoto(imageURL:)` converts HEIC to JPEG before encoding. The v2.4 requirement "HEIC/TIFF/BMP conversion via CoreGraphics" is listed as shipped — but this was implemented in the Mac app's local rendering path (GRDB era), which was retired in v2.2. The current `APIImageDescriptionService` may not perform conversion before sending.
-
-**Fix approach:**
-1. Confirm whether `APIImageDescriptionService` converts HEIC before upload. If not, add CoreGraphics-based conversion (HEIC → JPEG) in the Mac-side service before encoding to base64.
-2. Alternatively, add server-side HEIC→JPEG conversion in `process-photo.ts` using `sharp` npm package. This makes all clients (PWA, Mac, future mobile) work with HEIC without client-side changes.
-
-### iCloud Placeholder Detection Gate
-
-`scanForNewFiles` uses `options: [.skipsHiddenFiles]` in `FileManager.contentsOfDirectory`. The `.icloud` placeholders are hidden files (dot-prefixed). So `scanForNewFiles` correctly skips `.icloud` placeholders — they are never enqueued as processable files.
-
-`triggerICloudDownloads` uses `options: []` (includes hidden files) to find `.icloud` placeholders and call `startDownloadingUbiquitousItem`. This gate is in place and functioning.
-
-`processFile` also checks `ubiquitousItemDownloadingStatus != .current` and defers if not fully downloaded. The iCloud gate is correctly implemented — it is not the source of CAP-01.
-
-### Manual Upload Flow (CAP-02)
-
-**Flow:** User selects a photo in the PWA → `usePhotoUpload` hook → `POST /v1/process-photo?preview=true` (preview, no DB write) → user confirms → `POST /v1/process-photo` (commit, no `?preview` param).
-
-**Commit path in `vigil-core/src/routes/process-photo.ts` (verified):**
-Steps 8-10: build insert rows, batch DB insert, return `{ paperType, confidence, thoughts[] }`. No triage call anywhere in the commit path. The thoughts are saved with `confidence` from Claude's photo analysis but `category` is NULL.
-
-**CAP-02 root cause confirmed:** `process-photo.ts` commit path never calls the triage service. Thoughts created via photo upload (from any client) have no category.
-
-**Why the folder watcher works (and PWA does not):** `FolderWatcherService` calls `triageThoughts()` after `imageService.processPhoto()` completes — this is Mac-side triage that runs after the API call returns. The PWA has no equivalent post-commit triage call.
-
-**Fix location:** `vigil-core/src/routes/process-photo.ts`, commit path (after DB insert, before returning 201). Add a fire-and-forget call to the triage logic for each inserted thought. This ensures server-side auto-triage on all photo uploads regardless of which client submitted them, and aligns with how the triage route already works for text thoughts.
-
----
-
-## Component Map: New vs Modified
-
-### New Components
-
-| Component | Location | Purpose |
-|-----------|----------|---------|
-| `posthog.ts` | `vigil-core/src/analytics/posthog.ts` | PostHog server singleton + captureEvent/captureError helpers |
-| `analytics.ts` route | `vigil-core/src/routes/analytics.ts` | `POST /v1/analytics/event` — Mac app + extension event proxy |
-| `me.ts` route | `vigil-core/src/routes/me.ts` | `GET /v1/me` — returns `{ userId, email }` for PWA PostHog identify |
-| `ErrorBoundary.tsx` | `vigil-pwa/src/components/ErrorBoundary.tsx` | React class component catches render errors, sends to PostHog |
-| `exit-confirm.ts` | `vigil-g2-plugin/src/screens/exit-confirm.ts` | G2 exit confirmation screen (double-tap dialogue) |
-
-### Modified Components
-
-| Component | Location | Change |
-|-----------|----------|--------|
-| `index.ts` | `vigil-core/src/` | Import posthog singleton, mount `/v1/analytics` + `/v1/me` routes, add `app.onError()`, add `process.on('uncaughtException')` |
-| `process-photo.ts` | `vigil-core/src/routes/` | Add auto-triage call in commit path (CAP-02); add HEIC media type + conversion (CAP-01) |
-| `navigation.ts` | `vigil-g2-plugin/src/` | Add EXIT_CONFIRM state machine for double-tap from HOME screen (G2-02) |
-| `main.ts` | `vigil-g2-plugin/src/` | Update event handler dispatch to route through new exit-confirm logic (G2-02) |
-| `index.html` | `vigil-g2-plugin/` | Add Vigil brand CSS variables and Inter font for WebView compliance (G2-03) |
-| `AuthPage.tsx` | `vigil-pwa/src/pages/` | Add email/password tab, call `POST /v1/auth/login`, store JWT via existing `storeKey()` |
-| `App.tsx` | `vigil-pwa/src/` | Wrap authenticated subtree in `<ErrorBoundary>` |
-| `main.tsx` | `vigil-pwa/src/` | Add `posthog-js` init before `createRoot` |
-| `AppDelegate.swift` | `vigil-safari-extension/Vigil Capture/` | Add `SMAppService.mainApp.register()` + `LSUIElement` suppression (EXT-01) |
-
----
-
-## Suggested Build Order with Dependency Chain
-
-```
-Phase A: Server foundations (no client deps, unblocks everything else)
-  A1. CAP-02: add auto-triage to process-photo commit path
-  A2. CAP-01: investigate APIImageDescriptionService HEIC handling; fix HEIC on server or Mac side
-  A3. ANLY-01: posthog.ts singleton + app.onError + process handlers in index.ts
-  A4. ANLY-02: POST /v1/analytics/event route
-  A5. GET /v1/me endpoint (required by AUTH-06 for PostHog identify)
-
-Phase B: PWA auth UI (depends on A5 /v1/me)
-  B1. AUTH-06: AuthPage email/password tab + JWT store + posthog.identify on success
-
-Phase C: PWA error tracking (depends on ANLY-01 posthog-js, can parallel with B)
-  C1. ANLY-03: posthog-js init in main.tsx + ErrorBoundary component + wire to App.tsx
-
-Phase D: API metrics + traffic baseline (depends on A3 PostHog server SDK)
-  D1. ANLY-04: captureEvent calls in key routes (brief/generate, thoughts POST, auth/login)
-
-Phase E: G2 resubmit (fully independent, no server deps for G2-01/G2-03)
-  E1. G2-01: Simulator screenshots (process task, no code change)
-  E2. G2-03: WebView brand CSS + Inter font in index.html
-  E3. G2-02: Exit confirmation dialogue in navigation.ts + new exit-confirm screen
-
-Phase F: Safari extension persistence (independent Xcode project)
-  F1. EXT-01: AppDelegate Login Item registration + LSUIElement suppression
-```
-
-**Dependency rationale:**
-- PostHog server SDK (A3) must land before per-user events in any route (D1).
-- `/v1/me` (A5) must land before AUTH-06 can do `posthog.identify()` with real userId.
-- AUTH-06 backend (shipped v3.4) is complete — Phase B is pure frontend work.
-- CAP-01/CAP-02 are isolated server-side fixes; they should land first to unblock existing broken functionality.
-- G2 resubmit (E) and Safari extension (F) are fully independent and can be parallelized with A–D.
-- G2-01 screenshots are a process task with zero code changes — can happen anytime after E2 (brand compliance) is done.
-
----
-
-## Data Flow Changes
-
-### PostHog Event Flow (new)
-
-```
-Client action (PWA, Mac, extension)
-  → API call to vigil-core
-  → bearerAuth sets c.get('userId')
-  → Route handler: posthog.captureEvent(userId, 'event_name', props)  <- NEW
-  → posthog-node sends to PostHog Cloud (async, non-blocking)
-```
-
-### Auth Flow Change (AUTH-06)
-
-```
-Current:  User enters vk_ key → validateApiKey() → storeKey() → isAuthenticated = true
-New path: User enters email/pw → POST /v1/auth/login → { token: JWT } → storeKey(JWT) → isAuthenticated = true
-Legacy:   vk_ key entry path preserved unchanged for existing Mac app + extension clients
-```
-
-### Photo Upload Triage Fix (CAP-02)
-
-```
-Current:  POST /v1/process-photo (commit) → DB insert → return thoughts (category: null)
-Fixed:    POST /v1/process-photo (commit) → DB insert → triage each thought → update category → return thoughts with category
+The test gap is coverage, not a real bug. But W-02 requires proof.
+
+**Integration points:**
+- `vigil-core/src/integration/cross-user-isolation.test.ts` — add new `it()` block
+
+**New components:** none
+
+**Modified components:**
+- `vigil-core/src/integration/cross-user-isolation.test.ts` — add test
+
+**Test pattern to add (extend the existing describe block at the end):**
+```typescript
+it("brief PDF isolation — GET /v1/brief/:date returns 404 when caller is not the owner", async (t) => {
+  if (!DB_READY) { t.skip("DATABASE_URL required"); return; }
+  const { db: d } = await import("../db/connection.js");
+  const { briefs, briefPdfs } = await import("../db/schema.js");
+  // userA owns a brief with known PDF bytes
+  const [aBrief] = await d!.insert(briefs).values({
+    userId: userA.id,
+    date: "2099-11-01",
+    summary: { test: "w02" },
+    thoughtCount: 0, taskCount: 0,
+  }).returning();
+  await d!.insert(briefPdfs).values({
+    briefId: aBrief.id,
+    userId: userA.id,
+    bytes: Buffer.from("fakepdf"),
+    contentType: "application/pdf",
+    byteLength: 7,
+  });
+  try {
+    // userB requests userA's date -- must get 404, NOT 200 with userA's bytes
+    const res = await get("/v1/brief/2099-11-01", tokenB);
+    assert.equal(res.status, 404,
+      "LEAK: GET /v1/brief/:date returned non-404 to non-owner — cross-user PDF bytes exposed");
+    // Also verify owner can access own brief
+    const ownRes = await get("/v1/brief/2099-11-01", tokenA);
+    assert.equal(ownRes.status, 200,
+      "REGRESSION: owner cannot access own brief PDF");
+  } finally {
+    await d!.delete(briefPdfs).where(eq(briefPdfs.briefId, aBrief.id));
+    await d!.delete(briefs).where(eq(briefs.id, aBrief.id));
+  }
+});
 ```
 
 ---
 
-## Integration Points Summary
+### SCHED-01: Per-User Scheduler Fan-Out
 
-| Feature | Modified Entry Point | Integration Method |
-|---------|---------------------|-------------------|
-| PostHog server | `vigil-core/src/index.ts` | singleton init + `app.onError` handler |
-| PostHog PWA | `vigil-pwa/src/main.tsx` | `posthog-js` init before `createRoot` |
-| PostHog per-user | route handlers via `c.get('userId')` | userId already set by existing bearerAuth middleware |
-| Error tracking React | `vigil-pwa/src/App.tsx` | `<ErrorBoundary>` wraps authenticated layout |
-| Error tracking Node | `vigil-core/src/index.ts` | `app.onError()` + `process.on` handlers |
-| G2 exit dialogue | `vigil-g2-plugin/src/navigation.ts` | new EXIT_CONFIRM state in `handleNavEvent` |
-| G2 brand WebView | `vigil-g2-plugin/index.html` | CSS variables + Inter font |
-| PWA login UI | `vigil-pwa/src/pages/AuthPage.tsx` | extend existing auth page (no new route) |
-| JWT storage | `vigil-pwa/src/api/client.ts` | existing `storeKey()` / `getStoredKey()` — unchanged |
-| Safari Login Item | `vigil-safari-extension/Vigil Capture/AppDelegate.swift` | `SMAppService.mainApp.register()` |
-| CAP-01 HEIC fix | `vigil-core/src/routes/process-photo.ts` + Mac `APIImageDescriptionService` | add HEIC support on server or confirm Mac converts before upload |
-| CAP-02 triage | `vigil-core/src/routes/process-photo.ts` | fire-and-forget triage after DB insert in commit path |
+**Entry point confirmed:** `vigil-core/src/services/generate-scheduler.ts`. The TODO at line 19 explicitly documents the seed-user lock. The scheduler runs as `setInterval(60s)` in-process in `vigil-core/src/index.ts` (lines 213-224). There is no Railway cron job — this is a self-scheduling in-process loop.
+
+The `createGenerateScheduler` factory already accepts `(dateStr, userId)` for the `assemble` function — the internal plumbing supports per-user assembly. The constraint is in `tick()`: it resolves the seed user and hard-scopes everything to that one user.
+
+**Integration points:**
+- `vigil-core/src/services/generate-scheduler.ts` — tick() function (line 202) + getSeedUserId() (line 107)
+- `vigil-core/src/db/schema.ts` — users table (need to query all users)
+- `vigil-core/src/index.ts` — scheduler instantiation (lines 213-224); no changes needed here
+
+**New components:** none
+
+**Modified components:**
+- `vigil-core/src/services/generate-scheduler.ts` — replace `getSeedUserId()` single-user resolve with `getAllUsersForScheduling()` multi-user iteration. Remove `resolvedSeedUserId` cached singleton. Add optional `getAllUsersFn` to `GenerateSchedulerDeps` interface.
+
+**Data flow:**
+```
+tick() every 60s
+  -> if db unavailable: log warn, return
+  -> getAllUsersForScheduling():
+       SELECT DISTINCT u.id, u.email FROM users u
+       -- all registered users are candidates; each has their own schedule in app_settings
+  -> for each user (sequential, not concurrent):
+      -> getSettingViaDb("user_timezone", userId)
+      -> getSettingViaDb("generate_schedule", userId)
+      -> if schedule.enabled AND hour/minute match in user's TZ:
+          -> getRecentBriefViaDb(date, userId)  -- dedupe check
+          -> if NOT recently generated:
+              try:
+                -> assemble(dateStr, userId)
+                -> upsertBriefViaDb({ userId, ... })
+                -> log success for userId
+              catch err:
+                -> log error for userId, CONTINUE loop (do not abort)
+          else: log dedupe skip for userId
+      else: skip
+```
+
+**Concurrency decision: sequential, not concurrent.** Rationale:
+1. Single Railway instance — no parallelism benefit from concurrent Promises; it just multiplies simultaneous Anthropic API calls in a burst window.
+2. Error isolation: a try/catch per-user loop means one user's failure (expired OAuth token, no thoughts, Anthropic error) does not abort other users' generation.
+3. At v3.6 user count (1-3 users), sequential processing of N users in a 60s window is trivially fast.
+
+**Rate-limit mitigations:**
+- Anthropic: sequential calls spaced by assembly time (~2-5s each). Fine at <20 users. If count grows, add `await new Promise(r => setTimeout(r, 1000))` between users.
+- ESPN/sports: fetched inside brief-assembly-service per call. If sharing is needed later, cache the sports result at the top of tick() and pass it to each user's assembly. For now, sequential calls are fine.
+- Google Calendar: per-user OAuth token — no sharing possible; sequential is correct.
+
+**Test impact:** `vigil-core/src/services/generate-scheduler.test.ts` uses injected DI seams. Update to inject `getAllUsersFn` returning an array of `{id: number}`. Existing single-user test behavior preserved by passing a single-element array.
+
+---
+
+### AUTH-09: Change Password
+
+**Integration points:**
+- `vigil-core/src/routes/auth.ts` — add endpoint (existing Hono router; same file as register/login)
+- `vigil-core/src/utils/password.ts` — `hashPassword` + `verifyPassword` (already imported and used in auth.ts)
+- `vigil-pwa/src/api/client.ts` — add `changePassword(currentPassword, newPassword)` function
+- `vigil-pwa/src/pages/SettingsPage.tsx` — add inline section in Vigil Account card
+
+**New components:**
+- Inline form section in `SettingsPage.tsx` within the existing "Vigil Account" `<section>` (lines 217-231). No new page, no new route. State: `[showChangePassword, setShowChangePassword]` + form fields.
+
+**Modified components:**
+- `vigil-core/src/routes/auth.ts` — add `auth.post("/auth/change-password", ...)`. This endpoint IS behind bearerAuth (index.ts:118-119 only skips register and login; `/auth/change-password` reaches bearerAuth correctly).
+- `vigil-pwa/src/pages/SettingsPage.tsx` — add expandable inline change-password form
+- `vigil-pwa/src/api/client.ts` — add `changePassword` function
+
+**Endpoint shape:**
+```
+POST /v1/auth/change-password
+Authorization: Bearer <jwt>
+{ "currentPassword": "...", "newPassword": "..." }
+
+200: { "message": "Password updated" }
+400: { "error": "..." }   -- validation failure or new password too short/long
+401: { "error": "Current password incorrect" }
+```
+
+**Require current password re-entry: yes.** Prevents session-hijack: an attacker with a stolen session token cannot silently change the password without knowing the old one.
+
+**Data flow:**
+```
+POST /v1/auth/change-password
+  -> bearerAuth -> userId = c.get("userId")
+  -> parse body -> { currentPassword, newPassword }
+  -> validate newPassword length (MIN_PASSWORD=12, MAX_PASSWORD=128 from existing constants)
+  -> db.select users WHERE id = userId  (fetch current hash)
+  -> verifyPassword(currentPassword, user.passwordHash)
+  -> if fail -> 401 "Current password incorrect"
+  -> hashPassword(newPassword) -> newHash
+  -> db.update users SET password_hash = newHash, updated_at = now() WHERE id = userId
+  -> 200 { message: "Password updated" }
+```
+
+**PWA placement:** The "Vigil Account" section in `SettingsPage.tsx` currently shows email + Sign out button (lines 217-231). Add an inline expandable form below the email line. Collapsed by default ("Change password" link text). Expands to current/new/confirm fields inline. This is consistent with the existing section-based UI and requires no modal or new route.
+
+---
+
+### AUTH-10: Forgot Password Flow
+
+**This is the most architecturally novel feature in v3.6.** It introduces the first outbound email from Vigil.
+
+**Data model decision — three options evaluated:**
+
+**Option A: Dedicated `password_reset_tokens` table (RECOMMENDED)**
+```typescript
+export const passwordResetTokens = pgTable("password_reset_tokens", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  tokenHash: text("token_hash").notNull(),  // SHA-256 of raw token
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),  // null = unused
+  type: text("type").notNull().default("password_reset"),  // reused by AUTH-11
+}, (table) => [
+  uniqueIndex("uq_prt_token_hash").on(table.tokenHash),
+  index("idx_prt_user_id").on(table.userId),
+]);
+```
+Why recommended: explicit expiry, explicit used_at for single-use enforcement, auditable, easy to purge expired rows. The `type` column is added upfront so AUTH-11 reuses the same table (no second migration).
+
+**Option B: Reuse `ai_cache` table (rejected)**
+ai_cache has composite unique key `(userId, type)` — one row per user per type. A reset token needs: multiple tokens per user (rapid retries), expiry, usedAt. Cramming into ai_cache.result JSONB breaks the single-row-per-type invariant.
+
+**Option C: Stateless signed JWT token (rejected)**
+Cannot be single-use without server-side state (used_at requires a DB record). Blacklisting brings you back to a DB table. Reject.
+
+**Integration points:**
+- `vigil-core/src/db/schema.ts` — add `passwordResetTokens` table
+- `vigil-core/drizzle/` — new migration `0015_password_reset_tokens.sql`
+- `vigil-core/src/routes/auth.ts` — add two endpoints
+- `vigil-core/src/services/email-service.ts` — NEW FILE
+- `vigil-pwa/src/pages/ForgotPasswordPage.tsx` — NEW FILE
+- `vigil-pwa/src/pages/ResetPasswordPage.tsx` — NEW FILE
+- `vigil-pwa/src/api/client.ts` — add `forgotPassword` + `resetPassword`
+- `vigil-pwa/src/App.tsx` — add two public routes
+
+**Email service — new file `vigil-core/src/services/email-service.ts`:**
+
+Follows the DI pattern from `me.ts` (MeDeps interface), `process-photo.ts` (ProcessPhotoDeps), etc.:
+
+```typescript
+// vigil-core/src/services/email-service.ts
+
+export interface EmailDeps {
+  sendFn: (to: string, subject: string, html: string) => Promise<void>
+}
+
+export interface EmailService {
+  sendPasswordReset(to: string, resetUrl: string): Promise<void>
+  sendEmailVerification(to: string, verifyUrl: string): Promise<void>  // reused by AUTH-11
+}
+
+export function createEmailService(deps: EmailDeps): EmailService {
+  return {
+    async sendPasswordReset(to, resetUrl) {
+      await deps.sendFn(
+        to,
+        "Reset your Vigil password",
+        `<p>Click to reset your password (expires in 1 hour):</p>
+         <a href="${resetUrl}">${resetUrl}</a>
+         <p>If you did not request this, ignore this email.</p>`
+      );
+    },
+    async sendEmailVerification(to, verifyUrl) {
+      await deps.sendFn(
+        to,
+        "Verify your Vigil email",
+        `<p>Click to verify your email address:</p>
+         <a href="${verifyUrl}">${verifyUrl}</a>`
+      );
+    },
+  }
+}
+
+// Production singleton wired to Resend
+import { Resend } from 'resend';
+const client = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+export const emailService = createEmailService({
+  sendFn: async (to, subject, html) => {
+    if (!client) throw new Error("Email service not configured (RESEND_API_KEY unset)");
+    await client.emails.send({
+      from: process.env.EMAIL_FROM ?? 'noreply@vigilhub.io',
+      to, subject, html,
+    });
+  },
+});
+```
+
+**Email provider env vars — cross-cutting concern:**
+```
+RESEND_API_KEY=re_...
+EMAIL_FROM=noreply@vigilhub.io
+PWA_BASE_URL=https://app.vigilhub.io
+```
+Pattern: identical to ANTHROPIC_API_KEY / POSTHOG_API_KEY. Set in Railway project variables panel. Added to `vigil-core/.env.example` as commented-out examples. Startup check in `index.ts`: warn (not FATAL) if `RESEND_API_KEY` or `EMAIL_FROM` unset — server still boots, email endpoints return 503 if provider not configured.
+
+**Email provider recommendation: Resend** (resend.com). Simple Node SDK (`npm install resend`), generous free tier (3000 emails/month), HTTP API (no SMTP port issues on Railway), no complex DKIM/SPF setup for known-sender domain.
+
+**Modified components:**
+- `vigil-core/src/routes/auth.ts` — add two PUBLIC endpoints (forgot-password, reset-password)
+- `vigil-core/src/index.ts` — add path exceptions for `/v1/auth/forgot-password` and `/v1/auth/reset-password` in the bearerAuth skip block (lines 115-120), matching the pattern at line 118-119
+- `vigil-pwa/src/App.tsx` — add routes `/forgot-password` and `/reset-password` OUTSIDE the `isAuthenticated` guard (must be reachable while logged out)
+- `vigil-pwa/src/api/client.ts` — add `forgotPassword` + `resetPassword`
+
+**Endpoint shapes:**
+```
+POST /v1/auth/forgot-password   (PUBLIC -- no bearer)
+{ "email": "user@example.com" }
+-> 200 { "message": "If that email is registered, you will receive a link." }
+   (enumeration-safe: always 200 regardless of whether email exists)
+   Internal: lookup user by email -> if found:
+     generate crypto.randomBytes(32).toString("hex") -> rawToken
+     SHA-256(rawToken) -> tokenHash
+     INSERT password_reset_tokens(userId, tokenHash, expiresAt=now+1h, type='password_reset')
+     emailService.sendPasswordReset(user.email, `${PWA_BASE_URL}/reset-password?token=${rawToken}`)
+
+POST /v1/auth/reset-password    (PUBLIC -- no bearer)
+{ "token": "<rawToken>", "newPassword": "..." }
+-> 200 { "message": "Password updated. Please log in." }
+-> 400 { "error": "Invalid or expired token" }
+   Internal: SHA-256(token) -> tokenHash
+   SELECT FROM password_reset_tokens WHERE tokenHash = ? AND expiresAt > now() AND usedAt IS NULL
+     AND type = 'password_reset'
+   -> if not found -> 400 "Invalid or expired token"
+   -> hashPassword(newPassword) -> newHash
+   -> UPDATE users SET password_hash = newHash, updated_at = now() WHERE id = row.userId
+   -> UPDATE password_reset_tokens SET used_at = now() WHERE id = row.id
+   -> 200 { message: "Password updated. Please log in." }
+```
+
+**Data flow (forgot-password):**
+```
+POST /v1/auth/forgot-password
+  -> parse email
+  -> timing-safe: always 200 (lookup happens but result not reflected in response shape)
+  -> if user found in DB:
+      -> rawToken = crypto.randomBytes(32).toString("hex")
+      -> tokenHash = SHA-256(rawToken)
+      -> INSERT password_reset_tokens (userId, tokenHash, expiresAt=now+1h)
+      -> try: emailService.sendPasswordReset(email, resetUrl)
+         catch: log error (do not expose in response)
+  -> 200 { message: "..." }
+```
+
+**PWA pages:**
+- `/forgot-password` — single email input + submit. After submit shows static "Check your email" message. Link back to `/auth`. Rendered OUTSIDE `isAuthenticated` guard.
+- `/reset-password?token=<token>` — new password + confirm inputs. Reads token from `useSearchParams()`. On success redirect to `/auth?password_reset=true`. On error show error + link to `/forgot-password`.
+
+Both pages added to `App.tsx` as additional `<Route>` entries in the section before or alongside the `<Route path="/auth">` block.
+
+---
+
+### AUTH-11: Email Verify Flow
+
+**Data model decision:**
+
+**Option A: `emailVerifiedAt TIMESTAMP WITH TIME ZONE` column on users (RECOMMENDED)**
+Add nullable `emailVerifiedAt` to `users`. `NULL` = unverified. Timestamp gives "when verified" for free. Single-table lookup. No join needed.
+
+**Option B: Separate `email_verifications` table (rejected)**
+Overkill. Email verification is one-time state per user. A column is sufficient.
+
+**Option C: Enum column (rejected)**
+Less clean; loses "when verified" metadata.
+
+**Token storage:** Reuse `password_reset_tokens` table with `type = 'email_verify'`. The `type` column is added when the table is created (AUTH-10 migration), so AUTH-11 requires no additional migration for the tokens table — only the `emailVerifiedAt` column on `users` needs its own migration.
+
+**Gating strategy: banner + non-blocking.** Do NOT block any features on `emailVerifiedAt`. Blocking is high-friction and risks breaking the seed user's claim-flow. Instead: show an unobtrusive banner in the PWA if `emailVerifiedAt IS NULL`, with a "Resend verification" button. All endpoints continue working for unverified users.
+
+**Integration points:**
+- `vigil-core/src/db/schema.ts` — add `emailVerifiedAt` nullable column to `users`
+- `vigil-core/drizzle/` — new migration `0016_email_verified_at.sql`
+- `vigil-core/src/routes/auth.ts` — amend `POST /v1/auth/register` + add two new endpoints
+- `vigil-core/src/services/email-service.ts` — `sendEmailVerification` method (already in plan)
+- `vigil-core/src/routes/me.ts` — extend `userLookupFn` return type + response to include `emailVerifiedAt`
+- `vigil-pwa/src/pages/SettingsPage.tsx` — verification status banner in Vigil Account section
+- `vigil-pwa/src/api/client.ts` — add `resendVerificationEmail()`
+- `vigil-core/src/index.ts` — add path exception for `GET /v1/auth/verify-email/` prefix
+
+**Modified components:**
+- `vigil-core/src/routes/auth.ts` — add two endpoints:
+  1. `POST /v1/auth/send-verify-email` — behind bearerAuth (user must be logged in). Rate limited: 1 send per 60s per userId (simple in-memory `Map<number, number>` of lastSentAt, consistent with existing in-memory rate limiter).
+  2. `GET /v1/auth/verify-email/:token` — PUBLIC (link click from email, no bearer available).
+- `vigil-core/src/routes/auth.ts` — amend `POST /v1/auth/register`: after successful INSERT, fire-and-forget `emailService.sendEmailVerification(...)`. Wrap in try/catch — email failure must not block registration response.
+- `vigil-core/src/routes/me.ts` — extend `userLookupFn` to select `emailVerifiedAt`; extend response shape to include `emailVerifiedAt: string | null`
+- `vigil-pwa/src/pages/SettingsPage.tsx` — banner in Vigil Account section: if `emailVerifiedAt` is null → show "Please verify your email. [Resend]" banner with resend button
+
+**Endpoint shapes:**
+```
+POST /v1/auth/send-verify-email   (bearer required -- user is logged in)
+-> 200 { "message": "Verification email sent" }
+-> 400 { "error": "Email already verified" }
+-> 429 { "error": "Too many requests. Try again in 60 seconds." }
+   Internal: check emailVerifiedAt on users row for userId
+   -> if already verified -> 400
+   -> check in-memory rate limit map for userId
+   -> generate rawToken, tokenHash, INSERT password_reset_tokens(type='email_verify', expiresAt=now+24h)
+   -> emailService.sendEmailVerification(user.email, `${PWA_BASE_URL}/verify-email?token=${rawToken}`)
+
+GET /v1/auth/verify-email/:token  (PUBLIC -- link click from email)
+-> 302 redirect to ${PWA_BASE_URL}/auth?email_verified=true
+-> 400 { "error": "Invalid or expired token" }
+   Internal: SHA-256(token) -> tokenHash
+   SELECT FROM password_reset_tokens WHERE tokenHash=? AND type='email_verify'
+     AND expiresAt > now() AND usedAt IS NULL
+   -> if not found -> 400
+   -> UPDATE users SET email_verified_at = now() WHERE id = row.userId
+   -> UPDATE password_reset_tokens SET used_at = now() WHERE id = row.id
+   -> redirect/200
+```
+
+**Data flow (verify email):**
+```
+Register:
+  POST /v1/auth/register
+    -> existing register logic (hash pw, insert user)
+    -> [NEW] fire-and-forget:
+         rawToken = crypto.randomBytes(32).toString("hex")
+         tokenHash = SHA-256(rawToken)
+         INSERT password_reset_tokens(userId, tokenHash, expiresAt=now+24h, type='email_verify')
+         emailService.sendEmailVerification(email, `${PWA_BASE_URL}/verify-email?token=${rawToken}`)
+    -> 201 { id, email }  (unchanged from current)
+
+Verify:
+  GET /v1/auth/verify-email/:token  (public link)
+    -> SHA-256(token) -> tokenHash
+    -> lookup in password_reset_tokens (type='email_verify', not expired, not used)
+    -> UPDATE users SET email_verified_at = now()
+    -> UPDATE token SET used_at = now()
+    -> redirect to ${PWA_BASE_URL}/auth?email_verified=true
+
+PWA banner (GET /v1/me response):
+  me.ts now returns { userId, email, emailVerifiedAt: string | null }
+  App.tsx uses /v1/me on mount -> already called
+  SettingsPage Vigil Account section: if emailVerifiedAt == null -> show banner
+```
+
+---
+
+### EXT-02: Safari Extension Quick-Capture Parity
+
+**Current state confirmed by reading actual files:**
+
+**Chrome extension** (`vigil-extension/`):
+- `manifest.json` — MV3, permissions: `activeTab, storage`, host_permissions for `api.vigilhub.io`
+- `popup.js` — freeform text textarea, URL checkbox, Cmd+Enter submit, triage polling (5s max, 800ms interval), category badge display, `chrome.tabs.query` for URL, `chrome.storage.local` for API key
+- `popup.html` — has `id="include-url"` checkbox, `id="success-text"` span, `class="shortcut-hint"` div
+
+**Safari extension** (`vigil-safari-extension/Vigil Capture Extension/Resources/`):
+- `manifest.json` — IDENTICAL to Chrome
+- `popup.html` — MISSING: URL checkbox, MISSING: `success-text` span (has static "Captured!" text), MISSING: `shortcut-hint` div
+- `popup.js` — MISSING: URL checkbox logic, MISSING: Cmd+Enter handler, MISSING: triage polling loop, MISSING: category badge display. Has auto-prefill of title+URL into textarea on open (Phase 93 behavior, replaced by Phase 94's empty-start UX). Uses `chrome.storage.local` correctly.
+- `popup.css` — identical content to Chrome; no changes needed
+
+**The Safari extension already uses `chrome.*` namespace** (e.g., `chrome.storage.local.get`, `chrome.tabs.query`). Safari 14+ supports the WebExtension `chrome.*` compatibility layer. No namespace changes needed.
+
+**Surgical delta — minimum changes:**
+
+1. `vigil-safari-extension/Vigil Capture Extension/Resources/popup.html`:
+   - Add URL checkbox after textarea, before capture button:
+     `<label class="url-toggle"><input type="checkbox" id="include-url"> Include page URL</label>`
+   - Add shortcut hint after capture button:
+     `<div class="shortcut-hint">Cmd+Enter to capture</div>`
+   - Change static success div to dynamic:
+     `<div id="capture-success" class="success-msg" hidden><span id="success-text"></span></div>`
+   - Add DOM reference: `const includeUrlCheckbox = document.getElementById('include-url')` and `const successText = document.getElementById('success-text')` to the DOM references section at the top of popup.js
+
+2. `vigil-safari-extension/Vigil Capture Extension/Resources/popup.js`:
+   - Add `includeUrlCheckbox` and `successText` to DOM references (top of file)
+   - Replace the `initCaptureView` function with the Chrome Phase 94 version:
+     - Remove auto-prefill of tab title+URL into textarea (Phase 93 behavior)
+     - Start with empty textarea + focus
+     - Add Cmd+Enter handler via `contentInput.addEventListener('keydown', ...)`
+     - Add URL checkbox append logic in capture handler
+     - Add triage polling loop (800ms interval, 5s max timeout, `clearInterval` on success/timeout)
+     - Update `captureSuccess.hidden = false` to also set `successText.innerHTML = '<span class="analyzing">Analyzing...</span>'` and then the category badge on poll success
+
+**Not needed:**
+- `SafariWebExtensionHandler.swift` — the native message handler is boilerplate; the extension makes direct HTTP fetch calls and does not use `browser.runtime.sendNativeMessage()`. No changes.
+- `manifest.json` — already identical to Chrome. No changes.
+- `popup.css` — already identical to Chrome. Both files have `.url-toggle`, `.category-badge`, `.shortcut-hint`, `.analyzing` styles. No changes.
+- Xcode project settings — bundle ID and entitlements are for the container app, not the web extension JS. No changes needed for the JS delta.
+
+**Build requirement:** After changing Resources files, Xcode must re-build the Swift app container to package the updated extension resources. UAT requires: install updated `.app`, enable extension in Safari Preferences, reload a tab, open popup, test all 4 features (freeform text, URL checkbox, Cmd+Enter, category badge).
+
+---
+
+## Build Order Recommendation
+
+### Dependency graph
+
+```
+W-01 (work_order_statuses userId migration + route fix)
+  |-> W-01 test (cross-user-isolation + unit test update)
+  -- independent of all auth features
+
+W-02 (brief PDF isolation test)
+  -- independent (add to existing test file; no code changes)
+
+SCHED-01 (per-user scheduler fan-out)
+  -- independent of auth features at code level
+  -- suggested Wave 1 or Wave 4 (no blocking dependency)
+
+AUTH-09 (change password)
+  -- independent (no email, no new table)
+
+email-service foundation (NEW -- precondition for AUTH-10 + AUTH-11)
+  -- blocks AUTH-10 and AUTH-11
+
+AUTH-10 (forgot password)
+  |-> needs email-service foundation
+  |-> needs password_reset_tokens table migration (0015)
+
+AUTH-11 (email verify)
+  |-> needs email-service foundation
+  |-> needs password_reset_tokens type column (same 0015 migration as AUTH-10)
+  |-> needs emailVerifiedAt column migration (0016)
+  -- AUTH-11 can share the 0015 migration with AUTH-10 if built in same phase
+
+EXT-02 (Safari quick-capture parity)
+  -- fully independent of all above
+```
+
+### Recommended phase order
+
+**Wave 1 (parallel-safe, no cross-dependencies):**
+- Phase A: W-01 + W-02 together
+  - migration 0014, schema.ts update, work-order-status.ts route fix, cross-user-isolation.test.ts addition, unit test update
+- Phase B: AUTH-09 (change password)
+  - auth.ts endpoint, SettingsPage.tsx inline form, client.ts function
+- Phase C: EXT-02 (Safari extension)
+  - popup.html + popup.js delta, Xcode rebuild, UAT
+
+**Wave 2 (email foundation — unblocks Wave 3):**
+- Phase D: Email service + env setup
+  - email-service.ts, npm install resend, env vars in Railway + .env.example, startup warnings in index.ts, doctor.sh check
+
+**Wave 3 (parallel-safe after Wave 2):**
+- Phase E: AUTH-10 (forgot password)
+  - migration 0015 (password_reset_tokens with type column), auth.ts endpoints x2, index.ts path exceptions, ForgotPasswordPage.tsx + ResetPasswordPage.tsx, App.tsx routes, client.ts functions
+- Phase F: AUTH-11 (email verify)
+  - migration 0016 (emailVerifiedAt on users), auth.ts endpoints x2 + register amendment, index.ts path exception, me.ts response extension, SettingsPage.tsx banner, client.ts function
+
+**Wave 4 (no dependency; can be Wave 1 if preferred):**
+- Phase G: SCHED-01 (per-user scheduler fan-out)
+  - generate-scheduler.ts tick() refactor, test update
+
+**Rationale:**
+1. W-01 + W-02 are the highest-value items with lowest risk — they close the multi-user loop v3.4 explicitly deferred. Doing them first ensures the isolation story is complete before adding more users.
+2. AUTH-09 has zero new infrastructure — it reuses existing argon2id + users table. Fast win that completes the profile page.
+3. EXT-02 has no server dependency; it's purely a Safari extension change. Completely parallel with server work.
+4. Email service (Wave 2) must precede AUTH-10 and AUTH-11. It is a shared foundation that takes one focused build.
+5. AUTH-10 and AUTH-11 can be built concurrently in Wave 3 by the same person sequentially or conceptually in parallel — they share the password_reset_tokens table (created in AUTH-10's migration) but their endpoints and PWA pages are in separate code areas. The one coordination point: create the `type` column in the 0015 migration (AUTH-10) so AUTH-11 does not need an additional migration for it.
+6. SCHED-01 has no inter-feature dependencies and can slot anywhere. Wave 1 makes sense if the developer wants to knock out all multi-user items together; Wave 4 makes sense if the auth flow work is the priority.
+
+---
+
+## Component Inventory: New vs Modified
+
+### New files
+
+| File | Feature |
+|------|---------|
+| `vigil-core/drizzle/0014_work_order_statuses_user_scoping.sql` | W-01 |
+| `vigil-core/drizzle/0015_password_reset_tokens.sql` | AUTH-10 (+ AUTH-11 type column) |
+| `vigil-core/drizzle/0016_email_verified_at.sql` | AUTH-11 |
+| `vigil-core/src/services/email-service.ts` | AUTH-10 + AUTH-11 shared |
+| `vigil-pwa/src/pages/ForgotPasswordPage.tsx` | AUTH-10 |
+| `vigil-pwa/src/pages/ResetPasswordPage.tsx` | AUTH-10 |
+
+### Modified files
+
+| File | Feature | Nature of change |
+|------|---------|-----------------|
+| `vigil-core/src/db/schema.ts` | W-01 | add userId + index to workOrderStatuses; new PK strategy |
+| `vigil-core/src/db/schema.ts` | AUTH-10 | add passwordResetTokens table definition |
+| `vigil-core/src/db/schema.ts` | AUTH-11 | add emailVerifiedAt to users; add type to passwordResetTokens |
+| `vigil-core/src/routes/work-order-status.ts` | W-01 | dbSelectFn + dbUpsertFn accept userId; production impls filter by userId |
+| `vigil-core/src/routes/auth.ts` | AUTH-09 | add change-password endpoint |
+| `vigil-core/src/routes/auth.ts` | AUTH-10 | add forgot-password + reset-password endpoints |
+| `vigil-core/src/routes/auth.ts` | AUTH-11 | add send-verify-email endpoint; amend register to fire verification email |
+| `vigil-core/src/routes/me.ts` | AUTH-11 | extend userLookupFn + response to include emailVerifiedAt |
+| `vigil-core/src/index.ts` | AUTH-10 | add path exceptions: forgot-password, reset-password |
+| `vigil-core/src/index.ts` | AUTH-11 | add path exception: verify-email prefix |
+| `vigil-core/src/services/generate-scheduler.ts` | SCHED-01 | replace getSeedUserId with getAllUsersForScheduling; sequential per-user loop in tick() |
+| `vigil-core/src/integration/cross-user-isolation.test.ts` | W-02 | add brief PDF isolation test |
+| `vigil-core/src/integration/cross-user-isolation.test.ts` | W-01 | add work_order_statuses isolation test |
+| `vigil-core/src/routes/work-order-status.test.ts` | W-01 | update fake deps signatures for userId |
+| `vigil-core/src/services/generate-scheduler.test.ts` | SCHED-01 | update for multi-user DI injection |
+| `vigil-pwa/src/App.tsx` | AUTH-10 | add /forgot-password + /reset-password routes outside auth guard |
+| `vigil-pwa/src/App.tsx` | AUTH-11 | add /verify-email route outside auth guard (or handle via query param on /auth) |
+| `vigil-pwa/src/api/client.ts` | AUTH-09 | add changePassword() |
+| `vigil-pwa/src/api/client.ts` | AUTH-10 | add forgotPassword() + resetPassword() |
+| `vigil-pwa/src/api/client.ts` | AUTH-11 | add resendVerificationEmail() |
+| `vigil-pwa/src/pages/SettingsPage.tsx` | AUTH-09 | add inline change-password form section |
+| `vigil-pwa/src/pages/SettingsPage.tsx` | AUTH-11 | add emailVerifiedAt banner + resend button |
+| `vigil-safari-extension/.../Resources/popup.html` | EXT-02 | add URL checkbox + shortcut hint + dynamic success span |
+| `vigil-safari-extension/.../Resources/popup.js` | EXT-02 | replace initCaptureView with Phase 94 Chrome version; add DOM refs |
 
 ---
 
 ## Sources
 
-All findings are HIGH confidence from direct codebase inspection on 2026-04-19.
-
-- `vigil-core/src/index.ts` — middleware stack, route mounting, startup sequence
-- `vigil-core/src/middleware/auth.ts` — three-path bearerAuth, ContextVariableMap userId
-- `vigil-core/src/routes/process-photo.ts` — VALID_MEDIA_TYPES (no HEIC), commit path (no triage)
-- `vigil-core/src/routes/auth.ts` — register/login endpoints, PLACEHOLDER_HASH_PREFIX
-- `vigil-pwa/src/App.tsx` — route structure, auth gate pattern, no ErrorBoundary
-- `vigil-pwa/src/main.tsx` — entry point, no PostHog init
-- `vigil-pwa/src/api/client.ts` — localStorage key, vigilFetch, storeKey/getStoredKey
-- `vigil-pwa/src/pages/AuthPage.tsx` — API key only, no email/password form
-- `vigil-pwa/src/hooks/usePhotoUpload.ts` — commit flow confirmed no triage call
-- `vigil-g2-plugin/src/main.ts` — lifecycle events, DOUBLE_CLICK in NAV_EVENTS
-- `vigil-g2-plugin/src/navigation.ts` — screen state machine, DOUBLE_CLICK navigates to HOME
-- `vigil-g2-plugin/src/constants.ts` — greyscale display, no color tokens
-- `vigil-g2-plugin/package.json` — Even SDK v0.0.9
-- `Sources/DailyBriefMonitor/FolderWatcherService.swift` — full iCloud handling chain
-- `Sources/JarvisCore/Config/AppConfig.swift` + `ConfigLoader.swift` — snake_case decoding confirmed working
-- `~/.config/dailybrief/config.json` — `image_folder_path`: `com~apple~CloudDocs/Notebook` confirmed
-- `vigil-safari-extension/Vigil Capture/AppDelegate.swift` — minimal AppDelegate, Login Item fix needed
-- `vigil-extension/manifest.json` + `vigil-safari-extension/.../manifest.json` — both popup-only MV3, no background SW
-- PostHog Cloud pricing (MEDIUM confidence — from posthog.com, not re-verified today): 1M events/month free tier
+All findings derived from live codebase reads:
+- `vigil-core/src/db/schema.ts` lines 224-228 — W-01 gap confirmed
+- `vigil-core/src/routes/work-order-status.ts` lines 64-83 — W-01 bare select confirmed
+- `vigil-core/src/services/generate-scheduler.ts` lines 19, 107-122 — SCHED-01 TODO + seed-user lock confirmed
+- `vigil-core/src/integration/cross-user-isolation.test.ts` — W-02 gap confirmed (briefs list covered, PDF bytes endpoint not)
+- `vigil-core/src/routes/brief-generate.ts` line 158 — W-02 already scoped; gap is coverage only
+- `vigil-core/src/routes/auth.ts` — AUTH-09/10/11 extension points; bearerAuth exemption pattern at index.ts:118-119
+- `vigil-pwa/src/pages/SettingsPage.tsx` lines 217-231 — AUTH-09 placement confirmed
+- `vigil-pwa/src/App.tsx` — route structure; public vs authenticated guard confirmed
+- `vigil-safari-extension/.../Resources/popup.js` — EXT-02 missing features confirmed
+- `vigil-safari-extension/.../Resources/popup.html` — EXT-02 missing DOM elements confirmed
+- `vigil-extension/popup.js` + `popup.html` — Chrome Phase 94 reference implementation confirmed
 
 ---
-
-*Architecture research for: Vigil v3.5 Observability, G2 Resubmit & Capture Repair*
-*Researched: 2026-04-19*
+*Architecture research for: Vigil v3.6 Multi-User Completion, Auth UX & Safari Parity*
+*Researched: 2026-04-22*
