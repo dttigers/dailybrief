@@ -10,7 +10,7 @@ import { sql } from "drizzle-orm";
 //   - AUTH-01: users table with email unique + passwordHash column
 //   - AUTH-04: 11 data tables each gain NOT NULL user_id FK to users(id)
 //   - D-05:    Seed user row exists with lowercased email + argon2id placeholder hash
-//   - D-23:    work_order_statuses stays unscoped (no user_id column)
+//   - D-23 (Phase 102) REVERSED in Phase 108 — work_order_statuses is now user-scoped; assertion flipped.
 //   - Pitfall 3: app_settings PK is composite (user_id, key) — not just (key)
 //   - Pitfall 5: seed email stored lowercase
 //   - Pitfall 7: every userId FK declared ON DELETE RESTRICT (confdeltype='r')
@@ -127,21 +127,36 @@ describe("migration 0012 — multi-user foundation (AUTH-01, AUTH-04)", () => {
     }
   });
 
-  it("work_order_statuses table does NOT have a user_id column (D-23 reference table)", async (t) => {
+  it("work_order_statuses table DOES have NOT NULL user_id column with FK to users(id) ON DELETE RESTRICT (D-23 reversed in Phase 108 — W-01)", async (t) => {
     if (!DB_READY) {
       t.skip("DATABASE_URL required");
       return;
     }
     const { db } = await import("./connection.js");
     if (!db) throw new Error("db null");
+
+    // Column exists + is NOT NULL
     const rows = await db.execute(sql`
-      SELECT column_name FROM information_schema.columns
+      SELECT is_nullable FROM information_schema.columns
       WHERE table_name = 'work_order_statuses' AND column_name = 'user_id'
     `);
+    const [row] = rows as unknown as Array<{ is_nullable: string }>;
+    assert.ok(row, "work_order_statuses.user_id column missing — Phase 108 migration 0014 did not apply");
+    assert.equal(row.is_nullable, "NO", "work_order_statuses.user_id must be NOT NULL");
+
+    // FK exists and is ON DELETE RESTRICT (confdeltype='r')
+    const fk = await db.execute(sql`
+      SELECT confdeltype FROM pg_constraint c
+      JOIN pg_class cl ON cl.oid = c.conrelid
+      WHERE cl.relname = 'work_order_statuses' AND c.contype = 'f'
+        AND pg_get_constraintdef(c.oid) LIKE '%REFERENCES users(id)%'
+    `);
+    const [fkRow] = fk as unknown as Array<{ confdeltype: string }>;
+    assert.ok(fkRow, "work_order_statuses.user_id missing FK to users(id)");
     assert.equal(
-      (rows as unknown as unknown[]).length,
-      0,
-      "D-23 violation: work_order_statuses.user_id exists",
+      fkRow.confdeltype,
+      "r",
+      `work_order_statuses.user_id FK must be ON DELETE RESTRICT (confdeltype='r'), got '${fkRow.confdeltype}'`,
     );
   });
 
