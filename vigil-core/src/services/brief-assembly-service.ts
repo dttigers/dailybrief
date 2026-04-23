@@ -30,7 +30,7 @@ import type * as schema from "../db/schema.js";
 
 export interface BriefAssemblyDeps {
   sportsService?: { fetchAllLeagues: () => Promise<SportsResponse> };
-  calendarService?: { fetchTodaysEvents: () => Promise<CalendarEventsResponse> };
+  calendarService?: { fetchTodaysEvents: (userId: number) => Promise<CalendarEventsResponse> };
   pdfRenderer?: { renderBrief: (data: BriefRenderData, config?: PdfConfig) => Promise<Buffer> };
   dbClient?: PostgresJsDatabase<typeof schema> | null; // Drizzle db instance (null when DB unavailable)
   callClaudeFn?: (opts: { system: string; userMessage: string; maxTokens: number }) => Promise<string>;
@@ -439,7 +439,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
         ? withTimeout(deps.sportsService.fetchAllLeagues(), SOURCE_TIMEOUT_MS)
         : Promise.reject(new Error("No sports service")),
       deps.calendarService
-        ? withTimeout(deps.calendarService.fetchTodaysEvents(), SOURCE_TIMEOUT_MS)
+        ? withTimeout(deps.calendarService.fetchTodaysEvents(userId), SOURCE_TIMEOUT_MS)
         : Promise.reject(new Error("No calendar service")),
       db
         ? withTimeout(
