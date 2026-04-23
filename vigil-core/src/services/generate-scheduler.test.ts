@@ -243,3 +243,75 @@ test("SCH-08: matches schedule in user TZ (04:00 NYC) when UTC is 09:00 (EST) / 
   assert.equal(calls.length, 1);
   assert.equal(calls[0], "2026-01-15");
 });
+
+// ── SCH-09: fan-out across all users + per-user error isolation (Phase 109 SCHED-01) ──
+
+test("SCH-09: tick() fans out across all users and isolates per-user errors", async () => {
+  const { logFn, lines } = makeLog();
+  const assembleCalls: Array<{ dateStr: string; userId: number }> = [];
+  const upserts: Array<{ userId: number; date: string }> = [];
+
+  const scheduler = createGenerateScheduler({
+    db: null,
+    // D-14: two-user fixture via DI seam — no real drizzle
+    getAllUsersFn: async () => [
+      { id: 1, email: "a@test" },
+      { id: 2, email: "b@test" },
+    ],
+    // user 1's assemble throws; user 2's succeeds. Roadmap SC#2 literal:
+    // user 1's failure must not prevent user 2's assemble from firing.
+    assemble: async (dateStr: string, userId: number) => {
+      assembleCalls.push({ dateStr, userId });
+      if (userId === 1) {
+        throw new Error("simulated assemble failure for user 1");
+      }
+      return {
+        buffer: Buffer.from("fake-pdf-user-2"),
+        metadata: { thoughtCount: 3, taskCount: 4, dateStr },
+      };
+    },
+    logFn,
+    // 08:00 UTC = 04:00 EDT on 2026-04-15 — matches the 04:00 schedule for BOTH users
+    now: () => new Date("2026-04-15T08:00:00Z"),
+    // Same settings for both users; the per-user scoping is in getSettingViaDb which
+    // we don't exercise via DI here (getSettingFn returns the same regardless of userId
+    // because this DI seam predates the per-user fan-out — but that's fine: the test
+    // asserts fan-out + error isolation, not per-user settings divergence).
+    getSettingFn: makeFakeSettings({
+      schedule: { hour: 4, minute: 0, enabled: true },
+      timezone: "America/New_York",
+    }),
+    getRecentBriefFn: async () => null, // no dedupe for either user
+    upsertBriefFn: async (b) => {
+      upserts.push({ userId: b.userId, date: b.date });
+    },
+  });
+
+  await scheduler.tick(); // must NOT throw (T-86-07 outer fail-safe)
+
+  // SC#1 + SC#4: both users' pipelines ran
+  assert.equal(assembleCalls.length, 2, "both users must reach assemble");
+  assert.deepEqual(
+    assembleCalls.map((c) => c.userId).sort(),
+    [1, 2],
+    "assemble must be called for userId=1 (which throws) AND userId=2 (which succeeds)",
+  );
+
+  // SC#2: user 1's throw did NOT leak into user 2 — only user 2's upsert landed
+  assert.equal(upserts.length, 1, "only user 2's upsert should land; user 1's pipeline threw before upsert");
+  assert.equal(upserts[0].userId, 2);
+
+  // D-05 log shape: per-user error log cites userId (1) and email (a@test)
+  const errLine = lines.find(
+    (l) => l.level === "error" && l.msg.includes("generate failed for user 1"),
+  );
+  assert.ok(errLine, `expected error log for user 1; got: ${JSON.stringify(lines, null, 2)}`);
+  assert.ok(errLine!.msg.includes("a@test"), "error log must include user 1's email");
+
+  // Success log shape: per-user success log cites userId (2) and email (b@test)
+  const okLine = lines.find(
+    (l) => l.level === "info" && l.msg.includes("generated brief") && l.msg.includes("user 2"),
+  );
+  assert.ok(okLine, `expected success log for user 2; got: ${JSON.stringify(lines, null, 2)}`);
+  assert.ok(okLine!.msg.includes("b@test"), "success log must include user 2's email");
+});
