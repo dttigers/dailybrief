@@ -153,11 +153,11 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Right-click + long-press context menu — 7 actions (delete/move/edit/re-triage/add-to-project), deferred-commit delete with single-slot toast undo, D-19 interlock preserves Phase 100 pause gate — v3.4
 - ✓ `work_order_statuses` user scoping — `user_id NOT NULL` FK + composite `(user_id, case_number)` PK, all 4 route call sites scoped, D-23 guardrail flipped, cross-user PUT overwrite structurally prevented (W-01 — v3.6 Phase 108)
 - ✓ GET /v1/brief/:date cross-user isolation — userB receives 404 (not userA's bytes) when requesting a date only userA has; `brief PDF isolation` it() block in `cross-user-isolation.test.ts` (W-02 — v3.6 Phase 108)
+- ✓ Per-user scheduler fan-out — `generate-scheduler.ts` iterates all users with try/catch + `continue` for error isolation; `/prioritize` AI cache filenames scoped by userId (`wo-priority-${userId}-${today}-${hash}.json`); `calendar-service.ts` `fetchTodaysEvents(userId)` and `fetchCalendarList(userId)` required; atomic D-12 two-site wiring (`index.ts` + `routes/brief-generate.ts`) makes calendar events render in briefs for the first time ever (SCHED-01 — v3.6 Phase 109)
 
 ### Active
 
 **v3.6 (in progress):**
-- [ ] Per-user scheduler fan-out (SCHED-01 — schedulers hard-scoped to seed user with TODO markers)
 - [ ] Change password from PWA profile (AUTH-09)
 - [ ] Forgot-password email link (AUTH-10 — introduces transactional email)
 - [ ] Verify email on signup (AUTH-11)
@@ -275,4 +275,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-23 — Phase 108 complete. W-01 + W-02 validated: work_order_statuses now fully user-scoped (user_id FK + composite PK, 4 call sites scoped), brief PDF cross-user isolation test landed. v3.6 progress: 1/7 phases complete.*
+*Last updated: 2026-04-23 — Phase 109 complete. SCHED-01 validated: scheduler fanned out across all users with per-user error isolation, /prioritize cache filenames scoped by userId, calendar-service userId-required, atomic D-12 two-site wiring makes brief calendar sections live for the first time. v3.6 progress: 2/7 phases complete.*
