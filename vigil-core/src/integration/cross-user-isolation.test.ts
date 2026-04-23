@@ -346,6 +346,74 @@ describe("cross-user isolation (AUTH-05)", () => {
     }
   });
 
+  it("brief PDF isolation — userB cannot retrieve userA's PDF bytes on a date only userA has (W-02)", async (t) => {
+    if (!DB_READY) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { db: d } = await import("../db/connection.js");
+    const { briefs, briefPdfs } = await import("../db/schema.js");
+
+    // Distant-future date; deconflicted from the brief-history isolation test's
+    // 2099-12-30 / 2099-12-31 fixtures. W-02 Success Criterion #5.
+    const isoDate = "2099-12-28";
+
+    // Insert userA's briefs row FIRST (brief_pdfs.brief_id FKs to briefs.id).
+    const [aBrief] = await d!
+      .insert(briefs)
+      .values({
+        userId: userA.id,
+        date: isoDate,
+        summary: { test: "W-02-A-brief" },
+        thoughtCount: 1,
+        taskCount: 0,
+      })
+      .returning();
+
+    // Insert the matching brief_pdfs row with real bytes so the route's
+    // leftJoin resolves to bytes (distinguishes "no briefs row" 404 from
+    // "briefs row exists but no pdf bytes" 404 — we want the first kind).
+    const pdfBytes = Buffer.from("W-02 FAKE PDF BYTES — userA ONLY");
+    await d!.insert(briefPdfs).values({
+      briefId: aBrief.id,
+      userId: userA.id,
+      bytes: pdfBytes,
+      contentType: "application/pdf",
+      byteLength: pdfBytes.length,
+    });
+
+    try {
+      // userB requests the same date with tokenB — must return 404, never bytes.
+      const res = await get(`/v1/brief/${isoDate}`, tokenB);
+      assert.equal(
+        res.status,
+        404,
+        `LEAK: userB got status ${res.status} on GET /v1/brief/${isoDate} — expected 404`,
+      );
+      const body = (await res.json()) as { error: string; date: string; regenerable: boolean };
+      assert.equal(
+        body.error,
+        "brief_not_found",
+        `LEAK: userB got error '${body.error}' — expected 'brief_not_found' (the route's no-briefs-row 404 branch)`,
+      );
+      // Sanity: userB MUST NOT have received the PDF payload shape (any response
+      // with Content-Type=application/pdf would be a leak; 404 JSON body is the
+      // expected shape).
+      assert.notEqual(
+        res.headers.get("content-type"),
+        "application/pdf",
+        "LEAK: userB received application/pdf Content-Type on another user's brief date",
+      );
+    } finally {
+      // Cleanup order: brief_pdfs first (FK references briefs.id), then briefs.
+      // (briefPdfs.briefId is FK to briefs.id ON DELETE CASCADE, so deleting
+      // the briefs row would also cascade; but doing it explicitly keeps the
+      // cleanup order unambiguous and matches the brief-history test style.)
+      await d!.delete(briefPdfs).where(eq(briefPdfs.briefId, aBrief.id));
+      await d!.delete(briefs).where(eq(briefs.id, aBrief.id));
+    }
+  });
+
   it("work-orders isolation — GET /v1/work-orders returns only caller's orders", async (t) => {
     if (!DB_READY) {
       t.skip("DATABASE_URL required");
