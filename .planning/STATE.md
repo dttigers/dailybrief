@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
-status: roadmapped
-stopped_at: Roadmap created — ready to plan Phase 108
-last_updated: "2026-04-23T00:00:00Z"
-last_activity: 2026-04-23
+status: Roadmapped — ready for /gsd-plan-phase 108
+stopped_at: Phase 108 context gathered
+last_updated: "2026-04-23T14:55:41.655Z"
+last_activity: 2026-04-23 — Roadmap created for v3.6 (7 phases, 8 requirements)
 progress:
-  total_phases: 7
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 5
+  completed_phases: 4
+  total_plans: 22
+  completed_plans: 21
+  percent: 95
 ---
 
 # Project State
@@ -96,12 +96,14 @@ None — ready to plan Phase 108.
 ### Blockers/Concerns
 
 **Carried into v3.6 (still-blocked from prior milestones):**
+
 - ServiceNow API token still blocks Phase 80 (from v3.1)
 - Phase 85 (iOS Shortcut) held — Shortcuts.app bugs
 - G2 physical hardware retest pending device delivery (unknown date) — blocks v3.5 ship, NOT v3.6 execution
 - Phase 107.1 work_orders schema drift — columns notes/archived_at/last_change_at/last_change_summary defined in schema.ts but never migrated; blocks any plan needing to run live migrations against a freshly-set-up local dev DB
 
 **Active for v3.6:**
+
 - DNS propagation for vigilhub.io DKIM/SPF/DMARC (Phase 111) is variable — start DNS config early, do not block Phase 112 planning on propagation completion
 - Safari Cmd+Enter keyboard priority: must be empirically tested as step 1 of Phase 114 before any implementation — if swallowed, fallback UX must be designed upfront
 
@@ -111,7 +113,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-23T00:00:00Z
-Stopped at: v3.6 roadmap complete — 7 phases, 8/8 requirements mapped, files written
-Resume file: None
+Last session: 2026-04-23T14:55:41.637Z
+Stopped at: Phase 108 context gathered
+Resume file: .planning/phases/108-work-order-statuses-userid-scoping-isolation-test/108-CONTEXT.md
 Next action: /gsd-plan-phase 108
