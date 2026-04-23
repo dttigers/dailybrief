@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: executing
-stopped_at: Completed 108-01-PLAN.md
-last_updated: "2026-04-23T15:26:05.825Z"
+stopped_at: Completed 108-02-PLAN.md
+last_updated: "2026-04-23T15:41:20.952Z"
 last_activity: 2026-04-23
 progress:
   total_phases: 5
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 ## Current Position
 
 Phase: 108 (work-order-statuses-userid-scoping-isolation-test) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-23
 
@@ -58,6 +58,7 @@ v3.6 overall [          ] 0/7 phases complete
 | v3.5 | 103-107 (+107.1/107.2/107.3) | 34 | paused pre-ship (G2 hardware UAT) |
 | v3.6 | 108-114 | TBD | In progress (started 2026-04-22) |
 | Phase 108 P01 | 25 | 4 tasks | 5 files |
+| Phase 108 P02 | 4 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - AUTH-10 and AUTH-11 are separate phases (112, 113): blast radius containment; AUTH-11 reuses password_reset_tokens (type column) created in AUTH-10's migration — sequential ordering is required
 - EXT-02 is Phase 114 (last): fully independent of server/PWA work; scheduled last as a clean cap to the milestone; can be executed on MacBook Pro in parallel with any server phase if desired
 - [Phase 108]: Hand-added 0014 to _journal.json: drizzle migrator requires SQL files to be in journal; hand-written migrations bypass drizzle-kit generate which normally auto-updates it
+- [Phase 108]: seed-work-order-statuses.ts fixed to look up seed user by email and include userId in inserts — required by NOT NULL constraint added in Plan 01
 
 ### Pending Todos
 
@@ -115,7 +117,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-23T15:26:05.819Z
-Stopped at: Completed 108-01-PLAN.md
+Last session: 2026-04-23T15:41:20.946Z
+Stopped at: Completed 108-02-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 108

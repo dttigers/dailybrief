@@ -461,7 +461,7 @@ Plans:
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 4/5 | In Progress|  |
 | 107. Safari Extension Persistence | v3.5 | 6/6 | Complete    | 2026-04-21 |
 
-| 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 1/3 | In Progress|  |
+| 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 2/3 | In Progress|  |
 | 109. Per-User Scheduler Fan-Out | v3.6 | 0/0 | Not started | - |
 | 110. Change Password + password_changed_at Gate | v3.6 | 0/0 | Not started | - |
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 0/0 | Not started | - |
@@ -499,7 +499,7 @@ Plans:
 **Plans**: 3 plans
 Plans:
 - [x] 108-01-PLAN.md — Schema + 0014 migration + run migration + invert D-23 guardrail (Wave 1, W-01)
-- [ ] 108-02-PLAN.md — Scope 4 call sites in work-order-status.ts + work-orders.ts + update unit tests (Wave 2, W-01)
+- [x] 108-02-PLAN.md — Scope 4 call sites in work-order-status.ts + work-orders.ts + update unit tests (Wave 2, W-01)
 - [ ] 108-03-PLAN.md — W-02 brief PDF isolation it() block in cross-user-isolation.test.ts (Wave 2, W-02)
 **UI hint**: no
 
@@ -589,7 +589,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 1/3 plans executed
+**Plans:** 2/3 plans executed
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
