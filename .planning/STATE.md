@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
-status: Roadmapped — ready for /gsd-plan-phase 108
-stopped_at: Phase 108 context gathered
-last_updated: "2026-04-23T14:55:41.655Z"
-last_activity: 2026-04-23 — Roadmap created for v3.6 (7 phases, 8 requirements)
+status: executing
+stopped_at: Completed 108-01-PLAN.md
+last_updated: "2026-04-23T15:26:05.825Z"
+last_activity: 2026-04-23
 progress:
   total_phases: 5
   completed_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v3.6 Phase 108 — work_order_statuses userId Scoping + Isolation Test (ready to plan)
+**Current focus:** Phase 108 — work-order-statuses-userid-scoping-isolation-test
 
 ## Current Position
 
-Phase: 108 (not started)
-Plan: —
-Status: Roadmapped — ready for /gsd-plan-phase 108
-Last activity: 2026-04-23 — Roadmap created for v3.6 (7 phases, 8 requirements)
+Phase: 108 (work-order-statuses-userid-scoping-isolation-test) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-23
 
 ```
 Phase 108 [          ] 0%   work_order_statuses userId Scoping + Isolation Test
@@ -57,6 +57,7 @@ v3.6 overall [          ] 0/7 phases complete
 | v1.0–v3.4 | 1-102 | ~211 | ~18 days |
 | v3.5 | 103-107 (+107.1/107.2/107.3) | 34 | paused pre-ship (G2 hardware UAT) |
 | v3.6 | 108-114 | TBD | In progress (started 2026-04-22) |
+| Phase 108 P01 | 25 | 4 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -88,6 +89,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - EMAIL-01 is Phase 111: DNS propagation is non-deterministic; isolating it as a standalone phase lets DNS work start and propagate while Phases 108-110 execute
 - AUTH-10 and AUTH-11 are separate phases (112, 113): blast radius containment; AUTH-11 reuses password_reset_tokens (type column) created in AUTH-10's migration — sequential ordering is required
 - EXT-02 is Phase 114 (last): fully independent of server/PWA work; scheduled last as a clean cap to the milestone; can be executed on MacBook Pro in parallel with any server phase if desired
+- [Phase 108]: Hand-added 0014 to _journal.json: drizzle migrator requires SQL files to be in journal; hand-written migrations bypass drizzle-kit generate which normally auto-updates it
 
 ### Pending Todos
 
@@ -113,7 +115,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-23T14:55:41.637Z
-Stopped at: Phase 108 context gathered
-Resume file: .planning/phases/108-work-order-statuses-userid-scoping-isolation-test/108-CONTEXT.md
+Last session: 2026-04-23T15:26:05.819Z
+Stopped at: Completed 108-01-PLAN.md
+Resume file: None
 Next action: /gsd-plan-phase 108
