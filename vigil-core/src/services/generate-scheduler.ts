@@ -206,52 +206,63 @@ export function createGenerateScheduler(deps: GenerateSchedulerDeps): GenerateSc
         return;
       }
 
-      // Resolve seed user id (Phase 102 hard-scope). Silent-skip if missing.
-      const seedUserId = await getSeedUserId();
-      if (seedUserId === null) {
-        log("warn", "seed user not resolved, skipping tick");
+      // Phase 109 (SCHED-01): fan out across every registered user.
+      const allUsers = await getAllUsersViaDb();
+      if (allUsers.length === 0) {
+        log("info", "no users found, skipping tick");
         return;
       }
 
-      // Read settings (scoped to seed user via composite PK)
-      const tzRaw = await getSettingViaDb("user_timezone", seedUserId);
-      const tz = typeof tzRaw === "string" && tzRaw.length > 0 ? tzRaw : DEFAULT_TIMEZONE;
+      // Sequential by design: N is 1..few for the foreseeable future.
+      // Revisit at N > 10 users (CONTEXT Deferred §Timezone-matching perf).
+      for (const user of allUsers) {
+        const { id: userId, email } = user;
+        try {
+          // Read settings scoped to this user (appSettings PK = (userId, key))
+          const tzRaw = await getSettingViaDb("user_timezone", userId);
+          const tz = typeof tzRaw === "string" && tzRaw.length > 0 ? tzRaw : DEFAULT_TIMEZONE;
 
-      const schedRaw = await getSettingViaDb("generate_schedule", seedUserId);
-      const schedule: GenerateSchedule =
-        schedRaw && typeof schedRaw === "object"
-          ? (schedRaw as GenerateSchedule)
-          : DEFAULT_SCHEDULE;
+          const schedRaw = await getSettingViaDb("generate_schedule", userId);
+          const schedule: GenerateSchedule =
+            schedRaw && typeof schedRaw === "object"
+              ? (schedRaw as GenerateSchedule)
+              : DEFAULT_SCHEDULE;
 
-      if (!schedule.enabled) return; // D-04-adjacent: disabled = silent skip
+          if (!schedule.enabled) continue; // disabled = silent skip for this user
 
-      // Timezone-aware matching
-      const { date: todayInTz, hour: hourInTz, minute: minuteInTz } = partsInZone(now(), tz);
-      if (hourInTz !== schedule.hour || minuteInTz !== schedule.minute) return;
+          // Timezone-aware matching in this user's TZ
+          const { date: todayInTz, hour: hourInTz, minute: minuteInTz } = partsInZone(now(), tz);
+          if (hourInTz !== schedule.hour || minuteInTz !== schedule.minute) continue;
 
-      // Dedupe check (D-03) — scoped by seed userId
-      const recent = await getRecentBriefViaDb(todayInTz, seedUserId);
-      if (recent && now().getTime() - recent.createdAt.getTime() < dedupeWindowMs) {
-        log("info", `dedupe: brief for ${todayInTz} generated recently, skipping`);
-        return;
-      }
+          // Dedupe check (D-03) — scoped by this userId
+          const recent = await getRecentBriefViaDb(todayInTz, userId);
+          if (recent && now().getTime() - recent.createdAt.getTime() < dedupeWindowMs) {
+            log("info", `dedupe: brief for ${todayInTz} user ${userId} (${email}) generated recently, skipping`);
+            continue;
+          }
 
-      // Generate (assemble for seed user; brief row carries seed userId)
-      try {
-        const result = await deps.assemble(todayInTz, seedUserId);
-        const summaryJson = { generatedAt: new Date().toISOString(), partial: false };
-        await upsertBriefViaDb({
-          userId: seedUserId,
-          date: todayInTz,
-          bytes: result.buffer,
-          thoughtCount: result.metadata.thoughtCount,
-          taskCount: result.metadata.taskCount,
-          summary: summaryJson,
-        });
-        log("info", `generated brief for ${todayInTz}`);
-      } catch (err) {
-        log("error", "generate failed", err instanceof Error ? err.message : String(err));
-        return;
+          // Generate per user
+          const result = await deps.assemble(todayInTz, userId);
+          const summaryJson = { generatedAt: new Date().toISOString(), partial: false };
+          await upsertBriefViaDb({
+            userId,
+            date: todayInTz,
+            bytes: result.buffer,
+            thoughtCount: result.metadata.thoughtCount,
+            taskCount: result.metadata.taskCount,
+            summary: summaryJson,
+          });
+          log("info", `generated brief for ${todayInTz} user ${userId} (${email})`);
+        } catch (err) {
+          // D-04 + D-05: per-user error isolation — log and continue (NEVER return).
+          // One user's failure must not block subsequent users this tick (SCHED-01 SC#2).
+          log(
+            "error",
+            `generate failed for user ${userId} (${email})`,
+            err instanceof Error ? err.message : String(err),
+          );
+          continue;
+        }
       }
     } catch (err) {
       // Absolute fail-safe: tick must never throw (T-86-07)

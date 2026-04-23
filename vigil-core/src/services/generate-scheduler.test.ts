@@ -46,7 +46,7 @@ test("SCH-01: tick() with generate_schedule.enabled=false does NOT invoke assemb
   const { assemble, calls } = makeAssembler();
   const { logFn } = makeLog();
   const scheduler = createGenerateScheduler({
-    seedUserId: 1,
+    getAllUsersFn: async () => [{ id: 1, email: "seed@test" }],
     db: null,
     assemble,
     logFn,
@@ -68,7 +68,7 @@ test("SCH-02: tick() with non-matching hour/minute does NOT invoke assembler", a
   const { assemble, calls } = makeAssembler();
   const { logFn } = makeLog();
   const scheduler = createGenerateScheduler({
-    seedUserId: 1,
+    getAllUsersFn: async () => [{ id: 1, email: "seed@test" }],
     db: null,
     assemble,
     logFn,
@@ -92,7 +92,7 @@ test("SCH-03: tick() with matching hour/minute invokes assembler and upserts", a
   const { logFn } = makeLog();
   const upserts: Array<{ date: string }> = [];
   const scheduler = createGenerateScheduler({
-    seedUserId: 1,
+    getAllUsersFn: async () => [{ id: 1, email: "seed@test" }],
     db: null,
     assemble,
     logFn,
@@ -119,7 +119,7 @@ test("SCH-04: tick() dedupe — existing brief row within 10min window skips", a
   const { logFn, lines } = makeLog();
   const nowDate = new Date("2026-04-15T08:00:00Z");
   const scheduler = createGenerateScheduler({
-    seedUserId: 1,
+    getAllUsersFn: async () => [{ id: 1, email: "seed@test" }],
     db: null,
     assemble,
     logFn,
@@ -145,7 +145,7 @@ test("SCH-04: tick() dedupe — existing brief row within 10min window skips", a
 test("SCH-05: scheduler upsert passes buffer bytes, not a filename", async () => {
   const captured: any = {};
   const scheduler = createGenerateScheduler({
-    seedUserId: 1,
+    getAllUsersFn: async () => [{ id: 1, email: "seed@test" }],
     db: null,
     assemble: async (dateStr) => ({
       buffer: Buffer.from("%PDF-1.4 fake"),
@@ -177,7 +177,7 @@ test("SCH-05: scheduler upsert passes buffer bytes, not a filename", async () =>
 test("SCH-06: assembler throws — logged as error, tick does not throw", async () => {
   const { logFn, lines } = makeLog();
   const scheduler = createGenerateScheduler({
-    seedUserId: 1,
+    getAllUsersFn: async () => [{ id: 1, email: "seed@test" }],
     db: null,
     assemble: async () => { throw new Error("boom"); },
     logFn,
@@ -199,7 +199,7 @@ test("SCH-07: start() begins interval; stop() clears it", async () => {
   const { assemble } = makeAssembler();
   const { logFn } = makeLog();
   const scheduler = createGenerateScheduler({
-    seedUserId: 1,
+    getAllUsersFn: async () => [{ id: 1, email: "seed@test" }],
     db: null,
     assemble,
     logFn,
@@ -227,7 +227,7 @@ test("SCH-08: matches schedule in user TZ (04:00 NYC) when UTC is 09:00 (EST) / 
 
   // Winter: 2026-01-15 09:00 UTC = 04:00 EST
   const schedulerEST = createGenerateScheduler({
-    seedUserId: 1,
+    getAllUsersFn: async () => [{ id: 1, email: "seed@test" }],
     db: null,
     assemble,
     logFn,
