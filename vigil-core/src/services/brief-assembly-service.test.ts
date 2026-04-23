@@ -146,6 +146,26 @@ describe("assembleAndRender orchestration", () => {
     assert.deepEqual(data3.calendarEvents, []);
   });
 
+  test("SCHED-01 D-12: calendarService.fetchTodaysEvents receives the assemble userId", async () => {
+    // D-12 forcing function: assembleAndRender(dateStr, userId) must thread userId
+    // into the calendar call. Pre-Phase-109 the calendar dep took zero args and
+    // briefs never carried calendar events; post-Phase-109 userId must flow from
+    // the caller through to the per-user oauth_tokens lookup.
+    let capturedUserId: number | undefined;
+    const deps = makeBaseDeps({
+      calendarService: {
+        fetchTodaysEvents: async (userId: number) => {
+          capturedUserId = userId;
+          return makeCalendarResponse();
+        },
+      },
+    });
+    const service = createBriefAssemblyService(deps);
+    await service.assembleAndRender(TEST_DATE, 42);
+
+    assert.equal(capturedUserId, 42, "calendarService.fetchTodaysEvents must receive userId=42");
+  });
+
   test("Test 4: all external sources fail — still returns valid buffer", async () => {
     let capturedData: BriefRenderData | null = null;
     const deps = makeBaseDeps({
