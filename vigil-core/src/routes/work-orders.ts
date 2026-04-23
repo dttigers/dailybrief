@@ -88,8 +88,12 @@ workOrdersRouter.get("/work-orders", async (c) => {
 
   const rows = await db.select().from(workOrders).where(eq(workOrders.userId, userId));
 
-  // Fetch all statuses in one query and build a lookup map
-  const statusRows = await db.select().from(workOrderStatuses);
+  // Fetch all statuses in one query and build a lookup map.
+  // Phase 108 W-01: scope by userId — status rows are now per-user.
+  const statusRows = await db
+    .select()
+    .from(workOrderStatuses)
+    .where(eq(workOrderStatuses.userId, userId));
   const statusMap = new Map<string, { status: string; updatedAt: Date }>();
   for (const row of statusRows) {
     statusMap.set(row.caseNumber, { status: row.status, updatedAt: row.updatedAt });
@@ -208,11 +212,18 @@ workOrdersRouter.delete("/work-orders/archived", async (c) => {
 
   const archivedCaseNumbers = archived.map((r) => r.caseNumber);
 
-  // Clean up corresponding statuses first (caseNumber-keyed; workOrderStatuses
-  // stays globally-keyed per D-23 — only this user's caseNumbers get cleared).
+  // Clean up corresponding statuses first. Phase 108 W-01: status rows are now
+  // user-scoped; add eq(workOrderStatuses.userId, userId) as defense-in-depth so
+  // the DELETE cannot sweep another user's statuses even if archivedCaseNumbers
+  // is ever populated cross-user due to an upstream regression.
   await db
     .delete(workOrderStatuses)
-    .where(inArray(workOrderStatuses.caseNumber, archivedCaseNumbers));
+    .where(
+      and(
+        eq(workOrderStatuses.userId, userId),
+        inArray(workOrderStatuses.caseNumber, archivedCaseNumbers),
+      ),
+    );
 
   // Hard-delete only this user's archived work orders
   await db
