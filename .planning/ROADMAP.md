@@ -461,7 +461,7 @@ Plans:
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 4/5 | In Progress|  |
 | 107. Safari Extension Persistence | v3.5 | 6/6 | Complete    | 2026-04-21 |
 
-| 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 3/3 | Complete   | 2026-04-23 |
+| 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 3/3 | Complete    | 2026-04-23 |
 | 109. Per-User Scheduler Fan-Out | v3.6 | 0/0 | Not started | - |
 | 110. Change Password + password_changed_at Gate | v3.6 | 0/0 | Not started | - |
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 0/0 | Not started | - |
