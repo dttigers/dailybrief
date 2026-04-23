@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
-status: verifying
-stopped_at: Phase 109 context gathered
-last_updated: "2026-04-23T17:52:00.880Z"
+status: executing
+stopped_at: Completed 109-01-PLAN.md
+last_updated: "2026-04-23T18:49:54.616Z"
 last_activity: 2026-04-23
 progress:
   total_phases: 5
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 108 — work-order-statuses-userid-scoping-isolation-test
+**Current focus:** Phase 109 — per-user-scheduler-fan-out
 
 ## Current Position
 
-Phase: 108
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 109 (per-user-scheduler-fan-out) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
 Last activity: 2026-04-23
 
 ```
@@ -60,6 +60,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 108 P01 | 25 | 4 tasks | 5 files |
 | Phase 108 P02 | 4 | 3 tasks | 4 files |
 | Phase 108 P03 | 12 | 1 tasks | 1 files |
+| Phase 109 P01 | 12min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 108]: Hand-added 0014 to _journal.json: drizzle migrator requires SQL files to be in journal; hand-written migrations bypass drizzle-kit generate which normally auto-updates it
 - [Phase 108]: seed-work-order-statuses.ts fixed to look up seed user by email and include userId in inserts — required by NOT NULL constraint added in Plan 01
 - [Phase 108]: W-02: used date 2099-12-28 (D-13), single 404-only scenario (D-14), briefPdfs lazily imported inside it() body matching aiCache pattern
+- [Phase 109]: Plan 01: scheduler fan-out removes seedUserId hard-scope; default getAllUsersFn closes over deps.db; per-user try/catch uses continue (never return); SCH-09 regression guards SC#1/SC#2/SC#4
 
 ### Pending Todos
 
@@ -119,7 +121,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-23T17:52:00.825Z
-Stopped at: Phase 109 context gathered
-Resume file: .planning/phases/109-per-user-scheduler-fan-out/109-CONTEXT.md
+Last session: 2026-04-23T18:49:54.610Z
+Stopped at: Completed 109-01-PLAN.md
+Resume file: None
 Next action: /gsd-plan-phase 108

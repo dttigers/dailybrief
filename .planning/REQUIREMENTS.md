@@ -13,7 +13,7 @@ Tech debt carried forward from v3.4. The multi-user foundation shipped, but thre
 
 - [x] **W-01**: A user can set / view / change work order status without leaking to or colliding with any other user — the `work_order_statuses` table gains a `user_id` FK, every query scopes by the authenticated user, and upserts cannot cross users via `caseNumber` collision
 - [x] **W-02**: The cross-user isolation test suite asserts that user A cannot retrieve user B's brief PDF bytes via `GET /v1/brief/:date` (extends the existing briefs-list isolation test)
-- [ ] **SCHED-01**: The scheduler generates a daily brief + prioritization cache for every registered user, not just the seed user — one user's failure (API error, stale data) does not block other users, and the prioritization filesystem cache is keyed by userId so no cross-user data leaks across scheduler runs
+- [x] **SCHED-01**: The scheduler generates a daily brief + prioritization cache for every registered user, not just the seed user — one user's failure (API error, stale data) does not block other users, and the prioritization filesystem cache is keyed by userId so no cross-user data leaks across scheduler runs
 
 ### Auth UX
 
@@ -88,7 +88,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | W-01 | Phase 108 | Complete |
 | W-02 | Phase 108 | Complete |
-| SCHED-01 | Phase 109 | Pending |
+| SCHED-01 | Phase 109 | Complete |
 | AUTH-09 | Phase 110 | Pending |
 | EMAIL-01 | Phase 111 | Pending |
 | AUTH-10 | Phase 112 | Pending |
