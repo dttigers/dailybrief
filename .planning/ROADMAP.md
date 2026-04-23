@@ -496,7 +496,11 @@ Plans:
   3. All four workOrderStatuses call sites in work-order-status.ts and work-orders.ts are scoped by userId — confirmed by grep
   4. The migration deploys on a fresh local DB via docker/psql without error (five-step backfill ordering: ADD COLUMN nullable → backfill to seed user → SET NOT NULL → ADD FK → CREATE INDEX)
   5. User B requesting GET /v1/brief/:date for a date that only User A has a brief PDF returns 404, not User A's bytes
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 108-01-PLAN.md — Schema + 0014 migration + run migration + invert D-23 guardrail (Wave 1, W-01)
+- [ ] 108-02-PLAN.md — Scope 4 call sites in work-order-status.ts + work-orders.ts + update unit tests (Wave 2, W-01)
+- [ ] 108-03-PLAN.md — W-02 brief PDF isolation it() block in cross-user-isolation.test.ts (Wave 2, W-02)
 **UI hint**: no
 
 ### Phase 109: Per-User Scheduler Fan-Out
