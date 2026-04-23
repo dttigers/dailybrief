@@ -1,15 +1,19 @@
 import { Hono } from "hono";
+import { eq } from "drizzle-orm";
 import { db } from "../db/connection.js";
 import { workOrderStatuses } from "../db/schema.js";
 
 const VALID_STATUSES = ["open", "inProgress", "done"] as const;
 
 // ── Dependency injection interface (for testability) ─────────────────────────
+// Phase 108 W-01: dbSelectFn / dbUpsertFn now take userId so every call site is
+// scoped to the authenticated caller. Composite PK (userId, caseNumber) means
+// User A's PUT on a caseNumber User B owns inserts a NEW row, not an overwrite.
 
 export interface WorkOrderStatusDeps {
   dbAvailable: boolean;
-  dbSelectFn: () => Promise<Array<{ caseNumber: string; status: string }>>;
-  dbUpsertFn: (caseNumber: string, status: string) => Promise<void>;
+  dbSelectFn: (userId: number) => Promise<Array<{ caseNumber: string; status: string }>>;
+  dbUpsertFn: (userId: number, caseNumber: string, status: string) => Promise<void>;
 }
 
 // ── Factory (injected deps — used by tests) ───────────────────────────────────
@@ -17,11 +21,13 @@ export interface WorkOrderStatusDeps {
 export function createWorkOrderStatusRouter(deps: WorkOrderStatusDeps): Hono {
   const router = new Hono();
 
-  // GET /work-orders/statuses — fetch all (literal route BEFORE param route to avoid greedy match)
+  // GET /work-orders/statuses — fetch caller's statuses only (Phase 108 W-01)
+  // Literal route MUST precede param route to avoid greedy match.
   router.get("/work-orders/statuses", async (c) => {
     if (!deps.dbAvailable) return c.json({ error: "Database not available" }, 503);
 
-    const rows = await deps.dbSelectFn();
+    const userId = c.get("userId") as number;
+    const rows = await deps.dbSelectFn(userId);
     const result: Record<string, string> = {};
     for (const row of rows) {
       result[row.caseNumber] = row.status;
@@ -29,10 +35,11 @@ export function createWorkOrderStatusRouter(deps: WorkOrderStatusDeps): Hono {
     return c.json(result);
   });
 
-  // PUT /work-orders/:caseNumber/status — upsert status
+  // PUT /work-orders/:caseNumber/status — upsert caller's status (Phase 108 W-01)
   router.put("/work-orders/:caseNumber/status", async (c) => {
     if (!deps.dbAvailable) return c.json({ error: "Database not available" }, 503);
 
+    const userId = c.get("userId") as number;
     const caseNumber = c.req.param("caseNumber");
     let body: unknown;
     try {
@@ -51,7 +58,7 @@ export function createWorkOrderStatusRouter(deps: WorkOrderStatusDeps): Hono {
       );
     }
 
-    await deps.dbUpsertFn(caseNumber, status as string);
+    await deps.dbUpsertFn(userId, caseNumber, status as string);
 
     return c.json({ caseNumber, status });
   });
@@ -65,18 +72,21 @@ export const workOrderStatus = createWorkOrderStatusRouter({
   get dbAvailable() {
     return !!db;
   },
-  dbSelectFn: async () => {
+  dbSelectFn: async (userId: number) => {
     if (!db) return [];
-    const rows = await db.select().from(workOrderStatuses);
+    const rows = await db
+      .select()
+      .from(workOrderStatuses)
+      .where(eq(workOrderStatuses.userId, userId));
     return rows.map((r) => ({ caseNumber: r.caseNumber, status: r.status }));
   },
-  dbUpsertFn: async (caseNumber: string, status: string) => {
+  dbUpsertFn: async (userId: number, caseNumber: string, status: string) => {
     if (!db) throw new Error("Database not available");
     await db
       .insert(workOrderStatuses)
-      .values({ caseNumber, status })
+      .values({ userId, caseNumber, status })
       .onConflictDoUpdate({
-        target: workOrderStatuses.caseNumber,
+        target: [workOrderStatuses.userId, workOrderStatuses.caseNumber],
         set: { status, updatedAt: new Date() },
       });
   },
