@@ -461,7 +461,7 @@ Plans:
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 4/5 | In Progress|  |
 | 107. Safari Extension Persistence | v3.5 | 6/6 | Complete    | 2026-04-21 |
 
-| 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 2/3 | In Progress|  |
+| 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 3/3 | Complete   | 2026-04-23 |
 | 109. Per-User Scheduler Fan-Out | v3.6 | 0/0 | Not started | - |
 | 110. Change Password + password_changed_at Gate | v3.6 | 0/0 | Not started | - |
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 0/0 | Not started | - |
@@ -476,7 +476,7 @@ Plans:
 
 ## v3.6 Phases
 
-- [ ] **Phase 108: work_order_statuses userId Scoping + Isolation Test** - userId FK migration + four call-site scope fix + W-02 brief PDF isolation test
+- [x] **Phase 108: work_order_statuses userId Scoping + Isolation Test** - userId FK migration + four call-site scope fix + W-02 brief PDF isolation test (completed 2026-04-23)
 - [ ] **Phase 109: Per-User Scheduler Fan-Out** - generate-scheduler tick() iterates all users; per-user try/catch with continue; prioritize cache key includes userId
 - [ ] **Phase 110: Change Password + password_changed_at Gate** - POST /v1/auth/change-password + bearerAuth iat gate + PWA inline form
 - [ ] **Phase 111: Transactional Email Infrastructure (Resend + DNS)** - Resend account + DKIM/SPF/DMARC on vigilhub.io + email-service.ts module + Railway env
@@ -500,7 +500,7 @@ Plans:
 Plans:
 - [x] 108-01-PLAN.md — Schema + 0014 migration + run migration + invert D-23 guardrail (Wave 1, W-01)
 - [x] 108-02-PLAN.md — Scope 4 call sites in work-order-status.ts + work-orders.ts + update unit tests (Wave 2, W-01)
-- [ ] 108-03-PLAN.md — W-02 brief PDF isolation it() block in cross-user-isolation.test.ts (Wave 2, W-02)
+- [x] 108-03-PLAN.md — W-02 brief PDF isolation it() block in cross-user-isolation.test.ts (Wave 2, W-02)
 **UI hint**: no
 
 ### Phase 109: Per-User Scheduler Fan-Out
@@ -589,7 +589,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 2/3 plans executed
+**Plans:** 3/3 plans complete
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
