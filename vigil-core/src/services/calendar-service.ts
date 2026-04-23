@@ -3,17 +3,16 @@
 // Security: access tokens are NEVER logged (T-74-08 mitigation).
 
 import { db } from "../db/connection.js";
-import { oauthTokens, users } from "../db/schema.js";
+import { oauthTokens } from "../db/schema.js";
 import { eq, and } from "drizzle-orm";
 import { decryptToken } from "../utils/token-crypto.js";
 
-// TODO(AUTH-06+): Per-user calendar service. For Phase 102 the calendar
-// service is hard-scoped to the seed user (VIGIL_SEED_USER_EMAIL) because
-// oauth_tokens is now keyed by (userId, provider) and the production
-// singleton has no per-request userId context. Future phase: thread
-// userId through fetchTodaysEvents / fetchCalendarList when the PWA
-// switches from vk_ to JWT auth and the brief assembly pipeline fans
-// out per user. Captured in RESEARCH Open Q4.
+// Phase 109 (SCHED-01 D-11/D-13): per-user calendar service. fetchTodaysEvents
+// and fetchCalendarList take an explicit userId parameter; the oauth_tokens
+// reads are scoped by (userId, provider="google"). The internal seed-user
+// resolver was removed. Users without a connected Google account fall
+// through to TokenNotFoundError → { status: "needs_reauth" }, which the
+// brief assembly layer handles as "no calendar events" gracefully.
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -112,34 +111,20 @@ interface GCalCalendarListResponse {
 // ── Factory ────────────────────────────────────────────────────────────────────
 
 export function createCalendarService(deps?: CalendarServiceDeps): {
-  fetchTodaysEvents: () => Promise<CalendarEventsResponse>;
-  fetchCalendarList: () => Promise<CalendarListResponse>;
+  fetchTodaysEvents: (userId: number) => Promise<CalendarEventsResponse>;
+  fetchCalendarList: (userId: number) => Promise<CalendarListResponse>;
 } {
   const fetchFn = deps?.fetchFn ?? globalThis.fetch.bind(globalThis);
 
   // ── DB helpers ────────────────────────────────────────────────────────────
 
-  // Phase 102: resolve seed user id lazily so test DI paths don't need to run it.
-  let resolvedSeedUserId: number | null = null;
-  async function getSeedUserId(): Promise<number | null> {
-    if (resolvedSeedUserId !== null) return resolvedSeedUserId;
-    if (!db) return null;
-    const seedEmail = (process.env["VIGIL_SEED_USER_EMAIL"] ?? "jamesonmorrill1@gmail.com").trim().toLowerCase();
-    const rows = await db.select({ id: users.id }).from(users).where(eq(users.email, seedEmail)).limit(1);
-    if (rows.length === 0) return null;
-    resolvedSeedUserId = rows[0].id;
-    return resolvedSeedUserId;
-  }
-
-  async function dbSelect(): Promise<OAuthTokenRow | null> {
+  async function dbSelect(userId: number): Promise<OAuthTokenRow | null> {
     if (deps?.dbSelectFn) return deps.dbSelectFn();
     if (!db) return null;
-    const seedUserId = await getSeedUserId();
-    if (seedUserId === null) return null;
     const rows = await db
       .select()
       .from(oauthTokens)
-      .where(and(eq(oauthTokens.userId, seedUserId), eq(oauthTokens.provider, "google")))
+      .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.provider, "google")))
       .limit(1);
     if (rows.length === 0) return null;
     const row = rows[0];
@@ -155,15 +140,13 @@ export function createCalendarService(deps?: CalendarServiceDeps): {
     };
   }
 
-  async function dbUpdate(accessToken: string, expiresAt: Date | null): Promise<void> {
+  async function dbUpdate(userId: number, accessToken: string, expiresAt: Date | null): Promise<void> {
     if (deps?.dbUpdateFn) return deps.dbUpdateFn(accessToken, expiresAt);
     if (!db) return;
-    const seedUserId = await getSeedUserId();
-    if (seedUserId === null) return;
     await db
       .update(oauthTokens)
       .set({ accessToken, expiresAt: expiresAt ?? undefined, updatedAt: new Date() })
-      .where(and(eq(oauthTokens.userId, seedUserId), eq(oauthTokens.provider, "google")));
+      .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.provider, "google")));
   }
 
   async function doRefresh(refreshToken: string): Promise<{ access_token: string; expiry_date: number | null }> {
@@ -188,8 +171,8 @@ export function createCalendarService(deps?: CalendarServiceDeps): {
    * Throws TokenNotFoundError or TokenRevokedError on failure.
    * Never logs token values (T-74-08 mitigation).
    */
-  async function getValidAccessToken(): Promise<{ token: string; calendarSelections: string[] }> {
-    const row = await dbSelect();
+  async function getValidAccessToken(userId: number): Promise<{ token: string; calendarSelections: string[] }> {
+    const row = await dbSelect(userId);
     if (!row) throw new TokenNotFoundError();
 
     const now = new Date();
@@ -213,7 +196,7 @@ export function createCalendarService(deps?: CalendarServiceDeps): {
         const refreshed = await doRefresh(refreshToken);
         accessToken = refreshed.access_token;
         const newExpiry = refreshed.expiry_date ? new Date(refreshed.expiry_date) : null;
-        await dbUpdate(accessToken, newExpiry);
+        await dbUpdate(userId, accessToken, newExpiry);
         console.log("[calendar-service] token refreshed for provider=google");
       } catch (err) {
         throw new TokenRevokedError(err);
@@ -260,12 +243,12 @@ export function createCalendarService(deps?: CalendarServiceDeps): {
 
   // ── Public: fetchTodaysEvents ─────────────────────────────────────────────
 
-  async function fetchTodaysEvents(): Promise<CalendarEventsResponse> {
+  async function fetchTodaysEvents(userId: number): Promise<CalendarEventsResponse> {
     let accessToken: string;
     let calendarSelections: string[];
 
     try {
-      const result = await getValidAccessToken();
+      const result = await getValidAccessToken(userId);
       accessToken = result.token;
       calendarSelections = result.calendarSelections;
     } catch (err) {
@@ -339,11 +322,11 @@ export function createCalendarService(deps?: CalendarServiceDeps): {
 
   // ── Public: fetchCalendarList ─────────────────────────────────────────────
 
-  async function fetchCalendarList(): Promise<CalendarListResponse> {
+  async function fetchCalendarList(userId: number): Promise<CalendarListResponse> {
     let accessToken: string;
 
     try {
-      const result = await getValidAccessToken();
+      const result = await getValidAccessToken(userId);
       accessToken = result.token;
     } catch (err) {
       if (err instanceof TokenNotFoundError || err instanceof TokenRevokedError) {

@@ -86,7 +86,7 @@ test("CAL-02-no-token-row: when no oauth_tokens row exists for 'google', service
     dbSelectFn: async () => null,
   };
   const service = createCalendarService(deps);
-  const result = await service.fetchTodaysEvents();
+  const result = await service.fetchTodaysEvents(1);
 
   assert.equal(result.status, "needs_reauth");
 });
@@ -110,7 +110,7 @@ test("CAL-02-no-refresh-needed: when access token expiresAt is 1 hour in the fut
   };
 
   const service = createCalendarService(deps);
-  const result = await service.fetchTodaysEvents();
+  const result = await service.fetchTodaysEvents(1);
 
   assert.equal(refreshCalled, false, "refreshFn must NOT be called when token is still valid");
   assert.equal(result.status, "ok");
@@ -145,7 +145,7 @@ test("CAL-02-refresh: when access token expiresAt is in the past, service refres
   };
 
   const service = createCalendarService(deps);
-  const result = await service.fetchTodaysEvents();
+  const result = await service.fetchTodaysEvents(1);
 
   assert.equal(refreshCalled, true, "refreshFn must be called when token is expired");
   assert.equal(dbUpdateCalled, true, "dbUpdateFn must be called after refresh");
@@ -166,7 +166,7 @@ test("CAL-02-refresh-failure: when refreshAccessToken throws (revoked token), se
   };
 
   const service = createCalendarService(deps);
-  const result = await service.fetchTodaysEvents();
+  const result = await service.fetchTodaysEvents(1);
 
   assert.equal(result.status, "needs_reauth");
 });
@@ -184,7 +184,7 @@ test("CAL-03-events: fetchTodaysEvents returns events in CalendarEvent shape", a
   };
 
   const service = createCalendarService(deps);
-  const result = await service.fetchTodaysEvents() as { status: "ok"; events: unknown[]; fetchedAt: string };
+  const result = await service.fetchTodaysEvents(1) as { status: "ok"; events: unknown[]; fetchedAt: string };
 
   assert.equal(result.status, "ok");
   assert.ok(Array.isArray(result.events), "events must be an array");
@@ -222,7 +222,7 @@ test("CAL-03-allday: when Google returns event with start.date (no start.dateTim
   };
 
   const service = createCalendarService(deps);
-  const result = await service.fetchTodaysEvents() as { status: "ok"; events: Array<{ id: string; allDay: boolean; startTime: string }> };
+  const result = await service.fetchTodaysEvents(1) as { status: "ok"; events: Array<{ id: string; allDay: boolean; startTime: string }> };
 
   assert.equal(result.status, "ok");
   const allDayEvent = result.events.find((e) => e.id === "event2");
@@ -239,7 +239,7 @@ test("CAL-03-network-error: when fetch to Google Calendar API throws network err
   };
 
   const service = createCalendarService(deps);
-  const result = await service.fetchTodaysEvents() as { status: string; error?: string };
+  const result = await service.fetchTodaysEvents(1) as { status: string; error?: string };
 
   assert.equal(result.status, "error");
   assert.ok(typeof result.error === "string", "error must be a string message");
@@ -264,7 +264,7 @@ test("CAL-03-selected-calendars: when calendarSelections has specific IDs, only 
   };
 
   const service = createCalendarService(deps);
-  await service.fetchTodaysEvents();
+  await service.fetchTodaysEvents(1);
 
   // Should fetch events for each selected calendar (no calendarList call)
   const calendarFetches = fetchedUrls.filter((u) => u.includes("calendars/") && u.includes("/events"));
@@ -300,7 +300,7 @@ test("CAL-03-no-selection: when calendarSelections is empty, all calendars are f
   };
 
   const service = createCalendarService(deps);
-  await service.fetchTodaysEvents();
+  await service.fetchTodaysEvents(1);
 
   const calendarListFetches = fetchedUrls.filter((u) => u.includes("calendarList"));
   assert.equal(calendarListFetches.length, 1, "should call calendarList exactly once when selections is empty");
