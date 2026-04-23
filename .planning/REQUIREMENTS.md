@@ -86,11 +86,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| W-01 | TBD | Pending |
-| W-02 | TBD | Pending |
-| SCHED-01 | TBD | Pending |
-| AUTH-09 | TBD | Pending |
-| AUTH-10 | TBD | Pending |
-| AUTH-11 | TBD | Pending |
-| EMAIL-01 | TBD | Pending |
-| EXT-02 | TBD | Pending |
+| W-01 | Phase 108 | Pending |
+| W-02 | Phase 108 | Pending |
+| SCHED-01 | Phase 109 | Pending |
+| AUTH-09 | Phase 110 | Pending |
+| EMAIL-01 | Phase 111 | Pending |
+| AUTH-10 | Phase 112 | Pending |
+| AUTH-11 | Phase 113 | Pending |
+| EXT-02 | Phase 114 | Pending |

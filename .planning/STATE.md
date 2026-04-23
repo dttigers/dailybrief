@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
-status: planning
-stopped_at: Defining requirements
-last_updated: "2026-04-22T21:00:00Z"
-last_activity: 2026-04-22
+status: roadmapped
+stopped_at: Roadmap created — ready to plan Phase 108
+last_updated: "2026-04-23T00:00:00Z"
+last_activity: 2026-04-23
 progress:
-  total_phases: 0
+  total_phases: 7
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -21,14 +21,26 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v3.6 milestone — defining requirements
+**Current focus:** v3.6 Phase 108 — work_order_statuses userId Scoping + Isolation Test (ready to plan)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 108 (not started)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-22 — Milestone v3.6 started
+Status: Roadmapped — ready for /gsd-plan-phase 108
+Last activity: 2026-04-23 — Roadmap created for v3.6 (7 phases, 8 requirements)
+
+```
+Phase 108 [          ] 0%   work_order_statuses userId Scoping + Isolation Test
+Phase 109 [          ] 0%   Per-User Scheduler Fan-Out
+Phase 110 [          ] 0%   Change Password + password_changed_at Gate
+Phase 111 [          ] 0%   Transactional Email Infrastructure (Resend + DNS)
+Phase 112 [          ] 0%   Forgot-Password Email Flow
+Phase 113 [          ] 0%   Verify Email on Signup
+Phase 114 [          ] 0%   Safari Extension Quick-Capture Parity
+
+v3.6 overall [          ] 0/7 phases complete
+```
 
 ## Performance Metrics
 
@@ -44,7 +56,7 @@ Last activity: 2026-04-22 — Milestone v3.6 started
 |-----------|--------|-------|----------|
 | v1.0–v3.4 | 1-102 | ~211 | ~18 days |
 | v3.5 | 103-107 (+107.1/107.2/107.3) | 34 | paused pre-ship (G2 hardware UAT) |
-| v3.6 | TBD | TBD | In progress (started 2026-04-22) |
+| v3.6 | 108-114 | TBD | In progress (started 2026-04-22) |
 
 ## Accumulated Context
 
@@ -54,6 +66,7 @@ Last activity: 2026-04-22 — Milestone v3.6 started
 - Phase 107.2 inserted after Phase 107: cross-machine Tailscale dev access with secure bind and CORS (URGENT)
 - Phase 107.3 inserted after Phase 107 (2026-04-22): prod bind default + install.sh silent-fail + doctor stale-drift cleanup — three paper-cuts surfaced during fresh MacBook Pro bootstrap; 107.2 prod bind caused live api.vigilhub.io 502 outage, fixed via Railway `VIGIL_BIND_HOST=0.0.0.0` env var
 - v3.5 paused 2026-04-22 at 34/34 plans complete, waiting on G2 physical hardware UAT (device delivery unknown). v3.6 started same day with multi-user debt + auth UX + Safari parity.
+- v3.6 roadmap created 2026-04-23: 7 phases (108-114), 8 requirements fully mapped. W-01 + W-02 merged into Phase 108 (W-02 is a single test addition in the same isolation test file). Phase ordering respects EMAIL-01 → AUTH-10 → AUTH-11 dependency chain and ensures password_changed_at gate (AUTH-09 / Phase 110) exists before AUTH-10 / Phase 112 can update it.
 
 ### Decisions
 
@@ -67,11 +80,18 @@ All decisions logged in PROJECT.md Key Decisions table.
 - G2 resubmit: all three items (G2-01/02/03) gated together — no partial submission
 - Phase 107.3 bind detection: `RAILWAY_SERVICE_ID` presence check (not `NODE_ENV`, not nonexistent `RAILWAY_ENVIRONMENT`); Phase 107.2 security bias (127.0.0.1 default) preserved for non-Railway envs
 
-(Plan-level decisions from Phases 103–107.3 archived in git history; not re-listed here for v3.6 planning brevity.)
+**v3.6 key decisions (roadmap phase):**
+
+- W-01 + W-02 merged into Phase 108: W-02 is a single it() block in cross-user-isolation.test.ts; it belongs in the same phase as W-01 because both live in the same test file and W-01's migration is the prerequisite for W-02's test to be meaningful
+- SCHED-01 stays as standalone Phase 109 (not merged with W-01): scheduler refactor touches generate-scheduler.ts + prioritize.ts + their test files — enough scope to warrant its own phase
+- AUTH-09 is Phase 110, not Phase 108: no hard dependency on multi-user scoping; Wave 1 parallelizable; assigned own phase because password_changed_at gate is a cross-cutting security foundation that Phase 112 (AUTH-10) depends on
+- EMAIL-01 is Phase 111: DNS propagation is non-deterministic; isolating it as a standalone phase lets DNS work start and propagate while Phases 108-110 execute
+- AUTH-10 and AUTH-11 are separate phases (112, 113): blast radius containment; AUTH-11 reuses password_reset_tokens (type column) created in AUTH-10's migration — sequential ordering is required
+- EXT-02 is Phase 114 (last): fully independent of server/PWA work; scheduled last as a clean cap to the milestone; can be executed on MacBook Pro in parallel with any server phase if desired
 
 ### Pending Todos
 
-None — v3.6 requirements gathering is next step.
+None — ready to plan Phase 108.
 
 ### Blockers/Concerns
 
@@ -81,8 +101,9 @@ None — v3.6 requirements gathering is next step.
 - G2 physical hardware retest pending device delivery (unknown date) — blocks v3.5 ship, NOT v3.6 execution
 - Phase 107.1 work_orders schema drift — columns notes/archived_at/last_change_at/last_change_summary defined in schema.ts but never migrated; blocks any plan needing to run live migrations against a freshly-set-up local dev DB
 
-**New for v3.6:**
-- Transactional email provider decision (AUTH-10/AUTH-11 depend on this) — candidates: Resend, Postmark, AWS SES. First outbound email in Vigil; touches DKIM/SPF/deliverability.
+**Active for v3.6:**
+- DNS propagation for vigilhub.io DKIM/SPF/DMARC (Phase 111) is variable — start DNS config early, do not block Phase 112 planning on propagation completion
+- Safari Cmd+Enter keyboard priority: must be empirically tested as step 1 of Phase 114 before any implementation — if swallowed, fallback UX must be designed upfront
 
 ### Memory drift flagged
 
@@ -90,7 +111,7 @@ None — v3.6 requirements gathering is next step.
 
 ## Session Continuity
 
-Last session: 2026-04-22T21:00:00Z
-Stopped at: v3.6 milestone initialization — PROJECT.md updated, requirements-gathering next
+Last session: 2026-04-23T00:00:00Z
+Stopped at: v3.6 roadmap complete — 7 phases, 8/8 requirements mapped, files written
 Resume file: None
-Next action: Define REQUIREMENTS.md (optionally after research), then spawn gsd-roadmapper
+Next action: /gsd-plan-phase 108

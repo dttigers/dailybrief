@@ -22,7 +22,8 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v3.2 Freshness & Capture Parity** — Phases 88-95 (shipped 2026-04-16)
 - ✅ **v3.3 Stability & Chat Context** — Phases 96-98 (shipped 2026-04-17)
 - ✅ **v3.4 Multi-User Foundation & PWA Polish** — Phases 99-102 (shipped 2026-04-18)
-- 🚧 **v3.5 Observability, G2 Resubmit & Capture Repair** — Phases 103-107 (in progress)
+- ⏸ **v3.5 Observability, G2 Resubmit & Capture Repair** — Phases 103-107 (paused pre-ship, blocked on G2 hardware UAT)
+- 🚧 **v3.6 Multi-User Completion, Auth UX & Safari Parity** — Phases 108-114 (in progress)
 
 ## Completed Milestones
 
@@ -459,6 +460,120 @@ Plans:
 | 105. Product Events, API Metrics & User Identity | v3.5 | 3/3 | Complete    | 2026-04-20 |
 | 106. G2 Store Resubmit (Atomic) | v3.5 | 4/5 | In Progress|  |
 | 107. Safari Extension Persistence | v3.5 | 6/6 | Complete    | 2026-04-21 |
+
+| 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 0/0 | Not started | - |
+| 109. Per-User Scheduler Fan-Out | v3.6 | 0/0 | Not started | - |
+| 110. Change Password + password_changed_at Gate | v3.6 | 0/0 | Not started | - |
+| 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 0/0 | Not started | - |
+| 112. Forgot-Password Email Flow | v3.6 | 0/0 | Not started | - |
+| 113. Verify Email on Signup | v3.6 | 0/0 | Not started | - |
+| 114. Safari Extension Quick-Capture Parity | v3.6 | 0/0 | Not started | - |
+
+
+## 🚧 v3.6 Multi-User Completion, Auth UX & Safari Parity (In Progress)
+
+**Milestone Goal:** Close the v3.4 multi-user loop end-to-end (per-user isolation + scheduler fan-out), complete the auth UX flows (change password, forgot password, email verify), and bring the Safari extension up to Chrome Phase 94 quick-capture parity.
+
+## v3.6 Phases
+
+- [ ] **Phase 108: work_order_statuses userId Scoping + Isolation Test** - userId FK migration + four call-site scope fix + W-02 brief PDF isolation test
+- [ ] **Phase 109: Per-User Scheduler Fan-Out** - generate-scheduler tick() iterates all users; per-user try/catch with continue; prioritize cache key includes userId
+- [ ] **Phase 110: Change Password + password_changed_at Gate** - POST /v1/auth/change-password + bearerAuth iat gate + PWA inline form
+- [ ] **Phase 111: Transactional Email Infrastructure (Resend + DNS)** - Resend account + DKIM/SPF/DMARC on vigilhub.io + email-service.ts module + Railway env
+- [ ] **Phase 112: Forgot-Password Email Flow** - POST /v1/auth/forgot-password + POST /v1/auth/reset-password + password_reset_tokens migration + PWA pages
+- [ ] **Phase 113: Verify Email on Signup** - emailVerifiedAt migration + register hook + GET /v1/auth/verify-email/:token + resend endpoint + PWA banner
+- [ ] **Phase 114: Safari Extension Quick-Capture Parity** - popup.html + popup.js delta to match Chrome Phase 94; Xcode rebuild + UAT
+
+## v3.6 Phase Details
+
+### Phase 108: work_order_statuses userId Scoping + Isolation Test
+**Goal**: work_order_statuses rows are isolated per user and the brief PDF cross-user isolation coverage gap is closed
+**Depends on**: Phase 107.3 (brownfield — builds on multi-user foundation from Phase 102)
+**Requirements**: W-01, W-02
+**Success Criteria** (what must be TRUE):
+  1. User A sets a work order status; User B's GET /v1/work-orders/statuses response does not include that row — verified by the cross-user-isolation integration test
+  2. User A's PUT cannot overwrite User B's status for the same caseNumber — upsert conflict target is now composite (userId, caseNumber)
+  3. All four workOrderStatuses call sites in work-order-status.ts and work-orders.ts are scoped by userId — confirmed by grep
+  4. The migration deploys on a fresh local DB via docker/psql without error (five-step backfill ordering: ADD COLUMN nullable → backfill to seed user → SET NOT NULL → ADD FK → CREATE INDEX)
+  5. User B requesting GET /v1/brief/:date for a date that only User A has a brief PDF returns 404, not User A's bytes
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 109: Per-User Scheduler Fan-Out
+**Goal**: The daily brief scheduler generates briefs and prioritization caches for every registered user, with per-user error isolation
+**Depends on**: Phase 108 (work_order_statuses scoping must be correct before scheduler generates briefs that could include status data)
+**Requirements**: SCHED-01
+**Success Criteria** (what must be TRUE):
+  1. With two registered users, the scheduler tick() generates a brief attempt for each user — confirmed by log output showing both user IDs processed
+  2. A simulated failure for User 2 (injected throw in test) does not prevent User 3 from receiving a brief generation attempt — per-user try/catch uses continue, not return
+  3. The prioritization cache filename on disk includes the userId — getCacheKey() in prioritize.ts includes the userId parameter
+  4. A test injecting getAllUsersFn returning a two-element array confirms both users are iterated and independent errors do not cross-contaminate
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 110: Change Password + password_changed_at Gate
+**Goal**: An authenticated user can change their password from the PWA, and all JWTs issued before the change (or any future reset) are invalidated
+**Depends on**: Phase 108 (brownfield — no hard dependency, but logically follows multi-user scoping)
+**Requirements**: AUTH-09
+**Success Criteria** (what must be TRUE):
+  1. An authenticated user submits current password + new password from the PWA Settings page and receives a success confirmation — they remain logged in with their current session
+  2. A JWT issued before the password change is rejected with 401 when used on any authenticated endpoint after the change — the bearerAuth jwt.iat < password_changed_at gate is active
+  3. Submitting an incorrect current password returns 401 with a generic error; the password is not changed
+  4. The password_changed_at column exists on the users table and is updated by both change-password and (in Phase 112) reset-password operations
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 111: Transactional Email Infrastructure (Resend + DNS)
+**Goal**: Vigil can send authenticated, deliverable email from noreply@vigilhub.io via Resend, with DNS fully verified and link tracking disabled
+**Depends on**: Phase 110 (logical Wave 2 start — no code dependency, but should follow Wave 1 auth work so DNS propagation time runs concurrently)
+**Requirements**: EMAIL-01
+**Success Criteria** (what must be TRUE):
+  1. A manual test email sent via Resend SDK from vigil-core lands in jamesonmorrill1@gmail.com inbox (not spam) — confirmed in Gmail UI
+  2. dig TXT _dmarc.vigilhub.io returns a valid DMARC record; dig TXT resend._domainkey.vigilhub.io returns the DKIM record; Resend dashboard shows domain status as Verified
+  3. Raw email source inspection confirms the href on token links is a verbatim app.vigilhub.io URL, not a click-tracking domain (clickTracking: false is in effect)
+  4. vigil-core starts successfully with RESEND_API_KEY unset — lazy null-init following PostHog pattern; email endpoints return 503 if unconfigured rather than crashing on startup
+  5. RESEND_API_KEY env var is set in Railway Variables and present in vigil-core/.env.example (commented out) for new developer onboarding
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 112: Forgot-Password Email Flow
+**Goal**: An unauthenticated user can request a password reset link, receive it by email, and use it to set a new password — invalidating all prior sessions
+**Depends on**: Phase 111 (EMAIL-01 — Resend infra must be verified before first production send), Phase 110 (AUTH-09 — password_changed_at column and bearerAuth gate must exist; this phase updates it on successful reset)
+**Requirements**: AUTH-10
+**Success Criteria** (what must be TRUE):
+  1. Submitting a forgot-password request for an unknown email returns the same 200 response body and approximate response time as a known email — no enumeration possible
+  2. The user receives an email with a reset link; clicking it allows setting a new password; the page then redirects to the login page (no auto-login, no JWT in the redirect URL)
+  3. Using the same reset link a second time returns 400 "Invalid or expired token" — single-use enforcement via atomic UPDATE RETURNING used_at
+  4. A JWT issued before the password reset is rejected with 401 on subsequent API calls — password_changed_at is updated on reset success
+  5. The password_reset_tokens table stores token_hash (SHA-256), not the raw token; the raw token appears only in the email URL and never in the DB
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 113: Verify Email on Signup
+**Goal**: Newly registered users receive a verification email, see a non-blocking banner until verified, and can click the link or resend to clear it — with all pre-existing users grandfathered as verified
+**Depends on**: Phase 111 (EMAIL-01 — Resend infra), Phase 112 (AUTH-10 — password_reset_tokens table with type column must exist; AUTH-11 reuses it with type='email_verify')
+**Requirements**: AUTH-11
+**Success Criteria** (what must be TRUE):
+  1. A newly registered user receives a verification email within seconds of registration; the email contains a single-use link that expires in 24 hours
+  2. A user whose email is unverified sees a non-blocking banner in the PWA Settings page with a "Resend" button — all other app functionality works normally (no hard block)
+  3. Clicking the verification link sets emailVerifiedAt on the user record and the PWA banner disappears on next page load; the redirect URL contains no JWT or token parameter
+  4. The seed user (and all users registered before AUTH-11 ships) have emailVerifiedAt backfilled to their created_at timestamp — no lockout after Railway deploy
+  5. The resend endpoint returns 429 after 3 requests within 1 hour for the same user
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 114: Safari Extension Quick-Capture Parity
+**Goal**: The Safari extension popup offers the same quick-capture experience as the Chrome Phase 94 extension — freeform text, URL checkbox, Cmd+Enter, and triage feedback badge
+**Depends on**: Nothing (independent of all server and PWA work — pure Safari extension popup delta)
+**Requirements**: EXT-02
+**Success Criteria** (what must be TRUE):
+  1. The Safari popup opens with an empty freeform textarea (no auto-prefill of tab title or URL) and focus is on the textarea
+  2. The "Include page URL" checkbox appends the current tab's URL to the capture content when checked at submit time
+  3. Cmd+Enter submits the capture without requiring a mouse click — verified empirically in Safari popup before any implementation code is written
+  4. After a successful capture, a triage feedback badge appears showing the AI-assigned category (polling up to 5 seconds); the static "Captured!" text is replaced with the dynamic badge
+  5. The updated extension is re-signed with Xcode and spctl --assess passes; the extension remains functional after Safari is restarted
+**Plans**: TBD
+**UI hint**: yes
 
 ## Backlog
 
