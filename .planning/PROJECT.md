@@ -151,12 +151,12 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ Brief history survives Railway redeploys — brief_pdfs BYTEA table replacing /tmp write path, structured 404 (`brief_not_found` vs `brief_pdf_not_stored`) drives branched PWA UX with Regenerate affordance — v3.4
 - ✓ Edit-refresh pause gate — window event bus `vigil:edit-started/ended` with refcount pauses 30s poll during inline edits, fires catch-up refetch on last-edit-ends — v3.4
 - ✓ Right-click + long-press context menu — 7 actions (delete/move/edit/re-triage/add-to-project), deferred-commit delete with single-slot toast undo, D-19 interlock preserves Phase 100 pause gate — v3.4
+- ✓ `work_order_statuses` user scoping — `user_id NOT NULL` FK + composite `(user_id, case_number)` PK, all 4 route call sites scoped, D-23 guardrail flipped, cross-user PUT overwrite structurally prevented (W-01 — v3.6 Phase 108)
+- ✓ GET /v1/brief/:date cross-user isolation — userB receives 404 (not userA's bytes) when requesting a date only userA has; `brief PDF isolation` it() block in `cross-user-isolation.test.ts` (W-02 — v3.6 Phase 108)
 
 ### Active
 
 **v3.6 (in progress):**
-- [ ] `work_order_statuses` userId scoping (W-01 — v3.4 tech debt)
-- [ ] GET /v1/brief/:date cross-user isolation test (W-02)
 - [ ] Per-user scheduler fan-out (SCHED-01 — schedulers hard-scoped to seed user with TODO markers)
 - [ ] Change password from PWA profile (AUTH-09)
 - [ ] Forgot-password email link (AUTH-10 — introduces transactional email)
@@ -275,4 +275,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-22 — v3.6 Multi-User Completion, Auth UX & Safari Parity started. v3.5 paused at 34/34 plans complete, blocked only on G2 physical hardware UAT (device delivery unknown). v3.6 scope: W-01/W-02/SCHED-01 multi-user cleanup, AUTH-09/10/11 auth UX, EXT-02 Safari quick-capture parity.*
+*Last updated: 2026-04-23 — Phase 108 complete. W-01 + W-02 validated: work_order_statuses now fully user-scoped (user_id FK + composite PK, 4 call sites scoped), brief PDF cross-user isolation test landed. v3.6 progress: 1/7 phases complete.*
