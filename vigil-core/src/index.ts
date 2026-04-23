@@ -42,6 +42,7 @@ import { createGenerateScheduler } from "./services/generate-scheduler.js";
 import { createBriefAssemblyService } from "./services/brief-assembly-service.js";
 import { getAIClient, callClaude, parseAIJson } from "./ai/client.js";
 import { createSportsService } from "./services/sports-service.js";
+import { createCalendarService } from "./services/calendar-service.js";
 import { createGmailWorkOrderService } from "./services/gmail-workorder-service.js";
 
 // Verify database connection at startup
@@ -206,6 +207,7 @@ serve({ fetch: app.fetch, port, hostname }, () => {
 const assembler = createBriefAssemblyService({
   dbClient: mainDb,
   sportsService: createSportsService(),
+  calendarService: createCalendarService(), // Phase 109 (SCHED-01 D-12): scheduler path now wires calendar (first time ever)
   getAIClientFn: getAIClient,
   callClaudeFn: callClaude,
   parseAIJsonFn: parseAIJson,

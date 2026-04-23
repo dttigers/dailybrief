@@ -7,11 +7,13 @@ import { oauthTokens, workOrders as workOrdersTable, users } from "../db/schema.
 import { eq, and } from "drizzle-orm";
 import { decryptToken } from "../utils/token-crypto.js";
 
-// TODO(AUTH-06+): Per-user scheduler fan-out. For Phase 102 the Gmail
-// work-order importer is hard-scoped to the seed user (VIGIL_SEED_USER_EMAIL).
-// Future phase: iterate over every user with an oauthTokens row for provider
-// "google" and dispatch a separate import tick per user. Captured in
-// RESEARCH Open Q4.
+// TODO(AUTH-06+) — DEFERRED: Phase 109 (SCHED-01) fanned out the generate-scheduler
+// and calendar-service but intentionally deferred this Gmail importer per CONTEXT
+// §Deferred Ideas. Current behavior: still hard-scoped to VIGIL_SEED_USER_EMAIL.
+// Future phase (candidate: 109.1 or v3.7): iterate users with an oauthTokens row
+// for provider="google" and dispatch a separate 5-min import tick per user. Blast
+// radius is larger than Phase 109 (new per-user error modes: no token, revoked
+// token, quota exhaustion) — hence the split.
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

@@ -11,6 +11,7 @@ import type * as schema from "../db/schema.js";
 import { createBriefAssemblyService } from "../services/brief-assembly-service.js";
 import { getAIClient, callClaude, parseAIJson } from "../ai/client.js";
 import { createSportsService } from "../services/sports-service.js";
+import { createCalendarService } from "../services/calendar-service.js";
 import { trackEvent } from "../analytics/posthog.js";
 
 // ── Types ───────────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ export function createBriefGenerateRouter(deps: BriefGenerateDeps = {}): Hono {
     return createBriefAssemblyService({
       dbClient: getDb(),
       sportsService: createSportsService(),
+      calendarService: createCalendarService(), // Phase 109 (SCHED-01 D-12): on-demand path now wires calendar (first time ever)
       getAIClientFn: getAIClient,
       callClaudeFn: callClaude,
       parseAIJsonFn: parseAIJson,
