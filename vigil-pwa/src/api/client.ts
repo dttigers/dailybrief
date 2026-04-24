@@ -79,7 +79,9 @@ export async function vigilFetch(path: string, init?: RequestInit): Promise<Resp
         // dispatched by signOut() above for any listeners that mount before
         // the navigation tears the page down.
         if (typeof window !== 'undefined' && window.location) {
-          window.location.href = '/auth'
+          // ?reason=session_expired gives AuthPage context to show a banner —
+          // without it the user arrives with no explanation for the bounce.
+          window.location.href = '/auth?reason=session_expired'
         }
       }
     } catch {
