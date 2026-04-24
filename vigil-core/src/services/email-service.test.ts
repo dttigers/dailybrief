@@ -191,6 +191,57 @@ test("sendPasswordResetEmail returns failed when Resend throws", async () => {
   }
 });
 
+test("sendPasswordResetEmail returns failed when Resend returns { data: null, error: null } — degenerate path (WR-02)", async () => {
+  // WR-02: `{ data: null, error: null }` is undocumented but type-allowed by
+  // the SDK's ResendResult (both fields nullable). Without a real id, "sent"
+  // is a lie — downstream consumers would log https://resend.com/emails/ with
+  // an empty id, or store an empty string as the message-id. Surface as
+  // failed AND route through captureException with the same PII-hashed
+  // observability shape as other failures so SDK contract drift is caught on
+  // first occurrence.
+  const client: MockClient = {
+    captured: null,
+    emails: {
+      send: async (args: SendArgs) => {
+        client.captured = args;
+        return { data: null, error: null };
+      },
+    },
+  };
+  const capture = makeCaptureSpy();
+  const deps: EmailServiceDeps = {
+    resendClient: client as unknown as EmailServiceDeps["resendClient"],
+    captureExceptionFn: capture.fn,
+  };
+  const service = createEmailService(deps);
+  const result = await service.sendPasswordResetEmail(
+    "user@example.com",
+    "https://app.vigilhub.io/auth/reset?token=abc",
+  );
+  assert.equal(result.status, "failed");
+  if (result.status === "failed") {
+    assert.ok(
+      result.error.includes("no message id"),
+      `expected error to mention "no message id", got: ${result.error}`,
+    );
+  }
+  // Routed through observability — must call captureException with hashed PII.
+  assert.ok(
+    capture.calls.length > 0,
+    "captureException must have been called for the degenerate-id path",
+  );
+  const ctx = capture.calls[0]!.context;
+  assert.match(
+    ctx["to_hash"] as string,
+    /^[a-f0-9]{8,}$/,
+    "context.to_hash must be lowercase hex (PII-hashed)",
+  );
+  // Raw email must not appear in any context value (D-12).
+  for (const key of Object.keys(ctx)) {
+    assert.notEqual(ctx[key], "user@example.com");
+  }
+});
+
 test("sendPasswordResetEmail returns failed when Resend returns an error object", async () => {
   const client = makeErrorReturningClient("rate_limit_exceeded", "rate limited");
   const capture = makeCaptureSpy();

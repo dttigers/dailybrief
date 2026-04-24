@@ -160,7 +160,24 @@ export function createEmailService(deps?: EmailServiceDeps): {
         return { status: "failed", error: errMsg };
       }
 
-      return { status: "sent", id: result.data?.id ?? "" };
+      // WR-02: `{ data: null, error: null }` is undocumented but type-allowed
+      // by ResendResult (both fields are nullable). Without a real id, "sent"
+      // is a lie — downstream consumers (smoke-test log, future stored
+      // message-ids) treat it as success-with-real-id. Surface as failed and
+      // route through the same captureException + PII-hash observability path
+      // as other failures so we catch SDK contract drift on first occurrence.
+      const id = result.data?.id;
+      if (!id) {
+        const errMsg = "Resend returned no message id";
+        console.error("[email-service] send succeeded with no id:", type, result);
+        captureFn(null, new Error(errMsg), {
+          email_type: type,
+          to_hash: hashRecipient(to),
+        });
+        return { status: "failed", error: errMsg };
+      }
+
+      return { status: "sent", id };
     } catch (err) {
       console.error("[email-service] send threw:", type, err);
       const errMsg = err instanceof Error ? err.message : String(err);
