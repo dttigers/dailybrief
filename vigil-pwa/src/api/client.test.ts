@@ -219,8 +219,8 @@ describe("vigilFetch — D-19 'Session expired' handler", () => {
     expect(signoutSpy).toHaveBeenCalledTimes(1)
     // Storage cleared by signOut()
     expect(sessionStorage.getItem('vigil_jwt')).toBeNull()
-    // Navigation forced
-    expect(window.location.href).toBe('/auth')
+    // Navigation forced — query param gives AuthPage context for the banner
+    expect(window.location.href).toBe('/auth?reason=session_expired')
     // Original response still readable by caller
     const body = (await res.json()) as { error: string }
     expect(body.error).toBe('Session expired')

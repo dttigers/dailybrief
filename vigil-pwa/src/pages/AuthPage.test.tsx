@@ -118,3 +118,24 @@ describe('AuthPage — Signup mode', () => {
     )
   })
 })
+
+describe('AuthPage — Session-expired banner (AUTH-09 D-19)', () => {
+  it('shows banner when URL has ?reason=session_expired', () => {
+    const original = window.location
+    Object.defineProperty(window, 'location', {
+      value: { ...original, search: '?reason=session_expired' },
+      writable: true,
+    })
+    try {
+      renderAuth()
+      expect(screen.getByRole('status')).toHaveTextContent(/session expired/i)
+    } finally {
+      Object.defineProperty(window, 'location', { value: original, writable: true })
+    }
+  })
+
+  it('does NOT show banner when URL has no reason param', () => {
+    renderAuth()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+})
