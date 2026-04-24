@@ -47,16 +47,49 @@ describe("bearerAuth — token-type detection (D-01, D-02)", () => {
     assert.equal(res.status, 401);
   });
 
-  it("JWT path: valid HS256 token → 200 + c.get('userId') matches claim sub (D-02)", async () => {
-    const tok = await signToken(42, "e@t.local");
-    const res = await buildApp().fetch(
-      new Request("http://x/whoami", {
-        headers: { Authorization: `Bearer ${tok}` },
-      }),
-    );
-    assert.equal(res.status, 200);
-    const body = (await res.json()) as { userId: number };
-    assert.equal(body.userId, 42);
+  it("JWT path: valid HS256 token → 200 + c.get('userId') matches claim sub (D-02)", async (t) => {
+    // Phase 110 (AUTH-09) note: Plan 02 inserted the passwordChangedAt iat-gate
+    // in Path 2, which adds a SELECT against the users table on every JWT request.
+    // When DATABASE_URL is unset, `db` is null and the gate returns 503. Skip the
+    // happy-path assertion in that environment. The CP-GATE-01..05 suite below
+    // exercises this path with a real DB.
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL required (Phase 110 gate adds users-table SELECT on JWT path)");
+      return;
+    }
+    const { db } = await import("../db/connection.js");
+    const { users } = await import("../db/schema.js");
+    const { eq } = await import("drizzle-orm");
+    if (!db) {
+      t.skip("db not initialized");
+      return;
+    }
+
+    // Insert a throwaway user with passwordChangedAt 1h ago so a freshly-minted
+    // JWT (iat = now) passes the strict-less-than gate.
+    const nowMs = Date.now();
+    const [created] = await db
+      .insert(users)
+      .values({
+        email: `jwt-pass-${nowMs}@test.local`,
+        passwordHash: "$argon2id$v=19$m=19456,t=2,p=1$ZHVtbXlzYWx0ZHVtbXlzYWw$ZHVtbXloYXNoZHVtbXloYXNoZHVtbXloYXNoZHVtbXk",
+        passwordChangedAt: new Date(nowMs - 3600 * 1000),
+      })
+      .returning({ id: users.id, email: users.email });
+
+    try {
+      const tok = await signToken(created.id, created.email);
+      const res = await buildApp().fetch(
+        new Request("http://x/whoami", {
+          headers: { Authorization: `Bearer ${tok}` },
+        }),
+      );
+      assert.equal(res.status, 200);
+      const body = (await res.json()) as { userId: number };
+      assert.equal(body.userId, created.id);
+    } finally {
+      await db.delete(users).where(eq(users.id, created.id));
+    }
   });
 
   it("JWT path: tampered signature → 401", async () => {

@@ -86,9 +86,12 @@ auth.post("/auth/register", async (c) => {
   // Fresh registration (no existing row for this email)
   if (!existing) {
     const passwordHash = await hashPassword(password);
+    // Phase 110 (AUTH-09): passwordChangedAt column added in Plan 01 is NOT NULL
+    // with no DEFAULT — fresh register must set it. Semantically "password set at
+    // account creation" matches the D-03 backfill literal for pre-migration users.
     const [created] = await db
       .insert(users)
-      .values({ email, passwordHash })
+      .values({ email, passwordHash, passwordChangedAt: new Date() })
       .returning({ id: users.id, email: users.email });
     return c.json({ id: created.id, email: created.email }, 201);
   }
@@ -96,9 +99,13 @@ auth.post("/auth/register", async (c) => {
   // D-11: claim-flow — seed user with placeholder hash overwrites with the real password
   if (existing.passwordHash.startsWith(PLACEHOLDER_HASH_PREFIX)) {
     const passwordHash = await hashPassword(password);
+    // Phase 110 (AUTH-09): claim-flow IS a password set — bump passwordChangedAt
+    // alongside updatedAt so any JWT issued pre-claim (there shouldn't be any, but
+    // defensive) is gate-rejected and the caller must go through /auth/login.
+    const now = new Date();
     await db
       .update(users)
-      .set({ passwordHash, updatedAt: new Date() })
+      .set({ passwordHash, passwordChangedAt: now, updatedAt: now })
       .where(eq(users.id, existing.id));
     return c.json(
       { id: existing.id, email: existing.email, claimed: true },

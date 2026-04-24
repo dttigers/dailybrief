@@ -73,13 +73,17 @@ describe("cross-user isolation (AUTH-05)", () => {
     await db.delete(users).where(eq(users.email, "usera@test.local"));
     await db.delete(users).where(eq(users.email, "userb@test.local"));
     const pw = await hashPassword("validpass12345");
+    // Phase 110 (AUTH-09): passwordChangedAt NOT NULL — seed with "now" so the
+    // fresh JWT minted below has iat >= floor(passwordChangedAt/1000) and passes
+    // the Plan 02 bearerAuth gate (strict less-than per D-05).
+    const now = new Date();
     [userA] = await db
       .insert(users)
-      .values({ email: "usera@test.local", passwordHash: pw })
+      .values({ email: "usera@test.local", passwordHash: pw, passwordChangedAt: now })
       .returning();
     [userB] = await db
       .insert(users)
-      .values({ email: "userb@test.local", passwordHash: pw })
+      .values({ email: "userb@test.local", passwordHash: pw, passwordChangedAt: now })
       .returning();
     // One thought per user
     await db.insert(thoughts).values({

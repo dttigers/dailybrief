@@ -2,7 +2,7 @@ import crypto from "node:crypto";
 import type { MiddlewareHandler } from "hono";
 import { eq, and } from "drizzle-orm";
 import { db } from "../db/connection.js";
-import { apiKeys } from "../db/schema.js";
+import { apiKeys, users } from "../db/schema.js";
 import { verifyToken } from "../utils/jwt.js";
 
 // Hono context type augmentation — downstream routes call `c.get("userId")` and TypeScript
@@ -94,6 +94,44 @@ export const bearerAuth: MiddlewareHandler = async (c, next) => {
       if (!Number.isInteger(userId) || userId <= 0) {
         return c.json({ error: "Invalid token subject" }, 401);
       }
+
+      // Phase 110 (AUTH-09 D-05/D-06/D-07/D-08): password_changed_at iat gate.
+      // Single PK-indexed SELECT per JWT request — at current scale (1-few users,
+      // 100 req/60s global rate limit) the round-trip is negligible.
+      // Gate runs only on Path 2 (JWT). vk_ keys (Path 1) are structurally
+      // unaffected — no passwordChangedAt read on this branch (D-06).
+      if (!db) {
+        return c.json({ error: "Database unavailable" }, 503);
+      }
+      const [user] = await db
+        .select({ id: users.id, passwordChangedAt: users.passwordChangedAt })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+      if (!user) {
+        // D-07: missing users row for a validly-signed JWT (user deleted
+        // mid-session). Return the SAME body as verifyToken failure to keep
+        // the response surface symmetric.
+        return c.json({ error: "Invalid or expired token" }, 401);
+      }
+
+      // D-05: strict less-than. Truncate postgres microsecond timestamp to
+      // whole seconds to match JWT RFC 7519 iat resolution. Any JWT minted
+      // AFTER passwordChangedAt has iat >= floor(ts/1000) and passes; any
+      // JWT minted BEFORE has iat < floor(ts/1000) and fails. Equality
+      // (iat == floor(ts/1000)) PASSES because the comparison is strict <,
+      // not <=. D-14 ordering (signToken after db.update) makes the equality
+      // case practically unreachable in production but the gate enforces
+      // the exact contract documented here.
+      const gateThreshold = Math.floor(user.passwordChangedAt.getTime() / 1000);
+      if (claims.iat < gateThreshold) {
+        // D-08: distinct body so PWA can route on it specifically (Plan 03 D-19
+        // global 401 handler). No user enumeration concern — gate runs AFTER
+        // JWT verify, caller is known-authenticated.
+        return c.json({ error: "Session expired" }, 401);
+      }
+
       c.set("userId", userId);
       return next();
     } catch {
