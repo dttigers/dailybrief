@@ -463,8 +463,8 @@ Plans:
 
 | 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 3/3 | Complete    | 2026-04-23 |
 | 109. Per-User Scheduler Fan-Out | v3.6 | 3/3 | Complete    | 2026-04-23 |
-| 110. Change Password + password_changed_at Gate | v3.6 | 3/3 | Complete   | 2026-04-24 |
-| 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 0/0 | Not started | - |
+| 110. Change Password + password_changed_at Gate | v3.6 | 3/3 | Complete    | 2026-04-24 |
+| 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 0/3 | Planned | - |
 | 112. Forgot-Password Email Flow | v3.6 | 0/0 | Not started | - |
 | 113. Verify Email on Signup | v3.6 | 0/0 | Not started | - |
 | 114. Safari Extension Quick-Capture Parity | v3.6 | 0/0 | Not started | - |
@@ -545,7 +545,11 @@ Plans:
   3. Raw email source inspection confirms the href on token links is a verbatim app.vigilhub.io URL, not a click-tracking domain (clickTracking: false is in effect)
   4. vigil-core starts successfully with RESEND_API_KEY unset — lazy null-init following PostHog pattern; email endpoints return 503 if unconfigured rather than crashing on startup
   5. RESEND_API_KEY env var is set in Railway Variables and present in vigil-core/.env.example (commented out) for new developer onboarding
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 111-01-PLAN.md — DNS + Resend dashboard (SPF/DKIM/DMARC on vigilhub.io, Resend Verified) — manual checkpoints (D-01..D-03)
+- [ ] 111-02-PLAN.md — email-service.ts module (lazy null-init + typed wrappers + click_tracking:false + PII hashing) + tests + .env.example (D-04..D-12)
+- [ ] 111-03-PLAN.md — Railway env injection (RESEND_API_KEY + VIGIL_APP_BASE_URL) + smoke-test-email.ts + live send + Gmail raw-source verification
 **UI hint**: no
 
 ### Phase 112: Forgot-Password Email Flow
