@@ -12,6 +12,7 @@ import {
   setTimezone,
   vigilFetch,
   signOut,
+  storeKey,
 } from '../api/client'
 import { ScheduleCard } from '../components/ScheduleCard'
 
@@ -59,6 +60,15 @@ export default function SettingsPage() {
   // D-06 / D-07: Vigil Account section state — email from GET /v1/me
   const [accountEmail, setAccountEmail] = useState<string | null>(null)
   const [accountLoading, setAccountLoading] = useState(true)
+
+  // Phase 110 (AUTH-09 D-15..D-18): change-password form state
+  const [cpExpanded, setCpExpanded] = useState(false)
+  const [cpCurrent, setCpCurrent] = useState('')
+  const [cpNew, setCpNew] = useState('')
+  const [cpShowCurrent, setCpShowCurrent] = useState(false)
+  const [cpShowNew, setCpShowNew] = useState(false)
+  const [cpInlineMsg, setCpInlineMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
+  const [cpSubmitting, setCpSubmitting] = useState(false)
 
   // D-07: fetch authenticated user email for Vigil Account section.
   // Silent on failure — no error banner; absence renders empty string.
@@ -151,6 +161,74 @@ export default function SettingsPage() {
   const onScheduleSaved = useCallback((msg: string) => setBanner({ kind: 'success', text: msg }), [])
   const onScheduleError = useCallback((msg: string) => setBanner({ kind: 'error', text: msg }), [])
 
+  // Phase 110 (AUTH-09 D-17/D-18): submit change-password.
+  // On 200: storeKey BEFORE any other fetch (D-17 critical ordering), show
+  // success, clear inputs, collapse after 2s. On 401: inline "Current
+  // password is incorrect" (D-18 case 1). On 400: surface server error
+  // verbatim (D-18 case 2). Otherwise: generic message (D-18 case 3).
+  const handleChangePasswordSubmit = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCpSubmitting(true)
+    setCpInlineMsg(null)
+    try {
+      const res = await vigilFetch('/v1/auth/change-password', {
+        method: 'POST',
+        body: JSON.stringify({ currentPassword: cpCurrent, newPassword: cpNew }),
+      })
+      if (res.status === 200) {
+        const body = (await res.json()) as { token: string; user: { id: number; email: string } }
+        // CONTEXT D-17 references sessionStorage['vigil_token']; live code's
+        // canonical key is 'vigil_jwt' via storeKey() (api/client.ts:1).
+        // D-17 critical ordering: write new JWT to sessionStorage BEFORE any
+        // other authenticated fetch fires. The setState calls below do not
+        // fire network requests, so calling storeKey first preserves it.
+        storeKey(body.token)
+        setCpInlineMsg({ kind: 'success', text: 'Password changed' })
+        setCpCurrent('')
+        setCpNew('')
+        // Collapse the form after 2s.
+        setTimeout(() => {
+          setCpExpanded(false)
+          setCpInlineMsg(null)
+        }, 2000)
+        return
+      }
+      if (res.status === 401) {
+        // D-18 case 1: 401 from /v1/auth/change-password specifically means
+        // wrong current password (the endpoint is post-auth — caller is past
+        // bearerAuth, so 401 here cannot mean token-invalid). The global 401
+        // handler (client.ts vigilFetch) does NOT trigger because the
+        // response body is 'Invalid credentials', NOT 'Session expired' —
+        // body discriminator, not path discriminator.
+        setCpInlineMsg({ kind: 'error', text: 'Current password is incorrect' })
+        return
+      }
+      if (res.status === 400) {
+        // D-18 case 2: surface server error verbatim — covers length
+        // validation ("Password must be 12-128 characters") and same-as-current
+        // ("New password must differ from current"). Both are user-actionable.
+        const body = (await res.json().catch(() => ({}))) as { error?: string }
+        setCpInlineMsg({ kind: 'error', text: body.error ?? 'Invalid request' })
+        return
+      }
+      // D-18 case 3: 500 / network / anything else.
+      setCpInlineMsg({ kind: 'error', text: 'Something went wrong. Try again.' })
+    } catch {
+      setCpInlineMsg({ kind: 'error', text: 'Something went wrong. Try again.' })
+    } finally {
+      setCpSubmitting(false)
+    }
+  }, [cpCurrent, cpNew])
+
+  const handleCpCancel = useCallback(() => {
+    setCpExpanded(false)
+    setCpCurrent('')
+    setCpNew('')
+    setCpInlineMsg(null)
+    setCpShowCurrent(false)
+    setCpShowNew(false)
+  }, [])
+
   const handleTimezoneSave = async () => {
     setTimezoneSaving(true)
     try {
@@ -213,7 +291,9 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-medium mb-4">Settings</h1>
 
       {/* D-06: Vigil Account — first card in Settings content, shows
-          authenticated user's email from GET /v1/me + Sign out button. */}
+          authenticated user's email from GET /v1/me + Sign out button.
+          Phase 110 (AUTH-09 D-15..D-18): inline expandable Change Password
+          form. Mirrors Google card inline-confirm UX (lines 247-273 below). */}
       <section className="bg-gray-900 border border-gray-900/40 rounded-lg p-5 mb-4">
         <h2 className="text-lg font-medium">Vigil Account</h2>
         {accountLoading ? (
@@ -221,6 +301,18 @@ export default function SettingsPage() {
         ) : (
           <p className="text-gray-400 text-sm mt-2">{accountEmail ?? ''}</p>
         )}
+
+        {/* Phase 110 D-15: expandable change-password block, INSIDE the section. */}
+        {!cpExpanded && (
+          <button
+            type="button"
+            onClick={() => setCpExpanded(true)}
+            className="mt-3 mr-3 text-sm text-teal-400 hover:text-teal-300"
+          >
+            Change password
+          </button>
+        )}
+
         <button
           type="button"
           onClick={() => { signOut(); navigate('/auth') }}
@@ -228,6 +320,84 @@ export default function SettingsPage() {
         >
           Sign out
         </button>
+
+        {cpExpanded && (
+          <form onSubmit={handleChangePasswordSubmit} className="mt-4 border-t border-gray-900/40 pt-4 space-y-3">
+            {/* D-16: Current password field with show/hide toggle. */}
+            <div>
+              <label htmlFor="cp-current" className="block text-xs text-gray-400 mb-1">Current password</label>
+              <div className="flex">
+                <input
+                  id="cp-current"
+                  type={cpShowCurrent ? 'text' : 'password'}
+                  value={cpCurrent}
+                  onChange={(e) => setCpCurrent(e.target.value)}
+                  autoComplete="current-password"
+                  className="flex-1 px-3 py-2 bg-gray-900/80 border border-gray-400/30 rounded-l text-white placeholder-gray-400 focus:outline-none focus:border-teal-600"
+                  disabled={cpSubmitting}
+                />
+                <button
+                  type="button"
+                  onClick={() => setCpShowCurrent((v) => !v)}
+                  aria-label={cpShowCurrent ? 'Hide password' : 'Show password'}
+                  className="px-3 bg-gray-900/80 border border-l-0 border-gray-400/30 rounded-r text-gray-400 hover:text-gray-200"
+                >
+                  {cpShowCurrent ? '🙈' : '👁'}
+                </button>
+              </div>
+            </div>
+
+            {/* D-16: New password field with show/hide toggle.
+                NOTE: NO confirm-password field per D-16 + REQUIREMENTS.md
+                Out-of-Scope ("CXL data: 56% conversion hit"). */}
+            <div>
+              <label htmlFor="cp-new" className="block text-xs text-gray-400 mb-1">New password</label>
+              <div className="flex">
+                <input
+                  id="cp-new"
+                  type={cpShowNew ? 'text' : 'password'}
+                  value={cpNew}
+                  onChange={(e) => setCpNew(e.target.value)}
+                  autoComplete="new-password"
+                  className="flex-1 px-3 py-2 bg-gray-900/80 border border-gray-400/30 rounded-l text-white placeholder-gray-400 focus:outline-none focus:border-teal-600"
+                  disabled={cpSubmitting}
+                />
+                <button
+                  type="button"
+                  onClick={() => setCpShowNew((v) => !v)}
+                  aria-label={cpShowNew ? 'Hide password' : 'Show password'}
+                  className="px-3 bg-gray-900/80 border border-l-0 border-gray-400/30 rounded-r text-gray-400 hover:text-gray-200"
+                >
+                  {cpShowNew ? '🙈' : '👁'}
+                </button>
+              </div>
+            </div>
+
+            {cpInlineMsg && (
+              <p className={`text-sm ${cpInlineMsg.kind === 'success' ? 'text-teal-400' : 'text-red-400'}`}>
+                {cpInlineMsg.text}
+              </p>
+            )}
+
+            <div className="flex items-center gap-2">
+              <button
+                type="submit"
+                disabled={cpSubmitting || !cpCurrent || !cpNew}
+                className="px-3 py-1 bg-teal-600 hover:bg-teal-500 rounded text-white text-sm disabled:opacity-50"
+              >
+                {cpSubmitting ? 'Saving…' : 'Save'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCpCancel}
+                disabled={cpSubmitting}
+                className="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
       </section>
 
       <section className="bg-gray-900 border border-gray-900/40 rounded-lg p-5">
