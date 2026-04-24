@@ -36,6 +36,13 @@ export const users = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
+    // Phase 110 (AUTH-09 D-01): bearerAuth gate compares jwt.iat to
+    // floor(passwordChangedAt/1000); change-password handler writes new Date()
+    // here AFTER the password hash update commits (D-14). No DEFAULT — the
+    // 0015 migration backfills existing rows to created_at so prior JWTs
+    // (iat >= floor(created_at/1000)) keep working on deploy (D-03).
+    passwordChangedAt: timestamp("password_changed_at", { withTimezone: true })
+      .notNull(),
   },
   (table) => [uniqueIndex("uq_users_email").on(table.email)],
 );
