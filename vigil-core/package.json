@@ -31,7 +31,8 @@
     "jose": "^6.2.2",
     "pdfkit": "^0.18.0",
     "postgres": "^3.4.9",
-    "posthog-node": "^5.29.2"
+    "posthog-node": "^5.29.2",
+    "resend": "^6.12.2"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
