@@ -33,16 +33,20 @@ const sql = postgres(DATABASE_URL, { max: 1 });
 try {
   // Create users table if not exists — migration 0012 will also create it with IF NOT EXISTS;
   // we need it to exist here so we can INSERT before the migrator runs.
+  // Phase 110 (0015) added password_changed_at NOT NULL — include it so the INSERT
+  // below works on prod (where 0015 already ran) AND on fresh DBs (where this
+  // bootstrap CREATE runs first).
   await sql`CREATE TABLE IF NOT EXISTS users (
     id serial PRIMARY KEY NOT NULL,
     email text NOT NULL,
     password_hash text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    password_changed_at timestamp with time zone DEFAULT now() NOT NULL
   )`;
   await sql`CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email ON users USING btree (email)`;
 
-  await sql`INSERT INTO users (email, password_hash) VALUES (${seedEmail}, ${PLACEHOLDER_HASH}) ON CONFLICT (email) DO NOTHING`;
+  await sql`INSERT INTO users (email, password_hash, password_changed_at) VALUES (${seedEmail}, ${PLACEHOLDER_HASH}, NOW()) ON CONFLICT (email) DO NOTHING`;
 
   // Expose seed email to the migration session via a GUC so the DO-block in 0012 can read it.
   // ALTER DATABASE persists across reconnects within a deploy.
