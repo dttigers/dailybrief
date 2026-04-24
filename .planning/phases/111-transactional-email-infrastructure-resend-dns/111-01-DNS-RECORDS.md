@@ -103,6 +103,16 @@ Resend banner: _"Domain verified: Your domain is ready to send emails."_
 
 ## Resend domain-level tracking (replaces Plan 02's removed per-send click_tracking)
 
-_Pending — domain settings only unlock after DNS verification passes. To be done between Task 3 and Plan 03 Task 3 (live send)._
+**Status: off by default — no tracking subdomain configured.** Verified via Resend dashboard at 2026-04-24.
 
-Resend SDK v6.12.2 removed per-send `click_tracking` / `open_tracking` options. Mitigation T-111-09 (Apple Mail pre-fetch breaking single-use reset tokens) relocates from code-level to domain-level — click + open tracking must be toggled OFF in the Resend domain settings UI once verification enables access to it.
+Resend SDK v6.12.2 removed per-send `click_tracking` / `open_tracking` options. Mitigation T-111-09 (Apple Mail pre-fetch breaking single-use reset tokens) relocates from code-level to domain-level.
+
+What we found in the Resend UI:
+- The `vigilhub.io` domain Configuration tab routes to `/domains/<id>/tracking` which is a **"New tracking subdomain" form**, not an edit-existing-settings page.
+- No tracking subdomain exists on `vigilhub.io`. Resend's model is opt-in: tracking only applies when you create a tracking subdomain (e.g. `links.vigilhub.io`) and check "Enable click tracking" / "Enable open tracking" in that form.
+- The form's click-tracking checkbox appears pre-checked as a **form default for future opt-in**, but no submission was made (the "Add domain" button was never clicked), so no tracking config was persisted.
+- Account Settings has no separate tracking toggle (confirmed by human operator).
+
+Net behavior: `emails.send(...)` payloads from vigil-core do NOT include `click_tracking` / `open_tracking` fields (asserted by `email-service.test.ts` — grep for "payload must NOT include click_tracking"), AND no domain-level tracking subdomain rewrites URLs on Resend's side. The `<a href>` in delivered email HTML should be the verbatim URL passed in.
+
+**Empirical verification deferred to Plan 03 Task 3** — acceptance criterion requires the Gmail raw-source `<a href>` to start with `https://app.vigilhub.io/auth/reset?token=smoke-test-` with NO intermediate `link.resend.com` / `track.` / `r.resend.com` tracking domain. If that check fails we revisit tracking settings before marking phase complete.
