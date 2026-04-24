@@ -160,3 +160,332 @@ describe("POST /v1/auth/login — generic errors + JWT mint (D-12..D-15)", () =>
 
   it.skip("TODO Plan 03: login response time is within 3x of a miss (timing-safe via dummy-hash verify on miss)", () => {});
 });
+
+// ── Phase 110 (AUTH-09) POST /v1/auth/change-password handler tests ─────────
+//
+// Handler lives in vigil-core/src/routes/change-password.ts (NEW protected
+// router mounted in index.ts AFTER bearerAuth — D-09 'index.ts:151 pattern').
+//
+// CP-CHG-01: success — 200 + { token, user } + DB row updated
+// CP-CHG-02: wrong currentPassword → 401 "Invalid credentials"
+// CP-CHG-03: newPassword too short → 400 length error ("Password must be 12-128 characters")
+// CP-CHG-04: newPassword same as current → 400 "New password must differ from current"
+// CP-CHG-05: malformed JSON body → 400 "Invalid JSON body"
+// CP-CHG-06: D-14 ordering pin — db.update commits BEFORE signToken returns
+
+describe("POST /v1/auth/change-password — D-09..D-14 + ordering pin (CP-CHG-01..06)", () => {
+  // These tests need a real DB + bearerAuth + a fresh seed user. Skip if no
+  // DATABASE_URL — matches the existing pattern at line 79-82.
+
+  // Helper: mount the NEW changePassword router behind bearerAuth, mirroring
+  // index.ts wiring (changePassword sits AFTER bearerAuth dispatcher).
+  async function buildChangePasswordApp() {
+    const { bearerAuth } = await import("../middleware/auth.js");
+    const { changePassword } = await import("./change-password.js");
+    const app = new Hono();
+    app.use("/v1/*", bearerAuth);
+    app.route("/v1", changePassword);
+    return app;
+  }
+
+  // Helper: insert a test user with a known password.
+  async function seedTestUser(plainPassword: string) {
+    const { db } = await import("../db/connection.js");
+    const { users } = await import("../db/schema.js");
+    const { hashPassword } = await import("../utils/password.js");
+    const { signToken } = await import("../utils/jwt.js");
+    if (!db) throw new Error("db not initialized");
+
+    const nowMs = Date.now();
+    const passwordHash = await hashPassword(plainPassword);
+    const [created] = await db
+      .insert(users)
+      .values({
+        email: `chg-test-${nowMs}-${Math.random().toString(36).slice(2, 8)}@test.local`,
+        passwordHash,
+        passwordChangedAt: new Date(nowMs - 3600 * 1000), // 1h ago — fresh JWT will pass gate
+      })
+      .returning({ id: users.id, email: users.email });
+
+    const token = await signToken(created.id, created.email);
+    return { user: created, token };
+  }
+
+  async function deleteTestUser(userId: number) {
+    const { db } = await import("../db/connection.js");
+    const { users } = await import("../db/schema.js");
+    const { eq } = await import("drizzle-orm");
+    if (!db) return;
+    await db.delete(users).where(eq(users.id, userId));
+  }
+
+  it("CP-CHG-01: success — 200 + { token, user } + passwordHash + passwordChangedAt updated", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { db } = await import("../db/connection.js");
+    const { users } = await import("../db/schema.js");
+    const { eq } = await import("drizzle-orm");
+    const { verifyToken } = await import("../utils/jwt.js");
+    if (!db) {
+      t.skip("db not initialized");
+      return;
+    }
+
+    const oldPassword = "current-password-12";
+    const newPassword = "brand-new-password-34";
+    const { user, token } = await seedTestUser(oldPassword);
+
+    try {
+      const app = await buildChangePasswordApp();
+      const res = await app.fetch(
+        new Request("http://x/v1/auth/change-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ currentPassword: oldPassword, newPassword }),
+        }),
+      );
+
+      assert.equal(res.status, 200);
+      const body = (await res.json()) as {
+        token: string;
+        user: { id: number; email: string };
+      };
+      assert.equal(typeof body.token, "string");
+      assert.equal(body.user.id, user.id);
+      assert.equal(body.user.email, user.email);
+
+      // Returned token verifies via verifyToken
+      const claims = await verifyToken(body.token);
+      assert.equal(Number(claims.sub), user.id);
+
+      // DB row updated
+      const [refreshed] = await db
+        .select({
+          passwordHash: users.passwordHash,
+          passwordChangedAt: users.passwordChangedAt,
+        })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .limit(1);
+      // Old seed hash was for oldPassword; must now hash newPassword instead.
+      // passwordChangedAt was 1h ago at seed; must now be within last 5s.
+      const drift = Date.now() - refreshed.passwordChangedAt.getTime();
+      assert.ok(
+        drift >= 0 && drift < 5000,
+        `passwordChangedAt updated to recent timestamp; drift=${drift}ms`,
+      );
+      assert.ok(
+        refreshed.passwordHash.startsWith("$argon2id$"),
+        "passwordHash remains argon2id format",
+      );
+    } finally {
+      await deleteTestUser(user.id);
+    }
+  });
+
+  it("CP-CHG-02: wrong currentPassword → 401 'Invalid credentials' (D-11 step 2 verbatim)", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { user, token } = await seedTestUser("current-password-12");
+    try {
+      const app = await buildChangePasswordApp();
+      const res = await app.fetch(
+        new Request("http://x/v1/auth/change-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            currentPassword: "wrong-password-12",
+            newPassword: "new-password-12345",
+          }),
+        }),
+      );
+      assert.equal(res.status, 401);
+      const body = (await res.json()) as { error: string };
+      assert.equal(body.error, "Invalid credentials");
+    } finally {
+      await deleteTestUser(user.id);
+    }
+  });
+
+  it("CP-CHG-03: newPassword length 11 → 400 'Password must be 12-128 characters' (D-11 step 3)", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { user, token } = await seedTestUser("current-password-12");
+    try {
+      const app = await buildChangePasswordApp();
+      const res = await app.fetch(
+        new Request("http://x/v1/auth/change-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            currentPassword: "current-password-12",
+            newPassword: "a".repeat(11),
+          }),
+        }),
+      );
+      assert.equal(res.status, 400);
+      const body = (await res.json()) as { error: string };
+      // Pins the literal 12/128 values that change-password.ts duplicates from
+      // routes/auth.ts to keep the protected router decoupled from the public router.
+      assert.equal(body.error, "Password must be 12-128 characters");
+    } finally {
+      await deleteTestUser(user.id);
+    }
+  });
+
+  it("CP-CHG-04: newPassword same as current → 400 'New password must differ from current' (D-12)", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const oldPassword = "same-password-1234";
+    const { user, token } = await seedTestUser(oldPassword);
+    try {
+      const app = await buildChangePasswordApp();
+      const res = await app.fetch(
+        new Request("http://x/v1/auth/change-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            currentPassword: oldPassword,
+            newPassword: oldPassword,
+          }),
+        }),
+      );
+      assert.equal(res.status, 400);
+      const body = (await res.json()) as { error: string };
+      assert.equal(body.error, "New password must differ from current");
+    } finally {
+      await deleteTestUser(user.id);
+    }
+  });
+
+  it("CP-CHG-05: malformed JSON body → 400 'Invalid JSON body' (D-10)", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { user, token } = await seedTestUser("current-password-12");
+    try {
+      const app = await buildChangePasswordApp();
+      const res = await app.fetch(
+        new Request("http://x/v1/auth/change-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: "{not json",
+        }),
+      );
+      assert.equal(res.status, 400);
+      const body = (await res.json()) as { error: string };
+      assert.equal(body.error, "Invalid JSON body");
+    } finally {
+      await deleteTestUser(user.id);
+    }
+  });
+
+  it("CP-CHG-06 (D-14 ORDERING PIN): db.update commits BEFORE signToken — issued JWT iat is AFTER passwordChangedAt write", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { db } = await import("../db/connection.js");
+    const { users } = await import("../db/schema.js");
+    const { eq } = await import("drizzle-orm");
+    const { verifyToken } = await import("../utils/jwt.js");
+    if (!db) {
+      t.skip("db not initialized");
+      return;
+    }
+
+    // Strategy: after a successful change, the returned token's iat (in seconds)
+    // MUST be >= floor(refreshed.passwordChangedAt.getTime()/1000). If signToken
+    // ran BEFORE db.update, iat could be LESS THAN floor(ts/1000) if the DB
+    // write committed in a later second than the iat capture.
+    const oldPassword = "current-password-12";
+    const newPassword = "brand-new-password-34";
+    const { user, token: oldToken } = await seedTestUser(oldPassword);
+
+    try {
+      const app = await buildChangePasswordApp();
+      const res = await app.fetch(
+        new Request("http://x/v1/auth/change-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${oldToken}`,
+          },
+          body: JSON.stringify({ currentPassword: oldPassword, newPassword }),
+        }),
+      );
+      assert.equal(res.status, 200);
+      const body = (await res.json()) as { token: string };
+
+      const claims = await verifyToken(body.token);
+      const iatSeconds = claims.iat;
+
+      // Read the DB to get the recorded passwordChangedAt.
+      const [refreshed] = await db
+        .select({ passwordChangedAt: users.passwordChangedAt })
+        .from(users)
+        .where(eq(users.id, user.id))
+        .limit(1);
+      const gateThreshold = Math.floor(
+        refreshed.passwordChangedAt.getTime() / 1000,
+      );
+
+      // D-14 ordering: signToken AFTER db.update means iat >= gateThreshold,
+      // therefore the new JWT passes the gate (`claims.iat < gateThreshold`
+      // is false). If reordered, iat could be < gateThreshold and the issued
+      // token would bounce against its own write — this assertion catches it.
+      assert.ok(
+        iatSeconds >= gateThreshold,
+        `D-14 ordering: signToken must run AFTER db.update commits. iat=${iatSeconds}, gateThreshold=${gateThreshold}, drift=${iatSeconds - gateThreshold}s`,
+      );
+
+      // Belt-and-suspenders: the returned token must actually pass the gate.
+      // Make a follow-up authenticated request — expect 400 same-as-current,
+      // NOT 401 "Session expired".
+      const followUp = await app.fetch(
+        new Request("http://x/v1/auth/change-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${body.token}`,
+          },
+          body: JSON.stringify({
+            currentPassword: newPassword,
+            newPassword,
+          }),
+        }),
+      );
+      assert.notEqual(
+        followUp.status,
+        401,
+        "newly issued JWT must not bounce against its own passwordChangedAt write",
+      );
+    } finally {
+      await deleteTestUser(user.id);
+    }
+  });
+});
