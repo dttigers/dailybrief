@@ -462,8 +462,8 @@ Plans:
 | 107. Safari Extension Persistence | v3.5 | 6/6 | Complete    | 2026-04-21 |
 
 | 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 3/3 | Complete    | 2026-04-23 |
-| 109. Per-User Scheduler Fan-Out | v3.6 | 3/3 | Complete   | 2026-04-23 |
-| 110. Change Password + password_changed_at Gate | v3.6 | 0/0 | Not started | - |
+| 109. Per-User Scheduler Fan-Out | v3.6 | 3/3 | Complete    | 2026-04-23 |
+| 110. Change Password + password_changed_at Gate | v3.6 | 0/3 | Not started | - |
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 0/0 | Not started | - |
 | 112. Forgot-Password Email Flow | v3.6 | 0/0 | Not started | - |
 | 113. Verify Email on Signup | v3.6 | 0/0 | Not started | - |
@@ -528,7 +528,11 @@ Plans:
   2. A JWT issued before the password change is rejected with 401 when used on any authenticated endpoint after the change — the bearerAuth jwt.iat < password_changed_at gate is active
   3. Submitting an incorrect current password returns 401 with a generic error; the password is not changed
   4. The password_changed_at column exists on the users table and is updated by both change-password and (in Phase 112) reset-password operations
-**Plans**: TBD
+**Plans**: 3 plans
+Plans:
+- [ ] 110-01-PLAN.md — Schema + migration (users.password_changed_at TIMESTAMPTZ NOT NULL via 5-step backfill template; D-01..D-04)
+- [ ] 110-02-PLAN.md — bearerAuth iat-gate + POST /v1/auth/change-password handler + test matrix (gate 5 cases + handler 6 cases incl. D-14 ordering pin); D-05..D-14
+- [ ] 110-03-PLAN.md — PWA inline change-password form + global 401 'Session expired' handler in vigilFetch (D-15..D-19)
 **UI hint**: yes
 
 ### Phase 111: Transactional Email Infrastructure (Resend + DNS)
