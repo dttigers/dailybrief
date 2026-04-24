@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: executing
-stopped_at: Completed 110-01-PLAN.md
-last_updated: "2026-04-24T01:18:50.844Z"
+stopped_at: Completed 110-02-PLAN.md
+last_updated: "2026-04-24T01:37:27.694Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 5
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 ## Current Position
 
 Phase: 110 (change-password-password-changed-at-gate) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-24
 
@@ -64,6 +64,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 109 P02 | 18min | 2 tasks | 2 files |
 | Phase 109 P3 | 11min | 4 tasks | 8 files |
 | Phase 110 P01 | 5min | 3 tasks | 5 files |
+| Phase 110 P02 | 13min | 3 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,10 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 110]: Plan 01: drizzle-kit 0015 SQL draft discarded (re-embedded Phase 108 migration due to missing 0014_snapshot); hand-authored 3-statement 5-step template per D-02
 - [Phase 110]: Plan 01: Rule 3 auto-fix bumped 0015 when=1777267200000 to exceed Phase 108 0014 when=1777180800000 — drizzle-kit migrate orders by when not idx, silently skips out-of-order entries
 - [Phase 110]: Plan 01: Rule 3 auto-fix repaired 0013_snapshot.json duplicate id (Phase 107.1 drift) with fresh UUID; prevId repointed to actual 0012 id — unblocked drizzle-kit generate
+- [Phase 110]: Plan 02: CONTEXT §specifics line 135 wording bug reconciled in CP-GATE-02 — strict-less-than gate means iat == floor(passwordChangedAt/1000) PASSES; test description + comment pin actual live-code semantics
+- [Phase 110]: Plan 02: CP-GATE-04 reframed as 'vk_ unaffected by gate REJECTION' (passwordChangedAt 1y future still 200); 'no DB read on Path 1' claim anchored in code (gate SELECT inside if looksLikeJwt block), not provable by test
+- [Phase 110]: Plan 02: Rule 3 cascade — Plan 01 NOT NULL column forced 4-site passwordChangedAt fix (register insert, claim-flow update, isolation-test seeds A+B, middleware happy-path test). Claim-flow now bumps passwordChangedAt + updatedAt defensively
+- [Phase 110]: Plan 02: D-14 ordering (await db.update BEFORE await signToken) pinned by CP-CHG-06 — asserts iat >= floor(passwordChangedAt/1000) plus follow-up authenticated request that would 401 if reordered
 
 ### Pending Todos
 
@@ -131,7 +136,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-24T01:18:39.788Z
-Stopped at: Completed 110-01-PLAN.md
+Last session: 2026-04-24T01:37:27.688Z
+Stopped at: Completed 110-02-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 108
