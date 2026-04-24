@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: executing
-stopped_at: Phase 110 context gathered
-last_updated: "2026-04-24T00:42:49.269Z"
-last_activity: 2026-04-24 -- Phase 110 planning complete
+stopped_at: Completed 110-01-PLAN.md
+last_updated: "2026-04-24T01:18:50.844Z"
+last_activity: 2026-04-24
 progress:
   total_phases: 5
   completed_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 109 — per-user-scheduler-fan-out
+**Current focus:** Phase 110 — change-password-password-changed-at-gate
 
 ## Current Position
 
-Phase: 109
-Plan: Not started
+Phase: 110 (change-password-password-changed-at-gate) — EXECUTING
+Plan: 2 of 3
 Status: Ready to execute
-Last activity: 2026-04-24 -- Phase 110 planning complete
+Last activity: 2026-04-24
 
 ```
 Phase 108 [          ] 0%   work_order_statuses userId Scoping + Isolation Test
@@ -63,6 +63,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 109 P01 | 12min | 3 tasks | 2 files |
 | Phase 109 P02 | 18min | 2 tasks | 2 files |
 | Phase 109 P3 | 11min | 4 tasks | 8 files |
+| Phase 110 P01 | 5min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,10 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 109]: Plan 01: scheduler fan-out removes seedUserId hard-scope; default getAllUsersFn closes over deps.db; per-user try/catch uses continue (never return); SCH-09 regression guards SC#1/SC#2/SC#4
 - [Phase 109]: Plan 02: /prioritize cache filename scoped to userId (wo-priority-${userId}-${today}-${hash}.json); getCacheKey userId-first positional; no runtime 401 guard (D-09 — global bearerAuth dispatcher) and no startup sweep of pre-migration files (D-10)
 - [Phase 109]: Plan 03: calendar-service userId-required + atomic two-site wiring (9054a5d); first time calendar events reach brief PDF from either path — D-11 makes fetchTodaysEvents/fetchCalendarList require userId (TypeScript build is the forcing function); D-12 commits index.ts + routes/brief-generate.ts wiring atomically; D-13 rewrites TODO(AUTH-06+) in-place (dropped in calendar-service, retained + DEFERRED marker in gmail-workorder-service). Human-verify Path B confirmed graceful degradation: HTTP 200, 19KB PDF, no "No calendar service" log, no stack traces. Path A deferred to post-v3.6 production smoke-test (no local OAuth row on fresh 107.1 dev DB).
+- [Phase 110]: Plan 01: D-03 backfill pinned — password_changed_at = created_at EXACTLY (verified via COUNT(*) WHERE != created_at = 0); zero existing JWTs invalidated by deploy
+- [Phase 110]: Plan 01: drizzle-kit 0015 SQL draft discarded (re-embedded Phase 108 migration due to missing 0014_snapshot); hand-authored 3-statement 5-step template per D-02
+- [Phase 110]: Plan 01: Rule 3 auto-fix bumped 0015 when=1777267200000 to exceed Phase 108 0014 when=1777180800000 — drizzle-kit migrate orders by when not idx, silently skips out-of-order entries
+- [Phase 110]: Plan 01: Rule 3 auto-fix repaired 0013_snapshot.json duplicate id (Phase 107.1 drift) with fresh UUID; prevId repointed to actual 0012 id — unblocked drizzle-kit generate
 
 ### Pending Todos
 
@@ -126,7 +131,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-24T00:03:42.211Z
-Stopped at: Phase 110 context gathered
-Resume file: .planning/phases/110-change-password-password-changed-at-gate/110-CONTEXT.md
+Last session: 2026-04-24T01:18:39.788Z
+Stopped at: Completed 110-01-PLAN.md
+Resume file: None
 Next action: /gsd-plan-phase 108
