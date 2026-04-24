@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
-status: executing
-stopped_at: Completed 110-02-PLAN.md
-last_updated: "2026-04-24T01:37:27.694Z"
+status: verifying
+stopped_at: Completed 110-03-PLAN.md
+last_updated: "2026-04-24T01:45:50.489Z"
 last_activity: 2026-04-24
 progress:
   total_phases: 5
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 
 Phase: 110 (change-password-password-changed-at-gate) — EXECUTING
 Plan: 3 of 3
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-24
 
 ```
@@ -65,6 +65,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 109 P3 | 11min | 4 tasks | 8 files |
 | Phase 110 P01 | 5min | 3 tasks | 5 files |
 | Phase 110 P02 | 13min | 3 tasks | 7 files |
+| Phase 110 P03 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,10 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 110]: Plan 02: CP-GATE-04 reframed as 'vk_ unaffected by gate REJECTION' (passwordChangedAt 1y future still 200); 'no DB read on Path 1' claim anchored in code (gate SELECT inside if looksLikeJwt block), not provable by test
 - [Phase 110]: Plan 02: Rule 3 cascade — Plan 01 NOT NULL column forced 4-site passwordChangedAt fix (register insert, claim-flow update, isolation-test seeds A+B, middleware happy-path test). Claim-flow now bumps passwordChangedAt + updatedAt defensively
 - [Phase 110]: Plan 02: D-14 ordering (await db.update BEFORE await signToken) pinned by CP-CHG-06 — asserts iat >= floor(passwordChangedAt/1000) plus follow-up authenticated request that would 401 if reordered
+- [Phase 110]: Plan 03: D-17 ordering preserved — storeKey(body.token) executes BEFORE any setState or setTimeout; React setState does not fire fetches so execution order is sufficient. Inline comment pins CONTEXT 'vigil_token' typo vs live-code 'vigil_jwt' via storeKey() (api/client.ts:1).
+- [Phase 110]: Plan 03: D-19 body discriminator (not path filter) — any 401 with { error: 'Session expired' } triggers signOut+navigate; 'Invalid credentials' from change-password's wrong-current 401 passes through unchanged. res.clone() keeps caller's body consumable.
+- [Phase 110]: Plan 03: Emoji eye-icon toggles (👁/🙈) used instead of adding lucide-react/react-icons dep — zero-dep, aria-label accessible. D-16 'no confirm-password field' satisfied by show/hide toggle.
+- [Phase 110]: Plan 03: Pre-existing SettingsPage.test.tsx:104 WR-03 assertion failure (unrelated — asserts raw 'invalid_state' code but WR-03 allowlist maps to friendly text) logged to deferred-items.md. Not caused by this plan — confirmed via git stash + test on prior commit.
 
 ### Pending Todos
 
@@ -136,7 +141,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-24T01:37:27.688Z
-Stopped at: Completed 110-02-PLAN.md
+Last session: 2026-04-24T01:45:36.968Z
+Stopped at: Completed 110-03-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 108
