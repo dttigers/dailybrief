@@ -127,14 +127,14 @@ function makeCaptureSpy(): {
   fn: (
     userId: number | string | null,
     err: unknown,
-    context: Record<string, string | number | boolean | undefined>,
+    context?: Record<string, string | number | boolean | undefined>,
   ) => void;
 } {
   const calls: CaptureArgs[] = [];
   return {
     calls,
     fn: (userId, err, context) => {
-      calls.push({ userId, err, context });
+      calls.push({ userId, err, context: context ?? {} });
     },
   };
 }
