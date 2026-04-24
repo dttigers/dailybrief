@@ -275,6 +275,103 @@ test("sendPasswordResetEmail embeds the reset URL verbatim in the HTML href — 
   );
 });
 
+test("sendPasswordResetEmail HTML-escapes the reset URL in both href and visible-text slots (WR-01 — defensive XSS guard)", async () => {
+  // Defensive: even though current AUTH-10 callers build URLs from
+  // crypto.randomBytes() hex tokens + a trusted origin, the module accepts
+  // `resetUrl: string` with no validator. If a future caller ever passes a URL
+  // containing HTML-significant characters, the href-attribute and visible-<p>
+  // slots must encode them — otherwise we hand attackers a stored-XSS-via-email
+  // primitive (preview pane / webmail rendering).
+  const malicious =
+    'https://app.vigilhub.io/auth/reset?token=abc"><script>alert(1)</script>&x=<y>';
+  const client = makeOkClient();
+  const deps: EmailServiceDeps = {
+    resendClient: client as unknown as EmailServiceDeps["resendClient"],
+  };
+  const service = createEmailService(deps);
+  await service.sendPasswordResetEmail("user@example.com", malicious);
+  const args = client.captured!;
+  assert.ok(typeof args.html === "string", "html must be a string");
+  const html = args.html!;
+
+  // The raw, unescaped URL must NOT appear anywhere in the HTML body.
+  assert.equal(
+    html.includes(malicious),
+    false,
+    "raw unescaped URL must not appear verbatim in HTML — that would re-introduce the XSS",
+  );
+
+  // The HTML must NOT contain a live <script> tag or unescaped `">` attribute
+  // breakout sequence sourced from the URL.
+  assert.equal(
+    /<script[\s>]/i.test(html),
+    false,
+    "HTML must not contain a live <script> tag injected via the URL",
+  );
+
+  // The five HTML-significant characters must be entity-encoded.
+  // The malicious URL contains `"`, `<`, `>`, and `&` — all must be encoded.
+  assert.ok(
+    html.includes("&quot;"),
+    'HTML must encode `"` as &quot; in the href slot',
+  );
+  assert.ok(
+    html.includes("&lt;"),
+    "HTML must encode `<` as &lt; (both in href and visible-text slot)",
+  );
+  assert.ok(
+    html.includes("&gt;"),
+    "HTML must encode `>` as &gt;",
+  );
+  assert.ok(
+    html.includes("&amp;"),
+    "HTML must encode `&` as &amp;",
+  );
+
+  // The plaintext body is NOT HTML-parsed — it should contain the URL verbatim
+  // so a copy-paste workflow still produces the intended URL.
+  assert.ok(typeof args.text === "string");
+  assert.ok(
+    (args.text as string).includes(malicious),
+    "plaintext body must keep the raw URL — text/plain is not HTML-parsed",
+  );
+});
+
+test("sendEmailVerificationEmail HTML-escapes the verify URL in both href and visible-text slots (WR-01 — defensive XSS guard)", async () => {
+  // Mirrors the password-reset XSS guard for AUTH-11. Same threat model.
+  const malicious =
+    'https://app.vigilhub.io/auth/verify?token=xyz"><img src=x onerror=alert(1)>&z=<a>';
+  const client = makeOkClient();
+  const deps: EmailServiceDeps = {
+    resendClient: client as unknown as EmailServiceDeps["resendClient"],
+  };
+  const service = createEmailService(deps);
+  await service.sendEmailVerificationEmail("user@example.com", malicious);
+  const args = client.captured!;
+  assert.ok(typeof args.html === "string");
+  const html = args.html!;
+
+  assert.equal(
+    html.includes(malicious),
+    false,
+    "raw unescaped URL must not appear verbatim in HTML",
+  );
+  assert.equal(
+    /<img[\s>]/i.test(html),
+    false,
+    "HTML must not contain an injected <img> tag from the URL",
+  );
+  assert.ok(html.includes("&quot;"), "must encode `\"`");
+  assert.ok(html.includes("&lt;"), "must encode `<`");
+  assert.ok(html.includes("&gt;"), "must encode `>`");
+  assert.ok(html.includes("&amp;"), "must encode `&`");
+
+  assert.ok(
+    (args.text as string).includes(malicious),
+    "plaintext body must keep the raw URL — text/plain is not HTML-parsed",
+  );
+});
+
 test("sendPasswordResetEmail passes both html and text bodies to Resend (D-08 multipart fallback)", async () => {
   const client = makeOkClient();
   const deps: EmailServiceDeps = {

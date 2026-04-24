@@ -63,6 +63,23 @@ function hashRecipient(to: string): string {
     .slice(0, 16);
 }
 
+// ── HTML attribute / body escaper (WR-01) ─────────────────────────────────────
+// Defensive: although AUTH-10/AUTH-11 callers build URLs from
+// crypto.randomBytes() hex tokens + a trusted origin, this module accepts
+// `resetUrl: string` / `verifyUrl: string` with no validator. Escape the five
+// HTML-significant characters at every interpolation point — both the
+// `href="..."` attribute slot AND the visible-text `<p>` slot (where `<` would
+// still be parsed). Defeats stored-XSS-via-email if a future caller ever
+// derives the URL from user input.
+function escapeHtmlAttr(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 // ── Narrowing helpers for the mock and real Resend result shapes ──────────────
 
 interface ResendResult {
@@ -164,14 +181,17 @@ export function createEmailService(deps?: EmailServiceDeps): {
     resetUrl: string,
   ): Promise<EmailSendResult> => {
     const subject = "Reset your Vigil password";
+    // WR-01: escape URL at both href AND visible-text interpolation slots.
+    // Plaintext body uses the raw URL — text/plain is not HTML-parsed.
+    const safeUrl = escapeHtmlAttr(resetUrl);
     const html = `<!DOCTYPE html>
 <html><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f6f6f6; padding: 24px;">
 <div style="max-width: 560px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 8px;">
 <h1 style="margin: 0 0 16px 0; font-size: 20px; color: #111;">Reset your Vigil password</h1>
 <p style="margin: 0 0 16px 0; color: #333; line-height: 1.5;">Click the button below to set a new password. This link expires in 1 hour and can only be used once.</p>
-<p style="margin: 24px 0;"><a href="${resetUrl}" style="display: inline-block; background: #1D9E75; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: 600;">Set new password</a></p>
+<p style="margin: 24px 0;"><a href="${safeUrl}" style="display: inline-block; background: #1D9E75; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: 600;">Set new password</a></p>
 <p style="margin: 16px 0 0 0; color: #666; font-size: 14px;">Or paste this link into your browser:</p>
-<p style="margin: 4px 0 0 0; color: #1D9E75; font-size: 13px; word-break: break-all;">${resetUrl}</p>
+<p style="margin: 4px 0 0 0; color: #1D9E75; font-size: 13px; word-break: break-all;">${safeUrl}</p>
 <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
 <p style="margin: 0; color: #999; font-size: 12px;">If you didn't request this, you can safely ignore this email.</p>
 </div></body></html>`;
@@ -192,14 +212,17 @@ If you didn't request this, ignore this email.`;
     verifyUrl: string,
   ): Promise<EmailSendResult> => {
     const subject = "Verify your Vigil email";
+    // WR-01: escape URL at both href AND visible-text interpolation slots.
+    // Plaintext body uses the raw URL — text/plain is not HTML-parsed.
+    const safeUrl = escapeHtmlAttr(verifyUrl);
     const html = `<!DOCTYPE html>
 <html><body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f6f6f6; padding: 24px;">
 <div style="max-width: 560px; margin: 0 auto; background: #ffffff; padding: 32px; border-radius: 8px;">
 <h1 style="margin: 0 0 16px 0; font-size: 20px; color: #111;">Verify your Vigil email</h1>
 <p style="margin: 0 0 16px 0; color: #333; line-height: 1.5;">Confirm this is your email so we can send you important account notifications. This link expires in 24 hours.</p>
-<p style="margin: 24px 0;"><a href="${verifyUrl}" style="display: inline-block; background: #1D9E75; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: 600;">Verify email</a></p>
+<p style="margin: 24px 0;"><a href="${safeUrl}" style="display: inline-block; background: #1D9E75; color: #ffffff; padding: 12px 20px; text-decoration: none; border-radius: 6px; font-weight: 600;">Verify email</a></p>
 <p style="margin: 16px 0 0 0; color: #666; font-size: 14px;">Or paste this link into your browser:</p>
-<p style="margin: 4px 0 0 0; color: #1D9E75; font-size: 13px; word-break: break-all;">${verifyUrl}</p>
+<p style="margin: 4px 0 0 0; color: #1D9E75; font-size: 13px; word-break: break-all;">${safeUrl}</p>
 <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
 <p style="margin: 0; color: #999; font-size: 12px;">If you didn't request this, you can safely ignore this email.</p>
 </div></body></html>`;
