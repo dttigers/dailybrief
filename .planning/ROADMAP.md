@@ -464,7 +464,7 @@ Plans:
 | 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 3/3 | Complete    | 2026-04-23 |
 | 109. Per-User Scheduler Fan-Out | v3.6 | 3/3 | Complete    | 2026-04-23 |
 | 110. Change Password + password_changed_at Gate | v3.6 | 3/3 | Complete    | 2026-04-24 |
-| 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 0/3 | Planned | - |
+| 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 3/3 | Complete    | 2026-04-24 |
 | 112. Forgot-Password Email Flow | v3.6 | 0/0 | Not started | - |
 | 113. Verify Email on Signup | v3.6 | 0/0 | Not started | - |
 | 114. Safari Extension Quick-Capture Parity | v3.6 | 0/0 | Not started | - |
@@ -479,7 +479,7 @@ Plans:
 - [x] **Phase 108: work_order_statuses userId Scoping + Isolation Test** - userId FK migration + four call-site scope fix + W-02 brief PDF isolation test (completed 2026-04-23)
 - [x] **Phase 109: Per-User Scheduler Fan-Out** - generate-scheduler tick() iterates all users; per-user try/catch with continue; prioritize cache key includes userId (completed 2026-04-23)
 - [x] **Phase 110: Change Password + password_changed_at Gate** - POST /v1/auth/change-password + bearerAuth iat gate + PWA inline form (completed 2026-04-24)
-- [ ] **Phase 111: Transactional Email Infrastructure (Resend + DNS)** - Resend account + DKIM/SPF/DMARC on vigilhub.io + email-service.ts module + Railway env
+- [x] **Phase 111: Transactional Email Infrastructure (Resend + DNS)** - Resend account + DKIM/SPF/DMARC on vigilhub.io + email-service.ts module + Railway env (completed 2026-04-24)
 - [ ] **Phase 112: Forgot-Password Email Flow** - POST /v1/auth/forgot-password + POST /v1/auth/reset-password + password_reset_tokens migration + PWA pages
 - [ ] **Phase 113: Verify Email on Signup** - emailVerifiedAt migration + register hook + GET /v1/auth/verify-email/:token + resend endpoint + PWA banner
 - [ ] **Phase 114: Safari Extension Quick-Capture Parity** - popup.html + popup.js delta to match Chrome Phase 94; Xcode rebuild + UAT
@@ -547,9 +547,9 @@ Plans:
   5. RESEND_API_KEY env var is set in Railway Variables and present in vigil-core/.env.example (commented out) for new developer onboarding
 **Plans**: 3 plans
 Plans:
-- [ ] 111-01-PLAN.md — DNS + Resend dashboard (SPF/DKIM/DMARC on vigilhub.io, Resend Verified) — manual checkpoints (D-01..D-03)
-- [ ] 111-02-PLAN.md — email-service.ts module (lazy null-init + typed wrappers + click_tracking:false + PII hashing) + tests + .env.example (D-04..D-12)
-- [ ] 111-03-PLAN.md — Railway env injection (RESEND_API_KEY + VIGIL_APP_BASE_URL) + smoke-test-email.ts + live send + Gmail raw-source verification
+- [x] 111-01-PLAN.md — DNS + Resend dashboard (SPF/DKIM/DMARC on vigilhub.io, Resend Verified) — manual checkpoints (D-01..D-03)
+- [x] 111-02-PLAN.md — email-service.ts module (lazy null-init + typed wrappers + click_tracking:false + PII hashing) + tests + .env.example (D-04..D-12)
+- [x] 111-03-PLAN.md — Railway env injection (RESEND_API_KEY + VIGIL_APP_BASE_URL) + smoke-test-email.ts + live send + Gmail raw-source verification
 **UI hint**: no
 
 ### Phase 112: Forgot-Password Email Flow
