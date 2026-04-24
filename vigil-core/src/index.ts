@@ -33,6 +33,7 @@ import { calendar } from "./routes/calendar.js";
 import { googleAuth } from "./routes/google-auth.js";
 import { googleStatus } from "./routes/google-status.js";
 import { auth as authRoutes } from "./routes/auth.js";
+import { changePassword } from "./routes/change-password.js";
 import { me } from "./routes/me.js";
 import { captureException, shutdownPosthog } from "./analytics/posthog.js";
 import { settings } from "./routes/settings.js";
@@ -150,6 +151,12 @@ app.route("/v1", triage);
 app.route("/v1", affirmation);
 app.route("/v1", insights);
 app.route("/v1", prioritize);
+// Phase 110 (AUTH-09 D-09): change-password is a NEW protected router.
+// Mounted AFTER the bearerAuth dispatcher at line 116 (mirrors prioritize
+// pattern). The handler does `c.get("userId") as number` and the dispatcher
+// guarantees that's non-null. Do NOT move this above line 116 — would create
+// a silent auth bypass (see WR-02 mount-order comment at lines 124-130).
+app.route("/v1", changePassword);
 app.route("/v1", describeImage);
 app.route("/v1", processPhoto);
 app.route("/v1", processAudio);
