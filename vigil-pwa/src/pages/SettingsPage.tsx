@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useSearchParams, useNavigate } from 'react-router'
 import { useGoogleStatus } from '../hooks/useGoogleStatus'
 import {
@@ -69,6 +69,22 @@ export default function SettingsPage() {
   const [cpShowNew, setCpShowNew] = useState(false)
   const [cpInlineMsg, setCpInlineMsg] = useState<{ kind: 'success' | 'error'; text: string } | null>(null)
   const [cpSubmitting, setCpSubmitting] = useState(false)
+  // WR-02 (Phase 110 review fix): track the success-collapse setTimeout id so
+  // we can clear it on unmount, cancel, or a subsequent submit. Previously the
+  // timer leaked — on rapid navigation it fired setState on an unmounted
+  // component, and on repeated submits an older timer could clobber state set
+  // by a newer one (e.g. collapse a re-opened form).
+  const cpSuccessTimerRef = useRef<number | null>(null)
+
+  // WR-02: clear any pending collapse timer when the component unmounts.
+  useEffect(() => {
+    return () => {
+      if (cpSuccessTimerRef.current !== null) {
+        window.clearTimeout(cpSuccessTimerRef.current)
+        cpSuccessTimerRef.current = null
+      }
+    }
+  }, [])
 
   // D-07: fetch authenticated user email for Vigil Account section.
   // Silent on failure — no error banner; absence renders empty string.
@@ -187,9 +203,16 @@ export default function SettingsPage() {
         setCpCurrent('')
         setCpNew('')
         // Collapse the form after 2s.
-        setTimeout(() => {
+        // WR-02: clear any existing pending collapse (from a prior success
+        // within the same mount) before scheduling a new one — prevents an
+        // older timer from collapsing a freshly-reopened form.
+        if (cpSuccessTimerRef.current !== null) {
+          window.clearTimeout(cpSuccessTimerRef.current)
+        }
+        cpSuccessTimerRef.current = window.setTimeout(() => {
           setCpExpanded(false)
           setCpInlineMsg(null)
+          cpSuccessTimerRef.current = null
         }, 2000)
         return
       }
@@ -221,6 +244,13 @@ export default function SettingsPage() {
   }, [cpCurrent, cpNew])
 
   const handleCpCancel = useCallback(() => {
+    // WR-02: cancel clobbers the form state — cancel any pending
+    // success-collapse timer too, so it cannot fire later and wipe state
+    // set after the cancel (e.g. user cancels, re-opens, types).
+    if (cpSuccessTimerRef.current !== null) {
+      window.clearTimeout(cpSuccessTimerRef.current)
+      cpSuccessTimerRef.current = null
+    }
     setCpExpanded(false)
     setCpCurrent('')
     setCpNew('')
