@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { getGoogleStatus, disconnectGoogle, redirectToGoogleAuth, getPrintSchedule, setPrintSchedule, signOut } from './client'
+import { getGoogleStatus, disconnectGoogle, redirectToGoogleAuth, getPrintSchedule, setPrintSchedule, signOut, vigilFetch } from './client'
 
 describe('api/client Google methods', () => {
   beforeEach(() => {
@@ -180,5 +180,109 @@ describe('api/client signOut', () => {
     } finally {
       window.removeEventListener('vigil:signout', listener)
     }
+  })
+})
+
+// ── Phase 110 (AUTH-09 D-19): global 'Session expired' handler ─────────────
+//
+// Test framework: vitest (confirmed by client.test.ts:1). Patterns mirror the
+// existing tests above: vi.stubGlobal for fetch + window.location, with
+// vi.restoreAllMocks() in beforeEach for cleanup (matches line 6).
+
+describe("vigilFetch — D-19 'Session expired' handler", () => {
+  beforeEach(() => {
+    vi.restoreAllMocks()
+    sessionStorage.setItem('vigil_jwt', 'test-jwt')
+  })
+
+  afterEach(() => {
+    sessionStorage.removeItem('vigil_jwt')
+  })
+
+  it("triggers signOut + navigation when 401 body is { error: 'Session expired' }", async () => {
+    const signoutSpy = vi.fn()
+    window.addEventListener('vigil:signout', signoutSpy)
+
+    // Use vi.stubGlobal for both fetch and location — matches existing pattern
+    // at lines 15-19 (fetch); auto-cleaned by vi.restoreAllMocks() in beforeEach.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: 'Session expired' }), { status: 401 }),
+      ),
+    )
+    vi.stubGlobal('location', { href: '' })
+
+    const res = await vigilFetch('/v1/some-authenticated-route')
+
+    // Sign-out event fired
+    expect(signoutSpy).toHaveBeenCalledTimes(1)
+    // Storage cleared by signOut()
+    expect(sessionStorage.getItem('vigil_jwt')).toBeNull()
+    // Navigation forced
+    expect(window.location.href).toBe('/auth')
+    // Original response still readable by caller
+    const body = (await res.json()) as { error: string }
+    expect(body.error).toBe('Session expired')
+
+    window.removeEventListener('vigil:signout', signoutSpy)
+  })
+
+  it("does NOT trigger signOut for 401 with a DIFFERENT body ('Invalid credentials')", async () => {
+    const signoutSpy = vi.fn()
+    window.addEventListener('vigil:signout', signoutSpy)
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: 'Invalid credentials' }), { status: 401 }),
+      ),
+    )
+    vi.stubGlobal('location', { href: '' })
+
+    const res = await vigilFetch('/v1/auth/change-password', { method: 'POST' })
+
+    expect(signoutSpy).toHaveBeenCalledTimes(0)
+    // Storage NOT cleared
+    expect(sessionStorage.getItem('vigil_jwt')).toBe('test-jwt')
+    // No navigation
+    expect(window.location.href).toBe('')
+    // Caller can still read body
+    const body = (await res.json()) as { error: string }
+    expect(body.error).toBe('Invalid credentials')
+
+    window.removeEventListener('vigil:signout', signoutSpy)
+  })
+
+  it("does NOT throw on a non-JSON 401 body", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(
+        new Response('<html>401 Unauthorized</html>', {
+          status: 401,
+          headers: { 'Content-Type': 'text/html' },
+        }),
+      ),
+    )
+    vi.stubGlobal('location', { href: '' })
+
+    // Must not throw
+    const res = await vigilFetch('/v1/some-route')
+    expect(res.status).toBe(401)
+    // Storage NOT cleared (body did not match)
+    expect(sessionStorage.getItem('vigil_jwt')).toBe('test-jwt')
+  })
+
+  it("passes through 200 responses unchanged", async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(
+        new Response(JSON.stringify({ ok: true }), { status: 200 }),
+      ),
+    )
+
+    const res = await vigilFetch('/v1/some-route')
+    expect(res.status).toBe(200)
+    expect(sessionStorage.getItem('vigil_jwt')).toBe('test-jwt')
   })
 })

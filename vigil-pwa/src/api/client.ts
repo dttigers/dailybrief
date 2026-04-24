@@ -31,12 +31,31 @@ export const signOut = (): void => {
   window.dispatchEvent(new CustomEvent('vigil:signout'))
 }
 
+/**
+ * Authenticated fetch with cross-cutting 401 'Session expired' handler.
+ *
+ * Phase 110 (AUTH-09 D-19): when any authenticated request returns
+ *   401 + body { error: 'Session expired' }
+ * (the literal body shape from bearerAuth's password_changed_at gate — see
+ * vigil-core/src/middleware/auth.ts), this wrapper:
+ *   1. Clones the response so the caller can still read the body
+ *   2. Calls signOut() — clears sessionStorage and dispatches 'vigil:signout'
+ *   3. Forces a full-page navigation to /auth
+ * The original Response is still returned to the caller. The body
+ * discriminator (`'Session expired'`) is the contract — any endpoint that
+ * returns a 401 with a different body (e.g., /v1/auth/change-password's
+ * 'Invalid credentials' on wrong current password) is UNAFFECTED.
+ *
+ * Without this handler, every authenticated PWA route degrades the moment a
+ * user changes their password on another device — every poll/fetch returns a
+ * cryptic 401 the PWA cannot recover from.
+ */
 export async function vigilFetch(path: string, init?: RequestInit): Promise<Response> {
   const key = getStoredKey()
   const authHeaders: Record<string, string> = key
     ? { Authorization: `Bearer ${key}` }
     : {}
-  return fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -44,6 +63,32 @@ export async function vigilFetch(path: string, init?: RequestInit): Promise<Resp
       ...init?.headers,
     },
   })
+
+  // Phase 110 (AUTH-09 D-19): cross-cutting 401 'Session expired' detection.
+  if (res.status === 401) {
+    // Clone before reading — the original Response body is still consumable
+    // by the caller. Try/catch the JSON parse: a non-JSON 401 body (e.g.,
+    // proxy HTML page) must not throw.
+    try {
+      const probe = res.clone()
+      const body = (await probe.json()) as { error?: string }
+      if (body?.error === 'Session expired') {
+        signOut()
+        // Full-page navigation guarantees a clean state regardless of any
+        // in-flight React Router transitions. The signout event is also
+        // dispatched by signOut() above for any listeners that mount before
+        // the navigation tears the page down.
+        if (typeof window !== 'undefined' && window.location) {
+          window.location.href = '/auth'
+        }
+      }
+    } catch {
+      // Non-JSON 401 body — pass through unchanged. The caller's existing
+      // error-handling code path runs.
+    }
+  }
+
+  return res
 }
 
 /**
