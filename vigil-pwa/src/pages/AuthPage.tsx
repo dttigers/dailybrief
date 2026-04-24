@@ -8,17 +8,24 @@ interface AuthPageProps {
 
 const GENERIC_ERROR = 'Invalid email or password. Please try again.'
 
+function readSessionExpiredFlag(): boolean {
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('reason') === 'session_expired'
+}
+
 export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [sessionExpired, setSessionExpired] = useState<boolean>(readSessionExpiredFlag)
   const navigate = useNavigate()
 
   function toggleMode() {
     setMode((m) => (m === 'login' ? 'signup' : 'login'))
     setError(null)
+    setSessionExpired(false)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -81,6 +88,14 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
         <h1 className="text-2xl font-medium text-white mb-6">
           {isLogin ? 'Sign in to Vigil' : 'Create your account'}
         </h1>
+        {sessionExpired && (
+          <div
+            role="status"
+            className="mb-4 rounded border border-teal-600/40 bg-teal-600/10 px-3 py-2 text-sm text-teal-200"
+          >
+            Your session expired. Please sign in again.
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <label className="block text-sm text-gray-400 mb-2" htmlFor="email">
             Email
