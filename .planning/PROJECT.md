@@ -6,6 +6,8 @@
 
 **Paused:** v3.5 Observability, G2 Resubmit & Capture Repair — 34/34 plans complete but not shipped. Blocked only on G2 physical hardware UAT (device delivery date unknown). Phase 106-05 simulator-session `.ehpk` package + hardware retest carry forward; will close v3.5 when device arrives.
 
+**Phase 110 complete (2026-04-24):** Change password + `password_changed_at` JWT iat-gate — `POST /v1/auth/change-password` mounted on protected router, bearerAuth Path 2 rejects pre-change JWTs with distinct `{error:"Session expired"}` 401, PWA Settings inline form keeps the initiating device logged in (D-17 ordering pinned), global `vigilFetch` 401 handler force-navigates other devices to `/auth?reason=session_expired` with banner. AUTH-09 satisfied. 19 commits pushed to Railway.
+
 **Phase 107.3 complete (2026-04-22):** Prod bind + install.sh + doctor cleanup — vigil-core Railway-aware bind via `RAILWAY_SERVICE_ID` (fixes 502 class of bug), install.sh awk-based identity resolution (pipefail-immune), dailybrief-doctor.sh three-way plist branch (retired/present/missing), verify-phase-107.sh `--external` live `api.vigilhub.io/v1/health` probe.
 
 **Phase 107.2 complete (2026-04-22):** Cross-machine Tailscale dev access — MacBook Pro browser → iMac's `npm run dev` stack via Vite proxy, without weakening prod. Env-gated VIGIL_BIND_HOST (default 127.0.0.1 safe), prod FATAL guard refuses to boot without CORS_ORIGINS, Vite `host: true` + `allowedHosts` + `/v1` proxy, preflight Check 5 surfaces bind + macOS firewall state.
@@ -275,4 +277,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-23 — Phase 109 complete. SCHED-01 validated: scheduler fanned out across all users with per-user error isolation, /prioritize cache filenames scoped by userId, calendar-service userId-required, atomic D-12 two-site wiring makes brief calendar sections live for the first time. v3.6 progress: 2/7 phases complete.*
+*Last updated: 2026-04-24 — Phase 110 complete. AUTH-09 shipped: POST /v1/auth/change-password on protected router, bearerAuth iat-gate invalidates pre-change JWTs with distinct "Session expired" 401, PWA inline form + global 401 handler with ?reason=session_expired banner on AuthPage. Live UAT confirmed cross-device invalidation. v3.6 progress: 3/7 phases complete.*
