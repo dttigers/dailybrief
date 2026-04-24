@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: verifying
-stopped_at: Plan 109-03 complete (human-verify Path B PASS); running phase-level gates
-last_updated: "2026-04-23T23:31:13.863Z"
+stopped_at: Phase 110 context gathered
+last_updated: "2026-04-24T00:03:42.216Z"
 last_activity: 2026-04-23
 progress:
   total_phases: 5
@@ -25,8 +25,8 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 
 ## Current Position
 
-Phase: 109 (per-user-scheduler-fan-out) — EXECUTING
-Plan: 3 of 3
+Phase: 109
+Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-04-23
 
@@ -126,7 +126,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-23T23:31:01.374Z
-Stopped at: Plan 109-03 complete (human-verify Path B PASS); running phase-level gates
-Resume file: None
+Last session: 2026-04-24T00:03:42.211Z
+Stopped at: Phase 110 context gathered
+Resume file: .planning/phases/110-change-password-password-changed-at-gate/110-CONTEXT.md
 Next action: /gsd-plan-phase 108
