@@ -34,6 +34,7 @@ import { googleAuth } from "./routes/google-auth.js";
 import { googleStatus } from "./routes/google-status.js";
 import { auth as authRoutes } from "./routes/auth.js";
 import { changePassword } from "./routes/change-password.js";
+import { forgotPassword } from "./routes/forgot-password.js";
 import { me } from "./routes/me.js";
 import { captureException, shutdownPosthog } from "./analytics/posthog.js";
 import { settings } from "./routes/settings.js";
@@ -109,6 +110,10 @@ app.route("/v1", health);
 // exempted via path check below (Pitfall 8 — CORS preflight would otherwise fail).
 app.route("/v1", authRoutes);
 
+// Phase 112 Plan 02 — forgot-password is unauthenticated (must be reachable
+// without a JWT). Mount BEFORE bearerAuth and exempt the path below.
+app.route("/v1", forgotPassword);
+
 // Auth middleware — all /v1/* routes except /v1/health, register, login, and
 // the Google OAuth callback require a valid API key.
 // Phase 102 RESEARCH Open Q3 (path a): /v1/auth/google/callback stays public
@@ -119,6 +124,7 @@ app.use("/v1/*", async (c, next) => {
   if (c.req.path === "/v1/auth/google/callback") return next(); // callback only
   if (c.req.path === "/v1/auth/register") return next(); // Pitfall 8 — CORS preflight
   if (c.req.path === "/v1/auth/login") return next();
+  if (c.req.path === "/v1/auth/forgot-password") return next(); // Plan 02 ADDED
   return bearerAuth(c, next);
 });
 

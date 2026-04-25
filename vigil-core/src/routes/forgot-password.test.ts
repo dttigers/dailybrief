@@ -85,9 +85,9 @@ describe("POST /v1/auth/forgot-password", () => {
     __resetBucketsForTest();
     sendSpy = mock.fn(async () => ({ status: "sent" as const, id: "test_id" }));
     const route = createForgotPasswordRoute({
-      sendEmailFn: sendSpy as unknown as Parameters<
-        typeof createForgotPasswordRoute
-      >[0]["sendEmailFn"],
+      sendEmailFn: sendSpy as unknown as NonNullable<
+        Parameters<typeof createForgotPasswordRoute>[0]
+      >["sendEmailFn"],
     });
     app = new Hono();
     app.route("/v1", route);
@@ -150,7 +150,11 @@ describe("POST /v1/auth/forgot-password", () => {
     await seedUser(knownEmail);
     await clearTokensFor(knownEmail);
 
+    // Reset per-call so the rate-limit buckets don't fire mid-suite.
+    // Without this, calls 6+ hit the per-IP limit and short-circuit to ~0.4ms,
+    // skewing the median of misses below the median of hits.
     async function timeOne(email: string): Promise<number> {
+      __resetBucketsForTest();
       const t0 = process.hrtime.bigint();
       await app.request("/v1/auth/forgot-password", {
         method: "POST",
@@ -182,9 +186,12 @@ describe("POST /v1/auth/forgot-password", () => {
     const missMedian = median(misses);
     const ratio =
       Math.max(hitMedian, missMedian) / Math.min(hitMedian, missMedian);
-    // SC#1: approximate parity. Allow 1.5x slack — argon2 is ~100-200ms per
-    // call, hit-path adds DB writes + email-service call, miss-path is dummy
-    // verify only.
+    // SC#1: APPROXIMATE parity per CONTEXT D-05 ("Approximate, not constant-time").
+    // Both hit AND miss paths run argon2 verify against DUMMY_HASH (handler
+    // adds verify on hit path explicitly to match miss-path cost). On native
+    // @node-rs/argon2 the dominant op is ~18-19ms; DB writes add ~5-10ms;
+    // measured ratio settles around 1.1-1.3x with the rate-limit bucket reset
+    // in timeOne(). 1.5x leaves headroom for steady-state variance.
     assert.ok(
       ratio < 1.5,
       `hit/miss ratio ${ratio.toFixed(2)} (hit=${hitMedian.toFixed(1)}ms miss=${missMedian.toFixed(1)}ms) exceeds 1.5x — enumeration safety degraded`,
