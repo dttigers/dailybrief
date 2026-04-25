@@ -6,6 +6,8 @@
 
 **Paused:** v3.5 Observability, G2 Resubmit & Capture Repair — 34/34 plans complete but not shipped. Blocked only on G2 physical hardware UAT (device delivery date unknown). Phase 106-05 simulator-session `.ehpk` package + hardware retest carry forward; will close v3.5 when device arrives.
 
+**Phase 112 complete (2026-04-25):** Forgot-password email flow — `password_reset_tokens` table (Plan 01), `POST /v1/auth/forgot-password` (Plan 02, enum-safe 200, hit-path argon2 timing parity, per-IP+per-email rate limit) and `POST /v1/auth/reset-password` (Plan 03, atomic UPDATE-RETURNING claim, password_changed_at bump, 12 TDD tests including D-11 ordering pin), three PWA pages (Plan 04 — ForgotPasswordPage at /auth/forgot, ResetPasswordPage at /auth/reset with NO useEffect-driven fetch as Apple-Mail pre-fetch defense, AuthPage extension with "Forgot password?" link + `?reason=password_reset` banner, sibling routes outside protected Layout). Live UAT (Plan 05) executed end-to-end against Railway + Resend + Gmail on 2026-04-25: SC#1-#5 all PASS; cross-device JWT invalidation observed (Tab A 401'd post-reset, dispatcher signed out + navigated to `/auth?reason=session_expired`). AUTH-10 satisfied.
+
 **Phase 111 complete (2026-04-24):** Transactional email infrastructure (Resend) — `vigilhub.io` verified as a Resend sending domain (DKIM TXT root + SPF/MX at `send.` subdomain + DMARC with `rua=` to gmail), `vigil-core/src/services/email-service.ts` ships typed wrappers (sendPasswordResetEmail, sendEmailVerificationEmail, sendEmail) with lazy null-init mirroring `posthog.ts` pattern, SHA-256 PII hashing, no-key gate (returns `{status:"skipped_no_key"}` cold), and Vigil teal `#1D9E75` CTA. Live smoke send hit jamesonmorrill1@gmail.com Inbox with DKIM/SPF/DMARC=PASS and verbatim `app.vigilhub.io/auth/reset` href (no tracking rewrite). EMAIL-01 satisfied. iCloud personal email coexistence preserved (root SPF untouched).
 
 **Phase 110 complete (2026-04-24):** Change password + `password_changed_at` JWT iat-gate — `POST /v1/auth/change-password` mounted on protected router, bearerAuth Path 2 rejects pre-change JWTs with distinct `{error:"Session expired"}` 401, PWA Settings inline form keeps the initiating device logged in (D-17 ordering pinned), global `vigilFetch` 401 handler force-navigates other devices to `/auth?reason=session_expired` with banner. AUTH-09 satisfied. 19 commits pushed to Railway.
@@ -158,12 +160,13 @@ Capture every thought with zero friction and have the system organize it for you
 - ✓ `work_order_statuses` user scoping — `user_id NOT NULL` FK + composite `(user_id, case_number)` PK, all 4 route call sites scoped, D-23 guardrail flipped, cross-user PUT overwrite structurally prevented (W-01 — v3.6 Phase 108)
 - ✓ GET /v1/brief/:date cross-user isolation — userB receives 404 (not userA's bytes) when requesting a date only userA has; `brief PDF isolation` it() block in `cross-user-isolation.test.ts` (W-02 — v3.6 Phase 108)
 - ✓ Per-user scheduler fan-out — `generate-scheduler.ts` iterates all users with try/catch + `continue` for error isolation; `/prioritize` AI cache filenames scoped by userId (`wo-priority-${userId}-${today}-${hash}.json`); `calendar-service.ts` `fetchTodaysEvents(userId)` and `fetchCalendarList(userId)` required; atomic D-12 two-site wiring (`index.ts` + `routes/brief-generate.ts`) makes calendar events render in briefs for the first time ever (SCHED-01 — v3.6 Phase 109)
+- ✓ Forgot-password email flow — `password_reset_tokens` table with SHA-256 token_hash + atomic UPDATE-RETURNING claim, enum-safe `POST /v1/auth/forgot-password` (timing-parity hit-path argon2 + per-IP/per-email rate limit), `POST /v1/auth/reset-password` (D-11 ordering: claim BEFORE user.update so failed update still burns the token), three PWA pages with Apple-Mail pre-fetch defense (no useEffect-driven fetch on ResetPasswordPage), cross-device JWT invalidation via Phase 110 password_changed_at gate verified live on prod (AUTH-10 — v3.6 Phase 112)
 
 ### Active
 
 **v3.6 (in progress):**
-- [ ] Change password from PWA profile (AUTH-09)
-- [ ] Forgot-password email link (AUTH-10 — introduces transactional email)
+- [x] Change password from PWA profile (AUTH-09 — Phase 110)
+- [x] Forgot-password email link (AUTH-10 — Phase 112)
 - [ ] Verify email on signup (AUTH-11)
 - [ ] Safari extension Phase 94 quick-capture parity (EXT-02)
 
