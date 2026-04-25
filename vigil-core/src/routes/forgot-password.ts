@@ -208,9 +208,19 @@ export function createForgotPasswordRoute(deps?: ForgotPasswordDeps): Hono {
     const origin = process.env["VIGIL_APP_BASE_URL"] || "https://app.vigilhub.io";
     const resetUrl = `${origin}/auth/reset?token=${rawToken}`;
 
-    // Result observed (logged via captureException inside email-service on
-    // failure) but DOES NOT change response shape — D-03 invariant.
-    await sendEmailFn(user.email, resetUrl);
+    // WR-01: fire-and-forget email send so D-05 wall-clock parity is bounded
+    // by local ops (argon2 + DB writes) on BOTH paths. Awaiting Resend here
+    // would stack 50-300ms of network latency on the hit path only — making
+    // the hit path measurably slower than the miss path (which runs argon2
+    // alone). The send itself is invoked synchronously (so test spies record
+    // the call before the response is returned), but the returned promise is
+    // intentionally not awaited. Errors are already captured inside
+    // email-service via captureException; the .catch() here exists only to
+    // prevent Node's unhandledRejection from firing if the send throws.
+    // D-03 invariant preserved: response shape never reflects send outcome.
+    sendEmailFn(user.email, resetUrl).catch((err) => {
+      console.error("[forgot-password] email send failed (background):", err);
+    });
 
     return c.json(ENUM_SAFE_BODY, 200);
   });
