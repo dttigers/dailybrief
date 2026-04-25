@@ -29,21 +29,28 @@ created: 2026-04-25
 
 ## Spacing Scale
 
-Declared values (multiples of 4, mapped to Tailwind utility equivalents in use across SettingsPage + ResetPasswordPage):
+Project-standard spacing set (multiples of 4, extended with two project-pinned values established across SettingsPage and AuthPage):
+
+`{4, 8, 12, 16, 20, 24, 32, 48, 64}`
+
+The values 12px and 20px are **project-wide established tokens**, not phase-specific exceptions:
+- `12px` (`py-3`) is the banner vertical padding used in Phase 112 AuthPage banners and carried forward here — intentionally thinner than section-card padding.
+- `20px` (`p-5`) is the section card padding used in SettingsPage (`p-5`) throughout the project.
+
+Both are confirmed in the live codebase and are part of the project's Tailwind utility scale.
 
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Icon gaps, `gap-1`, tight inline spacing |
 | sm | 8px | `p-2`, `gap-2`, compact inline elements |
-| md | 16px | `p-4`, `mb-4`, default element spacing |
-| lg | 20px | `p-5`, section card padding (matches SettingsPage `p-5`) |
+| banner-v | 12px | `py-3`, Settings banner vertical padding (Phase 112 AuthPage precedent) |
+| md | 16px | `p-4`, `mb-4`, default element spacing; also banner horizontal `px-4` |
+| lg | 20px | `p-5`, section card padding (SettingsPage `p-5` precedent) |
 | xl | 24px | `mb-6`, heading bottom margin |
 | 2xl | 32px | `p-8`, page card padding (matches ResetPasswordPage `p-8`) |
 | 3xl | 48px | Not used in this phase |
 
-Exceptions:
-- Banner padding: `px-4 py-3` (16px / 12px) — matches `p-3` Settings banner precedent from Phase 112 AuthPage banners; 12px vertical is an intentional exception from the 8-point scale to keep banners visually thinner than section cards.
-- Touch target minimum for Resend and Confirm buttons: 44px height via `py-2` + font size. Primary CTA (Confirm) uses `py-2` which renders ~38px; acceptable since this is a desktop-first PWA. No mobile-specific exception required.
+No phase-specific spacing exceptions. All values above are part of the project's established scale.
 
 ---
 
@@ -71,12 +78,14 @@ Source: `vigil-pwa/src/index.css` `@theme` block — canonical token values.
 | Dominant (60%) | --color-gray-900 | #2C2C2A | Page background, section cards, form inputs |
 | Secondary (30%) | --color-gray-400 | #888780 | Subdued text, placeholders, meta labels |
 | Accent (10%) | --color-teal-600 | #0F6E56 | CTA buttons only (Confirm, Resend idle state) |
+| Interactive / Link (brand primary light) | --color-teal-400 | #1D9E75 | Secondary text links (`text-teal-400` for "Go to app" and "Back to app" links) and focus rings (`focus:ring-teal-400`) |
 | Warning surface | --color-warning-50 | #FAEEDA | Settings banner background |
 | Warning border | --color-warning-400 | #BA7517 | Settings banner border + text |
-| Destructive | --color-teal-400 | #1D9E75 | Not used in this phase (no destructive action) |
 | Error text | Tailwind red-400 | (Tailwind default) | Inline error messages — matches AuthPage pattern |
 
 **Accent reserved for:** Confirm button (VerifyEmailPage), Resend button in Idle state (Settings banner). No other elements use accent in this phase.
+
+**No destructive actions in this phase.** No destructive token is needed. `--color-teal-400` is the Vigil primary brand color (brand memory: logo mark teal #1D9E75) — it is used here exclusively as the interactive link and focus-ring color, consistent with its brand role.
 
 **Warning color decision (CONTEXT D-23):**
 - Banner background: `bg-[#FAEEDA]` (--color-warning-50 token; Tailwind v4 maps as `bg-warning-50`)
@@ -392,6 +401,9 @@ No third-party registry components in this phase. All UI is bespoke Tailwind + R
 | Inline error text class (text-red-400) | AuthPage.tsx | codebase |
 | role="alert" on banners | AuthPage.tsx | codebase |
 | role="alert" on error paragraphs | ResetPasswordPage.tsx | codebase |
+| 12px banner-v spacing token | Phase 112 AuthPage `py-3` precedent | codebase |
+| 20px lg spacing token | SettingsPage `p-5` precedent | codebase |
+| teal-400 as link/focus-ring color (not destructive) | brand guidelines (#1D9E75 = primary brand teal) | brand memory |
 
 ---
 
