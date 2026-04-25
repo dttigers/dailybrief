@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: executing
-stopped_at: Completed 112-03-PLAN.md (POST /v1/auth/reset-password endpoint; 12/12 tests pass; live curl smoke confirms route)
-last_updated: "2026-04-25T21:55:57.437Z"
+stopped_at: Completed 112-04-PLAN.md (PWA forgot-password pages — Forgot link + ?reason=password_reset banner on AuthPage; new /auth/forgot + /auth/reset routes; 23/23 plan tests pass)
+last_updated: "2026-04-25T22:06:34.480Z"
 last_activity: 2026-04-25
 progress:
   total_phases: 5
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 ## Current Position
 
 Phase: 112 (forgot-password-email-flow) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-04-25
 
@@ -67,6 +67,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 110 P02 | 13min | 3 tasks | 7 files |
 | Phase 110 P03 | 5min | 2 tasks | 3 files |
 | Phase 112 P03 | 9min | 3 tasks | 3 files |
+| Phase 112 P04 | 7 | 4 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -119,6 +120,9 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 112]: Plan 03: D-11 ordering pinned via Drizzle Proxy mock-DB pattern (counts update() calls; #1→real DB, #2→throws synchronously). Cleaner than manual fluent-object mock; Reflect.get propagates select/insert/delete unchanged.
 - [Phase 112]: Plan 03: Retry-After header floors at 1s — Math.max(1, Math.ceil(...)) so the header never returns 0 even at the bucket boundary (some HTTP clients treat 0 as retry-immediately or skip).
 - [Phase 112]: Plan 03: Test-runner post-suite hang carries forward from Plan 02 — postgres-js connection pool keeps tsx alive after the suite reports green; force-kill needed. All 12 ✔ marks render; no test failures.
+- [Phase 112]: Plan 04: ResetPasswordPage uses useMemo(searchParams.get('token')) at mount with NO useEffect — D-18 form-submit gate enforced at code level, not just behavior. 'does NOT call fetch on mount' test pins it for regression detection.
+- [Phase 112]: Plan 04: Mirrored existing AuthPage.test.tsx Object.defineProperty(window,'location') pattern for the new password_reset banner test — file consistency over Phase 110 anti-pattern flag. Replacing all session_expired tests is out of scope.
+- [Phase 112]: Plan 04: Added describe block 'Forgot password link (AUTH-10 D-14)' with 2 visibility tests (login mode shows, signup hides) beyond the plan's behavior block — D-14 visibility rule pinned at test level for cheap regression insurance.
 
 ### Pending Todos
 
@@ -145,7 +149,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-25T21:55:57.431Z
-Stopped at: Completed 112-03-PLAN.md (POST /v1/auth/reset-password endpoint; 12/12 tests pass; live curl smoke confirms route)
+Last session: 2026-04-25T22:06:23.279Z
+Stopped at: Completed 112-04-PLAN.md (PWA forgot-password pages — Forgot link + ?reason=password_reset banner on AuthPage; new /auth/forgot + /auth/reset routes; 23/23 plan tests pass)
 Resume file: None
 Next action: /gsd-plan-phase 108
