@@ -1,0 +1,113 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-25T02:05:31.616Z",
+  "context": "phase",
+  "phase": "112",
+  "phase_name": "forgot-password-email-flow",
+  "phase_dir": ".planning/phases/112-forgot-password-email-flow",
+  "plan": 3,
+  "task": 1,
+  "total_tasks": 17,
+  "status": "paused",
+  "wave_progress": {
+    "wave_1": "complete",
+    "wave_2": "partial (112-02 done, 112-03 not started)",
+    "wave_3": "not_started",
+    "wave_4": "not_started"
+  },
+  "completed_plans": [
+    {
+      "id": "112-01",
+      "name": "schema + migration",
+      "tasks": "3/3",
+      "summary": ".planning/phases/112-forgot-password-email-flow/112-01-SUMMARY.md",
+      "commits": ["68918bb", "3b80653", "5fed0a1"]
+    },
+    {
+      "id": "112-02",
+      "name": "POST /v1/auth/forgot-password endpoint",
+      "tasks": "3/3",
+      "summary": ".planning/phases/112-forgot-password-email-flow/112-02-SUMMARY.md",
+      "commits": ["ba74fcf", "24b9dc9", "2807348"]
+    }
+  ],
+  "remaining_plans": [
+    {
+      "id": "112-03",
+      "name": "POST /v1/auth/reset-password endpoint",
+      "wave": 2,
+      "autonomous": true,
+      "task_count": 3,
+      "files_modified": [
+        "vigil-core/src/routes/reset-password.ts",
+        "vigil-core/src/routes/reset-password.test.ts",
+        "vigil-core/src/index.ts"
+      ],
+      "status": "not_started",
+      "depends_on": ["112-01"],
+      "shared_files_with_completed": ["vigil-core/src/index.ts"]
+    },
+    {
+      "id": "112-04",
+      "name": "PWA pages — AuthPage extension + ForgotPasswordPage + ResetPasswordPage",
+      "wave": 3,
+      "autonomous": true,
+      "task_count": 4,
+      "depends_on": ["112-02", "112-03"],
+      "status": "not_started"
+    },
+    {
+      "id": "112-05",
+      "name": "live e2e smoke + HUMAN-UAT",
+      "wave": 4,
+      "autonomous": false,
+      "task_count": 3,
+      "depends_on": ["112-01", "112-02", "112-03", "112-04"],
+      "status": "not_started",
+      "human_action_required": "cross-device UAT — Tab A logged in BEFORE reset, observe auto-redirect after"
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Anthropic API repeatedly 529-overloaded during 112-02 executor spawn — orchestrator finished inline instead",
+      "type": "external",
+      "workaround": "fall back to inline orchestrator execution if subagent fails",
+      "blocking": false
+    }
+  ],
+  "human_actions_pending": [],
+  "decisions_made_this_session": [
+    {
+      "decision": "Null-DB defense in handler (treat as miss-path, not 503)",
+      "rationale": "503 leaks DB availability through response shape, breaking enumeration safety. Treating null-DB as miss-path matches D-03 invariant and lets Test 1 pass without DATABASE_URL. Production should never see null-db (boot fails on missing DATABASE_URL), but defense-in-depth.",
+      "phase": "112-02"
+    },
+    {
+      "decision": "Hit-path argon2 verify added for timing parity",
+      "rationale": "RESEARCH §A2 estimated argon2 at 100-200ms; live measurement on @node-rs/argon2 (native Rust binding) shows ~18-19ms. Without argon2 on the hit path, hit < miss → enumeration leak via timing. Both paths now share the same dominant op.",
+      "phase": "112-02"
+    },
+    {
+      "decision": "Rate-limiter bucket reset inside timeOne() for the timing test",
+      "rationale": "Test makes 7 sequential requests against the same handler instance; per-IP rate limit fires after request #5 → calls 6+ short-circuit at <1ms → median of misses gets dragged below median of hits. __resetBucketsForTest() inside timeOne() avoids the false positive without weakening the rate-limit semantics in production.",
+      "phase": "112-02"
+    }
+  ],
+  "uncommitted_files": [
+    ".planning/STATE.md (auto-modified by gsd state begin-phase, harmless)",
+    "vigil-pwa/src/index.css (pre-existing dirty state, NOT touched this phase)",
+    "vigil-pwa/tsconfig.tsbuildinfo (build artifact, untracked, harmless)"
+  ],
+  "next_action": "Spawn gsd-executor for plan 112-03 (reset-password endpoint). Plan is detailed; agent should produce 12 TDD test cases including the load-bearing D-11 ordering pin (mock DB throws on user.update → token IS burned → user requests fresh reset).",
+  "context_notes": "Phase 112 implements AUTH-10. Dependencies on Phase 110 (password_changed_at gate) and Phase 111 (Resend transport) are both verified live. CONTEXT.md has 21 locked decisions D-01..D-21. RESEARCH.md is HIGH confidence. UI-SPEC.md specifies 3 PWA surfaces. Plans were produced by gsd-planner (opus) and approved by gsd-plan-checker. Execution started with worktrees disabled → sequential within waves. Wave 1 ran cleanly via subagent. Wave 2 plan 02 ran with two fallbacks: (a) original executor agent hit API 529, (b) continuation agent also 529, so orchestrator finished inline. Plan 02 ships 10/10 tests at 1.5x timing ratio (actual ~1.1x), cold smoke confirmed enum-safe 200 with no env vars. Both 112-02 and 112-03 modify vigil-core/src/index.ts — Plan 02 already added forgot-password mount + dispatcher exempt; Plan 03 needs to add reset-password mount + dispatcher exempt as a sibling edit (different anchor lines, no merge conflict expected).",
+  "lessons_learned": [
+    {
+      "lesson": "@node-rs/argon2 native Rust binding is ~18-19ms, NOT 100-200ms as RESEARCH §A2 estimated",
+      "application": "Plan 03 should NOT assume argon2 will dominate response time; if it adds timing-parity logic, measure first"
+    },
+    {
+      "lesson": "API 529 overload mid-executor is recoverable — last commit boundary is a clean checkpoint, orchestrator can finish inline",
+      "application": "If 112-03 executor 529s after Task 1, run Task 2+3 inline as orchestrator using the Plan as the script"
+    }
+  ]
+}
