@@ -7,6 +7,8 @@ import { ToastProvider } from './hooks/useToast'
 import ToastHost from './components/ToastHost'
 import Layout from './components/Layout'
 import AuthPage from './pages/AuthPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
+import ResetPasswordPage from './pages/ResetPasswordPage'
 import DashboardPage from './pages/DashboardPage'
 import WorkOrdersPage from './pages/WorkOrdersPage'
 import ProjectsPage from './pages/ProjectsPage'
@@ -60,6 +62,12 @@ export default function App() {
             : <AuthPage onAuthSuccess={handleAuthSuccess} />
         }
       />
+      {/* Phase 112 (AUTH-10) — sibling unauthenticated routes for the forgot-
+          password flow. OUTSIDE the protected Layout cluster (no isAuthenticated
+          guard): users hitting reset links are by definition not logged in, or
+          about to be logged out by the password change. */}
+      <Route path="/auth/forgot" element={<ForgotPasswordPage />} />
+      <Route path="/auth/reset" element={<ResetPasswordPage />} />
       <Route
         path="/*"
         element={
