@@ -465,7 +465,7 @@ Plans:
 | 109. Per-User Scheduler Fan-Out | v3.6 | 3/3 | Complete    | 2026-04-23 |
 | 110. Change Password + password_changed_at Gate | v3.6 | 3/3 | Complete    | 2026-04-24 |
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 3/3 | Complete    | 2026-04-24 |
-| 112. Forgot-Password Email Flow | v3.6 | 4/5 | In Progress|  |
+| 112. Forgot-Password Email Flow | v3.6 | 5/5 | Complete    | 2026-04-25 |
 | 113. Verify Email on Signup | v3.6 | 0/0 | Not started | - |
 | 114. Safari Extension Quick-Capture Parity | v3.6 | 0/0 | Not started | - |
 
@@ -480,7 +480,7 @@ Plans:
 - [x] **Phase 109: Per-User Scheduler Fan-Out** - generate-scheduler tick() iterates all users; per-user try/catch with continue; prioritize cache key includes userId (completed 2026-04-23)
 - [x] **Phase 110: Change Password + password_changed_at Gate** - POST /v1/auth/change-password + bearerAuth iat gate + PWA inline form (completed 2026-04-24)
 - [x] **Phase 111: Transactional Email Infrastructure (Resend + DNS)** - Resend account + DKIM/SPF/DMARC on vigilhub.io + email-service.ts module + Railway env (completed 2026-04-24)
-- [ ] **Phase 112: Forgot-Password Email Flow** - POST /v1/auth/forgot-password + POST /v1/auth/reset-password + password_reset_tokens migration + PWA pages
+- [x] **Phase 112: Forgot-Password Email Flow** - POST /v1/auth/forgot-password + POST /v1/auth/reset-password + password_reset_tokens migration + PWA pages (completed 2026-04-25)
 - [ ] **Phase 113: Verify Email on Signup** - emailVerifiedAt migration + register hook + GET /v1/auth/verify-email/:token + resend endpoint + PWA banner
 - [ ] **Phase 114: Safari Extension Quick-Capture Parity** - popup.html + popup.js delta to match Chrome Phase 94; Xcode rebuild + UAT
 
@@ -568,7 +568,7 @@ Plans:
 - [x] 112-02-PLAN.md — POST /v1/auth/forgot-password endpoint + dual-axis rate limit + dummy argon2 verify on miss (D-03..D-08, D-21) (Wave 2)
 - [x] 112-03-PLAN.md — POST /v1/auth/reset-password endpoint + atomic UPDATE-RETURNING claim + password_changed_at bump (D-09..D-13) (Wave 2)
 - [x] 112-04-PLAN.md — PWA pages: Forgot link + ?reason=password_reset banner on AuthPage; new ForgotPasswordPage at /auth/forgot; new ResetPasswordPage at /auth/reset (D-14..D-20) (Wave 3)
-- [ ] 112-05-PLAN.md — Live e2e smoke (smoke-test-forgot-password.ts) + manual UAT checklist (HUMAN-UAT) covering all 5 SCs (Wave 4)
+- [x] 112-05-PLAN.md — Live e2e smoke (smoke-test-forgot-password.ts) + manual UAT checklist (HUMAN-UAT) covering all 5 SCs (Wave 4)
 **UI hint**: yes
 
 ### Phase 113: Verify Email on Signup
@@ -607,7 +607,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
