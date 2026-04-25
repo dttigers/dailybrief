@@ -139,3 +139,37 @@ describe('AuthPage — Session-expired banner (AUTH-09 D-19)', () => {
     expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 })
+
+describe('AuthPage — Password-reset banner (AUTH-10 D-19)', () => {
+  it('shows banner when URL has ?reason=password_reset', () => {
+    // Mirror the session_expired test's pattern (this file already uses
+    // Object.defineProperty; new tests follow file convention for consistency).
+    const original = window.location
+    Object.defineProperty(window, 'location', {
+      value: { ...original, search: '?reason=password_reset' },
+      writable: true,
+    })
+    try {
+      renderAuth()
+      expect(screen.getByRole('status')).toHaveTextContent(/password reset successfully/i)
+    } finally {
+      Object.defineProperty(window, 'location', { value: original, writable: true })
+    }
+  })
+})
+
+describe('AuthPage — Forgot password link (AUTH-10 D-14)', () => {
+  it('renders "Forgot password?" link in login mode pointing to /auth/forgot', () => {
+    renderAuth()
+    const link = screen.getByRole('link', { name: /forgot password/i })
+    expect(link).toBeInTheDocument()
+    expect(link).toHaveAttribute('href', '/auth/forgot')
+  })
+
+  it('hides "Forgot password?" link in signup mode', async () => {
+    const user = userEvent.setup()
+    renderAuth()
+    await user.click(screen.getByText(/don't have an account/i))
+    expect(screen.queryByRole('link', { name: /forgot password/i })).not.toBeInTheDocument()
+  })
+})
