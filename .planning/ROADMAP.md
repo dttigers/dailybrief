@@ -465,7 +465,7 @@ Plans:
 | 109. Per-User Scheduler Fan-Out | v3.6 | 3/3 | Complete    | 2026-04-23 |
 | 110. Change Password + password_changed_at Gate | v3.6 | 3/3 | Complete    | 2026-04-24 |
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 3/3 | Complete    | 2026-04-24 |
-| 112. Forgot-Password Email Flow | v3.6 | 0/0 | Not started | - |
+| 112. Forgot-Password Email Flow | v3.6 | 3/5 | In Progress|  |
 | 113. Verify Email on Signup | v3.6 | 0/0 | Not started | - |
 | 114. Safari Extension Quick-Capture Parity | v3.6 | 0/0 | Not started | - |
 
@@ -564,9 +564,9 @@ Plans:
   5. The password_reset_tokens table stores token_hash (SHA-256), not the raw token; the raw token appears only in the email URL and never in the DB
 **Plans**: 5 plans
 Plans:
-- [ ] 112-01-PLAN.md — Schema + 0016 migration (password_reset_tokens table; D-01) (Wave 1)
-- [ ] 112-02-PLAN.md — POST /v1/auth/forgot-password endpoint + dual-axis rate limit + dummy argon2 verify on miss (D-03..D-08, D-21) (Wave 2)
-- [ ] 112-03-PLAN.md — POST /v1/auth/reset-password endpoint + atomic UPDATE-RETURNING claim + password_changed_at bump (D-09..D-13) (Wave 2)
+- [x] 112-01-PLAN.md — Schema + 0016 migration (password_reset_tokens table; D-01) (Wave 1)
+- [x] 112-02-PLAN.md — POST /v1/auth/forgot-password endpoint + dual-axis rate limit + dummy argon2 verify on miss (D-03..D-08, D-21) (Wave 2)
+- [x] 112-03-PLAN.md — POST /v1/auth/reset-password endpoint + atomic UPDATE-RETURNING claim + password_changed_at bump (D-09..D-13) (Wave 2)
 - [ ] 112-04-PLAN.md — PWA pages: Forgot link + ?reason=password_reset banner on AuthPage; new ForgotPasswordPage at /auth/forgot; new ResetPasswordPage at /auth/reset (D-14..D-20) (Wave 3)
 - [ ] 112-05-PLAN.md — Live e2e smoke (smoke-test-forgot-password.ts) + manual UAT checklist (HUMAN-UAT) covering all 5 SCs (Wave 4)
 **UI hint**: yes
@@ -607,7 +607,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 3/3 plans complete
+**Plans:** 3/5 plans executed
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe

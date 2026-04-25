@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: executing
-stopped_at: Phase 111 context gathered
-last_updated: "2026-04-24T17:29:20.473Z"
-last_activity: 2026-04-24
+stopped_at: Completed 112-03-PLAN.md (POST /v1/auth/reset-password endpoint; 12/12 tests pass; live curl smoke confirms route)
+last_updated: "2026-04-25T21:55:57.437Z"
+last_activity: 2026-04-25
 progress:
   total_phases: 5
   completed_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 111 — transactional-email-infrastructure-resend-dns
+**Current focus:** Phase 112 — forgot-password-email-flow
 
 ## Current Position
 
-Phase: 111
-Plan: Not started
-Status: Executing Phase 111
-Last activity: 2026-04-24
+Phase: 112 (forgot-password-email-flow) — EXECUTING
+Plan: 4 of 5
+Status: Ready to execute
+Last activity: 2026-04-25
 
 ```
 Phase 108 [          ] 0%   work_order_statuses userId Scoping + Isolation Test
@@ -66,6 +66,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 110 P01 | 5min | 3 tasks | 5 files |
 | Phase 110 P02 | 13min | 3 tasks | 7 files |
 | Phase 110 P03 | 5min | 2 tasks | 3 files |
+| Phase 112 P03 | 9min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -115,6 +116,9 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 110]: Plan 03: D-19 body discriminator (not path filter) — any 401 with { error: 'Session expired' } triggers signOut+navigate; 'Invalid credentials' from change-password's wrong-current 401 passes through unchanged. res.clone() keeps caller's body consumable.
 - [Phase 110]: Plan 03: Emoji eye-icon toggles (👁/🙈) used instead of adding lucide-react/react-icons dep — zero-dep, aria-label accessible. D-16 'no confirm-password field' satisfied by show/hide toggle.
 - [Phase 110]: Plan 03: Pre-existing SettingsPage.test.tsx:104 WR-03 assertion failure (unrelated — asserts raw 'invalid_state' code but WR-03 allowlist maps to friendly text) logged to deferred-items.md. Not caused by this plan — confirmed via git stash + test on prior commit.
+- [Phase 112]: Plan 03: D-11 ordering pinned via Drizzle Proxy mock-DB pattern (counts update() calls; #1→real DB, #2→throws synchronously). Cleaner than manual fluent-object mock; Reflect.get propagates select/insert/delete unchanged.
+- [Phase 112]: Plan 03: Retry-After header floors at 1s — Math.max(1, Math.ceil(...)) so the header never returns 0 even at the bucket boundary (some HTTP clients treat 0 as retry-immediately or skip).
+- [Phase 112]: Plan 03: Test-runner post-suite hang carries forward from Plan 02 — postgres-js connection pool keeps tsx alive after the suite reports green; force-kill needed. All 12 ✔ marks render; no test failures.
 
 ### Pending Todos
 
@@ -141,7 +145,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-24T15:45:14.949Z
-Stopped at: Phase 111 context gathered
-Resume file: .planning/phases/111-transactional-email-infrastructure-resend-dns/111-CONTEXT.md
+Last session: 2026-04-25T21:55:57.431Z
+Stopped at: Completed 112-03-PLAN.md (POST /v1/auth/reset-password endpoint; 12/12 tests pass; live curl smoke confirms route)
+Resume file: None
 Next action: /gsd-plan-phase 108
