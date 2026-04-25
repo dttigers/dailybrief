@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useNavigate, Link } from 'react-router'
 import { storeKey, API_BASE } from '../api/client'
 
 interface AuthPageProps {
@@ -13,6 +13,14 @@ function readSessionExpiredFlag(): boolean {
   return new URLSearchParams(window.location.search).get('reason') === 'session_expired'
 }
 
+// Phase 112 (AUTH-10 D-19) — mirror sessionExpired pattern verbatim. The reason
+// string `password_reset` is a load-bearing exact-match contract with
+// ResetPasswordPage's success-path navigate (UI-SPEC §Notes-3). Do NOT rename.
+function readPasswordResetFlag(): boolean {
+  if (typeof window === 'undefined') return false
+  return new URLSearchParams(window.location.search).get('reason') === 'password_reset'
+}
+
 export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [mode, setMode] = useState<'login' | 'signup'>('login')
   const [email, setEmail] = useState('')
@@ -20,12 +28,14 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [sessionExpired, setSessionExpired] = useState<boolean>(readSessionExpiredFlag)
+  const [passwordReset, setPasswordReset] = useState<boolean>(readPasswordResetFlag)
   const navigate = useNavigate()
 
   function toggleMode() {
     setMode((m) => (m === 'login' ? 'signup' : 'login'))
     setError(null)
     setSessionExpired(false)
+    setPasswordReset(false)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -96,6 +106,16 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
             Your session expired. Please sign in again.
           </div>
         )}
+        {/* Phase 112 (AUTH-10 D-19) — success banner after password reset. Same
+            Tailwind classes as sessionExpired (UI-SPEC §1b mirrors verbatim). */}
+        {passwordReset && (
+          <div
+            role="status"
+            className="mb-4 rounded border border-teal-600/40 bg-teal-600/10 px-3 py-2 text-sm text-teal-200"
+          >
+            Password reset successfully. Please sign in with your new password.
+          </div>
+        )}
         <form onSubmit={handleSubmit}>
           <label className="block text-sm text-gray-400 mb-2" htmlFor="email">
             Email
@@ -123,6 +143,19 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
             className="w-full px-3 py-2 bg-gray-900/80 border border-gray-400/30 rounded text-white placeholder-gray-400 focus:outline-none focus:border-teal-600"
             disabled={loading}
           />
+          {/* Phase 112 (AUTH-10 D-14) — Forgot password? link, login mode only.
+              Hidden in signup mode (recovery is irrelevant for not-yet-existing
+              accounts per UI-SPEC §Surface-1a visibility rules). */}
+          {isLogin && (
+            <div className="mt-2 flex justify-end">
+              <Link
+                to="/auth/forgot"
+                className="text-sm text-teal-400 hover:text-teal-300"
+              >
+                Forgot password?
+              </Link>
+            </div>
+          )}
           {error && (
             <p className="mt-2 text-sm text-red-400">{error}</p>
           )}
