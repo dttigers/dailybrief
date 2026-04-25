@@ -562,7 +562,13 @@ Plans:
   3. Using the same reset link a second time returns 400 "Invalid or expired token" — single-use enforcement via atomic UPDATE RETURNING used_at
   4. A JWT issued before the password reset is rejected with 401 on subsequent API calls — password_changed_at is updated on reset success
   5. The password_reset_tokens table stores token_hash (SHA-256), not the raw token; the raw token appears only in the email URL and never in the DB
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 112-01-PLAN.md — Schema + 0016 migration (password_reset_tokens table; D-01) (Wave 1)
+- [ ] 112-02-PLAN.md — POST /v1/auth/forgot-password endpoint + dual-axis rate limit + dummy argon2 verify on miss (D-03..D-08, D-21) (Wave 2)
+- [ ] 112-03-PLAN.md — POST /v1/auth/reset-password endpoint + atomic UPDATE-RETURNING claim + password_changed_at bump (D-09..D-13) (Wave 2)
+- [ ] 112-04-PLAN.md — PWA pages: Forgot link + ?reason=password_reset banner on AuthPage; new ForgotPasswordPage at /auth/forgot; new ResetPasswordPage at /auth/reset (D-14..D-20) (Wave 3)
+- [ ] 112-05-PLAN.md — Live e2e smoke (smoke-test-forgot-password.ts) + manual UAT checklist (HUMAN-UAT) covering all 5 SCs (Wave 4)
 **UI hint**: yes
 
 ### Phase 113: Verify Email on Signup
