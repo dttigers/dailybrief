@@ -328,3 +328,38 @@ export const aiCache = pgTable(
     index("idx_ai_cache_user_id").on(table.userId),
   ],
 );
+
+// ── password_reset_tokens (Phase 112 — AUTH-10 forgot-password flow) ──────────
+// Schema is permanent for two phases:
+//   - Phase 112 writes type='password_reset' rows on /v1/auth/forgot-password.
+//   - Phase 113 (AUTH-11) writes type='email_verify' rows; the CHECK constraint
+//     is pre-locked here so 113 doesn't need to revisit the migration.
+//
+// Atomic single-use claim semantics (CONTEXT D-02): UPDATE … SET used_at=now()
+// WHERE token_hash=$1 AND type=$2 AND used_at IS NULL AND expires_at > now()
+// RETURNING user_id. UNIQUE on token_hash gives fast lookup; PG row-lock on
+// the matched row serializes concurrent claims (only the first sees used_at
+// IS NULL true).
+//
+// CHECK constraint on `type` is enforced at SQL level only — drizzle-orm@0.45.2
+// has no first-class column-level CHECK helper for pgTable. The 0016 migration
+// carries the strict semantic.
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(), // SHA-256 hex of raw token (D-08)
+    type: text("type").notNull(),            // 'password_reset' | 'email_verify' (CHECK at SQL)
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    usedAt: timestamp("used_at", { withTimezone: true }),  // NULL = unused, ts = claimed
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("idx_prt_token_hash").on(table.tokenHash),
+    index("idx_prt_user_id_type").on(table.userId, table.type),
+    index("idx_prt_expires_at").on(table.expiresAt),
+  ],
+);
