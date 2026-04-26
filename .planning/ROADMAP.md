@@ -466,7 +466,7 @@ Plans:
 | 110. Change Password + password_changed_at Gate | v3.6 | 3/3 | Complete    | 2026-04-24 |
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 3/3 | Complete    | 2026-04-24 |
 | 112. Forgot-Password Email Flow | v3.6 | 5/5 | Complete    | 2026-04-25 |
-| 113. Verify Email on Signup | v3.6 | 5/5 | Complete   | 2026-04-26 |
+| 113. Verify Email on Signup | v3.6 | 5/5 | Complete    | 2026-04-26 |
 | 114. Safari Extension Quick-Capture Parity | v3.6 | 0/0 | Not started | - |
 
 
