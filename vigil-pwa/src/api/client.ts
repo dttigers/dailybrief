@@ -656,12 +656,36 @@ export async function disconnectGoogle(): Promise<void> {
  * Trigger the Google OAuth flow via a full-page redirect.
  *
  * D-08 (reconciled): uses full-page navigation (NOT a popup) so it works inside
- * iOS standalone PWA mode. Endpoint is mounted at `/v1/auth/google` per
- * vigil-core/src/index.ts; GOOGLE_REDIRECT_URI must resolve to
+ * iOS standalone PWA mode. GOOGLE_REDIRECT_URI must resolve to
  * `{server_origin}/v1/auth/google/callback`.
+ *
+ * Hotfix 2026-04-26: the Phase 102 server-side change moved
+ * `GET /v1/auth/google` behind bearerAuth so the state JWT can carry the
+ * authenticated userId. Browsers do NOT send Authorization headers on
+ * `window.location.href` navigations, so the legacy GET path returns 401.
+ *
+ * Two-step replacement:
+ *   1. POST `/v1/auth/google/init` via vigilFetch (Authorization header
+ *      attached from sessionStorage) — server returns `{redirect_url}` with
+ *      the state JWT pre-baked.
+ *   2. window.location.href = redirect_url — direct navigation to Google's
+ *      consent screen, no further vigil-core hop required.
+ *
+ * Throws if init fails (e.g. session expired, network error). Callers should
+ * surface a user-facing error.
  */
-export function redirectToGoogleAuth(): void {
-  window.location.href = `${API_BASE}/v1/auth/google`
+export async function redirectToGoogleAuth(): Promise<void> {
+  const res = await vigilFetch('/v1/auth/google/init', { method: 'POST' })
+  if (!res.ok) {
+    throw new Error(
+      `Google OAuth init failed: ${res.status} ${res.statusText}`,
+    )
+  }
+  const body = (await res.json()) as { redirect_url?: string }
+  if (!body.redirect_url || typeof body.redirect_url !== 'string') {
+    throw new Error('Google OAuth init returned no redirect_url')
+  }
+  window.location.href = body.redirect_url
 }
 
 // ── Print schedule ─────────────────────────────────────────────────────────

@@ -46,19 +46,14 @@ interface Tokens {
 export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
   const router = new Hono();
 
-  // ── GET /auth/google — initiate OAuth consent flow (bearer-required) ──────
-  // Phase 102 RESEARCH Open Q3: state JWT now carries {nonce, userId}. Route
-  // is mounted behind bearerAuth in src/index.ts so c.get("userId") is set.
-  router.get("/auth/google", async (c) => {
-    const userId = c.get("userId");
+  // Shared helper — generates the state JWT + Google auth URL for both the
+  // legacy GET initiation and the new POST init endpoint.
+  async function buildGoogleAuthUrl(userId: number): Promise<string> {
     const clientId = process.env["GOOGLE_CLIENT_ID"];
     const clientSecret = process.env["GOOGLE_CLIENT_SECRET"];
     const redirectUri = process.env["GOOGLE_REDIRECT_URI"];
-
     const client = new OAuth2Client(clientId, clientSecret, redirectUri);
 
-    // Generate JWT state nonce (T-79-01, T-79-02, T-79-03 mitigations).
-    // State JWT carries {nonce, userId} — callback extracts userId for oauthTokens upsert.
     let stateJwt: string;
     if (deps?.signStateFn) {
       stateJwt = await deps.signStateFn(randomBytes(16).toString("hex"), userId);
@@ -72,13 +67,39 @@ export function createGoogleAuthRouter(deps?: GoogleAuthDeps): Hono {
         .sign(secret);
     }
 
-    const url = client.generateAuthUrl({
+    return client.generateAuthUrl({
       access_type: "offline",
       prompt: "consent",
       scope: REQUESTED_SCOPES,
       state: stateJwt,
     });
+  }
 
+  // ── POST /auth/google/init — return Google consent URL as JSON ────────────
+  // Hotfix 2026-04-26: PWA cannot send Authorization headers via
+  // window.location.href, so the legacy GET /auth/google initiation endpoint
+  // (added in Phase 102 with bearerAuth) is unreachable from the PWA. This
+  // endpoint accepts an authenticated POST, builds the same Google consent URL
+  // (state JWT carries {nonce, userId} per Phase 102 RESEARCH Open Q3), and
+  // returns it as JSON. The PWA then performs window.location.href = redirect_url
+  // directly, bypassing the broken header-on-redirect path.
+  router.post("/auth/google/init", async (c) => {
+    const userId = c.get("userId");
+    const url = await buildGoogleAuthUrl(userId);
+    return c.json({ redirect_url: url });
+  });
+
+  // ── GET /auth/google — initiate OAuth consent flow (bearer-required) ──────
+  // Phase 102 RESEARCH Open Q3: state JWT now carries {nonce, userId}. Route
+  // is mounted behind bearerAuth in src/index.ts so c.get("userId") is set.
+  //
+  // DEPRECATED 2026-04-26: PWA can't send Authorization headers via
+  // window.location.href; this endpoint is unreachable from any PWA-style
+  // client. Use POST /auth/google/init instead. Kept for backward compatibility
+  // with any non-browser caller that can attach a Bearer header.
+  router.get("/auth/google", async (c) => {
+    const userId = c.get("userId");
+    const url = await buildGoogleAuthUrl(userId);
     return c.redirect(url);
   });
 

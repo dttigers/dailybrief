@@ -198,9 +198,20 @@ export default function SettingsPage() {
 
   const dismissBanner = useCallback(() => setBanner(null), [])
 
-  const handleConnect = useCallback(() => {
+  const handleConnect = useCallback(async () => {
     // D-08: full-page redirect, NOT a popup (iOS standalone PWA).
-    redirectToGoogleAuth()
+    // 2026-04-26 hotfix: redirectToGoogleAuth is now async (calls
+    // POST /v1/auth/google/init first to get the consent URL with auth header
+    // attached; window.location.href can't carry Authorization). Surface init
+    // errors via the existing banner.
+    try {
+      await redirectToGoogleAuth()
+    } catch (e) {
+      setBanner({
+        kind: 'error',
+        text: `Google connect failed: ${(e as Error).message}`,
+      })
+    }
   }, [])
 
   const handleStartConfirm = useCallback(() => setConfirming(true), [])
