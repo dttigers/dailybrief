@@ -279,27 +279,31 @@ Use a freshly-unverified user. Options:
 
 ### Assertions
 
-- [ ] 1st click: button cycles "Resend" → "Sending…" → "Sent! Check your inbox."
+- [x] 1st click: button cycles "Resend" → "Sending…" → "Sent! Check your inbox."
       → (after ~10s) → "Resend". Network tab: POST /v1/auth/resend-verification returns 200.
-- [ ] 2nd click: same lifecycle as 1st click. POST returns 200.
-- [ ] 3rd click: same lifecycle as 1st click. POST returns 200.
-- [ ] 4th click: POST /v1/auth/resend-verification returns 429.
+- [x] 2nd click: same lifecycle as 1st click. POST returns 200.
+- [x] 3rd click: same lifecycle as 1st click. POST returns 200.
+- [x] 4th click: POST /v1/auth/resend-verification returns 429.
       Inline error text "You've requested too many. Try again later." renders next to button.
       Resend button disappears (rate-limited terminal state until next page mount — D-25).
-- [ ] Network tab 4th POST: status 429 with `Retry-After` response header present.
-- [ ] No 5th token email arrives in inbox (rate limit suppressed the send).
+- [x] Network tab 4th POST: status 429 with `Retry-After` response header present.
+- [ ] No 5th token email arrives in inbox (rate limit suppressed the send) — pending Gmail inbox check (expect exactly 3 emails, not 4).
 
 ### Observed
 
-- 1st click result: 
-- 2nd click result: 
-- 3rd click result: 
-- 4th click status (Network tab): 
-- Retry-After header on 4th POST: [ ] present / [ ] absent
-- Inline error text rendered: 
-- Resend button state after 429: 
+- Run timestamp: 2026-04-26T17:32:38Z (4th POST Date header)
+- 1st click result: POST 200, 98 B response, ~215ms — button cycle Resend → Sending… → Sent! → Resend completed cleanly
+- 2nd click result: POST 200, 98 B response, ~211ms — same cycle
+- 3rd click result: POST 200, 98 B response, ~203ms — same cycle
+- 4th click status (Network tab): :status: 429 (response 125 B, ~204ms) — body `{"error":"You've requested too many. Try again later."}`
+- Retry-After header on 4th POST: [x] present — `retry-after: 3561` (~59m21s, matches the 1-hour rate-limit window per D-16)
+- Inline error text rendered: "You've requested too many. Try again later." in red, replacing the Resend button position; banner amber background preserved
+- Server response headers also confirm: `Server: railway-edge`, `x-railway-edge: railway/us-west2`, `x-railway-request-id: h-DwSU3tTDKy8Ugk0_TJvA`
+- Resend button state after 429: button gone — replaced inline by the red error text. Will return on next page mount per D-25 (rate-limit terminal state, not session-permanent).
 
-**Result:** [ ] PASS  [ ] FAIL  [ ] DEFERRED
+**Result:** [x] PASS  [ ] FAIL  [ ] DEFERRED
+
+> Note: SC#5's "no 5th email" assertion is a soft check — if exactly 3 emails arrive in inbox during SC#1, SC#5 is fully closed. If 4 or more arrive, that'd be a server-side rate-limit bypass bug.
 
 ---
 
