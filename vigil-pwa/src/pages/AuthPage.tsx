@@ -53,7 +53,15 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
           setError(GENERIC_ERROR)
           return
         }
-        const { token, user } = (await res.json()) as { token: string; user: { id: number; email: string } }
+        // Phase 113 (AUTH-11 D-26) — login response now includes emailVerifiedAt
+        // (ISO string or null). PWA does not store it here; SettingsPage refetches
+        // via /v1/auth/me on mount. Type is widened so future consumers can read
+        // the field without a TS regression. Backwards-compatible: existing
+        // destructure { token, user: { id, email } } continues to work.
+        const { token, user } = (await res.json()) as {
+          token: string
+          user: { id: number; email: string; emailVerifiedAt: string | null }
+        }
         storeKey(token)
         onAuthSuccess?.(String(user.id), user.email)
         navigate('/')
@@ -78,7 +86,15 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
           setError(GENERIC_ERROR)
           return
         }
-        const { token, user } = (await loginRes.json()) as { token: string; user: { id: number; email: string } }
+        // Phase 113 (AUTH-11 D-26) — same shape change for the post-register
+        // auto-login. Newly-registered user always has emailVerifiedAt: null
+        // here (the verify email is sent by Plan 02's register handler in
+        // background; user must click the link to flip the column). Settings
+        // banner will render on first /settings visit until verify completes.
+        const { token, user } = (await loginRes.json()) as {
+          token: string
+          user: { id: number; email: string; emailVerifiedAt: string | null }
+        }
         storeKey(token)
         onAuthSuccess?.(String(user.id), user.email)
         navigate('/')
