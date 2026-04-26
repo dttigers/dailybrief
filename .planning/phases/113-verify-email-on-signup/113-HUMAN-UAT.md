@@ -7,8 +7,8 @@ source:
   - 113-05-PLAN.md
 created: 2026-04-26
 tested_by: jamesonmorrill1@gmail.com
-deploy: <Railway commit SHA after Plans 01-04 land — fill in>
-deploy_time: <UTC timestamp of Railway deploy success — fill in>
+deploy: 44cb338
+deploy_time: 2026-04-26T17:02:03Z
 tested_on: <date — fill in when UAT is executed>
 ---
 
@@ -222,12 +222,17 @@ Source: ROADMAP SC#4 + VALIDATION.md Manual-Only row 4.
 
 ### Observed
 
-- total_users: 
-- verified_users: 
-- unverified (must be 0): 
-- 5-user sample backfilled = t for ALL: [ ] yes / [ ] no (list any failures)
-- /settings banner for seed user: [ ] absent (correct) / [ ] present (BUG)
-- Login works normally: [ ] yes / [ ] no
+- Run timestamp: 2026-04-26T17:15:00Z (approx — psql ran shortly after deploy `44cb338` settled)
+- total_users: 4
+- verified_users: 4
+- unverified (must be 0): 0
+- non-seed sample backfilled = t for ALL: [x] yes — 3 of 3 non-seed users (ids 3, 44, 45) returned `backfilled = t`. DB has fewer than 5 non-seed users due to prior test-user cleanup (Phase 102 case-folding + Phase 104 work); LIMIT 5 returned all eligible rows.
+- Sampled non-seed users:
+  - id=3 `upper@case.com` — backfilled=t (Phase 102 case-folding artifact)
+  - id=44 `test+phase104@local.test` — backfilled=t (Phase 104 artifact)
+  - id=45 `jameson.morrill@icloud.com` — backfilled=t (real iCloud account)
+- /settings banner for seed user: [ ] absent (correct) / [ ] present (BUG) — pending browser check
+- Login works normally: [ ] yes / [ ] no — pending browser check
 
 **Result:** [ ] PASS  [ ] FAIL  [ ] DEFERRED
 
