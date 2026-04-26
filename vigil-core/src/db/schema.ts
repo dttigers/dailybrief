@@ -43,6 +43,13 @@ export const users = pgTable(
     // (iat >= floor(created_at/1000)) keep working on deploy (D-03).
     passwordChangedAt: timestamp("password_changed_at", { withTimezone: true })
       .notNull(),
+    // Phase 113 (AUTH-11 D-05): emailVerifiedAt column. NULL = unverified
+    // (banner sentinel for SettingsPage). Non-null TIMESTAMPTZ = verified
+    // at that moment. The 0017 migration backfills existing rows to
+    // created_at (SC#4 grandfathering anti-lockout). Nullable on purpose —
+    // newly registered users start with NULL until they click the verify
+    // link. NO .notNull() and NO default.
+    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
   },
   (table) => [uniqueIndex("uq_users_email").on(table.email)],
 );
