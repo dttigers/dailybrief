@@ -49,9 +49,18 @@ function log(msg: string): void {
   console.log(`[smoke-test:verify-email] ${msg}`);
 }
 
+// Throws (not process.exit) so the surrounding try/finally runs cleanup +
+// snapshot-restore before the script exits. The top-level catch in `main()`
+// logs the failure and exits 1.
+class SmokeAssertionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "SmokeAssertionError";
+  }
+}
+
 function die(msg: string): never {
-  console.error(`[smoke-test:verify-email] FAIL: ${msg}`);
-  process.exit(1);
+  throw new SmokeAssertionError(msg);
 }
 
 async function main(): Promise<void> {
@@ -78,13 +87,23 @@ async function main(): Promise<void> {
   // audit (email_verified_at = created_at) meaningful for the seed user after
   // each smoke-test run.
   let userIdForRestore: number | null = null;
-  let preTestEmailVerifiedAt: Date | null = null;
+  // Capture as TEXT (not Date) so microsecond precision survives the round-trip.
+  // JS Date only has millisecond precision; restoring via Date would drop
+  // sub-millisecond suffixes (e.g. created_at=.498932 → restored .498), making
+  // the SC#4 `email_verified_at = created_at` audit return `f` even though the
+  // values are functionally identical. Text round-trip preserves all precision.
+  let preTestEmailVerifiedAtText: string | null = null;
 
   try {
     // ── Step 1: Resolve the seed user ──────────────────────────────────────────
     const userRows = await sql<
-      { id: number; email: string; email_verified_at: Date | null }[]
-    >`SELECT id, email, email_verified_at
+      {
+        id: number;
+        email: string;
+        email_verified_at: Date | null;
+        email_verified_at_text: string | null;
+      }[]
+    >`SELECT id, email, email_verified_at, email_verified_at::text AS email_verified_at_text
       FROM users
       WHERE email = ${SEED_EMAIL.toLowerCase()}
       LIMIT 1`;
@@ -102,7 +121,7 @@ async function main(): Promise<void> {
 
     // Snapshot for finally-block restoration so SC#4 audit stays valid post-run.
     userIdForRestore = user.id;
-    preTestEmailVerifiedAt = user.email_verified_at;
+    preTestEmailVerifiedAtText = user.email_verified_at_text;
 
     // ── Step 2: INSERT a fresh email_verify token row directly ────────────────
     const rawToken = crypto.randomBytes(32).toString("base64url");
@@ -234,15 +253,22 @@ async function main(): Promise<void> {
     //      every smoke run.
     //   2. Pre-test value was null (fresh unverified test user) — restore to
     //      NULL so the smoke doesn't accidentally mark them verified.
+    // Uses text round-trip (snapshot is the ::text-cast value, restore casts
+    // back to timestamptz) to preserve microsecond precision through the
+    // snapshot/restore — JS Date is millisecond-precision only.
     if (userIdForRestore !== null) {
       try {
-        await sql`UPDATE users SET email_verified_at = ${preTestEmailVerifiedAt} WHERE id = ${userIdForRestore}`;
+        if (preTestEmailVerifiedAtText === null) {
+          await sql`UPDATE users SET email_verified_at = NULL WHERE id = ${userIdForRestore}`;
+        } else {
+          await sql`UPDATE users SET email_verified_at = ${preTestEmailVerifiedAtText}::timestamptz WHERE id = ${userIdForRestore}`;
+        }
         log(
-          `Cleanup: restored users.email_verified_at to ${preTestEmailVerifiedAt?.toISOString() ?? "null"} (pre-test value)`,
+          `Cleanup: restored users.email_verified_at to ${preTestEmailVerifiedAtText ?? "NULL"} (pre-test value, microsecond-precise)`,
         );
       } catch (restoreErr) {
         console.warn(
-          `[smoke-test:verify-email] Restore warning (users.id=${userIdForRestore} email_verified_at may need manual UPDATE to ${preTestEmailVerifiedAt?.toISOString() ?? "NULL"}):`,
+          `[smoke-test:verify-email] Restore warning (users.id=${userIdForRestore} email_verified_at may need manual UPDATE to ${preTestEmailVerifiedAtText ?? "NULL"}):`,
           restoreErr,
         );
       }
@@ -253,6 +279,12 @@ async function main(): Promise<void> {
 }
 
 main().catch((err: unknown) => {
-  console.error("[smoke-test:verify-email] Uncaught error:", err);
+  if (err instanceof SmokeAssertionError) {
+    // Assertion-failure path — finally already ran cleanup + restore.
+    // Print the FAIL line in the same format die() used to print, then exit 1.
+    console.error(`[smoke-test:verify-email] FAIL: ${err.message}`);
+  } else {
+    console.error("[smoke-test:verify-email] Uncaught error:", err);
+  }
   process.exit(1);
 });
