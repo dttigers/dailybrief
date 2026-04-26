@@ -212,13 +212,14 @@ Source: ROADMAP SC#4 + VALIDATION.md Manual-Only row 4.
 
 ### Assertions
 
-- [ ] psql audit 1: `unverified = 0` AND `verified_users = total_users` —
+- [x] psql audit 1: `unverified = 0` AND `verified_users = total_users` —
       the load-bearing SC#4 assertion (no user can be locked out).
-- [ ] psql audit 2: ALL 5 sampled non-seed users return `backfilled = t` —
+- [x] psql audit 2: ALL sampled non-seed users return `backfilled = t` —
       proves the D-02 `UPDATE … SET email_verified_at = created_at` UPDATE ran.
-- [ ] /settings as the seed user: verify banner does NOT appear (emailVerifiedAt
+      (3 of 3 eligible non-seed users; LIMIT 5 returned all rows since DB has fewer than 5 non-seed users post-cleanup.)
+- [x] /settings as the seed user: verify banner does NOT appear (emailVerifiedAt
       is non-null → banner condition is false).
-- [ ] Login as the seed user works normally (no AUTH-11 blocker).
+- [x] Login as the seed user works normally (no AUTH-11 blocker).
 
 ### Observed
 
@@ -231,10 +232,10 @@ Source: ROADMAP SC#4 + VALIDATION.md Manual-Only row 4.
   - id=3 `upper@case.com` — backfilled=t (Phase 102 case-folding artifact)
   - id=44 `test+phase104@local.test` — backfilled=t (Phase 104 artifact)
   - id=45 `jameson.morrill@icloud.com` — backfilled=t (real iCloud account)
-- /settings banner for seed user: [ ] absent (correct) / [ ] present (BUG) — pending browser check
-- Login works normally: [ ] yes / [ ] no — pending browser check
+- /settings banner for seed user: [x] absent (correct) — verified 2026-04-26 in browser; navigated explicitly to /settings after the post-login /thoughts redirect
+- Login works normally: [x] yes — seed user logged in, post-login redirect to /thoughts (Phase 50/63 default), navigation to /settings worked, all sections rendered
 
-**Result:** [ ] PASS  [ ] FAIL  [ ] DEFERRED
+**Result:** [x] PASS  [ ] FAIL  [ ] DEFERRED
 
 > **Why two audits?** The load-bearing requirement is "no user is locked out"
 > (audit 1). Audit 2 is the supporting evidence that the specific D-02
