@@ -15,9 +15,10 @@
 //   6. Re-POST the same token; assert 400 "Invalid or expired token"
 //      (single-use enforced — T-113-03).
 //   7. Cleanup: delete the inserted token row in finally (idempotent — runs even
-//      on error so no orphan rows are left behind). Leave email_verified_at alone —
-//      it's idempotent backfill semantics per D-02; the seed user was already
-//      verified at created_at before this run.
+//      on error so no orphan rows are left behind). ALSO restore the seed user's
+//      email_verified_at to its pre-test value if it was non-null before — this
+//      keeps the prod backfill audit (SC#4: email_verified_at = created_at)
+//      meaningful for the seed user after re-runs.
 //
 // Note: real-inbox delivery (SC#1) is verified by the HUMAN-UAT checklist, not
 // this script. Programmatic email parsing requires a Resend webhook receiver
@@ -72,6 +73,12 @@ async function main(): Promise<void> {
 
   // Tracked outside try so finally can clean up even if the smoke run fails mid-way.
   let insertedTokenId: number | null = null;
+  // Snapshot the seed user's email_verified_at BEFORE the test mutates it so
+  // the finally block can restore the pre-test value. Keeps the SC#4 backfill
+  // audit (email_verified_at = created_at) meaningful for the seed user after
+  // each smoke-test run.
+  let userIdForRestore: number | null = null;
+  let preTestEmailVerifiedAt: Date | null = null;
 
   try {
     // ── Step 1: Resolve the seed user ──────────────────────────────────────────
@@ -92,6 +99,10 @@ async function main(): Promise<void> {
     log(
       `Seed user: id=${user.id} email=${user.email} (emailVerifiedAt before test=${user.email_verified_at?.toISOString() ?? "null"})`,
     );
+
+    // Snapshot for finally-block restoration so SC#4 audit stays valid post-run.
+    userIdForRestore = user.id;
+    preTestEmailVerifiedAt = user.email_verified_at;
 
     // ── Step 2: INSERT a fresh email_verify token row directly ────────────────
     const rawToken = crypto.randomBytes(32).toString("base64url");
@@ -210,13 +221,33 @@ async function main(): Promise<void> {
       try {
         await sql`DELETE FROM password_reset_tokens WHERE id = ${insertedTokenId}`;
         log(`Cleanup: deleted token row id=${insertedTokenId}`);
-        log(
-          "  Note: users.email_verified_at left as-is — seed user was already verified via 0017 backfill.",
-        );
       } catch (cleanupErr) {
         console.warn(`[smoke-test:verify-email] Cleanup warning (token row id=${insertedTokenId} may need manual DELETE):`, cleanupErr);
       }
     }
+
+    // Restore the seed user's email_verified_at to its pre-test value so the
+    // smoke run is invisible to system state. Two cases:
+    //   1. Pre-test value was non-null (seed user was already verified, e.g.
+    //      grandfathered by 0017 backfill) — restore so SC#4 audit
+    //      `email_verified_at = created_at` continues to return `t` after
+    //      every smoke run.
+    //   2. Pre-test value was null (fresh unverified test user) — restore to
+    //      NULL so the smoke doesn't accidentally mark them verified.
+    if (userIdForRestore !== null) {
+      try {
+        await sql`UPDATE users SET email_verified_at = ${preTestEmailVerifiedAt} WHERE id = ${userIdForRestore}`;
+        log(
+          `Cleanup: restored users.email_verified_at to ${preTestEmailVerifiedAt?.toISOString() ?? "null"} (pre-test value)`,
+        );
+      } catch (restoreErr) {
+        console.warn(
+          `[smoke-test:verify-email] Restore warning (users.id=${userIdForRestore} email_verified_at may need manual UPDATE to ${preTestEmailVerifiedAt?.toISOString() ?? "NULL"}):`,
+          restoreErr,
+        );
+      }
+    }
+
     await sql.end({ timeout: 5 });
   }
 }

@@ -178,35 +178,68 @@ Source: ROADMAP SC#4 + VALIDATION.md Manual-Only row 4.
 
 ### Steps
 
-1. Connect to Railway prod Postgres. Get the DATABASE_URL from Railway dashboard
-   (your service → Variables → DATABASE_URL).
-2. Run the following psql query:
+1. Connect to Railway prod Postgres. Get `DATABASE_PUBLIC_URL` from the Railway
+   dashboard (Postgres service → Variables → `DATABASE_PUBLIC_URL`). The internal
+   `DATABASE_URL` (`*.railway.internal`) only resolves inside Railway's network.
+2. Run the **lockout audit** — the load-bearing assertion (every existing user
+   has a non-null `email_verified_at`):
    ```bash
-   psql "$RAILWAY_DB_URL" -c "SELECT email, email_verified_at, created_at, (email_verified_at = created_at) AS backfilled FROM users WHERE email='jamesonmorrill1@gmail.com';"
+   psql "$RAILWAY_DB_URL" -c "
+     SELECT
+       COUNT(*) AS total_users,
+       COUNT(email_verified_at) AS verified_users,
+       COUNT(*) FILTER (WHERE email_verified_at IS NULL) AS unverified
+     FROM users;
+   "
    ```
-3. As the seed user (jamesonmorrill1@gmail.com), navigate to
+3. Run the **backfill-equality audit** — verifies the UPDATE SET
+   `email_verified_at = created_at` ran (sampling non-seed users so the
+   smoke-test doesn't pollute results; smoke runs against the seed user and
+   bumps then restores its timestamp, but if a prior smoke ran without the
+   restore patch, the seed user may show `backfilled=f` even though backfill
+   succeeded). Pick any 5 users that have NEVER been touched by the smoke:
+   ```bash
+   psql "$RAILWAY_DB_URL" -c "
+     SELECT id, email, (email_verified_at = created_at) AS backfilled
+     FROM users
+     WHERE id != 1
+     ORDER BY id
+     LIMIT 5;
+   "
+   ```
+4. As the seed user (jamesonmorrill1@gmail.com), navigate to
    https://app.vigilhub.io/settings (log in fresh if needed).
 
 ### Assertions
 
-- [ ] psql: `email_verified_at` column is NOT NULL for the seed user.
-- [ ] psql: `email_verified_at = created_at` is `t` (true) — the D-02 backfill ran.
-- [ ] psql: No existing users have `email_verified_at IS NULL` (SELECT COUNT(*) where
-      email_verified_at IS NULL should return 0 for rows older than the deploy time).
-- [ ] /settings as the seed user: verify banner does NOT appear (emailVerifiedAt is
-      non-null → banner condition is false).
+- [ ] psql audit 1: `unverified = 0` AND `verified_users = total_users` —
+      the load-bearing SC#4 assertion (no user can be locked out).
+- [ ] psql audit 2: ALL 5 sampled non-seed users return `backfilled = t` —
+      proves the D-02 `UPDATE … SET email_verified_at = created_at` UPDATE ran.
+- [ ] /settings as the seed user: verify banner does NOT appear (emailVerifiedAt
+      is non-null → banner condition is false).
 - [ ] Login as the seed user works normally (no AUTH-11 blocker).
 
 ### Observed
 
-- psql email_verified_at (seed user): 
-- psql created_at (seed user): 
-- backfilled = t: [ ] yes / [ ] no
-- Count of users with email_verified_at IS NULL: 
+- total_users: 
+- verified_users: 
+- unverified (must be 0): 
+- 5-user sample backfilled = t for ALL: [ ] yes / [ ] no (list any failures)
 - /settings banner for seed user: [ ] absent (correct) / [ ] present (BUG)
 - Login works normally: [ ] yes / [ ] no
 
 **Result:** [ ] PASS  [ ] FAIL  [ ] DEFERRED
+
+> **Why two audits?** The load-bearing requirement is "no user is locked out"
+> (audit 1). Audit 2 is the supporting evidence that the specific D-02
+> `email_verified_at = created_at` semantics ran (vs. e.g. someone setting
+> everything to `now()` which would also satisfy audit 1 but break the
+> grandfathering intent). The seed user is excluded from audit 2 because the
+> smoke-test mutates+restores its timestamp; under the original (pre-restore)
+> smoke implementation, prior runs may have left `email_verified_at != created_at`
+> for the seed user even though backfill worked. The restore patch shipped
+> 2026-04-26 fixes this going forward.
 
 ---
 
