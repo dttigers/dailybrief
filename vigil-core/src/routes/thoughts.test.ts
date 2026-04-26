@@ -60,7 +60,14 @@ test("RO-06b: shouldBypassWindow — window=all DOES bypass", () => {
 
 test("RO-06c: shouldBypassWindow — category=idea bypasses window (ideas are open-ended)", () => {
   assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: "idea", window: undefined }), true);
-  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: "task", window: undefined }), false, "non-idea categories still use window");
+});
+
+test("RO-06d: shouldBypassWindow — category=task bypasses window (open tasks must not rot in the 7-day window — ADHD-friendly capture, mirrors idea bypass; added 2026-04-26)", () => {
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: "task", window: undefined }), true);
+  // Non-idea, non-task categories still respect the default window.
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: "therapy", window: undefined }), false, "therapy still uses window");
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: "reflection", window: undefined }), false, "reflection still uses window");
+  assert.equal(shouldBypassWindow({ q: undefined, after: undefined, before: undefined, category: "project", window: undefined }), false, "project still uses window");
 });
 
 // ── RO-07: shouldBypassWindow — ?q, ?after, ?before each bypass independently ─

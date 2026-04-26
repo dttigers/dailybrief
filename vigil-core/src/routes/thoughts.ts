@@ -12,16 +12,24 @@ import { trackEvent } from "../analytics/posthog.js";
 
 /**
  * Pure predicate: returns true if the caller has explicitly bypassed the
- * default week window. Exported for unit testing (RO-06, RO-07).
+ * default week window. Exported for unit testing (RO-06, RO-06b, RO-06c,
+ * RO-06d, RO-07, RO-07b, RO-07c, RO-07d).
  *
- * Bypass conditions (D-07):
- *   - q       : full-text search — results should be all-time
- *   - after   : caller supplied an explicit start bound
- *   - before  : caller supplied an explicit end bound
- *   - window === "all" : explicit escape hatch
+ * Bypass conditions:
+ *   - q       : full-text search — results should be all-time (D-07)
+ *   - after   : caller supplied an explicit start bound (D-07)
+ *   - before  : caller supplied an explicit end bound (D-07)
+ *   - window === "all" : explicit escape hatch (D-07)
+ *   - category === "idea" : ideas are open-ended reference; the 7-day window
+ *     would silently hide older ideas the user wants to keep visible.
+ *   - category === "task" : open tasks must persist until done; a 7-day window
+ *     buries old tasks and breaks the ADHD-friendly "nothing rots" capture
+ *     contract. Mirrors the idea exemption (added 2026-04-26).
  *
  * Any other value for window (including undefined, "", "current", typos)
- * falls through to the default window path.
+ * falls through to the default window path. Categories other than "idea"
+ * and "task" (e.g. "therapy", "reflection", "project") use the default
+ * window unless one of the other bypass conditions also matches.
  */
 export function shouldBypassWindow(params: {
   q: string | undefined;
@@ -30,7 +38,14 @@ export function shouldBypassWindow(params: {
   window: string | undefined;
   category: string | undefined;
 }): boolean {
-  return !!params.q || !!params.after || !!params.before || params.window === "all" || params.category === "idea";
+  return (
+    !!params.q ||
+    !!params.after ||
+    !!params.before ||
+    params.window === "all" ||
+    params.category === "idea" ||
+    params.category === "task"
+  );
 }
 
 const VALID_SOURCES = ["text", "voice", "image"] as const;
