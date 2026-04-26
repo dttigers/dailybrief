@@ -1,14 +1,16 @@
 ---
-status: partial
+status: verified
 phase: 110-change-password-password-changed-at-gate
 source: [110-VERIFICATION.md]
 started: 2026-04-24T14:57:55Z
-updated: 2026-04-24T15:18:40Z
+updated: 2026-04-26T18:20:00Z
+test_1_status: PASS
+test_2_status: PASS
 ---
 
 ## Current Test
 
-[awaiting retest of Test 2 with new banner]
+[all tests complete — verified 2026-04-26]
 
 ## Tests
 
@@ -19,15 +21,15 @@ notes: User confirmed live (2026-04-24). Changed password on Device B — Device
 
 ### 2. PWA change-password form visual/UX smoke
 expected: Form expands INSIDE the Vigil Account section (not as a separate card). Eye-icon toggles (👁 / 🙈) reveal/hide typed characters. Success confirmation shows in teal/green; error (wrong current password) shows in red. Inputs disable during submit. `storeKey` runs before any navigation — initiating device stays logged in with the new token.
-result: pending
-notes: Partial confirmation — initiating device stayed logged in (D-17 verified above). Full visual/UX smoke still pending.
+result: passed
+notes: Verified live 2026-04-26 against deploy `44cb338`. Form expanded inline inside Vigil Account section (no separate card/modal). Eye icons toggled visibility on all three inputs. Wrong-current-password path rendered the expected red error; happy path rendered the teal success state. D-17 confirmed once more — initiating device stayed logged in with the new token (no /auth bounce). Reset to original password successfully via same flow.
 
 ## Summary
 
 total: 2
-passed: 1
+passed: 2
 issues: 0
-pending: 1
+pending: 0
 skipped: 0
 blocked: 0
 
