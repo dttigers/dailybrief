@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: executing
-stopped_at: "Phase 113 — Wave 1+2 plan-02 complete (113-01, 113-02 shipped). 113-03 blocked by usage quota (resets 8:30pm MT). Resume with /gsd-execute-phase 113 --auto"
-last_updated: "2026-04-26T02:41:23.464Z"
+stopped_at: Phase 113 Plan 03 complete — verify-email + resend-verification endpoints shipped. Plan 04 (PWA) is next.
+last_updated: "2026-04-26T02:54:08.256Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 5
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 ## Current Position
 
 Phase: 113 (verify-email-on-signup) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-04-26
 
@@ -70,6 +70,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 112 P04 | 7 | 4 tasks | 7 files |
 | Phase 113 P01 | 8min | 4 tasks | 3 files |
 | Phase 113 P02 | 7min | 3 tasks | 5 files |
+| Phase 113 P03 | 499 | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -130,6 +131,8 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 113]: issueEmailVerifyToken() kept inline in auth.ts (not extracted to shared tokenIssue.ts): only 2 call sites in this plan; extraction deferred until Plan 03 adds a 3rd site
 - [Phase 113]: .catch() fire-and-forget used (not queueMicrotask): consistent with Phase 112 forgot-password.ts:221-223; RESEARCH Open Q1 confirmed this choice
 - [Phase 113]: auth-me.ts created as separate file (not extending me.ts): incompatible response shapes at incompatible paths; App.tsx PostHog identify preserved
+- [Phase 113]: tokenIssue.ts NOT extracted: 3 call sites across 2 files — deferred per CONTEXT Claude's Discretion; inline duplication is 4 lines
+- [Phase 113]: verifyEmail mount BEFORE bearerAuth dispatcher (ve=128 < disp=143); resendVerification AFTER (rv=200 > disp=143) — awk ORDER OK confirmed
 
 ### Pending Todos
 
@@ -156,7 +159,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-26T02:41:23.449Z
-Stopped at: Phase 113 — Wave 1+2 plan-02 complete (113-01, 113-02 shipped). 113-03 blocked by usage quota (resets 8:30pm MT). Resume with /gsd-execute-phase 113 --auto
-Resume file: .planning/phases/113-verify-email-on-signup/113-03-PLAN.md
+Last session: 2026-04-26T02:54:08.250Z
+Stopped at: Phase 113 Plan 03 complete — verify-email + resend-verification endpoints shipped. Plan 04 (PWA) is next.
+Resume file: None
 Next action: /gsd-plan-phase 108
