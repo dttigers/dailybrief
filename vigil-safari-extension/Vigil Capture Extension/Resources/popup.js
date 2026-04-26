@@ -1,4 +1,5 @@
 'use strict';
+// Keep in lockstep with ../../../vigil-extension/popup.js — Phase 114 (D-02)
 
 const STORAGE_KEY = 'vigil_api_key';
 const API_BASE = 'https://api.vigilhub.io';
@@ -14,6 +15,8 @@ const contentInput = document.getElementById('content-input');
 const captureBtn = document.getElementById('capture-btn');
 const captureError = document.getElementById('capture-error');
 const captureSuccess = document.getElementById('capture-success');
+const successText = document.getElementById('success-text');
+const includeUrlCheckbox = document.getElementById('include-url');
 const settingsBtn = document.getElementById('settings-btn');
 
 // --- View management ---
@@ -81,19 +84,17 @@ async function initCaptureView(apiKey) {
   captureError.hidden = true;
   captureSuccess.hidden = true;
 
-  // Read active tab -- must happen during DOMContentLoaded (user gesture context)
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const title = tab.title ?? '';
-    const url = tab.url ?? '';
-    contentInput.value = `${title}\n${url}\n\n`;
-    contentInput.focus();
-    contentInput.selectionStart = contentInput.value.length;
-    contentInput.selectionEnd = contentInput.value.length;
-  } catch {
-    contentInput.value = '';
-    contentInput.focus();
-  }
+  // Start with empty input — matches Mac quick capture behavior
+  contentInput.value = '';
+  contentInput.focus();
+
+  // Cmd+Enter (Mac) / Ctrl+Enter (Windows) submits the capture form
+  contentInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      captureBtn.click();
+    }
+  });
 
   captureBtn.onclick = async () => {
     const content = contentInput.value.trim();
@@ -101,6 +102,17 @@ async function initCaptureView(apiKey) {
       captureError.textContent = 'Content cannot be empty.';
       captureError.hidden = false;
       return;
+    }
+
+    // Build final content with optional URL
+    let finalContent = content;
+    if (includeUrlCheckbox.checked) {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.url) {
+          finalContent += `\n\n${tab.title || 'Page'}: ${tab.url}`;
+        }
+      } catch { /* activeTab not available — send content without URL */ }
     }
 
     captureError.hidden = true;
@@ -115,7 +127,7 @@ async function initCaptureView(apiKey) {
           'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content: content, source: 'text' }),
+        body: JSON.stringify({ content: finalContent, source: 'text' }),
       });
 
       if (!res.ok) {
@@ -131,11 +143,38 @@ async function initCaptureView(apiKey) {
         return;
       }
 
-      captureSuccess.hidden = false;
+      // Reset button state after successful POST
       captureBtn.textContent = 'Capture';
       captureBtn.disabled = false;
 
-      setTimeout(() => window.close(), 1500);
+      // Show success area with triage polling
+      const thought = await res.json();
+      captureSuccess.hidden = false;
+      successText.innerHTML = '<span class="analyzing">Analyzing...</span>';
+
+      const startTime = Date.now();
+      const pollInterval = setInterval(async () => {
+        if (Date.now() - startTime > 5000) {
+          clearInterval(pollInterval);
+          successText.innerHTML = '<span class="checkmark">&#10003;</span> Captured!';
+          setTimeout(() => window.close(), 1500);
+          return;
+        }
+        try {
+          const pollRes = await fetch(`${API_BASE}/v1/thoughts/${thought.id}`, {
+            headers: { 'Authorization': `Bearer ${apiKey}` },
+          });
+          if (pollRes.ok) {
+            const updated = await pollRes.json();
+            if (updated.category) {
+              clearInterval(pollInterval);
+              const cat = updated.category.charAt(0).toUpperCase() + updated.category.slice(1);
+              successText.innerHTML = `<span class="checkmark">&#10003;</span> Captured! <span class="category-badge">${cat}</span>`;
+              setTimeout(() => window.close(), 1500);
+            }
+          }
+        } catch { /* ignore poll errors — timeout will handle */ }
+      }, 800);
     } catch (err) {
       captureError.textContent = `Network error: ${err.message}`;
       captureError.hidden = false;
