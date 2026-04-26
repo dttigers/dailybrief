@@ -2,32 +2,32 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
-status: verifying
-stopped_at: "Completed 114-04-PLAN.md (final ship gate — xcodebuild clean build + codesign verify; HUMAN-UAT populated; SC#5 ship-with-uat-pending per D-12)"
-last_updated: "2026-04-26T16:40:02.967Z"
+status: shipped
+stopped_at: "v3.6 milestone complete — 7 phases, 27 plans, 8/8 requirements satisfied via live HUMAN-UAT against Railway production. Same-session hotfix for Phase 102 Google OAuth init regression. Ready to plan v3.7 with /gsd-new-milestone."
+last_updated: "2026-04-26T21:00:00.000Z"
 last_activity: 2026-04-26
 progress:
-  total_phases: 5
-  completed_phases: 4
-  total_plans: 22
-  completed_plans: 21
-  percent: 95
+  total_phases: 7
+  completed_phases: 7
+  total_plans: 27
+  completed_plans: 27
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-22)
+See: .planning/PROJECT.md (updated 2026-04-26 after v3.6 milestone shipped)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 114 — safari-extension-quick-capture-parity
+**Current focus:** Awaiting v3.7 milestone planning (`/gsd-new-milestone`)
 
 ## Current Position
 
-Phase: 114
-Plan: Not started
-Status: Phase complete — ready for verification
+Milestone: v3.6 (shipped 2026-04-26)
+Phase: — (no active phase)
+Status: Milestone complete — ready for next-milestone planning
 Last activity: 2026-04-26
 
 ```

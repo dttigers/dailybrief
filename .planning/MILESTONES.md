@@ -1,5 +1,37 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v3.6 Multi-User Completion, Auth UX & Safari Parity (Shipped: 2026-04-26)
+
+**Phases completed:** 7 phases (108-114), 27 plans, all 8 v3.6 requirements satisfied
+**Requirements:** 8/8 satisfied (W-01, W-02, SCHED-01, AUTH-09, EMAIL-01, AUTH-10, AUTH-11, EXT-02)
+**Production:** live at api.vigilhub.io and app.vigilhub.io — full UAT pass on 2026-04-26 across all phases
+
+**Key accomplishments:**
+
+- **Multi-user loop fully closed (Phases 108-109)** — `work_order_statuses` migrated to user-scoped composite key with all four call sites userId-filtered (W-01); cross-user isolation test extended to assert User B cannot retrieve User A's brief PDF bytes (W-02); generate-scheduler `tick()` iterates every registered user with per-user try/catch+continue, prioritization filesystem cache key includes userId so no cross-user data leaks (SCHED-01).
+- **Self-service password change with cross-device session invalidation (Phase 110, AUTH-09)** — POST /v1/auth/change-password endpoint + bearerAuth `jwt.iat < password_changed_at` gate + PWA inline form on Settings page; D-19 cross-device session invalidation verified live (Device A change → Device B kicked to /auth on next request); 401 'Session expired' handler in vigilFetch redirects with `?reason=session_expired` so the user sees a banner instead of a cryptic bounce.
+- **First production-deliverable email infrastructure (Phase 111, EMAIL-01)** — Resend account + DKIM/SPF/DMARC live on `vigilhub.io` Cloudflare DNS with verified status; email-service.ts module follows the lazy-null-init pattern (vigil-core boots without RESEND_API_KEY); click_tracking: false applied per-send so Apple Mail prefetch can't burn single-use tokens; raw-source verification in Gmail confirms verbatim app.vigilhub.io URLs (no Resend tracking wrapper). DMARC monitoring active with daily aggregate reports streaming clean DKIM+SPF passes.
+- **Forgot-password flow shipped end-to-end (Phase 112, AUTH-10)** — POST /v1/auth/forgot-password (enumeration-safe: dummy argon2 verify on miss + dual-axis rate limit) + POST /v1/auth/reset-password (atomic UPDATE-RETURNING claim + password_changed_at bump for AUTH-09 session invalidation) + ForgotPasswordPage and ResetPasswordPage in PWA. Live UAT on 2026-04-25 confirmed all 5 SCs PASS against Railway production.
+- **Verify email on signup with grandfathering (Phase 113, AUTH-11)** — Register hook fires fire-and-forget verification email; PWA `/settings` shows non-blocking amber banner with Resend lifecycle (3/hr per-userId rate limit, terminal 429 state at 4th click); D-19 prefetch-safe gate (Confirm button required — no useEffect-fired POST on mount, regression test `AUTH-11-P-MOUNT-NO-FETCH` locks it in); 0017 migration backfills `email_verified_at = created_at` for all pre-existing users so no lockout post-deploy. 5 SCs PASS in live UAT 2026-04-26; Apple Mail prefetch DEFERRED with structural+runtime evidence for D-19.
+- **Safari extension Chrome-94 quick-capture parity (Phase 114, EXT-02)** — verbatim Chrome → Safari port of `popup.{html,js,css}`: empty textarea on open + focus, "Include page URL" checkbox with verbatim D-06 format `\n\n${tab.title || 'Page'}: ${tab.url}`, ⌘+Enter handler keying off `e.metaKey || e.ctrlKey` (load-bearing empirical probe in Plan 01 captured `metaKey: true` from WebKit Web Inspector before any port code landed per D-03/D-04/D-05), 800ms triage poll with 5s timeout rendering category-badge pill on success or plain "✓ Captured!" on timeout. Re-sign verified via `xcodebuild clean build` + `codesign --verify --deep --strict` (D-15 reword from `spctl --assess` after empirical proof spctl rejects Apple Development-signed builds by design). 5 SCs PASS on physical Mac hardware UAT.
+- **Late-breaking Phase 102 hotfix (Google OAuth init regression)** — discovered during v3.6 closeout: PWA's `redirectToGoogleAuth()` called `window.location.href = ${API_BASE}/v1/auth/google` but server-side route was bearerAuth-gated since Phase 102; browsers don't send Authorization headers on plain navigations, so the route silently 401'd for 12 days. Fixed via new `POST /v1/auth/google/init` endpoint (bearer-required, returns `{redirect_url}` JSON) + PWA two-step async flow + 4 regression tests including `GA-INIT-04-method-only` that asserts GET on the path returns 404 (prevents the same regression class from sneaking back). User re-OAuth'd Gmail + Calendar successfully.
+- **Polish: ADHD-friendly capture hygiene** — `shouldBypassWindow()` exempts both `category="idea"` and `category="task"` from the default 7-day thoughts window, matching the "nothing rots" capture contract; D-02 lockstep header comments mirror across all 6 Chrome+Safari extension popup files; 4 follow-ups captured as seeds/todos (DMARC ramp, verify-email error UX, gmail-workorders importer, ThoughtRow whitespace-pre-line).
+
+**Known deferrals (DEFERRED, not blocking ship):**
+
+- **Apple Mail prefetch UAT (Phase 113)** — no iOS device with `jamesonmorrill1@gmail.com` bound to native Mail.app available during UAT session. D-19 gate verified at source level + 3 runtime confirmations during SC#3. Revisit if/when an iOS device with this inbox becomes available.
+- **DMARC ramp `p=none` → `p=quarantine`** — captured as SEED-003 with auto-evaluation routine scheduled for 2026-05-06 (10 days post-Phase-113-ship; checks ≥7 days clean aggregate reports + ≥3 days production verify-email volume).
+
+**Post-ship cleanup (captured for v3.7+):**
+
+- SEED-003 — DMARC ramp
+- SEED-004 — verify-email error UX (rotated/expired/rate-limited differentiation)
+- Todo — disable gmail-workorders importer tick (or replace via ServiceNow API)
+- Todo — `whitespace-pre-line` on `ThoughtRow.tsx:399`
+- Test-user cleanup (`upper@case.com`, `test+phase104@local.test` rows in production)
+
+---
+
 ## v3.4 Multi-User Foundation & PWA Polish (Shipped: 2026-04-18)
 
 **Phases completed:** 4 phases (99-102), 15 plans, 37 tasks
