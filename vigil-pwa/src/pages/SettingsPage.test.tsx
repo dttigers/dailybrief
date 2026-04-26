@@ -258,14 +258,17 @@ describe('SettingsPage', () => {
     it('AUTH-11-B2-RESEND-SENT-200: 200 → "Sent! Check your inbox." for 10s then returns to "Resend"', async () => {
       // Capture the setTimeout callback so we can invoke it directly without waiting 10s.
       let capturedCallback: (() => void) | null = null
-      const originalSetTimeout = window.setTimeout
-      vi.spyOn(window, 'setTimeout').mockImplementation((cb, delay, ...args) => {
+      const originalSetTimeout = window.setTimeout.bind(window)
+      const setTimeoutSpy = vi.spyOn(window, 'setTimeout')
+      // Cast to any to avoid vitest's strict NormalizedPrecedure type constraint
+      // on mockImplementation — the runtime behavior is correct.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ;(setTimeoutSpy.mockImplementation as any)(function (cb: TimerHandler, delay?: number, ...args: unknown[]) {
         if (delay === 10_000) {
           capturedCallback = cb as () => void
-          // Return a dummy timer id; we'll invoke the callback manually.
-          return 9999 as unknown as ReturnType<typeof setTimeout>
+          return 9999
         }
-        return originalSetTimeout(cb as TimerHandler, delay, ...args)
+        return originalSetTimeout(cb, delay, ...args)
       })
 
       renderPage({
