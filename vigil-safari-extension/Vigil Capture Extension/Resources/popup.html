@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Keep in lockstep with ../../../vigil-extension/popup.html — Phase 114 (D-02) -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -32,10 +33,12 @@
       <label for="content-input">Content</label>
       <textarea id="content-input" rows="6" placeholder="What's on your mind?"></textarea>
     </div>
+    <label class="url-toggle"><input type="checkbox" id="include-url"> Include page URL</label>
     <button id="capture-btn" class="btn btn-primary">Capture</button>
+    <div class="shortcut-hint">Cmd+Enter to capture</div>
     <div id="capture-error" class="error-msg" hidden></div>
     <div id="capture-success" class="success-msg" hidden>
-      <span class="checkmark">&#10003;</span> Captured!
+      <span id="success-text"></span>
     </div>
   </div>
 
