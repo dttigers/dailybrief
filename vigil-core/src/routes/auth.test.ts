@@ -1,4 +1,4 @@
-import { describe, it } from "node:test";
+import { describe, it, beforeEach, mock } from "node:test";
 import assert from "node:assert/strict";
 import { Hono } from "hono";
 
@@ -21,7 +21,7 @@ import { Hono } from "hono";
 process.env["JWT_SECRET"] = "test-secret-32-chars-minimum-value-xxxxxx";
 // Test-only — each test sets/unsets VIGIL_ALLOWED_EMAILS as needed.
 
-const { auth } = await import("./auth.js"); // Plan 03 creates this
+const { auth, __setSendEmailVerificationEmailForTest, __resetSendEmailVerificationEmailForTest } = await import("./auth.js"); // Plan 03 creates this
 
 function buildApp() {
   const app = new Hono();
@@ -486,6 +486,350 @@ describe("POST /v1/auth/change-password — D-09..D-14 + ordering pin (CP-CHG-01
       );
     } finally {
       await deleteTestUser(user.id);
+    }
+  });
+});
+
+// ── Phase 113 (AUTH-11) — register email_verify token issuance + login emailVerifiedAt ──
+
+describe("POST /v1/auth/register — email_verify token issuance (AUTH-11)", () => {
+  beforeEach(() => __resetSendEmailVerificationEmailForTest());
+
+  // Helper: seed a test user directly in DB (bypasses allowlist + register flow)
+  async function seedVerifyTestUser(email: string) {
+    const { db } = await import("../db/connection.js");
+    const { users } = await import("../db/schema.js");
+    const { hashPassword } = await import("../utils/password.js");
+    if (!db) throw new Error("db not initialized");
+    const passwordHash = await hashPassword("validpass123456");
+    const [created] = await db
+      .insert(users)
+      .values({ email, passwordHash, passwordChangedAt: new Date() })
+      .returning({ id: users.id, email: users.email });
+    return created;
+  }
+
+  async function deleteVerifyTestUser(userId: number) {
+    const { db } = await import("../db/connection.js");
+    const { users, passwordResetTokens } = await import("../db/schema.js");
+    const { eq } = await import("drizzle-orm");
+    if (!db) return;
+    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+    await db.delete(users).where(eq(users.id, userId));
+  }
+
+  it("AUTH-11-R-01: fresh register → password_reset_tokens row exists with type='email_verify', used_at IS NULL, correct expiry window", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL not set");
+      return;
+    }
+    const { db } = await import("../db/connection.js");
+    const { passwordResetTokens } = await import("../db/schema.js");
+    const { eq, and, isNull, gt, lt } = await import("drizzle-orm");
+    if (!db) { t.skip("db not initialized"); return; }
+
+    // Inject a no-op spy
+    const spy = mock.fn(async () => ({ status: "sent" as const, messageId: "test" }));
+    __setSendEmailVerificationEmailForTest(spy as never);
+
+    const now = Date.now();
+    const testEmail = `auth11-r01-${now}@test.local`;
+    process.env["VIGIL_ALLOWED_EMAILS"] = testEmail;
+
+    const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456" });
+    assert.equal(res.status, 201);
+
+    const body = (await res.json()) as { id: number; email: string };
+    const userId = body.id;
+
+    try {
+      // Check DB for the token row
+      const minExpiry = new Date(now + 23 * 60 * 60 * 1000);
+      const maxExpiry = new Date(now + 25 * 60 * 60 * 1000);
+      const rows = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(
+          and(
+            eq(passwordResetTokens.userId, userId),
+            eq(passwordResetTokens.type, "email_verify"),
+            isNull(passwordResetTokens.usedAt),
+            gt(passwordResetTokens.expiresAt, minExpiry),
+            lt(passwordResetTokens.expiresAt, maxExpiry),
+          ),
+        );
+      assert.equal(rows.length, 1, "expected exactly one email_verify token row");
+    } finally {
+      await deleteVerifyTestUser(userId);
+    }
+  });
+
+  it("AUTH-11-R-02: fresh register fires sendEmailVerificationEmail spy EXACTLY ONCE with correct args", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL not set");
+      return;
+    }
+    const { db } = await import("../db/connection.js");
+    if (!db) { t.skip("db not initialized"); return; }
+
+    const spy = mock.fn(async () => ({ status: "sent" as const, messageId: "test" }));
+    __setSendEmailVerificationEmailForTest(spy as never);
+
+    const now = Date.now();
+    const testEmail = `auth11-r02-${now}@test.local`;
+    process.env["VIGIL_ALLOWED_EMAILS"] = testEmail;
+
+    const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456" });
+    assert.equal(res.status, 201);
+    const body = (await res.json()) as { id: number };
+
+    // Give fire-and-forget a tick to attach
+    await new Promise((r) => setTimeout(r, 50));
+
+    try {
+      assert.equal(spy.mock.calls.length, 1, "sendEmailVerificationEmail called exactly once");
+      const callArgs = spy.mock.calls[0].arguments as unknown as [string, string];
+      const [toArg, urlArg] = callArgs;
+      assert.equal(toArg, testEmail);
+      assert.match(urlArg, /^https?:\/\/.+\/auth\/verify\?token=[A-Za-z0-9_-]{40,50}$/);
+    } finally {
+      await deleteVerifyTestUser(body.id);
+    }
+  });
+
+  it("AUTH-11-R-03: fresh register returns 201 even if sendEmailVerificationEmail throws synchronously", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL not set");
+      return;
+    }
+    const { db } = await import("../db/connection.js");
+    if (!db) { t.skip("db not initialized"); return; }
+
+    // Spy that throws synchronously when called (promise rejects immediately)
+    const spy = mock.fn(async () => { throw new Error("Resend is down"); });
+    __setSendEmailVerificationEmailForTest(spy as never);
+
+    const now = Date.now();
+    const testEmail = `auth11-r03-${now}@test.local`;
+    process.env["VIGIL_ALLOWED_EMAILS"] = testEmail;
+
+    let rejectionFired = false;
+    const rejectionHandler = () => { rejectionFired = true; };
+    process.on("unhandledRejection", rejectionHandler);
+
+    const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456" });
+    const body = (await res.json()) as { id: number };
+
+    // Give the .catch() handler time to run
+    await new Promise((r) => setTimeout(r, 100));
+    process.off("unhandledRejection", rejectionHandler);
+
+    try {
+      assert.equal(res.status, 201, ".catch() must swallow the error — 201 expected");
+      assert.equal(rejectionFired, false, "unhandledRejection must not fire");
+    } finally {
+      await deleteVerifyTestUser(body.id);
+    }
+  });
+
+  it("AUTH-11-R-04: claim-flow with emailVerifiedAt IS NULL → token issued + email sent", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL not set");
+      return;
+    }
+    const { db } = await import("../db/connection.js");
+    const { users, passwordResetTokens } = await import("../db/schema.js");
+    const { eq, and, isNull } = await import("drizzle-orm");
+    const { PLACEHOLDER_HASH_PREFIX } = await import("./auth.js");
+    if (!db) { t.skip("db not initialized"); return; }
+
+    const spy = mock.fn(async () => ({ status: "sent" as const, messageId: "test" }));
+    __setSendEmailVerificationEmailForTest(spy as never);
+
+    const now = Date.now();
+    const testEmail = `auth11-r04-${now}@test.local`;
+    process.env["VIGIL_ALLOWED_EMAILS"] = testEmail;
+
+    // Seed a user with placeholder hash AND NULL emailVerifiedAt (simulates pre-claim seed user)
+    const [seeded] = await db
+      .insert(users)
+      .values({
+        email: testEmail,
+        passwordHash: `${PLACEHOLDER_HASH_PREFIX}XXXXXXXXXXXXX`,
+        passwordChangedAt: new Date(),
+        emailVerifiedAt: null,
+      })
+      .returning({ id: users.id });
+
+    try {
+      const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456" });
+      assert.equal(res.status, 201);
+      const body = (await res.json()) as { claimed?: boolean };
+      assert.equal(body.claimed, true);
+
+      // Give fire-and-forget a tick
+      await new Promise((r) => setTimeout(r, 50));
+
+      assert.equal(spy.mock.calls.length, 1, "email should be sent for unverified claim-flow user");
+
+      // Token row should exist
+      const rows = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(
+          and(
+            eq(passwordResetTokens.userId, seeded.id),
+            eq(passwordResetTokens.type, "email_verify"),
+            isNull(passwordResetTokens.usedAt),
+          ),
+        );
+      assert.equal(rows.length, 1, "token row should exist for unverified claim-flow user");
+    } finally {
+      await deleteVerifyTestUser(seeded.id);
+    }
+  });
+
+  it("AUTH-11-R-05: claim-flow with non-null emailVerifiedAt → NO token issued, NO email sent", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL not set");
+      return;
+    }
+    const { db } = await import("../db/connection.js");
+    const { users, passwordResetTokens } = await import("../db/schema.js");
+    const { eq, and, isNull } = await import("drizzle-orm");
+    const { PLACEHOLDER_HASH_PREFIX } = await import("./auth.js");
+    if (!db) { t.skip("db not initialized"); return; }
+
+    const spy = mock.fn(async () => ({ status: "sent" as const, messageId: "test" }));
+    __setSendEmailVerificationEmailForTest(spy as never);
+
+    const now = Date.now();
+    const testEmail = `auth11-r05-${now}@test.local`;
+    process.env["VIGIL_ALLOWED_EMAILS"] = testEmail;
+
+    // Seed a user with placeholder hash AND non-null emailVerifiedAt (post-backfill seed user)
+    const [seeded] = await db
+      .insert(users)
+      .values({
+        email: testEmail,
+        passwordHash: `${PLACEHOLDER_HASH_PREFIX}XXXXXXXXXXXXX`,
+        passwordChangedAt: new Date(),
+        emailVerifiedAt: new Date(), // already verified
+      })
+      .returning({ id: users.id });
+
+    try {
+      const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456" });
+      assert.equal(res.status, 201);
+
+      // Give fire-and-forget a tick
+      await new Promise((r) => setTimeout(r, 50));
+
+      assert.equal(spy.mock.calls.length, 0, "no email should be sent for already-verified claim-flow user");
+
+      // No new token row should exist
+      const rows = await db
+        .select()
+        .from(passwordResetTokens)
+        .where(
+          and(
+            eq(passwordResetTokens.userId, seeded.id),
+            eq(passwordResetTokens.type, "email_verify"),
+            isNull(passwordResetTokens.usedAt),
+          ),
+        );
+      assert.equal(rows.length, 0, "no token row should be inserted for already-verified claim-flow user");
+    } finally {
+      await deleteVerifyTestUser(seeded.id);
+    }
+  });
+});
+
+describe("POST /v1/auth/login — emailVerifiedAt in response (AUTH-11 D-26)", () => {
+  async function seedLoginTestUser(email: string, emailVerifiedAt: Date | null) {
+    const { db } = await import("../db/connection.js");
+    const { users } = await import("../db/schema.js");
+    const { hashPassword } = await import("../utils/password.js");
+    if (!db) throw new Error("db not initialized");
+    const passwordHash = await hashPassword("validpass123456");
+    const values = {
+      email,
+      passwordHash,
+      passwordChangedAt: new Date(Date.now() - 3600 * 1000),
+      emailVerifiedAt: emailVerifiedAt ?? undefined,
+    };
+    const [created] = await db
+      .insert(users)
+      .values(values)
+      .returning({ id: users.id, email: users.email });
+    return created;
+  }
+
+  async function deleteLoginTestUser(userId: number) {
+    const { db } = await import("../db/connection.js");
+    const { users, passwordResetTokens } = await import("../db/schema.js");
+    const { eq } = await import("drizzle-orm");
+    if (!db) return;
+    await db.delete(passwordResetTokens).where(eq(passwordResetTokens.userId, userId));
+    await db.delete(users).where(eq(users.id, userId));
+  }
+
+  it("AUTH-11-L-01: login response body includes emailVerifiedAt key (D-26 additive contract)", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL not set");
+      return;
+    }
+    const now = Date.now();
+    const testEmail = `auth11-l01-${now}@test.local`;
+    process.env["VIGIL_ALLOWED_EMAILS"] = testEmail;
+    const user = await seedLoginTestUser(testEmail, new Date());
+    try {
+      const res = await post("/v1/auth/login", { email: testEmail, password: "validpass123456" });
+      assert.equal(res.status, 200);
+      const body = (await res.json()) as { token: string; user: Record<string, unknown> };
+      assert.ok("emailVerifiedAt" in body.user, "'emailVerifiedAt' key must be present in login response user object (D-26)");
+      assert.equal(typeof body.token, "string");
+    } finally {
+      await deleteLoginTestUser(user.id);
+    }
+  });
+
+  it("AUTH-11-L-02: login response user.emailVerifiedAt is ISO 8601 string when DB column is non-null", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL not set");
+      return;
+    }
+    const now = Date.now();
+    const testEmail = `auth11-l02-${now}@test.local`;
+    process.env["VIGIL_ALLOWED_EMAILS"] = testEmail;
+    const verifiedAt = new Date("2026-04-25T12:00:00Z");
+    const user = await seedLoginTestUser(testEmail, verifiedAt);
+    try {
+      const res = await post("/v1/auth/login", { email: testEmail, password: "validpass123456" });
+      assert.equal(res.status, 200);
+      const body = (await res.json()) as { user: { emailVerifiedAt: unknown } };
+      assert.match(String(body.user.emailVerifiedAt), /^\d{4}-\d{2}-\d{2}T/, "emailVerifiedAt must be ISO 8601 string");
+    } finally {
+      await deleteLoginTestUser(user.id);
+    }
+  });
+
+  it("AUTH-11-L-03: login response user.emailVerifiedAt is JSON null when DB column is null", async (t) => {
+    if (!process.env["DATABASE_URL"]) {
+      t.skip("DATABASE_URL not set");
+      return;
+    }
+    const now = Date.now();
+    const testEmail = `auth11-l03-${now}@test.local`;
+    process.env["VIGIL_ALLOWED_EMAILS"] = testEmail;
+    const user = await seedLoginTestUser(testEmail, null);
+    try {
+      const res = await post("/v1/auth/login", { email: testEmail, password: "validpass123456" });
+      assert.equal(res.status, 200);
+      const body = (await res.json()) as { user: { emailVerifiedAt: unknown } };
+      assert.strictEqual(body.user.emailVerifiedAt, null, "emailVerifiedAt must be JSON null (not undefined, not omitted) for unverified user");
+    } finally {
+      await deleteLoginTestUser(user.id);
     }
   });
 });
