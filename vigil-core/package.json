@@ -18,7 +18,8 @@
     "seed:local": "tsx --env-file=.env scripts/seed-local.ts",
     "db:migrate-sqlite": "tsx scripts/migrate-sqlite.ts",
     "set-password": "tsx scripts/set-password.ts",
-    "smoke-test": "tsx scripts/smoke-test.ts"
+    "smoke-test": "tsx scripts/smoke-test.ts",
+    "smoke-test:verify-email": "tsx --env-file=.env scripts/smoke-test-verify-email.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",
