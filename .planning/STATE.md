@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: executing
-stopped_at: Phase 113 UI-SPEC approved
-last_updated: "2026-04-26T00:16:53.195Z"
-last_activity: 2026-04-26 -- Phase 113 planning complete
+stopped_at: Phase 113 Plan 01 complete (schema migration applied)
+last_updated: "2026-04-26T00:22:55.619Z"
+last_activity: 2026-04-26
 progress:
   total_phases: 5
   completed_phases: 4
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 112 — forgot-password-email-flow
+**Current focus:** Phase 113 — verify-email-on-signup
 
 ## Current Position
 
-Phase: 112
-Plan: Not started
+Phase: 113 (verify-email-on-signup) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-04-26 -- Phase 113 planning complete
+Last activity: 2026-04-26
 
 ```
 Phase 108 [          ] 0%   work_order_statuses userId Scoping + Isolation Test
@@ -68,6 +68,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 110 P03 | 5min | 2 tasks | 3 files |
 | Phase 112 P03 | 9min | 3 tasks | 3 files |
 | Phase 112 P04 | 7 | 4 tasks | 7 files |
+| Phase 113 P01 | 8min | 4 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,8 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 112]: Plan 04: ResetPasswordPage uses useMemo(searchParams.get('token')) at mount with NO useEffect — D-18 form-submit gate enforced at code level, not just behavior. 'does NOT call fetch on mount' test pins it for regression detection.
 - [Phase 112]: Plan 04: Mirrored existing AuthPage.test.tsx Object.defineProperty(window,'location') pattern for the new password_reset banner test — file consistency over Phase 110 anti-pattern flag. Replacing all session_expired tests is out of scope.
 - [Phase 112]: Plan 04: Added describe block 'Forgot password link (AUTH-10 D-14)' with 2 visibility tests (login mode shows, signup hides) beyond the plan's behavior block — D-14 visibility rule pinned at test level for cheap regression insurance.
+- [Phase 113]: 0017 migration when=1777440000000 (> 0016's 1777353600000): drizzle-kit orders by when not idx; monotonic invariant enforced via node -e check
+- [Phase 113]: emailVerifiedAt nullable (no .notNull(), no default): NULL is the unverified sentinel; 0017 backfill sets all 117 pre-existing users to created_at (SC#4 grandfathering)
 
 ### Pending Todos
 
@@ -149,7 +152,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-25T23:38:54.396Z
-Stopped at: Phase 113 UI-SPEC approved
-Resume file: .planning/phases/113-verify-email-on-signup/113-UI-SPEC.md
+Last session: 2026-04-26T00:22:55.613Z
+Stopped at: Phase 113 Plan 01 complete (schema migration applied)
+Resume file: None
 Next action: /gsd-plan-phase 108

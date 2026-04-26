@@ -21,7 +21,7 @@ Closes the auth surface. AUTH-06/07/08 shipped login/register/email-display in P
 
 - [x] **AUTH-09**: An authenticated user can change their password from the PWA profile page — re-entering their current password, setting a new one, and remaining logged in on success; confirmation email sent to the same address as an anti-hijack signal
 - [ ] **AUTH-10**: An unauthenticated user who forgot their password can request a reset link from the login page, always sees "check your inbox" regardless of whether the email exists (enumeration-safe), receives an opaque single-use token via email (expires 1 hour), and can set a new password by clicking the link — after reset, old JWTs from before the reset no longer authenticate
-- [ ] **AUTH-11**: A newly-registered user receives a verification email at signup, sees a non-blocking banner in the PWA until verified, can click the verification link to clear the banner (token expires 24 hours, single-use), and can resend the verification email (rate-limited 3 / hour) — users who registered before AUTH-11 shipped are grandfathered as verified on deploy
+- [x] **AUTH-11**: A newly-registered user receives a verification email at signup, sees a non-blocking banner in the PWA until verified, can click the verification link to clear the banner (token expires 24 hours, single-use), and can resend the verification email (rate-limited 3 / hour) — users who registered before AUTH-11 shipped are grandfathered as verified on deploy
 
 ### Transactional Email Infrastructure
 
@@ -92,5 +92,5 @@ Which phases cover which requirements. Updated during roadmap creation.
 | AUTH-09 | Phase 110 | Complete |
 | EMAIL-01 | Phase 111 | Pending |
 | AUTH-10 | Phase 112 | Pending |
-| AUTH-11 | Phase 113 | Pending |
+| AUTH-11 | Phase 113 | Complete |
 | EXT-02 | Phase 114 | Pending |
