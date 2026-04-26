@@ -76,12 +76,41 @@ export default function SettingsPage() {
   // by a newer one (e.g. collapse a re-opened form).
   const cpSuccessTimerRef = useRef<number | null>(null)
 
+  // Phase 113 (AUTH-11 D-28) — verify banner state from /v1/auth/me.
+  // Local component state only — no global store, no react-query, no SWR
+  // (D-28). Banner re-renders on every Settings mount via fresh /v1/auth/me.
+  const [meData, setMeData] = useState<{
+    id: number
+    email: string
+    emailVerifiedAt: string | null
+  } | null>(null)
+
+  // Phase 113 (AUTH-11 D-25) — Resend button lifecycle:
+  //   idle → sending → (200 → sent → 10s → idle)
+  //                  | (429 → rate_limited, terminal until page reload)
+  //                  | (5xx/network → error → idle re-enabled immediately)
+  type ResendState = 'idle' | 'sending' | 'sent' | 'rate_limited' | 'error'
+  const [resendState, setResendState] = useState<ResendState>('idle')
+  const resendSentTimerRef = useRef<number | null>(null)
+
   // WR-02: clear any pending collapse timer when the component unmounts.
   useEffect(() => {
     return () => {
       if (cpSuccessTimerRef.current !== null) {
         window.clearTimeout(cpSuccessTimerRef.current)
         cpSuccessTimerRef.current = null
+      }
+    }
+  }, [])
+
+  // Phase 113 (AUTH-11 D-25) — clear the 10s "Sent!" → idle timer on unmount
+  // to prevent setState on an unmounted component (mirrors cpSuccessTimerRef
+  // cleanup pattern above, Phase 110 WR-02 fix).
+  useEffect(() => {
+    return () => {
+      if (resendSentTimerRef.current !== null) {
+        window.clearTimeout(resendSentTimerRef.current)
+        resendSentTimerRef.current = null
       }
     }
   }, [])
@@ -103,6 +132,23 @@ export default function SettingsPage() {
       })
       .catch(() => {
         setAccountLoading(false)
+      })
+  }, [])
+
+  // Phase 113 (AUTH-11 D-28) — fetch /v1/auth/me on mount alongside /v1/me.
+  // Two endpoints coexist by design (UI-SPEC §Notes-4):
+  //   /v1/me        → { userId, email }              — App.tsx PostHog identify + accountEmail display
+  //   /v1/auth/me   → { id, email, emailVerifiedAt } — verify banner sentinel
+  // Do NOT consolidate — App.tsx depends on /v1/me response shape.
+  useEffect(() => {
+    vigilFetch('/v1/auth/me')
+      .then((r) => (r.ok ? r.json() : undefined))
+      .then((data?: { id: number; email: string; emailVerifiedAt: string | null }) => {
+        if (data) setMeData(data)
+      })
+      .catch(() => {
+        // Silent — banner absent if /v1/auth/me fails (UI-SPEC §Notes-6:
+        // no flash of banner on verified users; null meData → no render).
       })
   }, [])
 
@@ -259,6 +305,38 @@ export default function SettingsPage() {
     setCpShowNew(false)
   }, [])
 
+  // Phase 113 (AUTH-11 D-25) — Resend button click handler.
+  // Lifecycle: idle → sending → (200 → sent → 10s → idle)
+  //                           | (429 → rate_limited terminal)
+  //                           | (5xx/network → error → idle re-enabled)
+  async function handleResendClick() {
+    if (resendState !== 'idle' && resendState !== 'error') return
+    setResendState('sending')
+    try {
+      const res = await vigilFetch('/v1/auth/resend-verification', { method: 'POST' })
+      if (res.status === 429) {
+        setResendState('rate_limited')
+        return
+      }
+      if (!res.ok) {
+        setResendState('error')
+        return
+      }
+      setResendState('sent')
+      // 10s timer back to idle (D-25 — user can retry if email never arrives,
+      // e.g. spam folder). Mirror cpSuccessTimerRef pattern.
+      if (resendSentTimerRef.current !== null) {
+        window.clearTimeout(resendSentTimerRef.current)
+      }
+      resendSentTimerRef.current = window.setTimeout(() => {
+        setResendState('idle')
+        resendSentTimerRef.current = null
+      }, 10_000)
+    } catch {
+      setResendState('error')
+    }
+  }
+
   const handleTimezoneSave = async () => {
     setTimezoneSaving(true)
     try {
@@ -298,6 +376,50 @@ export default function SettingsPage() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto text-gray-50">
+      {/* Phase 113 (AUTH-11 D-22..D-25) — verify-email banner. Renders ONLY
+          when meData?.emailVerifiedAt === null. Non-dismissible (D-24); no
+          close control. Uses warning tokens defined in index.css @theme.
+          Placed BEFORE the dismissible Google OAuth banner and BEFORE <h1>. */}
+      {meData?.emailVerifiedAt === null && (
+        <div
+          role="alert"
+          className="mb-4 rounded border border-warning-400 bg-warning-50 px-4 py-3 flex items-center justify-between"
+        >
+          <p className="text-sm text-warning-400">
+            Verify your email — we sent a link to {meData.email}. Click it to confirm.
+          </p>
+          <div aria-live="polite" className="ml-3 flex items-center">
+            {resendState === 'rate_limited' ? (
+              <span className="text-xs text-red-400">
+                You've requested too many. Try again later.
+              </span>
+            ) : resendState === 'sent' ? (
+              <span className="text-sm text-warning-400">Sent! Check your inbox.</span>
+            ) : resendState === 'error' ? (
+              <>
+                <span className="text-sm text-red-400 mr-2">Could not send. Try again.</span>
+                <button
+                  type="button"
+                  onClick={handleResendClick}
+                  className="px-3 py-1 bg-teal-600 hover:bg-teal-500 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+                >
+                  Resend
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={handleResendClick}
+                disabled={resendState === 'sending'}
+                aria-disabled={resendState === 'sending'}
+                className="px-3 py-1 bg-teal-600 hover:bg-teal-500 rounded text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-teal-400"
+              >
+                {resendState === 'sending' ? 'Sending…' : 'Resend'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
       {banner && (
         <div
           role="alert"
