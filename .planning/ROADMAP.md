@@ -603,7 +603,7 @@ Plans:
 **Plans**: 5 plans
 Plans:
 - [x] 114-00-PLAN.md — Wave 0: verify-phase-114.sh harness + 114-HUMAN-UAT.md scaffold + D-02 lockstep header comments on Chrome side (D-15/D-16)
-- [ ] 114-01-PLAN.md — Wave 1: Cmd+Enter empirical probe (D-03/D-04/D-05) — commit-and-revert pair + 114-01-SUMMARY attestation; HARD DEPENDENCY for all later plans
+- [x] 114-01-PLAN.md — Wave 1: Cmd+Enter empirical probe (D-03/D-04/D-05) — commit-and-revert pair + 114-01-SUMMARY attestation; HARD DEPENDENCY for all later plans
 - [ ] 114-02-PLAN.md — Wave 2: Safari popup.html + popup.css verbatim port (checkbox, shortcut hint, dynamic span, 4 CSS rule blocks; D-02 Safari-side headers)
 - [ ] 114-03-PLAN.md — Wave 2: Safari popup.js verbatim port (empty-init, Cmd+Enter handler, URL append per D-06, triage poll per D-08/D-09/D-10, D-02 header)
 - [ ] 114-04-PLAN.md — Wave 3: xcodebuild clean build (D-16) + codesign --verify --deep --strict (D-15) + populate HUMAN-UAT + SC#5 hardware UAT checkpoint
