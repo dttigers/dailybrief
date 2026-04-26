@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: executing
-stopped_at: Phase 113 Plan 01 complete (schema migration applied)
-last_updated: "2026-04-26T00:22:55.619Z"
+stopped_at: Phase 113 Plan 02 complete (register token issuance + /v1/auth/me + index.ts wiring)
+last_updated: "2026-04-26T00:33:34.517Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 5
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 ## Current Position
 
 Phase: 113 (verify-email-on-signup) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-04-26
 
@@ -69,6 +69,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 112 P03 | 9min | 3 tasks | 3 files |
 | Phase 112 P04 | 7 | 4 tasks | 7 files |
 | Phase 113 P01 | 8min | 4 tasks | 3 files |
+| Phase 113 P02 | 7min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -126,6 +127,9 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 112]: Plan 04: Added describe block 'Forgot password link (AUTH-10 D-14)' with 2 visibility tests (login mode shows, signup hides) beyond the plan's behavior block — D-14 visibility rule pinned at test level for cheap regression insurance.
 - [Phase 113]: 0017 migration when=1777440000000 (> 0016's 1777353600000): drizzle-kit orders by when not idx; monotonic invariant enforced via node -e check
 - [Phase 113]: emailVerifiedAt nullable (no .notNull(), no default): NULL is the unverified sentinel; 0017 backfill sets all 117 pre-existing users to created_at (SC#4 grandfathering)
+- [Phase 113]: issueEmailVerifyToken() kept inline in auth.ts (not extracted to shared tokenIssue.ts): only 2 call sites in this plan; extraction deferred until Plan 03 adds a 3rd site
+- [Phase 113]: .catch() fire-and-forget used (not queueMicrotask): consistent with Phase 112 forgot-password.ts:221-223; RESEARCH Open Q1 confirmed this choice
+- [Phase 113]: auth-me.ts created as separate file (not extending me.ts): incompatible response shapes at incompatible paths; App.tsx PostHog identify preserved
 
 ### Pending Todos
 
@@ -152,7 +156,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-26T00:22:55.613Z
-Stopped at: Phase 113 Plan 01 complete (schema migration applied)
+Last session: 2026-04-26T00:33:34.511Z
+Stopped at: Phase 113 Plan 02 complete (register token issuance + /v1/auth/me + index.ts wiring)
 Resume file: None
 Next action: /gsd-plan-phase 108
