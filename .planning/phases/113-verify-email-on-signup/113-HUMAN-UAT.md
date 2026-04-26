@@ -100,27 +100,29 @@ Source: ROADMAP SC#2.
 
 ### Assertions
 
-- [ ] Banner renders at the TOP of /settings, above all other content sections.
-- [ ] Banner background is amber/yellow (warning tone — not red/error).
-- [ ] Banner text: "Verify your email — we sent a link to {email}. Click it to confirm."
+- [x] Banner renders at the TOP of /settings, above all other content sections.
+- [x] Banner background is amber/yellow (warning tone — not red/error).
+- [x] Banner text: "Verify your email — we sent a link to {email}. Click it to confirm."
       with the actual test email address interpolated.
-- [ ] "Resend" button is visible inside the banner.
-- [ ] No close (×) or dismiss button on the banner (D-24).
-- [ ] All other Settings sections (change-password, Google Connect, schedules, etc.)
+- [x] "Resend" button is visible inside the banner.
+- [x] No close (×) or dismiss button on the banner (D-24).
+- [x] All other Settings sections (change-password, Google Connect, schedules, etc.)
       load and function normally — the banner does NOT block any action.
-- [ ] Banner does NOT appear on /thoughts, /work-orders, or any other page (D-22).
+- [x] Banner does NOT appear on /thoughts, /work-orders, or any other page (D-22).
+      (Verified during SC#4 step: navigated to /settings AFTER post-login /thoughts redirect; no banner on /thoughts.)
 
 ### Observed
 
-- Banner renders at top of /settings: [ ] yes / [ ] no
-- Banner background color observed: 
-- Banner copy verbatim: 
-- Resend button visible: [ ] yes / [ ] no
-- Dismiss/× control: [ ] none (correct) / [ ] present (BUG)
-- Other Settings sections functional: [ ] yes / [ ] no
-- Banner on other pages: [ ] none (correct) / [ ] present (BUG — which page: )
+- Run timestamp: 2026-04-26T17:30:00Z (approx — banner check immediately after smoke test ALL CHECKS PASSED + psql null of seed user)
+- Banner renders at top of /settings: [x] yes
+- Banner background color observed: amber/yellow (warning tone)
+- Banner copy verbatim: matches spec — "Verify your email — we sent a link to jamesonmorrill1@gmail.com. Click it to confirm."
+- Resend button visible: [x] yes
+- Dismiss/× control: [x] none (correct)
+- Other Settings sections functional: [x] yes
+- Banner on other pages: [x] none (correct) — confirmed via SC#4 /thoughts navigation
 
-**Result:** [ ] PASS  [ ] FAIL  [ ] DEFERRED
+**Result:** [x] PASS  [ ] FAIL  [ ] DEFERRED
 
 ---
 
