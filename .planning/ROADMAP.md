@@ -467,7 +467,7 @@ Plans:
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 3/3 | Complete    | 2026-04-24 |
 | 112. Forgot-Password Email Flow | v3.6 | 5/5 | Complete    | 2026-04-25 |
 | 113. Verify Email on Signup | v3.6 | 5/5 | Complete    | 2026-04-26 |
-| 114. Safari Extension Quick-Capture Parity | v3.6 | 3/5 | In Progress|  |
+| 114. Safari Extension Quick-Capture Parity | v3.6 | 4/5 | In Progress|  |
 
 
 ## 🚧 v3.6 Multi-User Completion, Auth UX & Safari Parity (In Progress)
@@ -605,7 +605,7 @@ Plans:
 - [x] 114-00-PLAN.md — Wave 0: verify-phase-114.sh harness + 114-HUMAN-UAT.md scaffold + D-02 lockstep header comments on Chrome side (D-15/D-16)
 - [x] 114-01-PLAN.md — Wave 1: Cmd+Enter empirical probe (D-03/D-04/D-05) — commit-and-revert pair + 114-01-SUMMARY attestation; HARD DEPENDENCY for all later plans
 - [x] 114-02-PLAN.md — Wave 2: Safari popup.html + popup.css verbatim port (checkbox, shortcut hint, dynamic span, 4 CSS rule blocks; D-02 Safari-side headers)
-- [ ] 114-03-PLAN.md — Wave 2: Safari popup.js verbatim port (empty-init, Cmd+Enter handler, URL append per D-06, triage poll per D-08/D-09/D-10, D-02 header)
+- [x] 114-03-PLAN.md — Wave 2: Safari popup.js verbatim port (empty-init, Cmd+Enter handler, URL append per D-06, triage poll per D-08/D-09/D-10, D-02 header)
 - [ ] 114-04-PLAN.md — Wave 3: xcodebuild clean build (D-16) + codesign --verify --deep --strict (D-15) + populate HUMAN-UAT + SC#5 hardware UAT checkpoint
 **UI hint**: yes
 
@@ -619,7 +619,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe

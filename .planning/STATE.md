@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: executing
-stopped_at: Completed 114-02-PLAN.md (popup.html + popup.css verbatim Chrome port)
-last_updated: "2026-04-26T16:15:07.340Z"
+stopped_at: Completed 114-03-PLAN.md (verbatim Chrome → Safari port of popup.js)
+last_updated: "2026-04-26T16:21:57.040Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 5
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 ## Current Position
 
 Phase: 114 (safari-extension-quick-capture-parity) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-04-26
 
@@ -76,6 +76,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 114 P00 | 4min | 3 tasks | 5 files |
 | Phase 114 P01 | 8min | 3 tasks | 2 files |
 | Phase 114 P02 | 2min | 2 tasks | 2 files |
+| Phase 114 P03 | 2min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -146,6 +147,7 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 114]: [Phase 114]: Plan 00: 114-HUMAN-UAT.md replaces 113's deploy/deploy_time frontmatter fields with rebuild_sha/rebuild_time (local extension rebuild, not Railway); ship-with-uat-pending status (D-12); SC#3 row populated by Plan 01 SUMMARY, SC#5 row attested post-Plan-04 rebuild
 - [Phase 114]: Plan 01: D-04 PASS — Safari WebKit fires metaKey:true on popup keydown for Cmd+Enter (verbatim console: code:Enter, ctrlKey:false, key:Enter, metaKey:true). Probe added (9f4f475) and reverted (559c010); net-zero diff. Plans 02/03/04 unblocked.
 - [Phase 114]: Plan 02: D-11 byte-for-byte CSS parity verified via diff (lines 161-196 empty diff between Chrome popup.css and Safari popup.css); D-02 header at line 2 of popup.html (DOCTYPE preserved as line 1 — Pitfall 6); D-07 enforced — no checked attribute on include-url
+- [Phase 114]: Plan 03: Verbatim Chrome → Safari port of popup.js — 6 edits applied atomically (D-02 header line 2, DOM refs +successText/+includeUrlCheckbox, URL pre-fill removed and replaced with empty-init+focus+Cmd+Enter handler, URL-append with verbatim D-06 format on submit, finalContent in POST body, triage poll loop replacing static setTimeout). 166→205 newlines matches Chrome popup.js exactly. node --check SYNTAX OK. verify-phase-114.sh --static all 5 gates PASS. Plan acceptance grep 'cat.charAt(0).toUpperCase()' is defective (variable is updated.category, not cat) — verbatim Chrome behavior preserved at line 171.
 
 ### Pending Todos
 
@@ -172,7 +174,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-26T16:15:07.333Z
-Stopped at: Completed 114-02-PLAN.md (popup.html + popup.css verbatim Chrome port)
+Last session: 2026-04-26T16:21:47.754Z
+Stopped at: Completed 114-03-PLAN.md (verbatim Chrome → Safari port of popup.js)
 Resume file: None
 Next action: /gsd-plan-phase 108
