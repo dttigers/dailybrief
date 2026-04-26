@@ -8,8 +8,8 @@ source:
   - 114-RESEARCH.md
 created: 2026-04-26
 tested_by: jamesonmorrill1@gmail.com
-rebuild_sha: <commit SHA after Plans 01-04 land — fill in>
-rebuild_time: <UTC timestamp of xcodebuild clean build success — fill in>
+rebuild_sha: 1076fa7364d64079cecb4251a7991be83bd98f0c
+rebuild_time: 2026-04-26T16:24:51Z
 tested_on: <date — fill in when UAT is executed>
 ---
 
@@ -27,10 +27,10 @@ checkbox, and update frontmatter `status: verified` when sign-off is complete.
 
 ## Pre-flight
 
-- [ ] Plans 01-04 merged to main.
-- [ ] Plan 04 final `xcodebuild clean build` exited 0 (record SHA + UTC time in frontmatter).
-- [ ] `codesign --verify --deep --strict --verbose=2 <APP>` exited 0 for both `.app` and `.appex`.
-- [ ] Rebuilt `.app` was opened once via Finder or `open` to refresh Safari's extension binding.
+- [x] Plans 01-04 merged to main.
+- [x] Plan 04 final `xcodebuild clean build` exited 0 (record SHA + UTC time in frontmatter).
+- [x] `codesign --verify --deep --strict --verbose=2 <APP>` exited 0 for both `.app` and `.appex`.
+- [x] Rebuilt `.app` was opened once via Finder or `open` to refresh Safari's extension binding.
 - [ ] Safari fully quit (⌘Q, not just close window) and reopened — Pitfall 1 from 114-RESEARCH.md.
 - [ ] Vigil Capture extension shows enabled in Safari → Settings → Extensions.
 
@@ -60,21 +60,23 @@ Source: 114-VALIDATION.md Manual-Only row 1 / ROADMAP SC#3 / D-03.
 
 ### Assertions
 
-- [ ] Plan 01 SUMMARY.md exists at `.planning/phases/114-safari-extension-quick-capture-parity/114-01-SUMMARY.md`.
-- [ ] Plan 01 SUMMARY.md contains the verbatim console log line from the probe run.
-- [ ] The recorded log line shows `metaKey: true` when ⌘+Enter was pressed (D-04 success bar).
-- [ ] No `[probe]` string remains in `vigil-safari-extension/Vigil Capture Extension/Resources/popup.js` after the revert (proves D-03 commit-and-revert closure).
+- [x] Plan 01 SUMMARY.md exists at `.planning/phases/114-safari-extension-quick-capture-parity/114-01-SUMMARY.md`.
+- [x] Plan 01 SUMMARY.md contains the verbatim console log line from the probe run.
+- [x] The recorded log line shows `metaKey: true` when ⌘+Enter was pressed (D-04 success bar).
+- [x] No `[probe]` string remains in `vigil-safari-extension/Vigil Capture Extension/Resources/popup.js` after the revert (proves D-03 commit-and-revert closure).
 
 ### Observed (paste from Plan 01 SUMMARY)
 
-- Date/time of probe run:
-- Console log line (verbatim):
-- metaKey value observed:
-- ctrlKey value observed:
-- key value observed:
-- Probe revert commit SHA:
+- Date/time of probe run: 2026-04-26T16:08:32Z
+- Console log line (verbatim): `[probe] keydown { code: "Enter", ctrlKey: false, key: "Enter", metaKey: true }` (sourced from popup.js:100; right-click → Inspect Element workaround per Pitfall 2)
+- metaKey value observed: true
+- ctrlKey value observed: false
+- key value observed: Enter
+- Probe revert commit SHA: 559c010 (`559c0109430110afb98dd7a6c387dd04725d0933` — `revert(114-01): remove throwaway Cmd+Enter probe (D-03 closure)`)
 
-**Result:** [ ] PASS  [ ] FAIL  [ ] DEFERRED
+**Result:** [x] PASS  [ ] FAIL  [ ] DEFERRED
+
+Source: `.planning/phases/114-safari-extension-quick-capture-parity/114-01-SUMMARY.md` (probe_result: PASS in frontmatter; verbatim Web Inspector console output captured at lines 26-32; commit-and-revert pair `9f4f475` → `559c010` produces net-zero diff on popup.js).
 
 ---
 
@@ -140,7 +142,7 @@ Source: 114-VALIDATION.md Manual-Only row 2 / ROADMAP SC#5 / D-12.
 
 Complete after both SC sections are filled in.
 
-- [ ] SC#3 PASS — Plan 01 SUMMARY captured `metaKey: true` empirically; probe code reverted from popup.js.
+- [x] SC#3 PASS — Plan 01 SUMMARY captured `metaKey: true` empirically; probe code reverted from popup.js.
 - [ ] SC#5 PASS — Safari restart preserved extension; all four quick-capture parity behaviors (empty textarea, checkbox, Cmd+Enter, triage badge) verified live on physical Mac hardware.
 - [ ] No regressions in Phase 107 behaviors: extension still enabled across reboot, container app SMAppService.mainApp.register() still wired, persistence pill still renders.
 - [ ] Status updated to `verified` in this file's frontmatter.
