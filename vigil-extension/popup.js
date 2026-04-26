@@ -1,4 +1,5 @@
 'use strict';
+// Keep in lockstep with ../vigil-safari-extension/Vigil Capture Extension/Resources/popup.js — Phase 114 (D-02)
 
 const STORAGE_KEY = 'vigil_api_key';
 const API_BASE = 'https://api.vigilhub.io';
