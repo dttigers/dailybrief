@@ -120,6 +120,13 @@
       "when": 1777353600000,
       "tag": "0016_password_reset_tokens",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1777440000000,
+      "tag": "0017_users_email_verified_at",
+      "breakpoints": true
     }
   ]
 }
