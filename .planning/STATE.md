@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
 status: executing
-stopped_at: Phase 113 Plan 03 complete — verify-email + resend-verification endpoints shipped. Plan 04 (PWA) is next.
-last_updated: "2026-04-26T02:54:08.256Z"
+stopped_at: Phase 113 Plan 04 complete — PWA email verification surface shipped. Plan 05 (manual UAT) is next.
+last_updated: "2026-04-26T03:10:00.380Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 5
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 ## Current Position
 
 Phase: 113 (verify-email-on-signup) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-04-26
 
@@ -71,6 +71,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 113 P01 | 8min | 4 tasks | 3 files |
 | Phase 113 P02 | 7min | 3 tasks | 5 files |
 | Phase 113 P03 | 499 | 3 tasks | 5 files |
+| Phase 113 P04 | 704 | 3 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -133,6 +134,8 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 113]: auth-me.ts created as separate file (not extending me.ts): incompatible response shapes at incompatible paths; App.tsx PostHog identify preserved
 - [Phase 113]: tokenIssue.ts NOT extracted: 3 call sites across 2 files — deferred per CONTEXT Claude's Discretion; inline duplication is 4 lines
 - [Phase 113]: verifyEmail mount BEFORE bearerAuth dispatcher (ve=128 < disp=143); resendVerification AFTER (rv=200 > disp=143) — awk ORDER OK confirmed
+- [Phase 113]: vi.hoisted() required for vitest mock factories that reference external spy variables — plain const declarations cause ReferenceError when hoisted
+- [Phase 113]: setTimeout spy capture pattern (not vi.useFakeTimers) for 10s Resend timer test — fake timers intercept waitFor internals and deadlock; spy callback capture avoids the issue
 
 ### Pending Todos
 
@@ -159,7 +162,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-26T02:54:08.250Z
-Stopped at: Phase 113 Plan 03 complete — verify-email + resend-verification endpoints shipped. Plan 04 (PWA) is next.
+Last session: 2026-04-26T03:10:00.374Z
+Stopped at: Phase 113 Plan 04 complete — PWA email verification surface shipped. Plan 05 (manual UAT) is next.
 Resume file: None
 Next action: /gsd-plan-phase 108

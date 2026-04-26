@@ -466,7 +466,7 @@ Plans:
 | 110. Change Password + password_changed_at Gate | v3.6 | 3/3 | Complete    | 2026-04-24 |
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 3/3 | Complete    | 2026-04-24 |
 | 112. Forgot-Password Email Flow | v3.6 | 5/5 | Complete    | 2026-04-25 |
-| 113. Verify Email on Signup | v3.6 | 3/5 | In Progress|  |
+| 113. Verify Email on Signup | v3.6 | 4/5 | In Progress|  |
 | 114. Safari Extension Quick-Capture Parity | v3.6 | 0/0 | Not started | - |
 
 
@@ -586,7 +586,7 @@ Plans:
 - [x] 113-01-PLAN.md — Schema migration: 0017_users_email_verified_at.sql + Drizzle schema sync + _journal.json + apply via npm run db:migrate (Wave 1, [BLOCKING])
 - [x] 113-02-PLAN.md — Register hook (token issuance + fire-and-forget send) + login response with emailVerifiedAt + GET /v1/auth/me + bearerAuth bypass list update (Wave 2)
 - [x] 113-03-PLAN.md — POST /v1/auth/verify-email (atomic UPDATE-RETURNING claim) + POST /v1/auth/resend-verification (3/hr per userId, idempotent) + index.ts mounts (Wave 2)
-- [ ] 113-04-PLAN.md — PWA: VerifyEmailPage at /auth/verify + SettingsPage banner + Resend lifecycle + AuthPage login response type (Wave 3)
+- [x] 113-04-PLAN.md — PWA: VerifyEmailPage at /auth/verify + SettingsPage banner + Resend lifecycle + AuthPage login response type (Wave 3)
 - [ ] 113-05-PLAN.md — Live e2e smoke (smoke-test-verify-email.ts) + manual UAT checklist (HUMAN-UAT) covering all 5 SCs (Wave 4)
 **UI hint**: yes
 
@@ -613,7 +613,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 3/5 plans executed
+**Plans:** 4/5 plans executed
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
