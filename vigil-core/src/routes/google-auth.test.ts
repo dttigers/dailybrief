@@ -87,6 +87,70 @@ test("GA-02-prompt-consent: GET /auth/google returns 302 with prompt=consent and
   assert.ok(location.includes("prompt=consent"), "Location must include prompt=consent");
 });
 
+// ── POST /auth/google/init regression tests (2026-04-26 hotfix) ──────────────
+// The PWA cannot send Authorization headers via window.location.href, so the
+// legacy GET /auth/google initiation endpoint (added in Phase 102 with
+// bearerAuth) was unreachable from the browser. POST /auth/google/init is the
+// header-friendly replacement; the PWA does fetch(POST) → reads redirect_url
+// from JSON → window.location.href = redirect_url. These tests guard the
+// contract so the same regression cannot land twice silently.
+
+test("GA-INIT-01-dual-scopes: POST /auth/google/init returns 200 + JSON {redirect_url} containing both calendar.readonly AND gmail.readonly scopes", async () => {
+  const { app } = buildApp();
+  const res = await app.request("/auth/google/init", { method: "POST" });
+
+  assert.equal(res.status, 200, "Expected 200 OK");
+  assert.ok(
+    res.headers.get("content-type")?.includes("application/json"),
+    "Response Content-Type must be application/json"
+  );
+
+  const body = (await res.json()) as { redirect_url?: string };
+  assert.ok(typeof body.redirect_url === "string", "Body must contain redirect_url string");
+  assert.ok(body.redirect_url!.includes("accounts.google.com"), "redirect_url must point to accounts.google.com");
+  assert.ok(body.redirect_url!.includes("calendar.readonly"), "redirect_url must include calendar.readonly scope");
+  assert.ok(body.redirect_url!.includes("gmail.readonly"), "redirect_url must include gmail.readonly scope");
+});
+
+test("GA-INIT-02-prompt-consent: POST /auth/google/init returns redirect_url with prompt=consent and access_type=offline (refresh token issuance contract)", async () => {
+  const { app } = buildApp();
+  const res = await app.request("/auth/google/init", { method: "POST" });
+
+  assert.equal(res.status, 200);
+  const body = (await res.json()) as { redirect_url: string };
+  assert.ok(body.redirect_url.includes("access_type=offline"), "redirect_url must include access_type=offline");
+  assert.ok(body.redirect_url.includes("prompt=consent"), "redirect_url must include prompt=consent");
+});
+
+test("GA-INIT-03-state-userid: POST /auth/google/init signs state JWT with userId from c.get('userId') so the callback can attribute tokens", async () => {
+  const captured: Array<{ nonce: string; userId: number }> = [];
+  const { app } = buildApp({
+    signStateFn: async (nonce, userId) => {
+      captured.push({ nonce, userId });
+      return "test-jwt-with-userId-42";
+    },
+  });
+  const res = await app.request("/auth/google/init", { method: "POST" });
+
+  assert.equal(res.status, 200);
+  assert.equal(captured.length, 1, "signStateFn must be called exactly once");
+  assert.equal(captured[0]!.userId, 42, "signStateFn must receive userId from request context (set by bearerAuth in production)");
+  assert.equal(typeof captured[0]!.nonce, "string", "signStateFn must receive a nonce string");
+  assert.ok(captured[0]!.nonce.length >= 16, "nonce must be ≥16 chars (Phase 102 randomBytes(16).toString('hex'))");
+
+  const body = (await res.json()) as { redirect_url: string };
+  assert.ok(body.redirect_url.includes("state=test-jwt-with-userId-42"), "redirect_url must include the signed state JWT");
+});
+
+test("GA-INIT-04-method-only: GET /auth/google/init returns 404 — only POST is exposed (no accidental browser navigation hit)", async () => {
+  const { app } = buildApp();
+  const res = await app.request("/auth/google/init", { method: "GET" });
+  // Hono returns 404 for unmatched method+path. The whole point of this hotfix
+  // is that GET-via-window.location.href cannot carry the Authorization header,
+  // so init MUST be POST-only.
+  assert.equal(res.status, 404, "GET /auth/google/init must NOT be routable — it would re-introduce the header-on-redirect regression");
+});
+
 test("GA-03-callback-success: GET /auth/google/callback with valid JWT state and code redirects to PWA with google_connected=true", async () => {
   const { app, dbCalls } = buildApp({ verifyStateFn: async () => ({ valid: true, userId: 42 }) });
 
