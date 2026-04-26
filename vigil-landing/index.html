@@ -405,7 +405,7 @@
       </svg>
       <span class="nav-wordmark">Vigil</span>
     </a>
-    <span class="nav-badge">Early access</span>
+    <span class="nav-badge">Free early access</span>
   </nav>
 
   <!-- Hero -->
@@ -419,21 +419,8 @@
     <p class="hero-desc">Capture anything in seconds. Vigil organizes it, prioritizes it, and hands you a clear daily brief — so your brain doesn't have to hold it all.</p>
 
     <div class="waitlist-wrap">
-      <form class="waitlist-form" id="waitlist-form" action="https://formspree.io/f/xyklwjzn" method="POST" novalidate>
-        <input
-          class="waitlist-input"
-          type="email"
-          name="email"
-          placeholder="your@email.com"
-          required
-          aria-label="Email address"
-        />
-        <button class="waitlist-btn" type="submit" id="submit-btn">Join waitlist</button>
-      </form>
-      <p class="success-msg" id="success-msg" role="status">
-        You're on the list. We'll be in touch soon.
-      </p>
-      <p class="waitlist-note">No spam. Just a ping when it's ready.</p>
+      <a href="https://app.vigilhub.io" class="waitlist-btn" style="display:inline-block; text-decoration:none; line-height:44px; padding: 0 32px;">Get started free</a>
+      <p class="waitlist-note" style="margin-top:0.875rem;">Free early access · No credit card required</p>
     </div>
   </section>
 
@@ -549,39 +536,6 @@
     }, { threshold: 0.1 });
 
     document.querySelectorAll('.tile').forEach(tile => observer.observe(tile));
-
-    // Waitlist form
-    const form = document.getElementById('waitlist-form');
-    const btn = document.getElementById('submit-btn');
-    const successMsg = document.getElementById('success-msg');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const email = form.querySelector('input[type="email"]').value;
-      if (!email) return;
-
-      btn.textContent = 'Joining...';
-      btn.classList.add('loading');
-
-      try {
-        const res = await fetch(form.action, {
-          method: 'POST',
-          headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email })
-        });
-
-        if (res.ok) {
-          form.style.display = 'none';
-          successMsg.style.display = 'block';
-        } else {
-          btn.textContent = 'Try again';
-          btn.classList.remove('loading');
-        }
-      } catch {
-        btn.textContent = 'Try again';
-        btn.classList.remove('loading');
-      }
-    });
   </script>
 
 </body>
