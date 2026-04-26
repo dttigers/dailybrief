@@ -37,6 +37,7 @@ import { changePassword } from "./routes/change-password.js";
 import { forgotPassword } from "./routes/forgot-password.js";
 import { resetPassword } from "./routes/reset-password.js";
 import { me } from "./routes/me.js";
+import { authMe } from "./routes/auth-me.js"; // Phase 113 (AUTH-11 D-27) — distinct from /v1/me
 import { captureException, shutdownPosthog } from "./analytics/posthog.js";
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
@@ -131,6 +132,7 @@ app.use("/v1/*", async (c, next) => {
   if (c.req.path === "/v1/auth/login") return next();
   if (c.req.path === "/v1/auth/forgot-password") return next(); // Plan 02 ADDED
   if (c.req.path === "/v1/auth/reset-password") return next();  // Plan 03 ADDED
+  if (c.req.path === "/v1/auth/verify-email") return next();    // Phase 113 (AUTH-11 D-12) — token IS the auth
   return bearerAuth(c, next);
 });
 
@@ -183,7 +185,8 @@ app.route("/v1", sports);
 app.route("/v1", calendar);
 app.route("/v1", googleStatus);
 app.route("/v1", settings);
-app.route("/v1", me);  // Phase 103 Plan 03 — AUTH-08, behind bearerAuth catch-all (D-17)
+app.route("/v1", me);     // Phase 103 Plan 03 — AUTH-08, behind bearerAuth catch-all (D-17)
+app.route("/v1", authMe); // Phase 113 (AUTH-11 D-27) — GET /v1/auth/me, bearerAuth-protected
 
 // D-13 — single chokepoint for unhandled errors. Must be AFTER all app.route()
 // calls so Hono's handler-chain ordering routes thrown errors here (Pitfall 4).
