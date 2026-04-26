@@ -59,6 +59,11 @@ The line-level diff between Chrome's [vigil-extension/popup.{html,js,css}](../..
 - **D-13:** **Re-sign = `xcodebuild` rebuild only.** Phase 107 already wired automatic code signing in [vigil-safari-extension/Vigil Capture.xcodeproj/project.pbxproj](../../../vigil-safari-extension/Vigil%20Capture.xcodeproj/project.pbxproj) (`CODE_SIGN_STYLE = Automatic`). Rebuilding the `.app` re-signs the extension `.appex` automatically. No separate `codesign` step.
 - **D-14:** **`chrome.*` namespace stays.** Current Safari popup.js already uses `chrome.tabs.query` and `chrome.storage.local.get` and works (see [popup.js:86, 159](../../../vigil-safari-extension/Vigil%20Capture%20Extension/Resources/popup.js)). No `browser.*` migration. Out of scope.
 
+### SC#5 reword — codesign instead of spctl (added 2026-04-26 from RESEARCH.md Open Q1)
+
+- **D-15:** **SC#5 verifies via `codesign --verify --deep --strict`, NOT `spctl --assess`.** Phase 114 RESEARCH.md empirically verified that `spctl --assess --type execute|install|open` **rejects** Apple Development-signed builds by design — only Developer ID + notarization passes Gatekeeper. Local development signing (Phase 107's automatic-signing path) cannot satisfy `spctl`. ROADMAP.md SC#5 reworded accordingly: re-sign via `xcodebuild`, then `codesign --verify --deep --strict /path/to/Vigil Capture.app` exits 0. `spctl --assess` deferred to a future phase (v3.7+, likely tied to TestFlight/distribution work where Developer ID + notarization are in scope anyway).
+- **D-16:** **`xcodebuild clean build` (not just `build`) for Plan 01 throwaway probe and Plan 04 final rebuild.** RESEARCH.md Open Q2 — clean rebuild eliminates `Resources/*` staleness bugs at ~30s cost. Worth it for the load-bearing probe (D-03) and the final UAT artifact.
+
 ### Claude's Discretion
 
 - Exact Plan numbering / split (e.g., whether HTML + CSS is one plan or two; whether the throwaway probe revert lives in Plan 01 or extends to Plan 02; whether re-sign verification is its own plan).

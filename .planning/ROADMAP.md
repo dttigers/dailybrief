@@ -599,7 +599,7 @@ Plans:
   2. The "Include page URL" checkbox appends the current tab's URL to the capture content when checked at submit time
   3. Cmd+Enter submits the capture without requiring a mouse click — verified empirically in Safari popup before any implementation code is written
   4. After a successful capture, a triage feedback badge appears showing the AI-assigned category (polling up to 5 seconds); the static "Captured!" text is replaced with the dynamic badge
-  5. The updated extension is re-signed with Xcode and spctl --assess passes; the extension remains functional after Safari is restarted
+  5. The updated extension is re-signed via `xcodebuild` and `codesign --verify --deep --strict` passes on the rebuilt `.app`; the extension remains functional after Safari is restarted on physical Mac hardware (`spctl --assess` deferred — requires Developer ID + notarization, out of scope for v3.6)
 **Plans**: TBD
 **UI hint**: yes
 
