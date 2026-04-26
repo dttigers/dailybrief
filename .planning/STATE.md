@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
-status: executing
-stopped_at: Completed 114-03-PLAN.md (verbatim Chrome → Safari port of popup.js)
-last_updated: "2026-04-26T16:21:57.040Z"
+status: verifying
+stopped_at: "Completed 114-04-PLAN.md (final ship gate — xcodebuild clean build + codesign verify; HUMAN-UAT populated; SC#5 ship-with-uat-pending per D-12)"
+last_updated: "2026-04-26T16:30:25.562Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 5
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-22)
 
 Phase: 114 (safari-extension-quick-capture-parity) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-26
 
 ```
@@ -77,6 +77,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 114 P01 | 8min | 3 tasks | 2 files |
 | Phase 114 P02 | 2min | 2 tasks | 2 files |
 | Phase 114 P03 | 2min | 1 tasks | 1 files |
+| Phase 114 P04 | 3min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -148,6 +149,8 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 114]: Plan 01: D-04 PASS — Safari WebKit fires metaKey:true on popup keydown for Cmd+Enter (verbatim console: code:Enter, ctrlKey:false, key:Enter, metaKey:true). Probe added (9f4f475) and reverted (559c010); net-zero diff. Plans 02/03/04 unblocked.
 - [Phase 114]: Plan 02: D-11 byte-for-byte CSS parity verified via diff (lines 161-196 empty diff between Chrome popup.css and Safari popup.css); D-02 header at line 2 of popup.html (DOCTYPE preserved as line 1 — Pitfall 6); D-07 enforced — no checked attribute on include-url
 - [Phase 114]: Plan 03: Verbatim Chrome → Safari port of popup.js — 6 edits applied atomically (D-02 header line 2, DOM refs +successText/+includeUrlCheckbox, URL pre-fill removed and replaced with empty-init+focus+Cmd+Enter handler, URL-append with verbatim D-06 format on submit, finalContent in POST body, triage poll loop replacing static setTimeout). 166→205 newlines matches Chrome popup.js exactly. node --check SYNTAX OK. verify-phase-114.sh --static all 5 gates PASS. Plan acceptance grep 'cat.charAt(0).toUpperCase()' is defective (variable is updated.category, not cat) — verbatim Chrome behavior preserved at line 171.
+- [Phase 114]: Plan 04: D-15/D-16 ship gate green — xcodebuild clean build (15s) + codesign --verify --deep --strict on .app + .appex both exit 0; verify-phase-114.sh --full all 7 checks PASS; rebuilt at DerivedData/Vigil_Capture-ecqueqzbhctzqhcfrasvarwjuont/...; TeamIdentifier=5H57ADQS8G + hardened runtime 0x10000 preserved through clean rebuild (Phase 107 hotfix integrity)
+- [Phase 114]: Plan 04: HUMAN-UAT.md populated — rebuild_sha=1076fa7, rebuild_time=2026-04-26T16:24:51Z, SC#3 Observed block from Plan 01 SUMMARY (metaKey:true confirmed empirically), pre-flight rows 1-4 ticked. SC#5 hardware UAT row left ship-with-uat-pending per D-12 (Phase 107/113 precedent — executor does not wait for Safari restart, surfaces in /gsd-progress until user signs off)
 
 ### Pending Todos
 
@@ -174,7 +177,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-26T16:21:47.754Z
-Stopped at: Completed 114-03-PLAN.md (verbatim Chrome → Safari port of popup.js)
+Last session: 2026-04-26T16:30:15.812Z
+Stopped at: Completed 114-04-PLAN.md (final ship gate — xcodebuild clean build + codesign verify; HUMAN-UAT populated; SC#5 ship-with-uat-pending per D-12)
 Resume file: None
 Next action: /gsd-plan-phase 108

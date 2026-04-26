@@ -467,7 +467,7 @@ Plans:
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 3/3 | Complete    | 2026-04-24 |
 | 112. Forgot-Password Email Flow | v3.6 | 5/5 | Complete    | 2026-04-25 |
 | 113. Verify Email on Signup | v3.6 | 5/5 | Complete    | 2026-04-26 |
-| 114. Safari Extension Quick-Capture Parity | v3.6 | 4/5 | In Progress|  |
+| 114. Safari Extension Quick-Capture Parity | v3.6 | 5/5 | Complete   | 2026-04-26 |
 
 
 ## 🚧 v3.6 Multi-User Completion, Auth UX & Safari Parity (In Progress)
@@ -482,7 +482,7 @@ Plans:
 - [x] **Phase 111: Transactional Email Infrastructure (Resend + DNS)** - Resend account + DKIM/SPF/DMARC on vigilhub.io + email-service.ts module + Railway env (completed 2026-04-24)
 - [x] **Phase 112: Forgot-Password Email Flow** - POST /v1/auth/forgot-password + POST /v1/auth/reset-password + password_reset_tokens migration + PWA pages (completed 2026-04-25)
 - [x] **Phase 113: Verify Email on Signup** - emailVerifiedAt migration + register hook + GET /v1/auth/verify-email/:token + resend endpoint + PWA banner (completed 2026-04-26)
-- [ ] **Phase 114: Safari Extension Quick-Capture Parity** - popup.html + popup.js delta to match Chrome Phase 94; Xcode rebuild + UAT
+- [x] **Phase 114: Safari Extension Quick-Capture Parity** - popup.html + popup.js delta to match Chrome Phase 94; Xcode rebuild + UAT (completed 2026-04-26)
 
 ## v3.6 Phase Details
 
@@ -606,7 +606,7 @@ Plans:
 - [x] 114-01-PLAN.md — Wave 1: Cmd+Enter empirical probe (D-03/D-04/D-05) — commit-and-revert pair + 114-01-SUMMARY attestation; HARD DEPENDENCY for all later plans
 - [x] 114-02-PLAN.md — Wave 2: Safari popup.html + popup.css verbatim port (checkbox, shortcut hint, dynamic span, 4 CSS rule blocks; D-02 Safari-side headers)
 - [x] 114-03-PLAN.md — Wave 2: Safari popup.js verbatim port (empty-init, Cmd+Enter handler, URL append per D-06, triage poll per D-08/D-09/D-10, D-02 header)
-- [ ] 114-04-PLAN.md — Wave 3: xcodebuild clean build (D-16) + codesign --verify --deep --strict (D-15) + populate HUMAN-UAT + SC#5 hardware UAT checkpoint
+- [x] 114-04-PLAN.md — Wave 3: xcodebuild clean build (D-16) + codesign --verify --deep --strict (D-15) + populate HUMAN-UAT + SC#5 hardware UAT checkpoint
 **UI hint**: yes
 
 ## Backlog
@@ -619,7 +619,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe

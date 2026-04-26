@@ -33,7 +33,7 @@ Prerequisite for AUTH-10 + AUTH-11. First outbound email in Vigil. Called out as
 
 Safari extension still ships the Phase 84 one-click URL capture only. Chrome got the Phase 94 quick-capture upgrade (freeform text + URL + triage feedback + Cmd+Enter) and daily use shows the gap. Safari-specific UX port of existing Chrome popup code.
 
-- [ ] **EXT-02**: The Safari extension popup offers Chrome Phase 94 quick-capture parity — freeform text input (pre-filled empty, not with URL), optional "Include page URL" checkbox, Cmd+Enter keyboard shortcut to submit, and a triage feedback badge displaying the AI-assigned category after submit — verified working on physical Mac hardware
+- [x] **EXT-02**: The Safari extension popup offers Chrome Phase 94 quick-capture parity — freeform text input (pre-filled empty, not with URL), optional "Include page URL" checkbox, Cmd+Enter keyboard shortcut to submit, and a triage feedback badge displaying the AI-assigned category after submit — verified working on physical Mac hardware
 
 ## Deferred to v3.7
 
@@ -93,4 +93,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EMAIL-01 | Phase 111 | Pending |
 | AUTH-10 | Phase 112 | Pending |
 | AUTH-11 | Phase 113 | Complete |
-| EXT-02 | Phase 114 | Pending |
+| EXT-02 | Phase 114 | Complete |
