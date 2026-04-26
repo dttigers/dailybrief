@@ -467,7 +467,7 @@ Plans:
 | 111. Transactional Email Infrastructure (Resend + DNS) | v3.6 | 3/3 | Complete    | 2026-04-24 |
 | 112. Forgot-Password Email Flow | v3.6 | 5/5 | Complete    | 2026-04-25 |
 | 113. Verify Email on Signup | v3.6 | 5/5 | Complete    | 2026-04-26 |
-| 114. Safari Extension Quick-Capture Parity | v3.6 | 5/5 | Complete   | 2026-04-26 |
+| 114. Safari Extension Quick-Capture Parity | v3.6 | 5/5 | Complete    | 2026-04-26 |
 
 
 ## 🚧 v3.6 Multi-User Completion, Auth UX & Safari Parity (In Progress)
