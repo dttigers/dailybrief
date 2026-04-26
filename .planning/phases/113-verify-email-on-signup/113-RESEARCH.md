@@ -593,19 +593,19 @@ This is an additive phase — no rename or refactor. No runtime state migration 
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **`queueMicrotask` vs `.catch()` fire-and-forget (D-08 vs live pattern)**
+1. **`queueMicrotask` vs `.catch()` fire-and-forget (D-08 vs live pattern)** — **RESOLVED:** Plans use `.catch()` throughout for consistency with Phase 112 live code. Both are semantically equivalent for fire-and-forget; `.catch()` is the established codebase pattern. Documented inline in Plan 02 Task 1.
    - What we know: D-08 specifies `queueMicrotask`. Phase 112 live code uses `.catch()` on the promise directly before returning.
    - What's unclear: Whether the planner should introduce `queueMicrotask` to match D-08 literally, or use `.catch()` for consistency with Phase 112.
    - Recommendation: Use `.catch()` pattern (Phase 112 live code) for codebase consistency unless the user wants to standardize on `queueMicrotask`. Both are safe — `queueMicrotask` only affects microtask scheduling order, not the correctness of the fire-and-forget semantics. Document the choice in a comment.
 
-2. **Shared `tokenIssue.ts` helper (Claude's Discretion)**
+2. **Shared `tokenIssue.ts` helper (Claude's Discretion)** — **RESOLVED:** Plans choose inline duplication for Phase 113 (per Claude's Discretion in CONTEXT.md). Helper extraction deferred to a future refactor phase once all 4 call sites have shipped and stabilized — premature consolidation risks coupling unrelated lifecycles.
    - What we know: After Phase 113, the pattern `randomBytes(32) → base64url → SHA-256 → INSERT password_reset_tokens` appears in register (fresh), register (claim), forgot-password, and resend-verification — 4 call sites.
    - What's unclear: Whether the duplication warrants a helper yet.
    - Recommendation: Extract a shared helper `issueToken(db, userId, type, ttlMs): Promise<string>` that returns the rawToken. Reduces copy-paste errors across 4 sites and makes future maintenance (e.g., changing token entropy) a single-file change.
 
-3. **Auth.ts register handler integration test scope**
+3. **Auth.ts register handler integration test scope** — **RESOLVED:** Plans extend the existing `auth.test.ts` with a new `describe()` block, matching the recommendation. Single-file convention preserved.
    - What we know: The existing `auth.test.ts` has unit tests for register. Phase 113 adds token issuance + fire-and-forget to the register handler.
    - What's unclear: Whether to add the new assertions into `auth.test.ts` or create a new `register-verify.test.ts`.
    - Recommendation: Extend `auth.test.ts` with a `describe("register → email_verify token issuance (AUTH-11)")` block — keeps the single-file convention for the register route tests.

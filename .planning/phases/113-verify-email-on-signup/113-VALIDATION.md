@@ -1,10 +1,11 @@
 ---
 phase: 113
 slug: verify-email-on-signup
-status: draft
-nyquist_compliant: false
+status: planned
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-04-25
+finalized: 2026-04-25
 ---
 
 # Phase 113 — Validation Strategy
@@ -37,13 +38,19 @@ created: 2026-04-25
 
 ## Per-Task Verification Map
 
-*Filled in by planner during plan creation. Each task gets a row.*
+*Each task in every plan has an `<automated>` verify command. Plans = 5, tasks total = 15 (01: 4, 02: 3, 03: 3, 04: 3, 05: 2). Per-plan summary below; full per-task `<automated>` commands live in each PLAN.md task block.*
 
-| Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
-|---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| TBD | TBD | TBD | AUTH-11 | TBD | TBD | TBD | TBD | TBD | ⬜ pending |
+| Plan | Wave | Tasks | Requirement | Threat Refs | Verify Strategy | Status |
+|------|------|-------|-------------|-------------|-----------------|--------|
+| 113-01 (schema) | 1 | 4 | AUTH-11 | T-113-08 | grep schema.ts emailVerifiedAt + journal `when` monotonic + `psql -c "SELECT COUNT(*) FROM users WHERE email_verified_at IS NULL"` returns 0 after `npm run db:migrate` | ⬜ pending |
+| 113-02 (register hook + /me + bypass) | 2 | 3 | AUTH-11 | T-113-01, T-113-06, T-113-08 | `npx tsx --test src/routes/auth.test.ts` (extended) + `npx tsx --test src/routes/auth-me.test.ts` + grep index.ts bypass list | ⬜ pending |
+| 113-03 (verify-email + resend endpoints) | 2 | 3 | AUTH-11 | T-113-02, T-113-03, T-113-04, T-113-07 | `npx tsx --test src/routes/verify-email.test.ts` + `npx tsx --test src/routes/resend-verification.test.ts` + awk mount-order check on index.ts | ⬜ pending |
+| 113-04 (PWA — verify page + Settings banner) | 3 | 3 | AUTH-11 | T-113-04, T-113-05 | `npm test -w vigil-pwa -- VerifyEmailPage` + `npm test -w vigil-pwa -- SettingsPage` + grep VerifyEmailPage uses raw `fetch(` not `vigilFetch(` | ⬜ pending |
+| 113-05 (live e2e smoke + HUMAN-UAT) | 4 | 2 | AUTH-11 | T-113-01..T-113-08 (whole-flow) | `npx tsx scripts/smoke-test-verify-email.ts` against Railway prod after deploy + manual UAT checklist (HUMAN-UAT.md) covering all 5 SCs incl. real Gmail inbox + Apple Mail prefetch | ⬜ pending (1 task is human-checkpoint) |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
+
+**Sampling continuity verified:** No 3-consecutive-task gap without an automated verify (only Plan 05 Task 2 is `checkpoint:human-verify`; preceded and followed by automated tasks).
 
 ---
 
