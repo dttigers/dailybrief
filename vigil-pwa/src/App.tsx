@@ -9,6 +9,7 @@ import Layout from './components/Layout'
 import AuthPage from './pages/AuthPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
+import VerifyEmailPage from './pages/VerifyEmailPage'
 import DashboardPage from './pages/DashboardPage'
 import WorkOrdersPage from './pages/WorkOrdersPage'
 import ProjectsPage from './pages/ProjectsPage'
@@ -68,6 +69,11 @@ export default function App() {
           about to be logged out by the password change. */}
       <Route path="/auth/forgot" element={<ForgotPasswordPage />} />
       <Route path="/auth/reset" element={<ResetPasswordPage />} />
+      {/* Phase 113 (AUTH-11) — verify-email page. Sibling to /auth/forgot
+          and /auth/reset; OUTSIDE the protected Layout cluster (no
+          isAuthenticated guard) so users hitting verify links from email
+          while logged-out can still complete the verify action. */}
+      <Route path="/auth/verify" element={<VerifyEmailPage />} />
       <Route
         path="/*"
         element={
