@@ -95,6 +95,11 @@ async function initCaptureView(apiKey) {
     contentInput.focus();
   }
 
+  // PHASE 114 PROBE — REVERT BEFORE IMPLEMENTATION (D-03/D-04). DO NOT SHIP.
+  contentInput.addEventListener('keydown', (e) => {
+    console.log('[probe] keydown', { key: e.key, metaKey: e.metaKey, ctrlKey: e.ctrlKey, code: e.code });
+  });
+
   captureBtn.onclick = async () => {
     const content = contentInput.value.trim();
     if (!content) {
