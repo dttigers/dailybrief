@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.6
 milestone_name: Multi-User Completion, Auth UX & Safari Parity
-status: verifying
-stopped_at: Phase 114 context gathered
-last_updated: "2026-04-26T04:11:34.041Z"
+status: executing
+stopped_at: Completed 114-00-PLAN.md (Wave 0 scaffold)
+last_updated: "2026-04-26T15:57:34.713Z"
 last_activity: 2026-04-26
 progress:
   total_phases: 5
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-22)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 113 — verify-email-on-signup
+**Current focus:** Phase 114 — safari-extension-quick-capture-parity
 
 ## Current Position
 
-Phase: 113
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 114 (safari-extension-quick-capture-parity) — EXECUTING
+Plan: 2 of 5
+Status: Ready to execute
 Last activity: 2026-04-26
 
 ```
@@ -73,6 +73,7 @@ v3.6 overall [          ] 0/7 phases complete
 | Phase 113 P03 | 499 | 3 tasks | 5 files |
 | Phase 113 P04 | 704 | 3 tasks | 6 files |
 | Phase 113 P05 | 7min | 2 tasks | 3 files |
+| Phase 114 P00 | 4min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -138,6 +139,9 @@ All decisions logged in PROJECT.md Key Decisions table.
 - [Phase 113]: vi.hoisted() required for vitest mock factories that reference external spy variables — plain const declarations cause ReferenceError when hoisted
 - [Phase 113]: setTimeout spy capture pattern (not vi.useFakeTimers) for 10s Resend timer test — fake timers intercept waitFor internals and deadlock; spy callback capture avoids the issue
 - [Phase 113]: Cleanup DELETE in finally block for idempotent smoke re-runs: insertedTokenId scoped outside try so orphan rows never accumulate on ECONNREFUSED or mid-run failures
+- [Phase 114]: [Phase 114]: Plan 00: verify-phase-114.sh encodes D-15 (codesign --verify --deep --strict) + D-16 (xcodebuild clean build) with negative grep guard preventing spctl --assess re-introduction; --static / --runtime / --full mode dispatcher mirrors verify-phase-107.sh shape
+- [Phase 114]: [Phase 114]: Plan 00: D-02 lockstep header lands at line 2 in popup.html (after DOCTYPE — Pitfall 6 quirks-mode mitigation) and popup.js (after 'use strict';); line 1 in popup.css; Plans 02/03 mirror with reversed ../../../ relative path
+- [Phase 114]: [Phase 114]: Plan 00: 114-HUMAN-UAT.md replaces 113's deploy/deploy_time frontmatter fields with rebuild_sha/rebuild_time (local extension rebuild, not Railway); ship-with-uat-pending status (D-12); SC#3 row populated by Plan 01 SUMMARY, SC#5 row attested post-Plan-04 rebuild
 
 ### Pending Todos
 
@@ -164,7 +168,7 @@ None — ready to plan Phase 108.
 
 ## Session Continuity
 
-Last session: 2026-04-26T04:11:34.035Z
-Stopped at: Phase 114 context gathered
-Resume file: .planning/phases/114-safari-extension-quick-capture-parity/114-CONTEXT.md
+Last session: 2026-04-26T15:57:34.707Z
+Stopped at: Completed 114-00-PLAN.md (Wave 0 scaffold)
+Resume file: None
 Next action: /gsd-plan-phase 108
