@@ -38,6 +38,8 @@ import { forgotPassword } from "./routes/forgot-password.js";
 import { resetPassword } from "./routes/reset-password.js";
 import { me } from "./routes/me.js";
 import { authMe } from "./routes/auth-me.js"; // Phase 113 (AUTH-11 D-27) — distinct from /v1/me
+import { verifyEmail } from "./routes/verify-email.js";          // Phase 113 (AUTH-11) — unauthenticated; mount BEFORE bearerAuth dispatcher
+import { resendVerification } from "./routes/resend-verification.js"; // Phase 113 (AUTH-11) — bearerAuth required; mount AFTER dispatcher
 import { captureException, shutdownPosthog } from "./analytics/posthog.js";
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
@@ -120,6 +122,11 @@ app.route("/v1", forgotPassword);
 // IS the auth credential). Mount BEFORE bearerAuth and exempt the path below.
 app.route("/v1", resetPassword);
 
+// Phase 113 (AUTH-11) — verify-email is unauthenticated (the opaque token IS
+// the auth credential — D-12). Mount BEFORE bearerAuth and ensure Plan 02
+// Task 3 added the path to the dispatcher's exempt list.
+app.route("/v1", verifyEmail);
+
 // Auth middleware — all /v1/* routes except /v1/health, register, login, and
 // the Google OAuth callback require a valid API key.
 // Phase 102 RESEARCH Open Q3 (path a): /v1/auth/google/callback stays public
@@ -187,6 +194,10 @@ app.route("/v1", googleStatus);
 app.route("/v1", settings);
 app.route("/v1", me);     // Phase 103 Plan 03 — AUTH-08, behind bearerAuth catch-all (D-17)
 app.route("/v1", authMe); // Phase 113 (AUTH-11 D-27) — GET /v1/auth/me, bearerAuth-protected
+// Phase 113 (AUTH-11 D-15) — resend-verification is bearerAuth-protected
+// (user must be logged in; rate limit keyed by JWT-derived userId). Mounted
+// AFTER the dispatcher so it inherits the bearerAuth gate automatically.
+app.route("/v1", resendVerification);
 
 // D-13 — single chokepoint for unhandled errors. Must be AFTER all app.route()
 // calls so Hono's handler-chain ordering routes thrown errors here (Pitfall 4).
