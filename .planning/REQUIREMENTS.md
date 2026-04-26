@@ -20,14 +20,14 @@ Tech debt carried forward from v3.4. The multi-user foundation shipped, but thre
 Closes the auth surface. AUTH-06/07/08 shipped login/register/email-display in Phase 104. This milestone adds self-service password management and the forgot-password flow — which introduces Vigil's first outbound email.
 
 - [x] **AUTH-09**: An authenticated user can change their password from the PWA profile page — re-entering their current password, setting a new one, and remaining logged in on success; confirmation email sent to the same address as an anti-hijack signal
-- [ ] **AUTH-10**: An unauthenticated user who forgot their password can request a reset link from the login page, always sees "check your inbox" regardless of whether the email exists (enumeration-safe), receives an opaque single-use token via email (expires 1 hour), and can set a new password by clicking the link — after reset, old JWTs from before the reset no longer authenticate
+- [x] **AUTH-10**: An unauthenticated user who forgot their password can request a reset link from the login page, always sees "check your inbox" regardless of whether the email exists (enumeration-safe), receives an opaque single-use token via email (expires 1 hour), and can set a new password by clicking the link — after reset, old JWTs from before the reset no longer authenticate
 - [x] **AUTH-11**: A newly-registered user receives a verification email at signup, sees a non-blocking banner in the PWA until verified, can click the verification link to clear the banner (token expires 24 hours, single-use), and can resend the verification email (rate-limited 3 / hour) — users who registered before AUTH-11 shipped are grandfathered as verified on deploy
 
 ### Transactional Email Infrastructure
 
 Prerequisite for AUTH-10 + AUTH-11. First outbound email in Vigil. Called out as its own requirement because DNS + domain verification + deliverability hygiene is independent of code and has to happen before any auth email flow can be tested against a real inbox.
 
-- [ ] **EMAIL-01**: Vigil can send authenticated, deliverable email from `noreply@vigilhub.io` via Resend — DKIM + SPF + DMARC records live on `vigilhub.io` DNS, domain verified in Resend dashboard, link tracking disabled per-send to avoid Apple Mail pre-fetch consuming single-use tokens, `RESEND_API_KEY` on Railway, email-service module in `vigil-core/src/services/` mirrors the dep-injected pattern used by other services
+- [x] **EMAIL-01**: Vigil can send authenticated, deliverable email from `noreply@vigilhub.io` via Resend — DKIM + SPF + DMARC records live on `vigilhub.io` DNS, domain verified in Resend dashboard, link tracking disabled per-send to avoid Apple Mail pre-fetch consuming single-use tokens, `RESEND_API_KEY` on Railway, email-service module in `vigil-core/src/services/` mirrors the dep-injected pattern used by other services
 
 ### Safari Extension Parity
 
@@ -90,7 +90,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | W-02 | Phase 108 | Complete |
 | SCHED-01 | Phase 109 | Complete |
 | AUTH-09 | Phase 110 | Complete |
-| EMAIL-01 | Phase 111 | Pending |
-| AUTH-10 | Phase 112 | Pending |
+| EMAIL-01 | Phase 111 | Complete |
+| AUTH-10 | Phase 112 | Complete |
 | AUTH-11 | Phase 113 | Complete |
 | EXT-02 | Phase 114 | Complete |
