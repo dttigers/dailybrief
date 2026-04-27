@@ -13,7 +13,11 @@ import {
   vigilFetch,
   signOut,
   storeKey,
+  getCalendarList,
+  setCalendarSelections,
 } from '../api/client'
+import type { CalendarInfo } from '../api/client'
+import { useToast } from '../hooks/useToast'
 import { ScheduleCard } from '../components/ScheduleCard'
 
 type Banner = { kind: 'success' | 'error'; text: string } | null
@@ -93,6 +97,15 @@ export default function SettingsPage() {
   const [resendState, setResendState] = useState<ResendState>('idle')
   const resendSentTimerRef = useRef<number | null>(null)
 
+  // Phase 115 CAL-01 — calendar picker state
+  const [calendarList, setCalendarList] = useState<CalendarInfo[] | null>(null)
+  const [calendarListStatus, setCalendarListStatus] = useState<'loading' | 'ok' | 'needs_reauth' | 'error'>('loading')
+  const [calendarListError, setCalendarListError] = useState<string | null>(null)
+  const [selectedCalendarIds, setSelectedCalendarIds] = useState<string[]>([])
+  const calendarSaveTimerRef = useRef<number | null>(null)
+  const lastSavedSelectionRef = useRef<string[]>([])
+  const { showToast } = useToast()
+
   // WR-02: clear any pending collapse timer when the component unmounts.
   useEffect(() => {
     return () => {
@@ -150,6 +163,47 @@ export default function SettingsPage() {
         // Silent — banner absent if /v1/auth/me fails (UI-SPEC §Notes-6:
         // no flash of banner on verified users; null meData → no render).
       })
+  }, [])
+
+  // Phase 115 CAL-01 D-09: fetch calendar list on mount.
+  // Status branches: ok → render picker; needs_reauth → hide subsection (D-12);
+  // error → render inline retry block (D-13).
+  const loadCalendars = useCallback(async () => {
+    setCalendarListStatus('loading')
+    setCalendarListError(null)
+    try {
+      const result = await getCalendarList()
+      if (result.status === 'ok') {
+        setCalendarList(result.calendars)
+        setCalendarListStatus('ok')
+      } else if (result.status === 'needs_reauth') {
+        setCalendarList(null)
+        setCalendarListStatus('needs_reauth')
+      } else {
+        setCalendarList(null)
+        setCalendarListStatus('error')
+        setCalendarListError(result.error)
+      }
+    } catch (err) {
+      setCalendarList(null)
+      setCalendarListStatus('error')
+      setCalendarListError(err instanceof Error ? err.message : 'Failed to load calendars')
+    }
+  }, [])
+
+  useEffect(() => {
+    loadCalendars()
+  }, [loadCalendars])
+
+  // Phase 115 CAL-01 D-08: debounced save (~400ms). Cleanup on unmount to
+  // avoid setState-after-unmount + stale-write races (mirrors Phase 110 WR-02 pattern).
+  useEffect(() => {
+    return () => {
+      if (calendarSaveTimerRef.current !== null) {
+        window.clearTimeout(calendarSaveTimerRef.current)
+        calendarSaveTimerRef.current = null
+      }
+    }
   }, [])
 
   // D-11 + Pitfall 4: read callback params ONCE on mount, then strip the URL.
@@ -346,6 +400,36 @@ export default function SettingsPage() {
     } catch {
       setResendState('error')
     }
+  }
+
+  // Phase 115 CAL-01 D-08/D-14: optimistic toggle, 400ms debounced PUT,
+  // rollback + toast on failure.
+  function handleCalendarToggle(calendarId: string) {
+    // Optimistic flip
+    const previous = selectedCalendarIds
+    const next = previous.includes(calendarId)
+      ? previous.filter((id) => id !== calendarId)
+      : [...previous, calendarId]
+    setSelectedCalendarIds(next)
+
+    // Reset debounce
+    if (calendarSaveTimerRef.current !== null) {
+      window.clearTimeout(calendarSaveTimerRef.current)
+    }
+    calendarSaveTimerRef.current = window.setTimeout(async () => {
+      calendarSaveTimerRef.current = null
+      try {
+        await setCalendarSelections(next)
+        lastSavedSelectionRef.current = next
+      } catch {
+        // D-14: rollback + error toast
+        setSelectedCalendarIds(lastSavedSelectionRef.current)
+        showToast({
+          variant: 'error',
+          body: "Couldn't save calendar selection — try again",
+        })
+      }
+    }, 400)
   }
 
   const handleTimezoneSave = async () => {
@@ -625,6 +709,68 @@ export default function SettingsPage() {
           <div className="mt-4 space-y-2 border-t border-gray-900/40 pt-4">
             <ScopeRow label="Calendar" state={status.calendar} onReconnect={handleConnect} />
             <ScopeRow label="Gmail" state={status.gmail} onReconnect={handleConnect} />
+          </div>
+        )}
+
+        {/* Phase 115 CAL-01 — Calendars subsection (D-06) */}
+        {status !== null && status.calendar === 'connected' && calendarListStatus !== 'needs_reauth' && (
+          <div data-testid="calendars-subsection" className="mt-4 border-t border-gray-900/40 pt-4">
+            <h3 className="text-sm font-medium mb-2">Calendars</h3>
+            <p className="text-xs text-gray-500 mb-3">
+              Choose which calendars contribute to your daily brief.
+            </p>
+            {calendarListStatus === 'loading' && (
+              <p className="text-gray-400 text-sm">Loading calendars…</p>
+            )}
+            {calendarListStatus === 'error' && (
+              <div className="bg-red-900/20 border border-red-900/40 rounded p-3">
+                <p className="text-red-400 text-sm mb-2">
+                  {calendarListError ?? 'Failed to load calendars.'}
+                </p>
+                <button
+                  onClick={loadCalendars}
+                  className="text-xs text-teal-400 hover:text-teal-300"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+            {calendarListStatus === 'ok' && calendarList && (
+              <>
+                <ul className="space-y-1.5">
+                  {calendarList.map((cal) => {
+                    const checked = selectedCalendarIds.includes(cal.id)
+                    return (
+                      <li key={cal.id} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => handleCalendarToggle(cal.id)}
+                          className="w-4 h-4 rounded border-gray-400/30 bg-gray-900/80 accent-teal-600 cursor-pointer"
+                          data-testid={`calendar-checkbox-${cal.id}`}
+                        />
+                        <span
+                          aria-hidden="true"
+                          className="inline-block w-3 h-3 rounded-full"
+                          style={{ background: cal.color ?? '#6b7280' }}
+                        />
+                        <span className="text-sm text-gray-100">{cal.name}</span>
+                        {cal.primary && (
+                          <span className="ml-1 inline-flex px-1.5 py-0.5 rounded text-[10px] font-medium bg-teal-500/20 text-teal-400">
+                            PRIMARY
+                          </span>
+                        )}
+                      </li>
+                    )
+                  })}
+                </ul>
+                {selectedCalendarIds.length === 0 && (
+                  <p className="mt-3 text-xs text-gray-500">
+                    No calendars selected — brief includes all of them.
+                  </p>
+                )}
+              </>
+            )}
           </div>
         )}
       </section>
