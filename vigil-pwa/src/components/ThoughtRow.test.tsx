@@ -602,3 +602,25 @@ describe('ThoughtRow — context menu triggers (Phase 101)', () => {
     expect(document.querySelectorAll('[role="menu"]').length).toBe(1)
   })
 })
+
+describe('ThoughtRow — POLISH-01 whitespace-pre-line', () => {
+  it('POLISH-01-whitespace-pre-line-class: display-mode <p> className contains whitespace-pre-line so multi-line content renders with line breaks', () => {
+    const multilineThought: ThoughtApiResponse = {
+      ...baseThought,
+      content: 'line one\nline two\nline three',
+    }
+    render(<ThoughtRow thought={multilineThought} onUpdate={vi.fn()} />)
+    // The display-mode <p> renders the thought content as its only text node.
+    // Find by the literal text — React's text node search is whitespace-tolerant
+    // by default but matches because the <p> is the only element rendering it.
+    const para = screen.getByText((_, el) => {
+      return el?.tagName === 'P' && el.textContent === 'line one\nline two\nline three'
+    })
+    expect(para).toBeInTheDocument()
+    expect(para.className).toContain('whitespace-pre-line')
+    // Sanity: the load-bearing existing classes survive the change (D-15 guard).
+    expect(para.className).toContain('text-gray-100')
+    expect(para.className).toContain('line-clamp-3')
+    expect(para.className).toContain('break-words')
+  })
+})
