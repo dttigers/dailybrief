@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import SettingsPage from './SettingsPage'
 import { GoogleStatusProvider } from '../hooks/GoogleStatusContext'
+import { ToastProvider } from '../hooks/useToast'
 
 function renderPage({
   initialEntries = ['/settings'],
@@ -19,7 +20,9 @@ function renderPage({
   return render(
     <MemoryRouter initialEntries={initialEntries}>
       <GoogleStatusProvider>
-        <SettingsPage />
+        <ToastProvider>
+          <SettingsPage />
+        </ToastProvider>
       </GoogleStatusProvider>
     </MemoryRouter>,
   )
@@ -426,6 +429,156 @@ describe('SettingsPage', () => {
         expect(calledUrls.some((u) => u.includes('/v1/auth/me'))).toBe(true)
         expect(calledUrls.some((u) => u.includes('/v1/me') && !u.includes('/v1/auth/me'))).toBe(true)
       })
+    })
+  })
+
+  // ── Phase 115 (CAL-01) Calendar source picker tests ─────────────────────
+  describe('calendar source picker (CAL-01)', () => {
+    function makeFetchImpl(opts: {
+      googleStatus?: object | null
+      calendarList?: object
+      putResponse?: { status: number; body?: object }
+      authMe?: object
+    }) {
+      let listCallCount = 0
+      const putCalls: Array<{ url: string; body: unknown }> = []
+      const fetchImpl = async (url: string, init?: RequestInit): Promise<Response> => {
+        const u = String(url)
+        if (u.includes('/v1/google/status')) {
+          return new Response(
+            JSON.stringify(opts.googleStatus ?? { calendar: 'connected', gmail: 'connected' }),
+            { status: 200 },
+          )
+        }
+        if (u.includes('/v1/calendar/list')) {
+          listCallCount++
+          return new Response(
+            JSON.stringify(opts.calendarList ?? { status: 'ok', calendars: [] }),
+            { status: 200 },
+          )
+        }
+        if (u.includes('/v1/calendar/selections')) {
+          putCalls.push({
+            url: u,
+            body: init?.body ? JSON.parse(init.body as string) : null,
+          })
+          return new Response(
+            JSON.stringify(opts.putResponse?.body ?? { ok: true }),
+            { status: opts.putResponse?.status ?? 200 },
+          )
+        }
+        if (u.includes('/v1/auth/me')) {
+          return new Response(
+            JSON.stringify(
+              opts.authMe ?? { id: 1, email: 'a@b.com', emailVerifiedAt: '2026-01-01' },
+            ),
+            { status: 200 },
+          )
+        }
+        if (u.includes('/v1/me')) {
+          return new Response(
+            JSON.stringify({ userId: '1', email: 'a@b.com' }),
+            { status: 200 },
+          )
+        }
+        // Schedules and timezone — silent success
+        return new Response(
+          JSON.stringify({ hour: 4, minute: 0, enabled: true }),
+          { status: 200 },
+        )
+      }
+      return {
+        fetchImpl,
+        getListCallCount: () => listCallCount,
+        getPutCalls: () => putCalls,
+      }
+    }
+
+    it('CAL-01-picker-render: renders calendar names from GET /v1/calendar/list', async () => {
+      const { fetchImpl } = makeFetchImpl({
+        calendarList: {
+          status: 'ok',
+          calendars: [
+            { id: 'primary@gmail.com', name: 'Personal', color: '#4285f4', primary: true },
+            { id: 'work@company.com', name: 'Work', color: '#0b8043', primary: false },
+          ],
+        },
+      })
+      renderPage({ fetchImpl })
+      expect(await screen.findByTestId('calendars-subsection')).toBeInTheDocument()
+      expect(await screen.findByText('Personal')).toBeInTheDocument()
+      expect(await screen.findByText('Work')).toBeInTheDocument()
+      expect(screen.getByText('PRIMARY')).toBeInTheDocument()
+    })
+
+    it('CAL-01-picker-toggle-saves: toggling a checkbox PUTs /v1/calendar/selections after 400ms debounce', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const { fetchImpl, getPutCalls } = makeFetchImpl({
+          calendarList: {
+            status: 'ok',
+            calendars: [
+              { id: 'primary@gmail.com', name: 'Personal', color: '#4285f4', primary: true },
+            ],
+          },
+        })
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        renderPage({ fetchImpl })
+        const cb = await screen.findByTestId('calendar-checkbox-primary@gmail.com')
+        await user.click(cb)
+        // Before 400ms: no PUT
+        expect(getPutCalls().length).toBe(0)
+        // Advance past debounce
+        await act(async () => {
+          vi.advanceTimersByTime(450)
+        })
+        await waitFor(() => expect(getPutCalls().length).toBe(1))
+        expect(getPutCalls()[0].body).toEqual({ selectedCalendarIds: ['primary@gmail.com'] })
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('CAL-01-picker-hidden-on-needs-reauth: subsection is absent when GET /v1/calendar/list returns needs_reauth', async () => {
+      const { fetchImpl } = makeFetchImpl({
+        calendarList: { status: 'needs_reauth' },
+      })
+      renderPage({ fetchImpl })
+      // Wait for page to settle (other fetches resolve)
+      await screen.findByText(/Google$/i).catch(() => {})
+      // Allow the calendar fetch effect to run
+      await new Promise((r) => setTimeout(r, 0))
+      await waitFor(() =>
+        expect(screen.queryByTestId('calendars-subsection')).not.toBeInTheDocument(),
+      )
+    })
+
+    it('CAL-01-picker-error-retry: error response renders Retry button that re-fetches', async () => {
+      const { fetchImpl, getListCallCount } = makeFetchImpl({
+        calendarList: { status: 'error', error: 'Google API down' },
+      })
+      const user = userEvent.setup()
+      renderPage({ fetchImpl })
+      expect(await screen.findByText(/Google API down/i)).toBeInTheDocument()
+      const retry = await screen.findByRole('button', { name: /retry/i })
+      const before = getListCallCount()
+      await user.click(retry)
+      await waitFor(() => expect(getListCallCount()).toBeGreaterThan(before))
+    })
+
+    it('CAL-01-picker-empty-helper: helper copy renders when no calendars are selected', async () => {
+      const { fetchImpl } = makeFetchImpl({
+        calendarList: {
+          status: 'ok',
+          calendars: [
+            { id: 'primary@gmail.com', name: 'Personal', color: '#4285f4', primary: true },
+          ],
+        },
+      })
+      renderPage({ fetchImpl })
+      expect(
+        await screen.findByText(/No calendars selected — brief includes all of them\./),
+      ).toBeInTheDocument()
     })
   })
 })
