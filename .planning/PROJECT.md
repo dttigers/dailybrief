@@ -6,42 +6,38 @@
 
 **Paused:** v3.5 Observability, G2 Resubmit & Capture Repair — 4/5 phases complete (103, 104, 105, 107) but not shipped. Blocked only on G2 physical hardware UAT (device delivery date unknown). Phase 106-05 simulator-session `.ehpk` package + hardware retest carry forward; will close v3.5 when device arrives.
 
-**Captured for v3.7+ during the v3.6 closeout session:**
-- SEED-003 — DMARC ramp `p=none → p=quarantine` (auto-evaluation routine fires 2026-05-06)
-- SEED-004 — verify-email error UX (rotated/expired/rate-limited differentiation)
-- Todo — disable gmail-workorders importer tick (or replace via ServiceNow API)
-- Todo — `whitespace-pre-line` on `ThoughtRow.tsx:399`
-- Test-user cleanup (`upper@case.com` id=3, `test+phase104@local.test` id=44)
-
 **Shipped:** v3.4 Multi-User Foundation & PWA Polish (2026-04-18) — 4 phases, 15 plans, 14/14 requirements satisfied, live on api.vigilhub.io with 5/5 go/no-go curls GREEN.
 
-## Current Milestone: v3.6 Multi-User Completion, Auth UX & Safari Parity
+## Current Milestone: v3.7 Source Pickers, Verify-Email UX & Closeout Cleanup
 
-**Goal:** Close the v3.4 multi-user loop end-to-end (per-user isolation + scheduler fan-out), complete the auth UX flows (change password, forgot password, email verify), and bring the Safari extension up to Chrome's Phase 94 quick-capture feature parity.
+**Goal:** Give users explicit control over which calendars and sports leagues/teams feed their daily brief from PWA Settings, harden the auth-email flows' rate-limit + error-state UX (verify-email AND forgot-password), and close out three v3.6 leftovers (DMARC quarantine ramp, prod test-user cleanup, ThoughtRow polish).
 
 **Target features:**
 
-*Multi-user completion (v3.4/v3.5 carry-forward):*
-- W-01: `work_order_statuses` userId column + migration + query scoping
-- W-02: cross-user isolation test for `GET /v1/brief/:date` PDF bytes path
-- SCHED-01: per-user scheduler fan-out — brief generation + prioritization cache iterate all users, not just seed
+*Settings — data source pickers:*
+- CAL-01: User can pick which Google calendars feed the brief from PWA Settings (multi-select; persisted per user via existing `calendarSelections` storage; respected by `fetchTodaysEvents`)
+- SPORTS-01: User can pick which sports leagues + favorite teams to track from PWA Settings (multi-select; new per-user persistence; respected by sports-service in brief assembly)
 
-*Auth UX completion:*
-- AUTH-09: change password from PWA profile (self-service, no email needed)
-- AUTH-10: forgot-password email link (introduces transactional email)
-- AUTH-11: verify email on signup (reuses AUTH-10 email provider)
+*Auth email UX hardening (D-13/D-21 friction across both flows):*
+- AUTH-12: 429 (rate-limited) responses render distinct copy with Retry-After countdown across `verify-email` AND `forgot-password` flows (instead of the D-21 single-bucket "no longer valid")
+- AUTH-13: Rate-limit tuning across `verify-email` AND `forgot-password` (raise the 5/hr per-IP cap and/or switch axis to per-userId where appropriate so a legit user retrying from one IP can't trip themselves)
 
-*Safari extension parity:*
-- EXT-02: Safari extension matches Chrome Phase 94 quick-capture — freeform text + URL checkbox + triage feedback + Cmd+Enter submit
+*Production hygiene:*
+- OPS-01: Delete test users `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) and any cascaded children from Railway prod
+- OPS-02: SEED-003 DMARC ramp `p=none → p=quarantine` on `vigilhub.io` (gated on auto-eval routine 2026-05-06: ≥7 days clean aggregate reports + ≥3 days verify-email volume)
 
-**New cross-cutting dependency:**
-- Transactional email provider (Resend / Postmark / SES / similar) — first outbound email in Vigil; provider choice falls out of research or the first auth phase plan
+*PWA polish:*
+- POLISH-01: `whitespace-pre-line` on `ThoughtRow.tsx:399` — multi-line captures preserve line breaks in the row view
+
+**Explicitly out of scope for v3.7:**
+- Token rotation copy differentiation (rotated vs expired) — captured as SEED-004 follow-up; v3.7 focuses on the rate-limit axis only
+- gmail-workorders importer tick disable — defer to whichever milestone unblocks ServiceNow API
 
 **Paused from v3.5 (blocked on G2 hardware — delivery unknown):**
 - Phase 106-05: single simulator session to capture verified PNGs + package `.ehpk`
 - G2 physical device retest (tap-expand + swipe-out-of-list + resubmit UAT)
 
-**Still blocked (not in v3.6 scope):**
+**Still blocked (not in v3.7 scope):**
 - Phase 85 (iOS Shortcut) — Shortcuts.app bugs
 - Phase 80 (ServiceNow API work orders) — IT token
 
@@ -276,4 +272,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-04-26 after v3.6 milestone shipped — all 7 phases complete, 8/8 requirements validated via live HUMAN-UAT against Railway production. Same-session hotfix landed for a Phase 102 Google OAuth init regression (the PWA Connect Google button silently 401'd for 12 days because window.location.href can't carry Authorization headers; fixed via new POST /v1/auth/google/init JSON endpoint + 4 regression tests including the GET-returns-404 sentinel that locks out the regression class). Task category exemption from default 7-day window also landed (mirrors the idea exemption — open tasks no longer rot). Four follow-ups captured for v3.7+: SEED-003 (DMARC ramp, scheduled for 2026-05-06), SEED-004 (verify-email error UX), todos for gmail-workorders importer + ThoughtRow whitespace-pre-line.*
+*Last updated: 2026-04-27 — v3.7 milestone started. Scope: PWA Settings calendar + sports source pickers (CAL-01, SPORTS-01); auth email UX hardening across verify-email + forgot-password (AUTH-12 429 differentiation, AUTH-13 rate-limit tuning) to dissolve the Phase 113 D-13/D-21 collision; closeout cleanup (OPS-01 prod test-user delete, OPS-02 DMARC quarantine ramp gated on 2026-05-06 auto-eval, POLISH-01 ThoughtRow whitespace fix). Token rotation copy (rotated vs expired) explicitly deferred — captured as SEED-004 follow-up. Phase numbering continues from 114 → v3.7 starts at Phase 115.*
