@@ -396,7 +396,7 @@ export default function ThoughtRow({
       ) : (
         <p
           onClick={handleContentClick}
-          className="text-gray-100 text-sm leading-relaxed line-clamp-3 break-words cursor-text"
+          className="text-gray-100 text-sm leading-relaxed line-clamp-3 break-words cursor-text whitespace-pre-line"
         >
           {thought.content}
         </p>
