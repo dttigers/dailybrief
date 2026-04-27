@@ -389,7 +389,7 @@ Plans:
   3. The next generated brief only includes events from calendars the user selected; unselected calendars contribute zero events. Empty selection still falls back to "all calendars" (current behavior preserved).
   4. A multi-line thought (one with embedded `\n` characters) renders with line breaks preserved in the thoughts list row view — no longer collapses to a single line.
 **Plans**: 3 plans
-  - [ ] 115-01-PLAN.md — Backend: setCalendarSelections service method + PUT /v1/calendar/selections route + tests + ROADMAP SC#1 path amendment (CAL-01)
+  - [x] 115-01-PLAN.md — Backend: setCalendarSelections service method + PUT /v1/calendar/selections route + tests + ROADMAP SC#1 path amendment (CAL-01)
   - [ ] 115-02-PLAN.md — PWA: Calendars subsection in SettingsPage with mount-time fetch + optimistic debounced toggle + reauth/error/empty branches (CAL-01)
   - [ ] 115-03-PLAN.md — POLISH-01: append whitespace-pre-line to ThoughtRow's display-mode <p> + regression test
 **UI hint**: yes
@@ -566,7 +566,7 @@ Plans:
 | 113. Verify Email on Signup | v3.6 | 5/5 | Complete    | 2026-04-26 |
 | 114. Safari Extension Quick-Capture Parity | v3.6 | 5/5 | Complete    | 2026-04-26 |
 
-| 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 0/3 | Planned | - |
+| 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 1/3 | In Progress|  |
 | 116. Sports source picker | v3.7 | 0/TBD | Not started | - |
 | 117. Auth-email rate-limit UX hardening | v3.7 | 0/TBD | Not started | - |
 | 118. Production test-user cleanup | v3.7 | 0/TBD | Not started | - |
@@ -582,7 +582,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 5/5 plans complete
+**Plans:** 1/3 plans executed
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe

@@ -9,7 +9,7 @@
 
 ### Settings — Data Source Pickers
 
-- [ ] **CAL-01**: User can pick which Google calendars feed the brief from PWA Settings — multi-select list rendered from `GET /v1/calendar/calendars`, persisted per-user via existing `calendarSelections` array on `oauth_tokens`, respected by `fetchTodaysEvents(userId)` so unselected calendars no longer contribute events. Empty selection continues to fall back to "all calendars" (current behavior).
+- [x] **CAL-01**: User can pick which Google calendars feed the brief from PWA Settings — multi-select list rendered from `GET /v1/calendar/calendars`, persisted per-user via existing `calendarSelections` array on `oauth_tokens`, respected by `fetchTodaysEvents(userId)` so unselected calendars no longer contribute events. Empty selection continues to fall back to "all calendars" (current behavior).
 - [ ] **SPORTS-01**: User can pick which sports leagues + favorite teams to track from PWA Settings — multi-select league toggle (MLB / NFL / NBA / NHL) and per-league team picker, persisted per-user via new storage (column or table), respected by sports-service so unselected leagues are skipped and team-specific data uses the user's pick instead of hardcoded `teamIds`. Brief PDF only renders selected leagues.
 
 ### Auth Email UX Hardening (D-13/D-21 friction across both flows)
@@ -55,7 +55,7 @@ Populated 2026-04-27 by gsd-roadmapper during ROADMAP.md creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CAL-01 | Phase 115 | Pending |
+| CAL-01 | Phase 115 | Complete |
 | POLISH-01 | Phase 115 | Pending |
 | SPORTS-01 | Phase 116 | Pending |
 | AUTH-12 | Phase 117 | Pending |

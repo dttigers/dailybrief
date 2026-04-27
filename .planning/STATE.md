@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
-status: planning
-stopped_at: Phase 115 context gathered
-last_updated: "2026-04-27T22:12:38.861Z"
-last_activity: 2026-04-27 — ROADMAP.md created with 5 phases (115-119), 7/7 requirements mapped
+status: executing
+stopped_at: Completed 115-01-PLAN.md
+last_updated: "2026-04-27T22:38:11.875Z"
+last_activity: 2026-04-27
 progress:
   total_phases: 10
   completed_phases: 6
-  total_plans: 33
-  completed_plans: 35
+  total_plans: 36
+  completed_plans: 36
   percent: 100
 ---
 
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v3.7 — defining requirements
+**Current focus:** Phase 115 — calendar-source-picker-thoughtrow-polish
 
 ## Current Position
 
 Milestone: v3.7 (started 2026-04-27)
-Phase: 0 of 5 (ROADMAP.md landed; Phase 115 next)
-Plan: —
-Status: Ready to plan Phase 115
-Last activity: 2026-04-27 — ROADMAP.md created with 5 phases (115-119), 7/7 requirements mapped
+Phase: 115 (calendar-source-picker-thoughtrow-polish) — EXECUTING
+Plan: 2 of 3
+Status: Ready to execute
+Last activity: 2026-04-27
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -57,6 +57,7 @@ Progress: [░░░░░░░░░░] 0%
 | v3.5 | 103-107 (+107.1/107.2/107.3) | 34 | paused pre-ship (G2 hardware UAT) |
 | v3.6 | 108-114 | 27 | shipped 2026-04-26 |
 | v3.7 | 5 (115-119) | TBD | started 2026-04-27, roadmap 2026-04-27 |
+| Phase 115 P01 | 5min | 3 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -73,6 +74,10 @@ Progress: [░░░░░░░░░░] 0%
 ### Decisions
 
 All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions logged in their respective `phases/<N>/<N>-CONTEXT.md` files (preserved in archive `.planning/milestones/v3.6-phases/` after milestone close).
+
+- [Phase 115]: Phase 115-01: Add dbSetCalendarSelectionsFn as a NEW dep instead of overloading dbUpdateFn — keeps token-refresh and selections-write mocks orthogonal
+- [Phase 115]: Phase 115-01: Validation single-sourced in service.setCalendarSelections (validateCalendarIds); route catches throw and maps to 400 — same rules apply to any future direct caller
+- [Phase 115]: Phase 115-01: Test wrapper pattern — outer Hono app with use('*') middleware setting userId, then route('/', innerRouter) — mirrors production global bearerAuth dispatcher in unit tests
 
 ### Pending Todos
 
@@ -108,7 +113,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-27T22:12:38.822Z
-Stopped at: Phase 115 context gathered
-Resume file: .planning/phases/115-calendar-source-picker-thoughtrow-polish/115-CONTEXT.md
+Last session: 2026-04-27T22:37:51.278Z
+Stopped at: Completed 115-01-PLAN.md
+Resume file: None
 Next action: /gsd-plan-phase 115
