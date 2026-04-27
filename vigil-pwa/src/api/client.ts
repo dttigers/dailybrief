@@ -782,3 +782,43 @@ export async function putTaskStatusFilter(filter: TaskStatusFilterValue): Promis
     body: JSON.stringify({ filter }),
   }).catch(() => { /* fire-and-forget */ })
 }
+
+// ── Calendar source picker (Phase 115 CAL-01) ─────────────────────────
+
+/** PWA-side mirror of CalendarInfo from vigil-core/src/services/calendar-service.ts. */
+export interface CalendarInfo {
+  id: string
+  name: string
+  color: string | null
+  primary: boolean
+}
+
+/** Discriminated union mirroring the GET /v1/calendar/list response shape. */
+export type CalendarListResult =
+  | { status: 'ok'; calendars: CalendarInfo[] }
+  | { status: 'needs_reauth' }
+  | { status: 'error'; error: string }
+
+/**
+ * Fetches the user's Google calendars for the source picker.
+ * Returns the full discriminated-union response — caller routes on status.
+ * Throws only on transport failures (HTTP non-200 OR network error).
+ */
+export async function getCalendarList(): Promise<CalendarListResult> {
+  const res = await vigilFetch('/v1/calendar/list')
+  if (!res.ok) throw new Error(`Failed to fetch calendar list: ${res.status}`)
+  return (await res.json()) as CalendarListResult
+}
+
+/**
+ * Persists the user's calendar selection. Server overwrites wholesale.
+ * Empty array IS valid input — see CAL-01 D-11 (empty = all calendars).
+ * Cap is enforced server-side at 1000 IDs (T-115-01-02).
+ */
+export async function setCalendarSelections(ids: string[]): Promise<void> {
+  const res = await vigilFetch('/v1/calendar/selections', {
+    method: 'PUT',
+    body: JSON.stringify({ selectedCalendarIds: ids }),
+  })
+  if (!res.ok) throw new Error(`Failed to save calendar selections: ${res.status}`)
+}
