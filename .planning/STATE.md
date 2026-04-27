@@ -2,12 +2,12 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
-status: planning
-stopped_at: "v3.7 milestone started 2026-04-27 — defining requirements (CAL-01, SPORTS-01, AUTH-12, AUTH-13, OPS-01, OPS-02, POLISH-01). Phase numbering continues from 114 → v3.7 starts at Phase 115."
+status: ready_to_plan
+stopped_at: "v3.7 ROADMAP.md landed 2026-04-27 — 5 phases (115-119), all 7 v1 requirements mapped. Ready to plan Phase 115."
 last_updated: "2026-04-27T00:00:00.000Z"
 last_activity: 2026-04-27
 progress:
-  total_phases: 0
+  total_phases: 5
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -26,10 +26,22 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 ## Current Position
 
 Milestone: v3.7 (started 2026-04-27)
-Phase: Not started (defining requirements)
+Phase: 0 of 5 (ROADMAP.md landed; Phase 115 next)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-04-27 — Milestone v3.7 started
+Status: Ready to plan Phase 115
+Last activity: 2026-04-27 — ROADMAP.md created with 5 phases (115-119), 7/7 requirements mapped
+
+Progress: [░░░░░░░░░░] 0%
+
+**v3.7 phases (115-119, all 0%):**
+
+| Phase | Name | Status |
+|-------|------|--------|
+| 115 | Calendar source picker (+ ThoughtRow polish) | Not started |
+| 116 | Sports source picker | Not started |
+| 117 | Auth-email rate-limit UX hardening | Not started |
+| 118 | Production test-user cleanup | Not started |
+| 119 | DMARC quarantine ramp | Not started |
 
 ## Performance Metrics
 
@@ -44,7 +56,7 @@ Last activity: 2026-04-27 — Milestone v3.7 started
 | v1.0–v3.4 | 1-102 | ~211 | ~18 days |
 | v3.5 | 103-107 (+107.1/107.2/107.3) | 34 | paused pre-ship (G2 hardware UAT) |
 | v3.6 | 108-114 | 27 | shipped 2026-04-26 |
-| v3.7 | TBD (starting at 115) | TBD | started 2026-04-27 |
+| v3.7 | 5 (115-119) | TBD | started 2026-04-27, roadmap 2026-04-27 |
 
 ## Accumulated Context
 
@@ -56,6 +68,7 @@ Last activity: 2026-04-27 — Milestone v3.7 started
 - v3.5 paused 2026-04-22 at 34/34 plans, waiting on G2 physical hardware UAT (device delivery unknown)
 - v3.6 shipped 2026-04-26: 7 phases (108-114), 27 plans, 8/8 requirements satisfied via live HUMAN-UAT against Railway production
 - v3.7 started 2026-04-27 — themes: PWA Settings source pickers (calendars + sports), auth-email UX hardening (verify-email + forgot-password D-13/D-21 friction), closeout cleanup (DMARC ramp, prod test-user delete, ThoughtRow polish)
+- v3.7 ROADMAP.md landed 2026-04-27 — 5 phases (115-119): 115 Calendar picker (+ POLISH-01 ride-along), 116 Sports picker, 117 Auth-email rate-limit UX, 118 Test-user cleanup, 119 DMARC quarantine ramp; 7/7 v1 requirements mapped
 
 ### Decisions
 
@@ -94,6 +107,6 @@ Captured but explicitly out of v3.7 scope:
 ## Session Continuity
 
 Last session: 2026-04-27T00:00:00.000Z
-Stopped at: v3.7 milestone started — PROJECT.md and STATE.md reset, ready to define REQUIREMENTS.md
+Stopped at: v3.7 ROADMAP.md landed — 5 phases (115-119), 7/7 requirements mapped, REQUIREMENTS.md traceability populated
 Resume file: None
-Next action: /gsd-plan-phase 115 (after roadmap lands)
+Next action: /gsd-plan-phase 115

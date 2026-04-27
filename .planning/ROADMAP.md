@@ -24,6 +24,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v3.4 Multi-User Foundation & PWA Polish** — Phases 99-102 (shipped 2026-04-18)
 - ⏸ **v3.5 Observability, G2 Resubmit & Capture Repair** — Phases 103-107 (paused pre-ship, blocked on G2 hardware UAT)
 - ✅ **v3.6 Multi-User Completion, Auth UX & Safari Parity** — Phases 108-114 (shipped 2026-04-26)
+- 🚧 **v3.7 Source Pickers, Verify-Email UX & Closeout Cleanup** — Phases 115-119 (in progress, started 2026-04-27)
 
 ## Completed Milestones
 
@@ -274,6 +275,18 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 </details>
 
+## 🚧 v3.7 Source Pickers, Verify-Email UX & Closeout Cleanup (In Progress)
+
+**Milestone Goal:** Give users explicit control over which calendars and sports leagues/teams feed their daily brief from PWA Settings, harden the auth-email flows' rate-limit + error-state UX (verify-email AND forgot-password), and close out three v3.6 leftovers (DMARC quarantine ramp, prod test-user cleanup, ThoughtRow polish).
+
+### Phases (v3.7)
+
+- [ ] **Phase 115: Calendar source picker (+ ThoughtRow whitespace polish)** — Users select which Google calendars feed the brief from PWA Settings; multi-line thought captures preserve line breaks in row view
+- [ ] **Phase 116: Sports source picker** — Users select which leagues + favorite teams feed the brief from PWA Settings; sports-service respects per-user picks instead of hardcoded teamIds
+- [ ] **Phase 117: Auth-email rate-limit UX hardening** — Server raises/refines rate-limit caps across all 4 token endpoints; PWA renders distinct 429 copy with Retry-After countdown
+- [ ] **Phase 118: Production test-user cleanup** — Test rows `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) plus cascaded children deleted from Railway prod with documented runbook
+- [ ] **Phase 119: DMARC quarantine ramp** — `vigilhub.io` Cloudflare DNS DMARC policy advances `p=none → p=quarantine` after 2026-05-06 auto-eval gate passes
+
 ## 🚧 v3.5 Observability, G2 Resubmit & Capture Repair (In Progress)
 
 **Milestone Goal:** Fix the capture pipeline, unblock G2 store approval, and land analytics/error tracking so we stop debugging blind — plus close the multi-user loop with a real login UI.
@@ -365,6 +378,68 @@ Plans:
   - [x] 107-02-PLAN.md — Wave 2: AppDelegate SMAppService status-guarded register() + first-launch NSAlert
   - [x] 107-03-PLAN.md — Wave 2: ViewController + Main.html + Script.js + Style.css persistence pill (D-04)
   - [x] 107-04-PLAN.md — Wave 3: full verify + HUMAN-UAT finalization + human eyeball checkpoint (Tests 3+4 pass; Tests 1/2/5 ship-with-uat-pending for reboot)
+
+### Phase 115: Calendar source picker (+ ThoughtRow whitespace polish)
+**Goal**: Users pick which Google calendars contribute to their daily brief from PWA Settings, and multi-line thought captures stop collapsing to a single line in the row view.
+**Depends on**: Nothing (first v3.7 phase; v3.6 shipped 2026-04-26)
+**Requirements**: CAL-01, POLISH-01
+**Success Criteria** (what must be TRUE):
+  1. User can open PWA Settings and see a multi-select list of all Google calendars on their connected account, populated from `GET /v1/calendar/calendars`.
+  2. User can toggle calendars on/off in Settings and the selection persists per-user (round-trips through `oauth_tokens.calendarSelections`); reload preserves the choice.
+  3. The next generated brief only includes events from calendars the user selected; unselected calendars contribute zero events. Empty selection still falls back to "all calendars" (current behavior preserved).
+  4. A multi-line thought (one with embedded `\n` characters) renders with line breaks preserved in the thoughts list row view — no longer collapses to a single line.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 116: Sports source picker
+**Goal**: Users pick which sports leagues and favorite teams to track from PWA Settings; the sports-service respects per-user selections instead of hardcoded team IDs.
+**Depends on**: Phase 115 (no hard dep, but sequential PWA-deploy rhythm preferred)
+**Requirements**: SPORTS-01
+**Success Criteria** (what must be TRUE):
+  1. User can open PWA Settings and toggle each of the four leagues (MLB, NFL, NBA, NHL) on/off; per-league team picker appears for enabled leagues.
+  2. User can select favorite team(s) per enabled league; selections persist per-user via new storage (column or table) and survive reload.
+  3. The next generated brief renders only the leagues the user enabled; team-specific data uses the user's picks, not the previously-hardcoded `teamIds` defaults.
+  4. A user with all leagues disabled gets a brief PDF with no sports section (or a clean "no leagues selected" placeholder), not stale hardcoded data.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 117: Auth-email rate-limit UX hardening
+**Goal**: A user retrying verify-email / resend-verification / forgot-password / reset-password from a single IP can complete a legitimate flow without tripping the rate limit AND, when they DO hit the limit, sees distinct copy with a Retry-After countdown instead of the D-21 single-bucket "this link is no longer valid" misdirection.
+**Depends on**: Phase 116 (sequential PWA deploy rhythm)
+**Requirements**: AUTH-12, AUTH-13
+**Success Criteria** (what must be TRUE):
+  1. On all 4 endpoints (`/v1/auth/verify-email`, `/v1/auth/resend-verification`, `/v1/auth/forgot-password`, `/v1/auth/reset-password`), a 429 response renders distinct PWA copy ("Too many attempts — try again in N minutes") with a live Retry-After countdown, NOT the generic "This link is no longer valid" expiry message.
+  2. A legitimate user retrying any of the 4 flows from a single IP no longer trips the rate limit on routine retry patterns (cap raised and/or per-userId/per-email axis added per endpoint as chosen during plan-phase).
+  3. Brute-force protection is structurally preserved — abuse patterns (e.g., 100 attempts/min from one IP) still hit 429; enumeration safety on `/v1/auth/forgot-password` is unchanged (no oracle leak in the new copy).
+  4. The PWA error-bucket split is exhaustive: time-expired tokens still render "no longer valid"; rate-limited responses render the new 429 copy; no path renders both or neither.
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 118: Production test-user cleanup
+**Goal**: Two known test-user rows (`upper@case.com` id=3 and `test+phase104@local.test` id=44) and all cascaded child rows are deleted from Railway prod, with a documented runbook and before/after row counts.
+**Depends on**: Phase 117 (no hard dep; ordering by milestone closeout sequence)
+**Requirements**: OPS-01
+**Success Criteria** (what must be TRUE):
+  1. Running `SELECT * FROM users WHERE id IN (3, 44)` against Railway prod returns zero rows after the cleanup operation.
+  2. No orphaned child rows remain in `oauth_tokens`, `password_reset_tokens`, `work_order_statuses`, `brief_pdfs`, `briefs`, `thoughts`, or any other userId-scoped table for ids 3 or 44 (verified via SELECT against each table).
+  3. A runbook (markdown checklist or SQL script with comments) is committed under `.planning/phases/118-*/` capturing exact commands run, before-row-counts, after-row-counts, and rollback notes.
+  4. No real user data is collateral damage — a smoke pass confirms the seed user (`jamesonmorrill1@gmail.com`) and any other live accounts still authenticate, generate briefs, and read their thoughts.
+**Plans**: TBD
+
+### Phase 119: DMARC quarantine ramp
+**Goal**: `vigilhub.io` DMARC policy advances from `p=none` (monitoring-only) to `p=quarantine` (spoof attempts go to spam) on Cloudflare DNS, with the ramp action gated on the 2026-05-06 auto-eval routine confirming ≥7 days clean aggregate reports + ≥3 days production verify-email volume.
+**Depends on**: Phase 118 (no hard dep; sequenced as final closeout step)
+**Requirements**: OPS-02
+**Success Criteria** (what must be TRUE):
+  1. The 2026-05-06 auto-eval routine runs and produces a documented PASS/FAIL determination based on (a) ≥7 days of aggregate DMARC reports with no DKIM/SPF failures from legitimate Vigil mail and (b) ≥3 days of real verify-email production volume to validate the signal.
+  2. If gate PASSES: `_dmarc.vigilhub.io` TXT record on Cloudflare DNS is updated `p=none` → `p=quarantine` (other tags preserved), verified via `dig TXT _dmarc.vigilhub.io +short`.
+  3. If gate FAILS: ramp does NOT fire; deferral reason is documented in the phase notes and a re-eval date is captured.
+  4. Post-ramp (PASS branch): the next verify-email or forgot-password mail flowing through Resend still arrives at Gmail Inbox with `dmarc=pass` in the raw headers (no false-positive quarantine of legitimate Vigil mail).
+
+**Notes / Constraints**:
+- Phase implementation (runbook + ramp script/checklist) can land any time; the ramp action itself is gated and only fires on or after 2026-05-06.
+- Final `p=quarantine → p=reject` ramp is explicitly OUT OF SCOPE for v3.7 (deferred to v3.8+ after ≥30 days clean quarantine telemetry per REQUIREMENTS.md).
+**Plans**: TBD
 
 ## Progress
 
@@ -487,6 +562,12 @@ Plans:
 | 112. Forgot-Password Email Flow | v3.6 | 5/5 | Complete    | 2026-04-25 |
 | 113. Verify Email on Signup | v3.6 | 5/5 | Complete    | 2026-04-26 |
 | 114. Safari Extension Quick-Capture Parity | v3.6 | 5/5 | Complete    | 2026-04-26 |
+
+| 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 0/TBD | Not started | - |
+| 116. Sports source picker | v3.7 | 0/TBD | Not started | - |
+| 117. Auth-email rate-limit UX hardening | v3.7 | 0/TBD | Not started | - |
+| 118. Production test-user cleanup | v3.7 | 0/TBD | Not started | - |
+| 119. DMARC quarantine ramp | v3.7 | 0/TBD | Not started | - |
 
 ## Backlog
 

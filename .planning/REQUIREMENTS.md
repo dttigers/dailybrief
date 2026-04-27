@@ -51,22 +51,22 @@ Deferred to a future milestone. Tracked here so they don't get lost.
 
 ## Traceability
 
-Empty initially — populated by gsd-roadmapper during ROADMAP.md creation.
+Populated 2026-04-27 by gsd-roadmapper during ROADMAP.md creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| CAL-01 | TBD | Pending |
-| SPORTS-01 | TBD | Pending |
-| AUTH-12 | TBD | Pending |
-| AUTH-13 | TBD | Pending |
-| OPS-01 | TBD | Pending |
-| OPS-02 | TBD | Pending |
-| POLISH-01 | TBD | Pending |
+| CAL-01 | Phase 115 | Pending |
+| POLISH-01 | Phase 115 | Pending |
+| SPORTS-01 | Phase 116 | Pending |
+| AUTH-12 | Phase 117 | Pending |
+| AUTH-13 | Phase 117 | Pending |
+| OPS-01 | Phase 118 | Pending |
+| OPS-02 | Phase 119 | Pending |
 
 **Coverage:**
 - v1 requirements: 7 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 7 ⚠️ (will resolve after roadmapper run)
+- Mapped to phases: 7 ✓
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-27*
