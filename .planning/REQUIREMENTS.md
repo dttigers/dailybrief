@@ -24,7 +24,7 @@
 
 ### PWA Polish
 
-- [ ] **POLISH-01**: `whitespace-pre-line` applied to `vigil-pwa/src/components/ThoughtRow.tsx:399` so multi-line thought captures preserve line breaks in the row view (today they collapse to a single line).
+- [x] **POLISH-01**: `whitespace-pre-line` applied to `vigil-pwa/src/components/ThoughtRow.tsx:399` so multi-line thought captures preserve line breaks in the row view (today they collapse to a single line).
 
 ## v2 Requirements
 
@@ -56,7 +56,7 @@ Populated 2026-04-27 by gsd-roadmapper during ROADMAP.md creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | CAL-01 | Phase 115 | Complete |
-| POLISH-01 | Phase 115 | Pending |
+| POLISH-01 | Phase 115 | Complete |
 | SPORTS-01 | Phase 116 | Pending |
 | AUTH-12 | Phase 117 | Pending |
 | AUTH-13 | Phase 117 | Pending |

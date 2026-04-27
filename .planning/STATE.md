@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Completed 115-01-PLAN.md
-last_updated: "2026-04-27T22:38:11.875Z"
+stopped_at: Completed 115-03-PLAN.md
+last_updated: "2026-04-27T22:43:46.849Z"
 last_activity: 2026-04-27
 progress:
   total_phases: 10
   completed_phases: 6
   total_plans: 36
-  completed_plans: 36
+  completed_plans: 37
   percent: 100
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 Milestone: v3.7 (started 2026-04-27)
 Phase: 115 (calendar-source-picker-thoughtrow-polish) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-04-27
 
@@ -58,6 +58,7 @@ Progress: [░░░░░░░░░░] 0%
 | v3.6 | 108-114 | 27 | shipped 2026-04-26 |
 | v3.7 | 5 (115-119) | TBD | started 2026-04-27, roadmap 2026-04-27 |
 | Phase 115 P01 | 5min | 3 tasks | 5 files |
+| Phase 115 P03 | 3min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,7 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 115]: Phase 115-01: Add dbSetCalendarSelectionsFn as a NEW dep instead of overloading dbUpdateFn — keeps token-refresh and selections-write mocks orthogonal
 - [Phase 115]: Phase 115-01: Validation single-sourced in service.setCalendarSelections (validateCalendarIds); route catches throw and maps to 400 — same rules apply to any future direct caller
 - [Phase 115]: Phase 115-01: Test wrapper pattern — outer Hono app with use('*') middleware setting userId, then route('/', innerRouter) — mirrors production global bearerAuth dispatcher in unit tests
+- [Phase 115]: Phase 115-03: POLISH-01 ships as a 1-class Tailwind append + dedicated regression test in same plan — locks visual contract against future className refactors / Tailwind purging
 
 ### Pending Todos
 
@@ -113,7 +115,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-27T22:37:51.278Z
-Stopped at: Completed 115-01-PLAN.md
+Last session: 2026-04-27T22:43:31.195Z
+Stopped at: Completed 115-03-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 115
