@@ -65,6 +65,10 @@ export interface CalendarServiceDeps {
   dbSelectFn?: () => Promise<OAuthTokenRow | null>;
   dbUpdateFn?: (accessToken: string, expiresAt: Date | null) => Promise<void>;
   refreshFn?: (refreshToken: string) => Promise<{ access_token: string; expiry_date: number | null }>;
+  // Phase 115 CAL-01: dedicated dep for setCalendarSelections so the
+  // selections write can be mocked without colliding with the token-refresh
+  // dbUpdateFn semantics.
+  dbSetCalendarSelectionsFn?: (userId: number, ids: string[]) => Promise<void>;
 }
 
 // ── Custom error classes ──────────────────────────────────────────────────────
@@ -113,6 +117,7 @@ interface GCalCalendarListResponse {
 export function createCalendarService(deps?: CalendarServiceDeps): {
   fetchTodaysEvents: (userId: number) => Promise<CalendarEventsResponse>;
   fetchCalendarList: (userId: number) => Promise<CalendarListResponse>;
+  setCalendarSelections: (userId: number, ids: string[]) => Promise<void>;
 } {
   const fetchFn = deps?.fetchFn ?? globalThis.fetch.bind(globalThis);
 
@@ -241,6 +246,38 @@ export function createCalendarService(deps?: CalendarServiceDeps): {
     };
   }
 
+  // ── Phase 115 CAL-01: setCalendarSelections ──────────────────────────────
+  // Validation lives at the service boundary so the route handler can stay
+  // single-sourced (Task 2 catches the throw and maps to 400).
+
+  const MAX_CALENDAR_SELECTIONS = 1000; // T-115-01-02: payload-bomb DoS cap
+
+  function validateCalendarIds(ids: unknown): asserts ids is string[] {
+    if (!Array.isArray(ids)) {
+      throw new Error("selectedCalendarIds must be an array");
+    }
+    if (ids.length > MAX_CALENDAR_SELECTIONS) {
+      throw new Error(`selectedCalendarIds exceeds cap of ${MAX_CALENDAR_SELECTIONS}`);
+    }
+    for (const id of ids) {
+      if (typeof id !== "string") {
+        throw new Error("selectedCalendarIds must contain only strings");
+      }
+    }
+  }
+
+  async function setCalendarSelections(userId: number, ids: string[]): Promise<void> {
+    validateCalendarIds(ids);
+    if (deps?.dbSetCalendarSelectionsFn) {
+      return deps.dbSetCalendarSelectionsFn(userId, ids);
+    }
+    if (!db) return;
+    await db
+      .update(oauthTokens)
+      .set({ calendarSelections: ids, updatedAt: new Date() })
+      .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.provider, "google")));
+  }
+
   // ── Public: fetchTodaysEvents ─────────────────────────────────────────────
 
   async function fetchTodaysEvents(userId: number): Promise<CalendarEventsResponse> {
@@ -363,7 +400,7 @@ export function createCalendarService(deps?: CalendarServiceDeps): {
     }
   }
 
-  return { fetchTodaysEvents, fetchCalendarList };
+  return { fetchTodaysEvents, fetchCalendarList, setCalendarSelections };
 }
 
 // ── Production singleton ──────────────────────────────────────────────────────
