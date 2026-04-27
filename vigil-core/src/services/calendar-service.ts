@@ -41,7 +41,7 @@ export type CalendarEventsResponse =
   | { status: "error"; error: string };
 
 export type CalendarListResponse =
-  | { status: "ok"; calendars: CalendarInfo[] }
+  | { status: "ok"; calendars: CalendarInfo[]; selectedCalendarIds: string[] }
   | { status: "needs_reauth" }
   | { status: "error"; error: string };
 
@@ -361,10 +361,12 @@ export function createCalendarService(deps?: CalendarServiceDeps): {
 
   async function fetchCalendarList(userId: number): Promise<CalendarListResponse> {
     let accessToken: string;
+    let calendarSelections: string[];
 
     try {
       const result = await getValidAccessToken(userId);
       accessToken = result.token;
+      calendarSelections = result.calendarSelections;
     } catch (err) {
       if (err instanceof TokenNotFoundError || err instanceof TokenRevokedError) {
         return { status: "needs_reauth" };
@@ -394,7 +396,7 @@ export function createCalendarService(deps?: CalendarServiceDeps): {
         primary: item.primary ?? false,
       }));
 
-      return { status: "ok", calendars };
+      return { status: "ok", calendars, selectedCalendarIds: calendarSelections };
     } catch (err) {
       return { status: "error", error: "Google Calendar API unreachable" };
     }

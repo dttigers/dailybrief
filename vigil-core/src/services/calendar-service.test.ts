@@ -445,3 +445,41 @@ test("CAL-01-set-idempotent: two consecutive setCalendarSelections calls succeed
   assert.deepEqual(calls[0], { userId: 1, ids: ["a"] });
   assert.deepEqual(calls[1], { userId: 1, ids: ["a"] });
 });
+
+// ── Phase 115 CR-01 (gap closure): fetchCalendarList exposes selectedCalendarIds ──
+
+test("CAL-01-list-includes-selections-nonempty: fetchCalendarList returns selectedCalendarIds populated from oauth_tokens.calendarSelections", async () => {
+  const deps: CalendarServiceDeps = {
+    dbSelectFn: async () => ({
+      ...VALID_TOKEN_ROW,
+      calendarSelections: ["primary@gmail.com", "work@company.com"],
+    }),
+    dbUpdateFn: async () => {},
+    fetchFn: makeCalendarFetch("any", CALENDAR_LIST_RESPONSE, 200),
+  };
+  const service = createCalendarService(deps);
+  const result = await service.fetchCalendarList(1);
+
+  assert.equal(result.status, "ok");
+  if (result.status !== "ok") return; // type narrow for TS
+  assert.deepEqual(result.selectedCalendarIds, ["primary@gmail.com", "work@company.com"]);
+  // Also confirm calendars[] still flows through unchanged (regression sanity).
+  assert.equal(result.calendars.length, 2);
+});
+
+test("CAL-01-list-includes-selections-empty: fetchCalendarList returns selectedCalendarIds=[] when oauth_tokens.calendarSelections is empty", async () => {
+  const deps: CalendarServiceDeps = {
+    dbSelectFn: async () => ({
+      ...VALID_TOKEN_ROW,
+      calendarSelections: [],
+    }),
+    dbUpdateFn: async () => {},
+    fetchFn: makeCalendarFetch("any", CALENDAR_LIST_RESPONSE, 200),
+  };
+  const service = createCalendarService(deps);
+  const result = await service.fetchCalendarList(1);
+
+  assert.equal(result.status, "ok");
+  if (result.status !== "ok") return;
+  assert.deepEqual(result.selectedCalendarIds, []);
+});
