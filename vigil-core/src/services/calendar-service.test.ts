@@ -367,3 +367,81 @@ test("CAL-SCHED-01-userid-required: fetchTodaysEvents requires a userId paramete
   const listResult = await service.fetchCalendarList(42);
   assert.equal(listResult.status, "ok");
 });
+
+// ── Phase 115 CAL-01: setCalendarSelections ────────────────────────────────────
+
+test("CAL-01-set-empty: setCalendarSelections([]) writes empty array via dbSetCalendarSelectionsFn", async () => {
+  const calls: Array<{ userId: number; ids: string[] }> = [];
+  const deps: CalendarServiceDeps = {
+    dbSetCalendarSelectionsFn: async (userId, ids) => { calls.push({ userId, ids }); },
+  };
+  const service = createCalendarService(deps);
+  await service.setCalendarSelections(1, []);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].userId, 1);
+  assert.deepEqual(calls[0].ids, []);
+});
+
+test("CAL-01-set-nonempty: setCalendarSelections writes the exact array via dbSetCalendarSelectionsFn", async () => {
+  const calls: Array<{ userId: number; ids: string[] }> = [];
+  const deps: CalendarServiceDeps = {
+    dbSetCalendarSelectionsFn: async (userId, ids) => { calls.push({ userId, ids }); },
+  };
+  const service = createCalendarService(deps);
+  await service.setCalendarSelections(1, ["primary@gmail.com", "work@company.com"]);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].userId, 1);
+  assert.deepEqual(calls[0].ids, ["primary@gmail.com", "work@company.com"]);
+});
+
+test("CAL-01-set-validates-array: setCalendarSelections rejects non-array input and does not call dbSetCalendarSelectionsFn", async () => {
+  const calls: Array<{ userId: number; ids: string[] }> = [];
+  const deps: CalendarServiceDeps = {
+    dbSetCalendarSelectionsFn: async (userId, ids) => { calls.push({ userId, ids }); },
+  };
+  const service = createCalendarService(deps);
+  await assert.rejects(
+    () => service.setCalendarSelections(1, "not-an-array" as unknown as string[]),
+    /array/i,
+  );
+  assert.equal(calls.length, 0, "dbSetCalendarSelectionsFn must NOT be called on validation failure");
+});
+
+test("CAL-01-set-validates-elements: setCalendarSelections rejects non-string elements and does not call dbSetCalendarSelectionsFn", async () => {
+  const calls: Array<{ userId: number; ids: string[] }> = [];
+  const deps: CalendarServiceDeps = {
+    dbSetCalendarSelectionsFn: async (userId, ids) => { calls.push({ userId, ids }); },
+  };
+  const service = createCalendarService(deps);
+  await assert.rejects(
+    () => service.setCalendarSelections(1, [1, 2] as unknown as string[]),
+    /string/i,
+  );
+  assert.equal(calls.length, 0, "dbSetCalendarSelectionsFn must NOT be called when an element is not a string");
+});
+
+test("CAL-01-set-validates-cap: setCalendarSelections rejects arrays larger than 1000 ids", async () => {
+  const calls: Array<{ userId: number; ids: string[] }> = [];
+  const deps: CalendarServiceDeps = {
+    dbSetCalendarSelectionsFn: async (userId, ids) => { calls.push({ userId, ids }); },
+  };
+  const service = createCalendarService(deps);
+  await assert.rejects(
+    () => service.setCalendarSelections(1, Array(1001).fill("x")),
+    /1000|cap|exceed/i,
+  );
+  assert.equal(calls.length, 0, "dbSetCalendarSelectionsFn must NOT be called when cap exceeded");
+});
+
+test("CAL-01-set-idempotent: two consecutive setCalendarSelections calls succeed and call dbSetCalendarSelectionsFn twice with identical args", async () => {
+  const calls: Array<{ userId: number; ids: string[] }> = [];
+  const deps: CalendarServiceDeps = {
+    dbSetCalendarSelectionsFn: async (userId, ids) => { calls.push({ userId, ids }); },
+  };
+  const service = createCalendarService(deps);
+  await service.setCalendarSelections(1, ["a"]);
+  await service.setCalendarSelections(1, ["a"]);
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[0], { userId: 1, ids: ["a"] });
+  assert.deepEqual(calls[1], { userId: 1, ids: ["a"] });
+});
