@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { Hono } from "hono";
 
 // ── Environment Setup ─────────────────────────────────────────────────────────
 process.env["GOOGLE_TOKEN_ENCRYPTION_KEY"] =
@@ -203,4 +204,128 @@ test("CAL-03-list-reauth: GET /calendar/list when service returns needs_reauth r
   assert.equal(res.status, 200);
   const json = await res.json() as { status: string };
   assert.equal(json.status, "needs_reauth");
+});
+
+// ── Phase 115 CAL-01: PUT /calendar/selections ────────────────────────────────
+
+function makeSelectionsDeps(): { deps: CalendarServiceDeps; calls: Array<{ userId: number; ids: string[] }> } {
+  const calls: Array<{ userId: number; ids: string[] }> = [];
+  const deps: CalendarServiceDeps = {
+    dbSetCalendarSelectionsFn: async (userId, ids) => { calls.push({ userId, ids }); },
+  };
+  return { deps, calls };
+}
+
+// Wrap the router in an outer Hono app that pre-sets userId so that the
+// route handler's `c.get("userId")` resolves to a known value (mirrors the
+// global bearerAuth dispatcher behavior in production index.ts).
+function makeAppWithUserId(deps: CalendarServiceDeps, userId = 1): Hono {
+  const inner = createCalendarRouter(deps);
+  const app = new Hono();
+  app.use("*", async (c, next) => {
+    c.set("userId" as never, userId as never);
+    await next();
+  });
+  app.route("/", inner);
+  return app;
+}
+
+test("CAL-01-put-happy: PUT /calendar/selections with valid body returns 200 and persists ids", async () => {
+  const { deps, calls } = makeSelectionsDeps();
+  const app = makeAppWithUserId(deps);
+  const res = await app.request("/calendar/selections", {
+    method: "PUT",
+    body: JSON.stringify({ selectedCalendarIds: ["a", "b"] }),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  assert.equal(res.status, 200);
+  const json = await res.json() as { ok: boolean };
+  assert.equal(json.ok, true);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].userId, 1);
+  assert.deepEqual(calls[0].ids, ["a", "b"]);
+});
+
+test("CAL-01-put-empty: PUT /calendar/selections with empty array returns 200 and persists []", async () => {
+  const { deps, calls } = makeSelectionsDeps();
+  const app = makeAppWithUserId(deps);
+  const res = await app.request("/calendar/selections", {
+    method: "PUT",
+    body: JSON.stringify({ selectedCalendarIds: [] }),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  assert.equal(res.status, 200);
+  const json = await res.json() as { ok: boolean };
+  assert.equal(json.ok, true);
+  assert.equal(calls.length, 1);
+  assert.deepEqual(calls[0].ids, []);
+});
+
+test("CAL-01-put-idempotent: two consecutive PUTs return 200 with identical persisted args", async () => {
+  const { deps, calls } = makeSelectionsDeps();
+  const app = makeAppWithUserId(deps);
+  const body = JSON.stringify({ selectedCalendarIds: ["a"] });
+
+  const r1 = await app.request("/calendar/selections", { method: "PUT", body, headers: { "Content-Type": "application/json" } });
+  const r2 = await app.request("/calendar/selections", { method: "PUT", body, headers: { "Content-Type": "application/json" } });
+
+  assert.equal(r1.status, 200);
+  assert.equal(r2.status, 200);
+  assert.equal(calls.length, 2);
+  assert.deepEqual(calls[0], { userId: 1, ids: ["a"] });
+  assert.deepEqual(calls[1], { userId: 1, ids: ["a"] });
+});
+
+test("CAL-01-put-rejects-non-array: PUT /calendar/selections with non-array selectedCalendarIds returns 400", async () => {
+  const { deps, calls } = makeSelectionsDeps();
+  const app = makeAppWithUserId(deps);
+  const res = await app.request("/calendar/selections", {
+    method: "PUT",
+    body: JSON.stringify({ selectedCalendarIds: "not-an-array" }),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  assert.equal(res.status, 400);
+  assert.equal(calls.length, 0, "dbSetCalendarSelectionsFn must NOT be called when validation fails");
+});
+
+test("CAL-01-put-rejects-missing-field: PUT /calendar/selections with no selectedCalendarIds returns 400", async () => {
+  const { deps, calls } = makeSelectionsDeps();
+  const app = makeAppWithUserId(deps);
+  const res = await app.request("/calendar/selections", {
+    method: "PUT",
+    body: JSON.stringify({}),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  assert.equal(res.status, 400);
+  assert.equal(calls.length, 0, "dbSetCalendarSelectionsFn must NOT be called when field is missing");
+});
+
+test("CAL-01-put-rejects-too-many: PUT /calendar/selections with >1000 ids returns 400", async () => {
+  const { deps, calls } = makeSelectionsDeps();
+  const app = makeAppWithUserId(deps);
+  const res = await app.request("/calendar/selections", {
+    method: "PUT",
+    body: JSON.stringify({ selectedCalendarIds: Array(1001).fill("x") }),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  assert.equal(res.status, 400);
+  assert.equal(calls.length, 0, "dbSetCalendarSelectionsFn must NOT be called when cap exceeded");
+});
+
+test("CAL-01-put-rejects-non-string-elements: PUT /calendar/selections with non-string elements returns 400", async () => {
+  const { deps, calls } = makeSelectionsDeps();
+  const app = makeAppWithUserId(deps);
+  const res = await app.request("/calendar/selections", {
+    method: "PUT",
+    body: JSON.stringify({ selectedCalendarIds: [1, 2] }),
+    headers: { "Content-Type": "application/json" },
+  });
+
+  assert.equal(res.status, 400);
+  assert.equal(calls.length, 0, "dbSetCalendarSelectionsFn must NOT be called when elements are non-string");
 });
