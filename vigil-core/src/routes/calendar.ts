@@ -28,6 +28,36 @@ export function createCalendarRouter(deps?: CalendarServiceDeps): Hono {
     return c.json(result);
   });
 
+  // PUT /calendar/selections — overwrite the calling user's calendar_selections
+  // wholesale (Phase 115 CAL-01).
+  // Body: { selectedCalendarIds: string[] } — empty array is valid (= the
+  // existing all-calendars fallback inside fetchTodaysEvents kicks in).
+  // Bearer-gated via the global bearerAuth dispatcher mounted in index.ts;
+  // userId is scoped via c.get("userId") (NEVER taken from the request body —
+  // T-115-01-04 cross-tenant write mitigation).
+  // Validation (array shape, string elements, cap=1000) is single-sourced in
+  // the service layer's validateCalendarIds — the route catches the throw and
+  // maps it to 400 (T-115-01-02 / T-115-01-03 mitigation).
+  router.put("/calendar/selections", async (c) => {
+    const userId = c.get("userId") as number;
+    let body: unknown;
+    try {
+      body = await c.req.json();
+    } catch {
+      return c.json({ error: "Invalid JSON body" }, 400);
+    }
+    if (!body || typeof body !== "object") {
+      return c.json({ error: "Body must be an object" }, 400);
+    }
+    const ids = (body as { selectedCalendarIds?: unknown }).selectedCalendarIds;
+    try {
+      await service.setCalendarSelections(userId, ids as string[]);
+    } catch (err) {
+      return c.json({ error: err instanceof Error ? err.message : "Validation failed" }, 400);
+    }
+    return c.json({ ok: true });
+  });
+
   return router;
 }
 
