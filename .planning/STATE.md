@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
-status: ready_to_plan
-stopped_at: "v3.7 ROADMAP.md landed 2026-04-27 — 5 phases (115-119), all 7 v1 requirements mapped. Ready to plan Phase 115."
-last_updated: "2026-04-27T00:00:00.000Z"
-last_activity: 2026-04-27
+status: planning
+stopped_at: Phase 115 context gathered
+last_updated: "2026-04-27T22:12:38.861Z"
+last_activity: 2026-04-27 — ROADMAP.md created with 5 phases (115-119), 7/7 requirements mapped
 progress:
-  total_phases: 5
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
-  percent: 0
+  total_phases: 10
+  completed_phases: 6
+  total_plans: 33
+  completed_plans: 35
+  percent: 100
 ---
 
 # Project State
@@ -77,11 +77,13 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 ### Pending Todos
 
 Captured for v3.7 execution (already in REQUIREMENTS once roadmap lands):
+
 - Test users `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) cleanup → OPS-01
 - DMARC ramp `p=none → p=quarantine` (auto-eval 2026-05-06) → OPS-02
 - ThoughtRow.tsx:399 `whitespace-pre-line` → POLISH-01
 
 Captured but explicitly out of v3.7 scope:
+
 - SEED-004 — verify-email error UX rotated/expired/rate-limited differentiation (token-rotation copy axis only; v3.7 covers the rate-limit axis)
 - Disable gmail-workorders importer tick — defer to whichever milestone unblocks ServiceNow API
 
@@ -106,7 +108,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-27T00:00:00.000Z
-Stopped at: v3.7 ROADMAP.md landed — 5 phases (115-119), 7/7 requirements mapped, REQUIREMENTS.md traceability populated
-Resume file: None
+Last session: 2026-04-27T22:12:38.822Z
+Stopped at: Phase 115 context gathered
+Resume file: .planning/phases/115-calendar-source-picker-thoughtrow-polish/115-CONTEXT.md
 Next action: /gsd-plan-phase 115
