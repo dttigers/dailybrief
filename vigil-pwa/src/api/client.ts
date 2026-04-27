@@ -795,7 +795,7 @@ export interface CalendarInfo {
 
 /** Discriminated union mirroring the GET /v1/calendar/list response shape. */
 export type CalendarListResult =
-  | { status: 'ok'; calendars: CalendarInfo[] }
+  | { status: 'ok'; calendars: CalendarInfo[]; selectedCalendarIds: string[] }
   | { status: 'needs_reauth' }
   | { status: 'error'; error: string }
 

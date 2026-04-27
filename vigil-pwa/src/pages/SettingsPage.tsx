@@ -175,6 +175,8 @@ export default function SettingsPage() {
       const result = await getCalendarList()
       if (result.status === 'ok') {
         setCalendarList(result.calendars)
+        setSelectedCalendarIds(result.selectedCalendarIds)
+        lastSavedSelectionRef.current = result.selectedCalendarIds
         setCalendarListStatus('ok')
       } else if (result.status === 'needs_reauth') {
         setCalendarList(null)

@@ -453,7 +453,7 @@ describe('SettingsPage', () => {
         if (u.includes('/v1/calendar/list')) {
           listCallCount++
           return new Response(
-            JSON.stringify(opts.calendarList ?? { status: 'ok', calendars: [] }),
+            JSON.stringify(opts.calendarList ?? { status: 'ok', calendars: [], selectedCalendarIds: [] }),
             { status: 200 },
           )
         }
@@ -502,6 +502,7 @@ describe('SettingsPage', () => {
             { id: 'primary@gmail.com', name: 'Personal', color: '#4285f4', primary: true },
             { id: 'work@company.com', name: 'Work', color: '#0b8043', primary: false },
           ],
+          selectedCalendarIds: [],
         },
       })
       renderPage({ fetchImpl })
@@ -520,6 +521,7 @@ describe('SettingsPage', () => {
             calendars: [
               { id: 'primary@gmail.com', name: 'Personal', color: '#4285f4', primary: true },
             ],
+            selectedCalendarIds: [],
           },
         })
         const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
@@ -573,12 +575,70 @@ describe('SettingsPage', () => {
           calendars: [
             { id: 'primary@gmail.com', name: 'Personal', color: '#4285f4', primary: true },
           ],
+          selectedCalendarIds: [],
         },
       })
       renderPage({ fetchImpl })
       expect(
         await screen.findByText(/No calendars selected — brief includes all of them\./),
       ).toBeInTheDocument()
+    })
+
+    // ── Phase 115 CR-01 gap-closure regression tests ──
+
+    it('CR-01-reload-preservation-checked-from-server: checkboxes start CHECKED when GET /v1/calendar/list returns a non-empty selectedCalendarIds', async () => {
+      const { fetchImpl } = makeFetchImpl({
+        calendarList: {
+          status: 'ok',
+          calendars: [
+            { id: 'primary@gmail.com', name: 'Personal', color: '#4285f4', primary: true },
+            { id: 'work@company.com', name: 'Work', color: '#0b8043', primary: false },
+            { id: 'side@gmail.com', name: 'Side Project', color: '#f4b400', primary: false },
+          ],
+          selectedCalendarIds: ['primary@gmail.com', 'work@company.com'],
+        },
+      })
+      renderPage({ fetchImpl })
+      // Wait for the picker to mount + hydrate.
+      const cbPrimary = await screen.findByTestId('calendar-checkbox-primary@gmail.com') as HTMLInputElement
+      const cbWork = await screen.findByTestId('calendar-checkbox-work@company.com') as HTMLInputElement
+      const cbSide = await screen.findByTestId('calendar-checkbox-side@gmail.com') as HTMLInputElement
+      // Hydration assertion — these MUST be checked because the server said so.
+      expect(cbPrimary.checked).toBe(true)
+      expect(cbWork.checked).toBe(true)
+      // The unselected one stays unchecked.
+      expect(cbSide.checked).toBe(false)
+    })
+
+    it('CR-01-multi-selection-toggle-preserves-others: toggling one calendar in a multi-selection PUTs the FULL updated array (not just the toggled id)', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const { fetchImpl, getPutCalls } = makeFetchImpl({
+          calendarList: {
+            status: 'ok',
+            calendars: [
+              { id: 'cal-a', name: 'Cal A', color: '#4285f4', primary: true },
+              { id: 'cal-b', name: 'Cal B', color: '#0b8043', primary: false },
+              { id: 'cal-c', name: 'Cal C', color: '#f4b400', primary: false },
+            ],
+            selectedCalendarIds: ['cal-a', 'cal-b', 'cal-c'],
+          },
+        })
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        renderPage({ fetchImpl })
+        // Wait for hydration: confirm cal-b is checked before we toggle it off.
+        const cbB = await screen.findByTestId('calendar-checkbox-cal-b') as HTMLInputElement
+        expect(cbB.checked).toBe(true)
+        // Toggle cal-b off.
+        await user.click(cbB)
+        // Advance past the 400ms debounce.
+        await act(async () => { vi.advanceTimersByTime(450) })
+        await waitFor(() => expect(getPutCalls().length).toBe(1))
+        // The PUT body MUST be the full updated array preserving a + c, NOT [] + nothing.
+        expect(getPutCalls()[0].body).toEqual({ selectedCalendarIds: ['cal-a', 'cal-c'] })
+      } finally {
+        vi.useRealTimers()
+      }
     })
   })
 })
