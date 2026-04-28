@@ -1,8 +1,9 @@
 ---
 phase: 115-calendar-source-picker-thoughtrow-polish
 verified: 2026-04-27T18:21:00Z
-status: human_needed
-score: 4/4 must-haves verified
+human_uat_completed: 2026-04-28T17:05:00Z
+status: passed
+score: 4/4 must-haves verified + 5/5 human UAT items passed
 overrides_applied: 0
 re_verification:
   previous_status: gaps_found
