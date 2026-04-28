@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
-status: verifying
-stopped_at: Completed 115-02-PLAN.md
-last_updated: "2026-04-27T22:53:42.118Z"
-last_activity: 2026-04-27
+status: executing
+stopped_at: Completed 115-04-PLAN.md
+last_updated: "2026-04-28T00:01:48.567Z"
+last_activity: 2026-04-28
 progress:
   total_phases: 10
   completed_phases: 7
-  total_plans: 36
-  completed_plans: 38
+  total_plans: 37
+  completed_plans: 39
   percent: 100
 ---
 
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 Milestone: v3.7 (started 2026-04-27)
 Phase: 115 (calendar-source-picker-thoughtrow-polish) — EXECUTING
-Plan: 3 of 3
-Status: Phase complete — ready for verification
-Last activity: 2026-04-27
+Plan: 2 of 4
+Status: Ready to execute
+Last activity: 2026-04-28
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -60,6 +60,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 115 P01 | 5min | 3 tasks | 5 files |
 | Phase 115 P03 | 3min | 2 tasks | 2 files |
 | Phase 115 P02 | 6min | 3 tasks | 4 files |
+| Phase 115 P04 | 15 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,8 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 115]: Phase 115-03: POLISH-01 ships as a 1-class Tailwind append + dedicated regression test in same plan — locks visual contract against future className refactors / Tailwind purging
 - [Phase 115]: Phase 115-02: PWA-side discriminated-union API helper pattern (caller routes on .status) replaces 'throw on every non-ok status' for endpoints with structured non-error states
 - [Phase 115]: Phase 115-02: Optimistic toggle + previous-value capture (lastSavedSelectionRef) for D-14 rollback contract — server-confirmed value is the source of truth
+- [Phase 115]: Phase 115-04: Extend GET /v1/calendar/list response shape (not a new endpoint) to carry selectedCalendarIds — smallest-diff fix for CR-01 reload-preservation bug
+- [Phase 115]: Phase 115-04: Seed lastSavedSelectionRef.current from server response on loadCalendars mount — ties rollback target to server truth, not empty array
 
 ### Pending Todos
 
@@ -118,7 +121,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-27T22:53:42.112Z
-Stopped at: Completed 115-02-PLAN.md
+Last session: 2026-04-28T00:01:48.561Z
+Stopped at: Completed 115-04-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 115

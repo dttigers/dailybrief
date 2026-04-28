@@ -566,7 +566,7 @@ Plans:
 | 113. Verify Email on Signup | v3.6 | 5/5 | Complete    | 2026-04-26 |
 | 114. Safari Extension Quick-Capture Parity | v3.6 | 5/5 | Complete    | 2026-04-26 |
 
-| 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 3/3 | Complete   | 2026-04-27 |
+| 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 4/4 | Complete   | 2026-04-28 |
 | 116. Sports source picker | v3.7 | 0/TBD | Not started | - |
 | 117. Auth-email rate-limit UX hardening | v3.7 | 0/TBD | Not started | - |
 | 118. Production test-user cleanup | v3.7 | 0/TBD | Not started | - |
@@ -582,7 +582,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 3/3 plans complete
+**Plans:** 4/4 plans complete
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
