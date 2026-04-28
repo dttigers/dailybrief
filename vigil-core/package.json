@@ -17,7 +17,7 @@
     "db:generate-key": "tsx scripts/generate-key.ts",
     "seed:local": "tsx --env-file=.env scripts/seed-local.ts",
     "db:migrate-sqlite": "tsx scripts/migrate-sqlite.ts",
-    "set-password": "tsx scripts/set-password.ts",
+    "set-password": "tsx --env-file=.env scripts/set-password.ts",
     "smoke-test": "tsx scripts/smoke-test.ts",
     "smoke-test:verify-email": "tsx --env-file=.env scripts/smoke-test-verify-email.ts"
   },

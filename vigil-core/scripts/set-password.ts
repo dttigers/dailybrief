@@ -60,7 +60,11 @@ async function main(): Promise<void> {
   }
 
   const passwordHash = await hashPassword(password);
-  await db.update(users).set({ passwordHash, updatedAt: new Date() }).where(eq(users.id, user.id));
+  const now = new Date();
+  await db
+    .update(users)
+    .set({ passwordHash, passwordChangedAt: now, updatedAt: now })
+    .where(eq(users.id, user.id));
 
   console.log(`Password updated for ${email} (id=${user.id})`);
   process.exit(0);
