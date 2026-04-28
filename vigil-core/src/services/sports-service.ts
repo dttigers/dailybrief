@@ -65,6 +65,7 @@ export interface SportsServiceDeps {
 type League = "mlb" | "nfl" | "nba" | "nhl";
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const TEAMS_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours (D-07: rosters rarely change)
 
 const BASE_URLS: Record<League, string> = {
   nba: "https://api.balldontlie.io/v1",
@@ -78,8 +79,8 @@ interface CacheEntry<T> {
   fetchedAt: number;
 }
 
-function isFresh(entry: CacheEntry<unknown>): boolean {
-  return Date.now() - entry.fetchedAt < CACHE_TTL_MS;
+function isFresh(entry: CacheEntry<unknown>, ttlMs: number = CACHE_TTL_MS): boolean {
+  return Date.now() - entry.fetchedAt < ttlMs;
 }
 
 // Per-league raw game types (BDL response shapes differ per league)
@@ -130,6 +131,20 @@ interface BDLStandingsEntry {
   win_pct?: string;
   streak?: string;
   ot_losses?: number;
+}
+
+interface BDLTeamRaw {
+  id: number;
+  // BDL field names diverge per league (D-08): MLB uses display_name, others use full_name.
+  // Tolerate either field on the type level; the per-league reader in fetchTeams picks the right one.
+  display_name?: string;
+  full_name?: string;
+}
+
+/** Normalized team list entry returned by fetchTeams. id is BDL team_id as STRING (D-05). */
+export interface TeamListEntry {
+  id: string;
+  name: string;
 }
 
 // ── Status helpers ─────────────────────────────────────────────────────────────
@@ -222,9 +237,12 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
   fetchLeague: (league: League) => Promise<LeagueResult>;
   fetchAllLeagues: () => Promise<SportsResponse>;
   clearCache: () => void;
+  fetchTeams: (league: League) => Promise<TeamListEntry[]>;
 } {
   const fetchFn = deps.fetchFn ?? globalThis.fetch.bind(globalThis);
   const cache = new Map<string, CacheEntry<LeagueResult>>();
+  // Teams cache (Phase 116 D-07): 24h TTL, global (shared across users), keyed by league.
+  const teamsCache = new Map<League, CacheEntry<TeamListEntry[]>>();
 
   function getCachedLeague(league: League): LeagueResult | null {
     const key = `league:${league}`;
@@ -512,6 +530,29 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
     };
   }
 
+  /**
+   * Fetch the team roster for a league from BDL /teams, normalizing the per-league
+   * field name divergence (D-08): MLB uses display_name; NFL/NBA/NHL use full_name.
+   * Returns alphabetically-sorted [{ id, name }] with id as STRING (D-05).
+   * Cached globally for 24 hours (D-07) — rosters rarely change.
+   */
+  async function fetchTeams(league: League): Promise<TeamListEntry[]> {
+    const cached = teamsCache.get(league);
+    if (cached && isFresh(cached, TEAMS_CACHE_TTL_MS)) {
+      return cached.data;
+    }
+    const url = `${BASE_URLS[league]}/teams`;
+    const res = await fetchJSON<{ data: BDLTeamRaw[] }>(url);
+    const useDisplayName = league === "mlb";
+    const teams: TeamListEntry[] = (res.data ?? []).map((raw) => ({
+      id: String(raw.id),
+      name: useDisplayName ? (raw.display_name ?? "") : (raw.full_name ?? ""),
+    }));
+    teams.sort((a, b) => a.name.localeCompare(b.name));
+    teamsCache.set(league, { data: teams, fetchedAt: Date.now() });
+    return teams;
+  }
+
   async function fetchLeague(league: League): Promise<LeagueResult> {
     // Cache check first
     const cached = getCachedLeague(league);
@@ -575,7 +616,8 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
 
   function clearCache(): void {
     cache.clear();
+    teamsCache.clear();
   }
 
-  return { fetchLeague, fetchAllLeagues, clearCache };
+  return { fetchLeague, fetchAllLeagues, clearCache, fetchTeams };
 }
