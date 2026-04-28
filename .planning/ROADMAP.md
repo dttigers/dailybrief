@@ -652,3 +652,22 @@ Plans:
 **Context:** Full empirical diagnosis, Phase 58 rationale, and all five fix options evaluated in `.planning/debug/icloud-photos-never-download.md` (committed in `4f71366`). Key nuance: CloudKit entitlements (`icloud-services`, `icloud-container-identifiers`) that Phase 58 correctly removed are a **different entitlement family** from ubiquity — Phase 58's "dead code, incompatible with Developer ID" rationale applies to CloudKit only, not to ubiquity.
 
 **Depends on:** Nothing — independent of all server/PWA work.
+
+### Phase 999.2: CaptureBar — support multi-line input (BACKLOG)
+
+**Goal:** Pasting or typing multi-line text into the Thoughts capture bar preserves newlines instead of collapsing to a single line. Display side already supports multi-line via Phase 115 POLISH-01 (`whitespace-pre-line` on `ThoughtRow.tsx <p>`); this phase fixes the capture side so the data actually carries `\n` chars into the DB.
+
+**Why it's in backlog (not active):** Surfaced as a real user-visible gap during Phase 115 UAT 2 (2026-04-28) — pasting `line one\nline two\nline three` into [CaptureBar.tsx:57](../../vigil-pwa/src/components/CaptureBar.tsx#L57) collapsed to one line because the element is `<input>`, which strips newlines on paste by HTML spec. Phase 115 POLISH-01 D-16 explicitly left capture-side untouched. Not blocking — `<textarea>` edit-mode already produces real multi-line thoughts that render correctly via 115-03 — so capture-side parity can wait.
+
+**Requirements:** TBD — candidates:
+- CAP-MULTI-01: CaptureBar element accepts multi-line input (likely swap `<input>` → `<textarea>` with auto-grow + Enter-vs-Cmd+Enter submit semantics)
+- CAP-MULTI-02: Pasted multi-line text preserves newlines into the persisted thought body
+- CAP-MULTI-03: Submit affordance unambiguous (Enter inserts newline OR submits — not both; pick one and document)
+- CAP-MULTI-04: Empty-string and whitespace-only guards still apply (don't accept `"\n\n\n"` as a thought)
+- CAP-MULTI-05: Mobile keyboard return-key behavior matches the chosen submit semantic
+
+**Plans:** 0 plans — promote with `/gsd-review-backlog` when ready to plan.
+
+**Context:** Phase 115 plan 115-03 fixed display-side rendering (`whitespace-pre-line` on `ThoughtRow.tsx:399 <p>`). Edit-mode `<textarea>` already preserves newlines (D-16, unchanged in 115). Only the capture entry point lags. Real-world trigger: user attempted to paste a three-line reflection during 115-HUMAN-UAT and the newlines silently disappeared — the `whitespace-pre-line` had nothing to render because the data never had newlines.
+
+**Depends on:** Nothing — independent of all server work.

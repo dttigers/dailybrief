@@ -14,11 +14,11 @@ updated: 2026-04-27T18:25:00Z
 
 ### 1. Visual layout — Calendars subsection in deployed PWA Settings
 expected: Subsection appears below the existing Calendar/Gmail ScopeRow rows; primary calendar carries a teal PRIMARY badge; color swatches match Google's per-calendar color
-result: [pending]
+result: pass (2026-04-28)
 
 ### 2. Multi-line thought row visual line-break rendering
 expected: A captured/pasted thought containing literal newlines renders across multiple visible lines (up to the line-clamp-3 cap), not collapsed to one line
-result: [pending]
+result: pass (2026-04-28) — verified by entering newlines via edit-mode `<textarea>` (CaptureBar `<input>` strips newlines on paste/Enter; tracked separately in backlog as out-of-scope for POLISH-01 per D-16)
 
 ### 3. End-to-end save+reload (CR-01 fix verification)
 expected: After checking 2-3 calendars, waiting ~500ms for debounced save, and hard-refreshing — the same checkboxes that were checked before reload are still checked. SC#2 'reload preserves the choice' is now implemented (server returns `selectedCalendarIds` in `GET /v1/calendar/list`; PWA hydrates state on mount).
