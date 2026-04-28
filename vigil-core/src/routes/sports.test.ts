@@ -332,3 +332,94 @@ test("SPORTS-01-get-row-absent: GET /sports/selections returns empty default whe
   assert.equal(res.status, 200);
   assert.deepEqual(await res.json(), { enabledLeagues: [], favoriteTeams: {} });
 });
+
+// ── Phase 116 SPORTS-01: GET /sports/teams/:league ──
+
+function makeTeamsRouterApp(fetchFn: (url: string, init?: RequestInit) => Promise<Response>) {
+  const inner = createSportsRouter({ fetchFn });
+  const app = new Hono();
+  app.use("*", async (c, next) => {
+    c.set("userId" as never, 1 as never);
+    await next();
+  });
+  app.route("/", inner);
+  return app;
+}
+
+function makeTeamsFetch(byPath: Record<string, unknown>): (url: string) => Promise<Response> {
+  return async (url: string) => {
+    for (const [pattern, body] of Object.entries(byPath)) {
+      if (url.includes(pattern)) {
+        return new Response(JSON.stringify(body), { status: 200, headers: { "Content-Type": "application/json" } });
+      }
+    }
+    return new Response("Not found", { status: 404 });
+  };
+}
+
+test("SPORTS-01-teams-route-mlb: GET /sports/teams/mlb returns 200 with normalized teams array", async () => {
+  const fetchFn = makeTeamsFetch({
+    "mlb/v1/teams": { data: [{ id: 116, display_name: "Detroit Tigers" }, { id: 5, display_name: "Cleveland Guardians" }] },
+  });
+  const app = makeTeamsRouterApp(fetchFn);
+  const res = await app.request("/sports/teams/mlb");
+  assert.equal(res.status, 200);
+  const body = await res.json() as { teams: Array<{ id: string; name: string }> };
+  assert.ok(Array.isArray(body.teams), "body.teams is an array");
+  assert.deepEqual(body.teams, [
+    { id: "5", name: "Cleveland Guardians" },
+    { id: "116", name: "Detroit Tigers" },
+  ]);
+});
+
+test("SPORTS-01-teams-route-nfl: GET /sports/teams/nfl returns 200 with full_name-normalized teams", async () => {
+  const fetchFn = makeTeamsFetch({
+    "nfl/v1/teams": { data: [{ id: 13, full_name: "Detroit Lions" }] },
+  });
+  const app = makeTeamsRouterApp(fetchFn);
+  const res = await app.request("/sports/teams/nfl");
+  assert.equal(res.status, 200);
+  const body = await res.json() as { teams: Array<{ id: string; name: string }> };
+  assert.deepEqual(body.teams, [{ id: "13", name: "Detroit Lions" }]);
+});
+
+test("SPORTS-01-teams-route-nba: GET /sports/teams/nba returns 200", async () => {
+  const fetchFn = makeTeamsFetch({
+    "api.balldontlie.io/v1/teams": { data: [{ id: 10, full_name: "Detroit Pistons" }] },
+  });
+  const app = makeTeamsRouterApp(fetchFn);
+  const res = await app.request("/sports/teams/nba");
+  assert.equal(res.status, 200);
+  const body = await res.json() as { teams: Array<{ id: string; name: string }> };
+  assert.deepEqual(body.teams, [{ id: "10", name: "Detroit Pistons" }]);
+});
+
+test("SPORTS-01-teams-route-nhl: GET /sports/teams/nhl returns 200", async () => {
+  const fetchFn = makeTeamsFetch({
+    "nhl/v1/teams": { data: [{ id: 10, full_name: "Detroit Red Wings" }] },
+  });
+  const app = makeTeamsRouterApp(fetchFn);
+  const res = await app.request("/sports/teams/nhl");
+  assert.equal(res.status, 200);
+  const body = await res.json() as { teams: Array<{ id: string; name: string }> };
+  assert.deepEqual(body.teams, [{ id: "10", name: "Detroit Red Wings" }]);
+});
+
+test("SPORTS-01-teams-route-rejects-unknown: GET /sports/teams/soccer returns 400", async () => {
+  const fetchFn = makeTeamsFetch({});
+  const app = makeTeamsRouterApp(fetchFn);
+  const res = await app.request("/sports/teams/soccer");
+  assert.equal(res.status, 400);
+  const body = await res.json() as { error: string };
+  assert.match(body.error, /Unknown league/);
+});
+
+test("SPORTS-01-teams-route-no-leak: 400 error body does NOT mention BALLDONTLIE or apiKey", async () => {
+  const fetchFn = makeTeamsFetch({});
+  const app = makeTeamsRouterApp(fetchFn);
+  const res = await app.request("/sports/teams/soccer");
+  assert.equal(res.status, 400);
+  const text = await res.text();
+  assert.ok(!/BALLDONTLIE/i.test(text), "Response must not mention BALLDONTLIE");
+  assert.ok(!/apiKey/i.test(text), "Response must not mention apiKey");
+});
