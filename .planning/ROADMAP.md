@@ -405,7 +405,7 @@ Plans:
   4. A user with all leagues disabled gets a brief PDF with no sports section (or a clean "no leagues selected" placeholder), not stale hardcoded data.
 **Plans**: 5 plans
 - [x] 116-01-PLAN.md — Sports preferences server (GET/PUT /v1/sports/selections + sports-preferences-service + app_settings upsert)
-- [ ] 116-02-PLAN.md — Teams endpoint + 24h cache (GET /v1/sports/teams/:league + per-league name normalization)
+- [x] 116-02-PLAN.md — Teams endpoint + 24h cache (GET /v1/sports/teams/:league + per-league name normalization)
 - [ ] 116-03-PLAN.md — sports-service selections threading (LeagueResult 'disabled' + standings-only path + per-user teamId override)
 - [ ] 116-04-PLAN.md — brief-assembly threading + env-var deprecation (read app_settings.sports_selections; pass to fetchAllLeagues)
 - [ ] 116-05-PLAN.md — PWA Settings sports picker (UI + 3 typed api/client helpers + tests)
@@ -572,7 +572,7 @@ Plans:
 | 114. Safari Extension Quick-Capture Parity | v3.6 | 5/5 | Complete    | 2026-04-26 |
 
 | 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 4/4 | Complete    | 2026-04-28 |
-| 116. Sports source picker | v3.7 | 1/5 | In Progress|  |
+| 116. Sports source picker | v3.7 | 2/5 | In Progress|  |
 | 117. Auth-email rate-limit UX hardening | v3.7 | 0/TBD | Not started | - |
 | 118. Production test-user cleanup | v3.7 | 0/TBD | Not started | - |
 | 119. DMARC quarantine ramp | v3.7 | 0/TBD | Not started | - |
@@ -587,7 +587,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 1/5 plans executed
+**Plans:** 2/5 plans executed
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe

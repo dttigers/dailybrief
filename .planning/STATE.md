@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Completed 116-01-PLAN.md
-last_updated: "2026-04-28T18:56:59.780Z"
+stopped_at: Completed 116-02-PLAN.md
+last_updated: "2026-04-28T19:05:23.448Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 12
   completed_phases: 7
   total_plans: 42
-  completed_plans: 40
-  percent: 95
+  completed_plans: 41
+  percent: 98
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 Milestone: v3.7 (started 2026-04-27)
 Phase: 116 (sports-source-picker) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-04-28
 
@@ -62,6 +62,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 115 P02 | 6min | 3 tasks | 4 files |
 | Phase 115 P04 | 15 | 2 tasks | 5 files |
 | Phase 116 P01 | 5min | 2 tasks | 4 files |
+| Phase 116 P02 | 4min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,11 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 116]: Phase 116-01: Validation single-sourced in service.setUserSelections (validateSportsSelections); route catches throw and maps to 400 — same pattern as Phase 115 calendar setCalendarSelections
 - [Phase 116]: Phase 116-01: Hono route ordering — literal /sports/selections registered BEFORE /sports/:league so the param route does not shadow
 - [Phase 116]: Phase 116-01: D-24 preservation rule — validator accepts favoriteTeams.<league> entries even when that league is NOT in enabledLeagues (disabling does not clear the team)
+- [Phase 116]: Phase 116-02: TEAMS_CACHE_TTL_MS = 24h global cache (D-07) — rosters rarely change AND BDL free-tier rate limit is 5 req/min
+- [Phase 116]: Phase 116-02: Per-league name normalization at service layer (D-08) — MLB display_name vs NFL/NBA/NHL full_name; collapses BDL divergence to a uniform TeamListEntry
+- [Phase 116]: Phase 116-02: BDL team_id returned as STRING (D-05) — direct drop-in for the existing team_ids[]=<id> string concatenation in fetchLeague*
+- [Phase 116]: Phase 116-02: Hono route order — /sports/teams/:league BEFORE /sports/:league so the literal /teams/ segment wins first-match dispatch
+- [Phase 116]: Phase 116-02: isFresh(entry, ttlMs?) parameterized with default = CACHE_TTL_MS — one-line signature change cleaner than duplicating the helper as isFreshTeams
 
 ### Pending Todos
 
@@ -126,7 +132,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-28T18:56:49.415Z
-Stopped at: Completed 116-01-PLAN.md
+Last session: 2026-04-28T19:05:12.502Z
+Stopped at: Completed 116-02-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 115
