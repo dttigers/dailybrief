@@ -32,20 +32,20 @@ No shadcn initialization required or desired — project uses raw Tailwind v4 wi
 
 ## Spacing Scale
 
-Declared values (multiples of 4):
+Declared values (multiples of 4 — standard set only):
 
 | Token | Value | Usage |
 |-------|-------|-------|
 | xs | 4px | Icon gaps, badge padding (`px-1.5 py-0.5`) |
 | sm | 8px | Compact element spacing (`space-y-1.5`, `gap-2`) |
 | md | 16px | Default element spacing (`p-4`, section padding) |
-| lg | 20px | Card padding (`p-5` — existing Settings card pattern) |
 | xl | 32px | Not used in Settings — layout gaps |
 | 2xl | 48px | Not used in picker — major section breaks |
 
 Source: Inferred from `SettingsPage.tsx` patterns (`p-5`, `p-4`, `mt-4`, `gap-2`, `space-y-1.5`, `border-t pt-4`). Phase 116 must match these exactly.
 
 Exceptions:
+- Card padding 20px (`p-5`): inherited from existing `SettingsPage.tsx` card padding pattern — matching is required for visual consistency with Phase 115 calendar picker that just shipped. Changing to 24px would break card alignment with the Phase 115 baseline.
 - Touch targets on checkboxes: 44px minimum (`min-w-[44px]` pattern from `ToastHost.tsx`). The `<li>` row for each team must provide enough vertical height for comfortable mobile tap — add `py-1` to each row if needed to reach 44px.
 
 ---
@@ -105,6 +105,8 @@ The Sports picker lives as a new `<section>` card in `SettingsPage.tsx`, beneath
   {/* league rows */}
 </section>
 ```
+
+Primary focal point: the Sports section card heading. Secondary focal point: the league enable checkbox row (44px touch targets, teal-bordered when enabled).
 
 ### League row structure
 
@@ -191,6 +193,7 @@ When all leagues are disabled, the brief omits the sports section entirely (succ
 Notes:
 - League labels include the sport name after the acronym (e.g., "MLB — Baseball") because solo-dev tooling — clarity beats terseness.
 - "Standings only" helper for no-team-selected is the honest fallback: the sports-service can still show league standings without a favorite team. If the implementation cannot support this, change to: "Select a team to track game results."
+- "Retry" is a single-word CTA intentionally inherited from `SettingsPage.tsx` line 735 (Phase 115 calendar picker, just shipped). Changing to "Retry load" would break UI consistency with the baseline; preserving the exact pattern takes priority over the verb+noun rule for this phase.
 - No destructive actions in this phase — no confirmation dialogs needed.
 
 ---
