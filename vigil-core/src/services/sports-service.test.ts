@@ -296,3 +296,135 @@ test("off-season: empty games array returns status off_season not error", async 
     "Empty games + standings must return status 'off_season', not 'error'",
   );
 });
+
+// ── Phase 116 SPORTS-01: fetchTeams ──
+
+test("SPORTS-01-teams-mlb-uses-display-name: fetchTeams('mlb') returns alphabetically-sorted teams using display_name field", async () => {
+  const mockFetch = createMockFetch({
+    "mlb/v1/teams": { data: [
+      { id: 116, display_name: "Detroit Tigers", full_name: "wrong-mlb-full_name" },
+      { id: 5, display_name: "Cleveland Guardians", full_name: "wrong-mlb-full_name" },
+    ]},
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  const teams = await service.fetchTeams("mlb");
+  assert.deepEqual(teams, [
+    { id: "5", name: "Cleveland Guardians" },
+    { id: "116", name: "Detroit Tigers" },
+  ]);
+});
+
+test("SPORTS-01-teams-nfl-uses-full-name: fetchTeams('nfl') uses full_name field", async () => {
+  const mockFetch = createMockFetch({
+    "nfl/v1/teams": { data: [
+      { id: 13, full_name: "Detroit Lions", display_name: "wrong-display" },
+      { id: 1, full_name: "Arizona Cardinals" },
+    ]},
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  const teams = await service.fetchTeams("nfl");
+  assert.deepEqual(teams, [
+    { id: "1", name: "Arizona Cardinals" },
+    { id: "13", name: "Detroit Lions" },
+  ]);
+});
+
+test("SPORTS-01-teams-nba-uses-full-name: fetchTeams('nba') uses full_name field", async () => {
+  const mockFetch = createMockFetch({
+    // NBA's BASE_URL is "/v1" (no league segment), so the path-substring is "v1/teams" — but
+    // we need to disambiguate from MLB/NFL/NHL. The mock's substring match treats "v1/teams"
+    // as ambiguous, so include "api.balldontlie.io/v1/teams" verbatim.
+    "api.balldontlie.io/v1/teams": { data: [
+      { id: 10, full_name: "Detroit Pistons" },
+      { id: 1, full_name: "Atlanta Hawks" },
+    ]},
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  const teams = await service.fetchTeams("nba");
+  assert.deepEqual(teams, [
+    { id: "1", name: "Atlanta Hawks" },
+    { id: "10", name: "Detroit Pistons" },
+  ]);
+});
+
+test("SPORTS-01-teams-nhl-uses-full-name: fetchTeams('nhl') uses full_name field", async () => {
+  const mockFetch = createMockFetch({
+    "nhl/v1/teams": { data: [
+      { id: 10, full_name: "Detroit Red Wings" },
+      { id: 6, full_name: "Boston Bruins" },
+    ]},
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  const teams = await service.fetchTeams("nhl");
+  assert.deepEqual(teams, [
+    { id: "6", name: "Boston Bruins" },
+    { id: "10", name: "Detroit Red Wings" },
+  ]);
+});
+
+test("SPORTS-01-teams-cache-hit: two consecutive fetchTeams calls within TTL produce ONE outbound call", async () => {
+  const mockFetch = createMockFetch({
+    "mlb/v1/teams": { data: [{ id: 116, display_name: "Detroit Tigers" }] },
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  const a = await service.fetchTeams("mlb");
+  const b = await service.fetchTeams("mlb");
+  assert.equal(mockFetch.calls.length, 1, "Second fetchTeams should hit cache");
+  assert.deepEqual(a, b);
+});
+
+test("SPORTS-01-teams-cache-cleared-by-clearCache: after clearCache(), next fetchTeams hits BDL again", async () => {
+  const mockFetch = createMockFetch({
+    "mlb/v1/teams": { data: [{ id: 116, display_name: "Detroit Tigers" }] },
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  await service.fetchTeams("mlb");           // call 1 → BDL
+  await service.fetchTeams("mlb");           // cached → no BDL
+  assert.equal(mockFetch.calls.length, 1);
+  service.clearCache();
+  await service.fetchTeams("mlb");           // cache empty → BDL again
+  assert.equal(mockFetch.calls.length, 2);
+});
+
+test("SPORTS-01-teams-cache-per-league-isolation: fetchTeams('mlb') then fetchTeams('nba') produces TWO calls", async () => {
+  const mockFetch = createMockFetch({
+    "mlb/v1/teams": { data: [{ id: 116, display_name: "Detroit Tigers" }] },
+    "api.balldontlie.io/v1/teams": { data: [{ id: 10, full_name: "Detroit Pistons" }] },
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  await service.fetchTeams("mlb");
+  await service.fetchTeams("nba");
+  assert.equal(mockFetch.calls.length, 2);
+});
+
+test("SPORTS-01-teams-bdl-error-throws: BDL non-200 throws and does NOT populate cache", async () => {
+  let callCount = 0;
+  const fetchFn = async (_url: string, _init?: RequestInit) => {
+    callCount++;
+    return new Response("server error", { status: 500 });
+  };
+  const service = createSportsService({ fetchFn });
+  await assert.rejects(() => service.fetchTeams("mlb"), /BDL fetch failed/);
+  // Subsequent call still hits fetchFn — proves error did NOT populate cache.
+  await assert.rejects(() => service.fetchTeams("mlb"), /BDL fetch failed/);
+  assert.equal(callCount, 2);
+});
+
+test("SPORTS-01-teams-empty-data: fetchTeams resolves to [] when BDL returns { data: [] }", async () => {
+  const mockFetch = createMockFetch({
+    "mlb/v1/teams": { data: [] },
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  const teams = await service.fetchTeams("mlb");
+  assert.deepEqual(teams, []);
+});
+
+test("SPORTS-01-teams-id-stringified: BDL numeric id is returned as a string (D-05)", async () => {
+  const mockFetch = createMockFetch({
+    "mlb/v1/teams": { data: [{ id: 116, display_name: "Detroit Tigers" }] },
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  const teams = await service.fetchTeams("mlb");
+  assert.equal(typeof teams[0].id, "string");
+  assert.equal(teams[0].id, "116");
+});
