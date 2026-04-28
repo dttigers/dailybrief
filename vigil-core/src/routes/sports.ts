@@ -65,8 +65,26 @@ export function createSportsRouter(deps?: SportsRouterDeps): Hono {
     return c.json({ ok: true });
   });
 
+  // GET /sports/teams/:league — Phase 116 SPORTS-01 D-06.
+  // Returns the BDL team roster for the league, normalized to [{ id: string, name: string }],
+  // alphabetically sorted, cached server-side for 24h (D-07).
+  // Bearer-gated via global bearerAuth dispatcher in index.ts; userId not required by this read
+  // because team rosters are public BDL data shared across users (the cache is global per D-07).
+  // Allowlist mirrors the existing /sports/:league handler (T-73-03 / T-116-02-06 mitigation).
+  // Registered BEFORE /sports/:league so Hono's first-match dispatch picks the literal /teams/ segment.
+  // 400 error body is hardcoded literal — never references BALLDONTLIE or apiKey (T-116-02-02).
+  router.get("/sports/teams/:league", async (c) => {
+    const league = c.req.param("league");
+    if (!VALID_LEAGUES.includes(league as League)) {
+      return c.json({ error: `Unknown league. Valid: mlb, nfl, nba, nhl` }, 400);
+    }
+    const teams = await service.fetchTeams(league as League);
+    return c.json({ teams });
+  });
+
   // Per-league — validates :league param against allowlist (T-73-03 mitigation).
-  // Registered LAST so the literal /sports/selections routes above win declaration-order matching.
+  // Registered LAST so the literal /sports/selections + /sports/teams/:league routes above
+  // win declaration-order matching.
   router.get("/sports/:league", async (c) => {
     const league = c.req.param("league");
     if (!VALID_LEAGUES.includes(league as League)) {
