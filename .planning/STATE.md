@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Phase 116 context gathered
-last_updated: "2026-04-28T18:09:52.856Z"
+stopped_at: Completed 116-01-PLAN.md
+last_updated: "2026-04-28T18:56:59.780Z"
 last_activity: 2026-04-28
 progress:
   total_phases: 12
   completed_phases: 7
-  total_plans: 37
-  completed_plans: 39
-  percent: 100
+  total_plans: 42
+  completed_plans: 40
+  percent: 95
 ---
 
 # Project State
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 115 — calendar-source-picker-thoughtrow-polish
+**Current focus:** Phase 116 — sports-source-picker
 
 ## Current Position
 
 Milestone: v3.7 (started 2026-04-27)
-Phase: 999.1
-Plan: Not started
+Phase: 116 (sports-source-picker) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
 Last activity: 2026-04-28
 
@@ -61,6 +61,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 115 P03 | 3min | 2 tasks | 2 files |
 | Phase 115 P02 | 6min | 3 tasks | 4 files |
 | Phase 115 P04 | 15 | 2 tasks | 5 files |
+| Phase 116 P01 | 5min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -86,6 +87,10 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 115]: Phase 115-02: Optimistic toggle + previous-value capture (lastSavedSelectionRef) for D-14 rollback contract — server-confirmed value is the source of truth
 - [Phase 115]: Phase 115-04: Extend GET /v1/calendar/list response shape (not a new endpoint) to carry selectedCalendarIds — smallest-diff fix for CR-01 reload-preservation bug
 - [Phase 115]: Phase 115-04: Seed lastSavedSelectionRef.current from server response on loadCalendars mount — ties rollback target to server truth, not empty array
+- [Phase 116]: Phase 116-01: Sports preferences persisted in app_settings as single jsonb (key='sports_selections') — composite PK already supports per-user, no migration
+- [Phase 116]: Phase 116-01: Validation single-sourced in service.setUserSelections (validateSportsSelections); route catches throw and maps to 400 — same pattern as Phase 115 calendar setCalendarSelections
+- [Phase 116]: Phase 116-01: Hono route ordering — literal /sports/selections registered BEFORE /sports/:league so the param route does not shadow
+- [Phase 116]: Phase 116-01: D-24 preservation rule — validator accepts favoriteTeams.<league> entries even when that league is NOT in enabledLeagues (disabling does not clear the team)
 
 ### Pending Todos
 
@@ -121,7 +126,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-28T18:09:52.850Z
-Stopped at: Phase 116 context gathered
-Resume file: .planning/phases/116-sports-source-picker/116-CONTEXT.md
+Last session: 2026-04-28T18:56:49.415Z
+Stopped at: Completed 116-01-PLAN.md
+Resume file: None
 Next action: /gsd-plan-phase 115
