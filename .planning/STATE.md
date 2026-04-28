@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Completed 115-04-PLAN.md
-last_updated: "2026-04-28T00:01:48.567Z"
+stopped_at: Phase 116 context gathered
+last_updated: "2026-04-28T18:09:52.856Z"
 last_activity: 2026-04-28
 progress:
-  total_phases: 10
+  total_phases: 12
   completed_phases: 7
   total_plans: 37
   completed_plans: 39
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 ## Current Position
 
 Milestone: v3.7 (started 2026-04-27)
-Phase: 115 (calendar-source-picker-thoughtrow-polish) — EXECUTING
-Plan: 2 of 4
+Phase: 999.1
+Plan: Not started
 Status: Ready to execute
 Last activity: 2026-04-28
 
@@ -121,7 +121,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-28T00:01:48.561Z
-Stopped at: Completed 115-04-PLAN.md
-Resume file: None
+Last session: 2026-04-28T18:09:52.850Z
+Stopped at: Phase 116 context gathered
+Resume file: .planning/phases/116-sports-source-picker/116-CONTEXT.md
 Next action: /gsd-plan-phase 115
