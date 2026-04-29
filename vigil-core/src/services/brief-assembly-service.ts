@@ -14,7 +14,7 @@ import type {
   PdfConfig,
 } from "./pdf-types.js";
 import { DEFAULT_PDF_CONFIG } from "./pdf-types.js";
-import type { SportsResponse } from "./sports-service.js";
+import type { SportsResponse, SportsSelections } from "./sports-service.js";
 import type { CalendarEventsResponse, CalendarEvent } from "./calendar-service.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -29,7 +29,7 @@ import type * as schema from "../db/schema.js";
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface BriefAssemblyDeps {
-  sportsService?: { fetchAllLeagues: () => Promise<SportsResponse> };
+  sportsService?: { fetchAllLeagues: (selections?: SportsSelections) => Promise<SportsResponse> };
   calendarService?: { fetchTodaysEvents: (userId: number) => Promise<CalendarEventsResponse> };
   pdfRenderer?: { renderBrief: (data: BriefRenderData, config?: PdfConfig) => Promise<Buffer> };
   dbClient?: PostgresJsDatabase<typeof schema> | null; // Drizzle db instance (null when DB unavailable)
@@ -48,6 +48,10 @@ type League = "mlb" | "nfl" | "nba" | "nhl";
 
 const AFFIRMATION_FALLBACK = "You are capable, you are enough, and today is full of possibility.";
 const AFFIRMATION_CACHE_DIR = path.join(os.homedir(), ".cache", "dailybrief");
+
+// Phase 116 SPORTS-01 D-10: empty default when no app_settings row exists for the
+// caller. sports-service short-circuits to all-disabled with zero BDL calls (D-17).
+const EMPTY_SELECTIONS: SportsSelections = { enabledLeagues: [], favoriteTeams: {} };
 
 // ── Timeout helper (T-76-02 mitigation) ──────────────────────────────────────
 
@@ -70,6 +74,10 @@ export function mapSports(result: PromiseSettledResult<SportsResponse>): BriefSp
 
   for (const key of ["mlb", "nfl", "nba", "nhl"] as League[]) {
     const league = leagues[key];
+    // Phase 116 SPORTS-01 D-15/D-18: this filter drops { status: 'disabled' } too —
+    // when all four leagues are disabled, mapped is empty and pdf-service's
+    // `data.sports.length > 0` guard at pdf-service.ts:281 suppresses the entire
+    // sports section (header + content). No renderer changes needed.
     if (league.status !== "ok" || !league.data) continue;
 
     const data = league.data;
@@ -408,6 +416,37 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     }
   }
 
+  /**
+   * Read the calling user's sports picker selections from app_settings (Phase 116 SPORTS-01).
+   * Returns the empty default { enabledLeagues: [], favoriteTeams: {} } when:
+   *   - no row exists (D-10 honest new-user default)
+   *   - row value is corrupt or non-object (graceful degradation; brief still renders)
+   *   - DB query throws (e.g. connection drop — fall back rather than crash brief generation)
+   *
+   * Defensive shape-check: rejects rows where value is not an object with the
+   * exact keys { enabledLeagues, favoriteTeams }. The WRITE path validates at
+   * Plan 01's PUT handler; this is a defense-in-depth READ.
+   */
+  async function getUserSportsSelections(db: any, userId: number): Promise<SportsSelections> {
+    try {
+      const rows = await db
+        .select({ value: appSettings.value })
+        .from(appSettings)
+        .where(and(drizzleEq(appSettings.userId, userId), drizzleEq(appSettings.key, "sports_selections")))
+        .limit(1);
+      if (rows.length === 0) return EMPTY_SELECTIONS;
+      const value = rows[0].value;
+      if (!value || typeof value !== "object") return EMPTY_SELECTIONS;
+      const v = value as { enabledLeagues?: unknown; favoriteTeams?: unknown };
+      if (!Array.isArray(v.enabledLeagues) || !v.favoriteTeams || typeof v.favoriteTeams !== "object") {
+        return EMPTY_SELECTIONS;
+      }
+      return value as SportsSelections;
+    } catch {
+      return EMPTY_SELECTIONS;
+    }
+  }
+
   // ── Drizzle table references (lazy to avoid import issues in tests) ────
 
   function getThoughtsTable() { return thoughtsTable; }
@@ -430,13 +469,20 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
 
     // 0. Compute Wed-anchored week window for thought queries
     const tz = db ? await getUserTimezone(db, userId) : "America/New_York";
+
+    // Phase 116 SPORTS-01 D-14: read per-user picker selections (single new DB query
+    // before the source fan-out). Empty default when no row exists (D-10), which
+    // sports-service short-circuits to all-disabled with zero BDL calls (D-17).
+    const sportsSelections = db ? await getUserSportsSelections(db, userId) : EMPTY_SELECTIONS;
+
     const { start: weekStart, end: weekEnd } = getCurrentWeekWindow(tz);
 
     // 1. Fetch all sources concurrently via Promise.allSettled with per-source timeouts (T-76-02)
     //    Phase 102: all DB queries scoped by userId (per-user brief).
+    //    Phase 116 SPORTS-01 D-14: sports fetch threads per-user selections.
     const [sportsR, calendarR, thoughtsR, workOrdersR, affirmationR] = await Promise.allSettled([
       deps.sportsService
-        ? withTimeout(deps.sportsService.fetchAllLeagues(), SOURCE_TIMEOUT_MS)
+        ? withTimeout(deps.sportsService.fetchAllLeagues(sportsSelections), SOURCE_TIMEOUT_MS)
         : Promise.reject(new Error("No sports service")),
       deps.calendarService
         ? withTimeout(deps.calendarService.fetchTodaysEvents(userId), SOURCE_TIMEOUT_MS)
