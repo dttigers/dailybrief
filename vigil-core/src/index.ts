@@ -237,6 +237,15 @@ serve({ fetch: app.fetch, port, hostname }, () => {
 // NOTE: If Railway ever scales to >1 instance, this will double-fire.
 // Current config is single instance (Phase 86 Risk 4). The 10-minute dedupe
 // window blunts damage even if that happens.
+// Phase 116 SPORTS-01 D-12: SPORTS_MLB_TEAM_ID, SPORTS_NFL_TEAM_ID, SPORTS_NBA_TEAM_ID,
+// SPORTS_NHL_TEAM_ID env vars are NO LONGER read by production code at brief-assembly time.
+// The assembler reads per-user `sports_selections` from app_settings (Plan 04) and threads
+// it into createSportsService().fetchAllLeagues(selections). The env-var fallback path
+// inside sports-service.ts (D-13) is retained ONLY for the existing test fixtures
+// (sports-service.test.ts:7-10 sets these to Detroit team IDs).
+//
+// Production env-var deletion from Railway is documented in the Phase 116 SUMMARY
+// runbook — manual ops step, not gated on this code change.
 const assembler = createBriefAssemblyService({
   dbClient: mainDb,
   sportsService: createSportsService(),
