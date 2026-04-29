@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Completed 116-02-PLAN.md
-last_updated: "2026-04-28T19:05:23.448Z"
-last_activity: 2026-04-28
+stopped_at: Completed 116-03-PLAN.md
+last_updated: "2026-04-29T13:41:39.483Z"
+last_activity: 2026-04-29
 progress:
   total_phases: 12
   completed_phases: 7
   total_plans: 42
-  completed_plans: 41
-  percent: 98
+  completed_plans: 42
+  percent: 100
 ---
 
 # Project State
@@ -27,9 +27,9 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 Milestone: v3.7 (started 2026-04-27)
 Phase: 116 (sports-source-picker) — EXECUTING
-Plan: 3 of 5
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-04-28
+Last activity: 2026-04-29
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -63,6 +63,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 115 P04 | 15 | 2 tasks | 5 files |
 | Phase 116 P01 | 5min | 2 tasks | 4 files |
 | Phase 116 P02 | 4min | 2 tasks | 4 files |
+| Phase 116 P03 | 5min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -97,6 +98,13 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 116]: Phase 116-02: BDL team_id returned as STRING (D-05) — direct drop-in for the existing team_ids[]=<id> string concatenation in fetchLeague*
 - [Phase 116]: Phase 116-02: Hono route order — /sports/teams/:league BEFORE /sports/:league so the literal /teams/ segment wins first-match dispatch
 - [Phase 116]: Phase 116-02: isFresh(entry, ttlMs?) parameterized with default = CACHE_TTL_MS — one-line signature change cleaner than duplicating the helper as isFreshTeams
+- [Phase 116]: Phase 116-03: fetchAllLeagues(selections?) — optional parameter widens API backward-compatibly; legacy env-var path (D-13) preserved for tests, prod always passes selections
+- [Phase 116]: Phase 116-03: LeagueResult.status += 'disabled' (D-15) — single union extension; renderer (Plan 04) checks status === 'disabled' to suppress that league; partial flag treats 'disabled' as intentional opt-out, NOT a partial signal
+- [Phase 116]: Phase 116-03: All-disabled short-circuit BEFORE Promise.allSettled (D-17) — zero outbound HTTP guaranteed by control-flow ordering, verified by mockFetch.calls.length === 0 assertion
+- [Phase 116]: Phase 116-03: Standings-only path co-located inside each per-league fetcher (D-16) — fetcher already owns BASE_URLS[league] + normalizeStandings, no new shared helper needed for one URL pattern
+- [Phase 116]: Phase 116-03: Cache-bypass for standings-only requests — cache key league:${league} doesn't include selections, so standings-only must NOT poison full-fetch cache and vice versa (T-116-03-06)
+- [Phase 116]: Phase 116-03: Hard-coded league iteration in fetchAllLeagues (T-116-03-01 mitigation) — Promise.allSettled iterates the four literal League values, never selections.enabledLeagues; corrupted entries are structurally unreachable
+- [Phase 116]: Phase 116-03: [Rule 1 fix] Per-league fetchers now reuse the resolved teamId const for parseInt (was double-reading getTeamId); fixes a latent home/away bug where selections-driven URL would use the picker team but the home/away identifier would still use the env-var team
 
 ### Pending Todos
 
@@ -132,7 +140,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-28T19:05:12.502Z
-Stopped at: Completed 116-02-PLAN.md
+Last session: 2026-04-29T13:41:39.477Z
+Stopped at: Completed 116-03-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 115
