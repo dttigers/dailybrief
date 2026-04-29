@@ -4,7 +4,7 @@ milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
 stopped_at: Completed 116-04-PLAN.md
-last_updated: "2026-04-29T14:12:09.346Z"
+last_updated: "2026-04-29T14:54:23.169Z"
 last_activity: 2026-04-29
 progress:
   total_phases: 12
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 ## Current Position
 
 Milestone: v3.7 (started 2026-04-27)
-Phase: 116 (sports-source-picker) — EXECUTING
-Plan: 4 of 5
+Phase: 999.1
+Plan: Not started
 Status: Ready to execute
 Last activity: 2026-04-29
 
