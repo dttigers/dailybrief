@@ -421,8 +421,11 @@ Plans:
   2. **PWA**: distinguish 5xx-server vs 502-upstream vs network/auth failures in `loadTeamsForLeague` error UI; show "Sports data temporarily unavailable" copy for 502s with optional retry-after if surfaced.
   3. Tests cover: route returns 502 (not 500) when fetcher throws; error body contains no provider name; PWA renders distinct copy per error class.
 **Out of scope**: WR-01 (`encodeURIComponent` on `teamId`) and WR-02 (`mapSports teamName` from env-var) — both already surfaced in 116-REVIEW.md and worth fixing in the same phase IF time permits, but the primary deliverable is observability, not defense-in-depth.
-**Plans**: 0 plans
-- [ ] TBD (run /gsd-plan-phase 116.1 to break down)
+**Plans**: 4 plans
+- [ ] 116.1-01-PLAN.md — UpstreamError class + service-layer try/catch + AbortController + WR-01 encodeURIComponent fix
+- [ ] 116.1-02-PLAN.md — Route layer 502 mapping + Retry-After header propagation for all 3 sports routes
+- [ ] 116.1-03-PLAN.md — PWA classifyFetchError helper + 4-bucket copy + countdown UI in loadTeamsForLeagueImpl
+- [ ] 116.1-04-PLAN.md — Brief-assembly per-league placeholder + PostHog telemetry + all-failed copy
 **UI hint**: yes (PWA error UI changes)
 
 ### Phase 117: Auth-email rate-limit UX hardening
