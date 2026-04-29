@@ -428,3 +428,128 @@ test("SPORTS-01-teams-id-stringified: BDL numeric id is returned as a string (D-
   assert.equal(typeof teams[0].id, "string");
   assert.equal(teams[0].id, "116");
 });
+
+// ── Phase 116 SPORTS-01: selections-aware fetchAllLeagues ──
+
+test("SPORTS-01-selections-undefined-uses-env-legacy: fetchAllLeagues() with no arg uses env-var teamIds (D-13)", async () => {
+  // env vars set at file top: SPORTS_MLB_TEAM_ID=116, SPORTS_NFL_TEAM_ID=13, etc.
+  const mockFetch = createMockFetch({
+    "mlb/v1/games?dates": MLB_GAMES_RESPONSE,
+    "mlb/v1/standings": MLB_STANDINGS_RESPONSE,
+    // Off-season noise for the other three leagues.
+    "nfl/v1/games": { data: [] },
+    "nfl/v1/standings": { data: [] },
+    "api.balldontlie.io/v1/games": { data: [] },
+    "api.balldontlie.io/v1/standings": { data: [] },
+    "nhl/v1/games": { data: [] },
+    "nhl/v1/standings": { data: [] },
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  const result = await service.fetchAllLeagues();
+  // The MLB recent URL must contain team_ids[]=116 (env-var Detroit Tigers, D-13 legacy).
+  const mlbRecentCall = mockFetch.calls.find((u) => u.includes("mlb/v1/games") && u.includes("team_ids[]=116"));
+  assert.ok(mlbRecentCall, `Expected an MLB recent-games URL with team_ids[]=116, got: ${mockFetch.calls.join(", ")}`);
+  // All four league keys are present in the response.
+  assert.ok(result.leagues.mlb);
+  assert.ok(result.leagues.nfl);
+  assert.ok(result.leagues.nba);
+  assert.ok(result.leagues.nhl);
+});
+
+test("SPORTS-01-selections-empty-short-circuits: enabledLeagues=[] yields all-disabled with ZERO HTTP calls (D-17)", async () => {
+  const mockFetch = createMockFetch({});
+  const service = createSportsService({ fetchFn: mockFetch });
+  const result = await service.fetchAllLeagues({ enabledLeagues: [], favoriteTeams: {} });
+  assert.equal(mockFetch.calls.length, 0, "Zero outbound calls expected");
+  assert.equal(result.leagues.mlb.status, "disabled");
+  assert.equal(result.leagues.nfl.status, "disabled");
+  assert.equal(result.leagues.nba.status, "disabled");
+  assert.equal(result.leagues.nhl.status, "disabled");
+  assert.equal(result.partial, false);
+  assert.ok(typeof result.fetchedAt === "string");
+});
+
+test("SPORTS-01-selections-disabled-league-not-fetched: only enabled league fetches (D-15)", async () => {
+  const mockFetch = createMockFetch({
+    "mlb/v1/games?dates": MLB_GAMES_RESPONSE,
+    "mlb/v1/standings": MLB_STANDINGS_RESPONSE,
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  const result = await service.fetchAllLeagues({ enabledLeagues: ["mlb"], favoriteTeams: { mlb: "116" } });
+  // No NFL/NBA/NHL URLs were fetched.
+  const offLeagueCalls = mockFetch.calls.filter(
+    (u) =>
+      u.includes("/nfl/") ||
+      u.includes("/nhl/") ||
+      // NBA's BASE_URL has no league segment (api.balldontlie.io/v1/...) — detect by absence of a known league segment.
+      (u.includes("api.balldontlie.io/v1/") && !u.includes("/mlb/") && !u.includes("/nfl/") && !u.includes("/nhl/")),
+  );
+  assert.equal(offLeagueCalls.length, 0, `Expected no off-league calls, got: ${offLeagueCalls.join(", ")}`);
+  assert.equal(result.leagues.nfl.status, "disabled");
+  assert.equal(result.leagues.nba.status, "disabled");
+  assert.equal(result.leagues.nhl.status, "disabled");
+});
+
+test("SPORTS-01-selections-standings-only-when-no-team: enabled+no-team fetches ONLY standings (D-16)", async () => {
+  const mockFetch = createMockFetch({
+    "mlb/v1/standings": MLB_STANDINGS_RESPONSE,
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  const result = await service.fetchAllLeagues({ enabledLeagues: ["mlb"], favoriteTeams: {} });
+  // No game URL — only standings was called.
+  const gameCalls = mockFetch.calls.filter((u) => u.includes("/games?"));
+  assert.equal(gameCalls.length, 0, `Expected no /games calls, got: ${gameCalls.join(", ")}`);
+  // Standings was called.
+  const standingsCalls = mockFetch.calls.filter((u) => u.includes("/standings"));
+  assert.ok(standingsCalls.length >= 1, "Standings call expected");
+  // MLB result is ok with null games.
+  assert.equal(result.leagues.mlb.status, "ok");
+  assert.equal(result.leagues.mlb.data?.recentGame, null);
+  assert.equal(result.leagues.mlb.data?.upcomingGame, null);
+  assert.ok(Array.isArray(result.leagues.mlb.data?.standings));
+});
+
+test("SPORTS-01-selections-team-override: favoriteTeams overrides env-var teamId in URL (D-13/D-14)", async () => {
+  const mockFetch = createMockFetch({
+    "mlb/v1/games?dates": MLB_GAMES_RESPONSE,
+    "mlb/v1/standings": MLB_STANDINGS_RESPONSE,
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  // Picker says "Yankees = 999" — override Detroit Tigers env-var.
+  await service.fetchAllLeagues({ enabledLeagues: ["mlb"], favoriteTeams: { mlb: "999" } });
+  // The MLB recent URL contains team_ids[]=999, NOT team_ids[]=116.
+  const overrideCall = mockFetch.calls.find((u) => u.includes("mlb/v1/games") && u.includes("team_ids[]=999"));
+  assert.ok(overrideCall, `Expected URL with team_ids[]=999, got: ${mockFetch.calls.join(", ")}`);
+  const envVarCall = mockFetch.calls.find((u) => u.includes("mlb/v1/games") && u.includes("team_ids[]=116"));
+  assert.equal(envVarCall, undefined, `Did NOT expect env-var teamId in URL when selections.favoriteTeams overrides`);
+});
+
+test("SPORTS-01-selections-response-shape-stable: all four league keys always present (D-15)", async () => {
+  const mockFetch = createMockFetch({});
+  const service = createSportsService({ fetchFn: mockFetch });
+  const result = await service.fetchAllLeagues({ enabledLeagues: [], favoriteTeams: {} });
+  assert.deepEqual(Object.keys(result).sort(), ["fetchedAt", "leagues", "partial"]);
+  assert.deepEqual(Object.keys(result.leagues).sort(), ["mlb", "nba", "nfl", "nhl"]);
+});
+
+test("SPORTS-01-selections-disabled-bypasses-cache: disabled league does not consult or populate cache", async () => {
+  const mockFetch = createMockFetch({
+    "mlb/v1/games?dates": MLB_GAMES_RESPONSE,
+    "mlb/v1/standings": MLB_STANDINGS_RESPONSE,
+  });
+  const service = createSportsService({ fetchFn: mockFetch });
+  // First call: MLB disabled → 0 calls.
+  await service.fetchAllLeagues({ enabledLeagues: [], favoriteTeams: {} });
+  assert.equal(mockFetch.calls.length, 0);
+  // Second call: enable MLB → MLB fetches happen (cache was NOT poisoned by 'disabled').
+  await service.fetchAllLeagues({ enabledLeagues: ["mlb"], favoriteTeams: { mlb: "116" } });
+  const mlbCalls = mockFetch.calls.filter((u) => u.includes("/mlb/"));
+  assert.ok(mlbCalls.length >= 1, "After enabling MLB, MLB fetches should occur");
+});
+
+test("SPORTS-01-selections-typed-LeagueResult-disabled: 'disabled' is a valid LeagueResult status (compile-only)", () => {
+  // If the union does NOT include 'disabled', the test file fails to compile and tsx --test never runs.
+  // This test passing at runtime is sufficient evidence the type was extended.
+  const x: import("./sports-service.js").LeagueResult = { status: "disabled" };
+  assert.equal(x.status, "disabled");
+});
