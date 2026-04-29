@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Completed 116-05-PLAN.md
-last_updated: "2026-04-29T13:59:33.716Z"
+stopped_at: Completed 116-04-PLAN.md
+last_updated: "2026-04-29T14:12:09.346Z"
 last_activity: 2026-04-29
 progress:
   total_phases: 12
-  completed_phases: 7
+  completed_phases: 8
   total_plans: 42
-  completed_plans: 43
+  completed_plans: 44
   percent: 100
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 Milestone: v3.7 (started 2026-04-27)
 Phase: 116 (sports-source-picker) — EXECUTING
-Plan: 3 of 5
+Plan: 4 of 5
 Status: Ready to execute
 Last activity: 2026-04-29
 
@@ -65,6 +65,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 116 P02 | 4min | 2 tasks | 4 files |
 | Phase 116 P03 | 5min | 1 tasks | 2 files |
 | Phase 116 P05 | 13min | 3 tasks | 3 files |
+| Phase 116 P04 | 7min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -110,6 +111,10 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 116]: Phase 116-05: Per-league teams cache as Record<League, TeamListEntry[] | 'loading' | 'error' | null> — null sentinel distinct from 'loading' so we lazy-fetch on first toggle without spurious flicker
 - [Phase 116]: Phase 116-05: [Rule 1 fix] defensive normalization of getSportsSelections response (Array.isArray + typeof object checks) prevents crash on stale-proxy / test-fixture-fallback responses
 - [Phase 116]: Phase 116-05: [Rule 1 fix] removed role='alert' from sports section error blocks to avoid clashing with verify-email banner role='alert' in pre-existing AUTH-11 tests; toast still announces save-failure via ToastHost role='alert'
+- [Phase 116]: Phase 116-04: getUserSportsSelections mirrors getUserTimezone exactly — same try/catch + Drizzle select + fallback-on-throw idiom for visual uniformity in the assembler's persistence-read patterns
+- [Phase 116]: Phase 116-04: Defensive READ shape-check on sports_selections jsonb (rejects non-array enabledLeagues, missing favoriteTeams, non-object value) — defense-in-depth against direct psql tampering / schema drift even though Plan 01's WRITE path validates first (T-116-04-01)
+- [Phase 116]: Phase 116-04: D-18 satisfied STRUCTURALLY — mapSports's existing 'status !== ok' filter drops 'disabled' (added in Plan 03), so disabled leagues never reach BriefRenderData.sports; pdf-service.ts:281 guard suppresses section. NO renderer changes needed — comment-as-contract locks the cascade against future filter 'simplification' refactors
+- [Phase 116]: Phase 116-04: D-12 SPORTS_*_TEAM_ID env-var deletion is a manual Railway ops step (NOT a code change) — env-var fallback inside sports-service.ts is preserved as TEST-ONLY (D-13 from Plan 03's Detroit-team fixtures); index.ts paper-trail comment + SUMMARY runbook document the deletion procedure
 
 ### Pending Todos
 
@@ -145,7 +150,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-29T13:59:33.710Z
-Stopped at: Completed 116-05-PLAN.md
+Last session: 2026-04-29T14:12:09.341Z
+Stopped at: Completed 116-04-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 115
