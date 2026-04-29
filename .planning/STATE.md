@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Completed 116-03-PLAN.md
-last_updated: "2026-04-29T13:41:39.483Z"
+stopped_at: Completed 116-05-PLAN.md
+last_updated: "2026-04-29T13:59:33.716Z"
 last_activity: 2026-04-29
 progress:
   total_phases: 12
   completed_phases: 7
   total_plans: 42
-  completed_plans: 42
+  completed_plans: 43
   percent: 100
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 Milestone: v3.7 (started 2026-04-27)
 Phase: 116 (sports-source-picker) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-04-29
 
@@ -64,6 +64,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 116 P01 | 5min | 2 tasks | 4 files |
 | Phase 116 P02 | 4min | 2 tasks | 4 files |
 | Phase 116 P03 | 5min | 1 tasks | 2 files |
+| Phase 116 P05 | 13min | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,10 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 116]: Phase 116-03: Cache-bypass for standings-only requests — cache key league:${league} doesn't include selections, so standings-only must NOT poison full-fetch cache and vice versa (T-116-03-06)
 - [Phase 116]: Phase 116-03: Hard-coded league iteration in fetchAllLeagues (T-116-03-01 mitigation) — Promise.allSettled iterates the four literal League values, never selections.enabledLeagues; corrupted entries are structurally unreachable
 - [Phase 116]: Phase 116-03: [Rule 1 fix] Per-league fetchers now reuse the resolved teamId const for parseInt (was double-reading getTeamId); fixes a latent home/away bug where selections-driven URL would use the picker team but the home/away identifier would still use the env-var team
+- [Phase 116]: Phase 116-05: Three typed PWA helpers (getSportsSelections / setSportsSelections / getSportsTeams) mirror Phase 115 calendar helpers exactly — uses existing vigilFetch (bearer + 401 redirect inherited)
+- [Phase 116]: Phase 116-05: Per-league teams cache as Record<League, TeamListEntry[] | 'loading' | 'error' | null> — null sentinel distinct from 'loading' so we lazy-fetch on first toggle without spurious flicker
+- [Phase 116]: Phase 116-05: [Rule 1 fix] defensive normalization of getSportsSelections response (Array.isArray + typeof object checks) prevents crash on stale-proxy / test-fixture-fallback responses
+- [Phase 116]: Phase 116-05: [Rule 1 fix] removed role='alert' from sports section error blocks to avoid clashing with verify-email banner role='alert' in pre-existing AUTH-11 tests; toast still announces save-failure via ToastHost role='alert'
 
 ### Pending Todos
 
@@ -140,7 +145,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-29T13:41:39.477Z
-Stopped at: Completed 116-03-PLAN.md
+Last session: 2026-04-29T13:59:33.710Z
+Stopped at: Completed 116-05-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 115
