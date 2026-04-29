@@ -800,3 +800,212 @@ describe("assembleAndRender — soft-deleted thought exclusion (bug fix)", () =>
     );
   });
 });
+
+// ── Phase 116 SPORTS-01: per-user selections threading ──────────────────────
+// Plan 04 D-14: assembleAndRender reads sports_selections from app_settings for
+// the userId in scope and passes it to deps.sportsService.fetchAllLeagues(selections).
+// D-10: when no row exists, the empty default { enabledLeagues: [], favoriteTeams: {} }
+//   is passed (sports-service short-circuits to all-disabled with zero BDL calls).
+// D-15/D-18: when all four leagues come back disabled, mapSports filters them out
+//   (`status !== 'ok'` covers 'disabled') and BriefRenderData.sports = []. The
+//   pdf-service guard at line 281 (data.sports.length > 0) then suppresses the
+//   entire sports section header AND content.
+// Defense-in-depth: corrupt rows (non-object jsonb value) fall back to the empty
+// default so the brief still renders.
+
+import type { SportsSelections } from "./sports-service.js";
+
+/**
+ * Build a key-aware DB mock that answers based on the appSettings.key looked up
+ * in the WHERE clause. Uses chunk-value collection (same approach as Test 11)
+ * to detect which key the assembler is querying.
+ *
+ * rowsByKey maps key string ("user_timezone", "sports_selections") -> rows array.
+ */
+function makeKeyAwareDb(rowsByKey: Record<string, any[]>): any {
+  return {
+    select: () => ({
+      from: (_table: any) => ({
+        where: (condition: any) => {
+          const chunks = collectChunkValues(condition);
+          // Find which key was asked for by scanning chunk values
+          let matchedRows: any[] = [];
+          for (const [key, rows] of Object.entries(rowsByKey)) {
+            if (chunks.includes(key)) {
+              matchedRows = rows;
+              break;
+            }
+          }
+          return {
+            orderBy: (..._args: any[]) => ({
+              limit: (_n: number) => Promise.resolve(matchedRows),
+            }),
+            limit: (_n: number) => Promise.resolve(matchedRows),
+          };
+        },
+        orderBy: (..._args: any[]) => ({
+          limit: (_n: number) => Promise.resolve([]),
+        }),
+        limit: (_n: number) => Promise.resolve([]),
+      }),
+    }),
+  };
+}
+
+function makeAllDisabledSportsResponse(): SportsResponse {
+  return {
+    fetchedAt: "2026-04-12T12:00:00Z",
+    partial: false,
+    leagues: {
+      mlb: { status: "disabled" },
+      nfl: { status: "disabled" },
+      nba: { status: "disabled" },
+      nhl: { status: "disabled" },
+    },
+  };
+}
+
+describe("assembleAndRender — Phase 116 SPORTS-01 selections threading", () => {
+  let tmpDir3: string;
+
+  beforeEach(() => {
+    tmpDir3 = fs.mkdtempSync(path.join(os.tmpdir(), "brief-sports-test-"));
+  });
+
+  afterEach(() => {
+    try { fs.rmSync(tmpDir3, { recursive: true, force: true }); } catch {}
+  });
+
+  test("SPORTS-01-brief-threads-selections: app_settings row drives fetchAllLeagues call", async () => {
+    const captured: Array<SportsSelections | undefined> = [];
+    const stored: SportsSelections = { enabledLeagues: ["mlb"], favoriteTeams: { mlb: "116" } };
+
+    const db = makeKeyAwareDb({
+      "sports_selections": [{ value: stored }],
+      "user_timezone": [], // fall back to default
+    });
+
+    const deps: BriefAssemblyDeps = {
+      sportsService: {
+        fetchAllLeagues: async (selections?: SportsSelections) => {
+          captured.push(selections);
+          return makeAllDisabledSportsResponse();
+        },
+      },
+      calendarService: { fetchTodaysEvents: async () => makeCalendarResponse() },
+      pdfRenderer: { renderBrief: async (_data: BriefRenderData, _config?: PdfConfig) => MOCK_PDF_BUFFER },
+      dbClient: db as unknown as PostgresJsDatabase<typeof schema>,
+      callClaudeFn: async () => "You are capable.",
+      parseAIJsonFn: <T>(raw: string) => JSON.parse(raw) as T,
+      getAIClientFn: () => null,
+      _cacheDir: tmpDir3,
+    };
+
+    await createBriefAssemblyService(deps).assembleAndRender(TEST_DATE, 1);
+
+    assert.equal(captured.length, 1, "fetchAllLeagues should have been called exactly once");
+    assert.deepEqual(captured[0], stored, "fetchAllLeagues should receive the stored selections");
+  });
+
+  test("SPORTS-01-brief-empty-default-when-no-row: missing app_settings row -> empty default", async () => {
+    const captured: Array<SportsSelections | undefined> = [];
+
+    const db = makeKeyAwareDb({
+      // No "sports_selections" key match -> empty rows -> empty default
+      "user_timezone": [],
+    });
+
+    const deps: BriefAssemblyDeps = {
+      sportsService: {
+        fetchAllLeagues: async (selections?: SportsSelections) => {
+          captured.push(selections);
+          return makeAllDisabledSportsResponse();
+        },
+      },
+      calendarService: { fetchTodaysEvents: async () => makeCalendarResponse() },
+      pdfRenderer: { renderBrief: async (_data: BriefRenderData, _config?: PdfConfig) => MOCK_PDF_BUFFER },
+      dbClient: db as unknown as PostgresJsDatabase<typeof schema>,
+      callClaudeFn: async () => "You are capable.",
+      parseAIJsonFn: <T>(raw: string) => JSON.parse(raw) as T,
+      getAIClientFn: () => null,
+      _cacheDir: tmpDir3,
+    };
+
+    await createBriefAssemblyService(deps).assembleAndRender(TEST_DATE, 1);
+
+    assert.equal(captured.length, 1);
+    assert.deepEqual(captured[0], { enabledLeagues: [], favoriteTeams: {} },
+      "fetchAllLeagues should receive the empty default when no row exists (D-10)");
+  });
+
+  test("SPORTS-01-brief-all-disabled-yields-empty-sports-array: D-18 cascade", async () => {
+    let capturedRender: BriefRenderData | null = null;
+
+    const db = makeKeyAwareDb({
+      "sports_selections": [],
+      "user_timezone": [],
+    });
+
+    const deps: BriefAssemblyDeps = {
+      // All four leagues disabled — D-15/D-18 cascade test
+      sportsService: {
+        fetchAllLeagues: async () => makeAllDisabledSportsResponse(),
+      },
+      calendarService: { fetchTodaysEvents: async () => makeCalendarResponse() },
+      pdfRenderer: {
+        renderBrief: async (data: BriefRenderData, _config?: PdfConfig) => {
+          capturedRender = data;
+          return MOCK_PDF_BUFFER;
+        },
+      },
+      dbClient: db as unknown as PostgresJsDatabase<typeof schema>,
+      callClaudeFn: async () => "You are capable.",
+      parseAIJsonFn: <T>(raw: string) => JSON.parse(raw) as T,
+      getAIClientFn: () => null,
+      _cacheDir: tmpDir3,
+    };
+
+    await createBriefAssemblyService(deps).assembleAndRender(TEST_DATE, 1);
+
+    assert.ok(capturedRender, "renderer should have been called");
+    const renderData = capturedRender as BriefRenderData;
+    // mapSports filters out 'disabled' (status !== 'ok'); all 4 disabled -> []
+    // pdf-service.ts:281 then suppresses the entire sports section.
+    assert.deepEqual(renderData.sports, [],
+      "BriefRenderData.sports must be [] when all leagues are disabled (mapSports drops 'disabled' status)");
+  });
+
+  test("SPORTS-01-brief-corrupt-row-falls-back: non-object jsonb value -> empty default, no throw", async () => {
+    const captured: Array<SportsSelections | undefined> = [];
+
+    // Corrupt: jsonb value is a bare string, not an object
+    const db = makeKeyAwareDb({
+      "sports_selections": [{ value: "not an object" }],
+      "user_timezone": [],
+    });
+
+    const deps: BriefAssemblyDeps = {
+      sportsService: {
+        fetchAllLeagues: async (selections?: SportsSelections) => {
+          captured.push(selections);
+          return makeAllDisabledSportsResponse();
+        },
+      },
+      calendarService: { fetchTodaysEvents: async () => makeCalendarResponse() },
+      pdfRenderer: { renderBrief: async (_data: BriefRenderData, _config?: PdfConfig) => MOCK_PDF_BUFFER },
+      dbClient: db as unknown as PostgresJsDatabase<typeof schema>,
+      callClaudeFn: async () => "You are capable.",
+      parseAIJsonFn: <T>(raw: string) => JSON.parse(raw) as T,
+      getAIClientFn: () => null,
+      _cacheDir: tmpDir3,
+    };
+
+    // Must NOT throw
+    const result = await createBriefAssemblyService(deps).assembleAndRender(TEST_DATE, 1);
+    assert.ok(result.buffer.length > 0, "brief should still render despite corrupt row");
+
+    assert.equal(captured.length, 1);
+    assert.deepEqual(captured[0], { enabledLeagues: [], favoriteTeams: {} },
+      "corrupt row should fall back to empty default (defense-in-depth READ check)");
+  });
+});
