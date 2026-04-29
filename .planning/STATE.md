@@ -77,6 +77,7 @@ Progress: [░░░░░░░░░░] 0%
 - v3.5 paused 2026-04-22 at 34/34 plans, waiting on G2 physical hardware UAT (device delivery unknown)
 - v3.6 shipped 2026-04-26: 7 phases (108-114), 27 plans, 8/8 requirements satisfied via live HUMAN-UAT against Railway production
 - v3.7 started 2026-04-27 — themes: PWA Settings source pickers (calendars + sports), auth-email UX hardening (verify-email + forgot-password D-13/D-21 friction), closeout cleanup (DMARC ramp, prod test-user delete, ThoughtRow polish)
+- Phase 116.1 inserted after Phase 116 (2026-04-29): Sports route + PWA error-class differentiation (URGENT — gap closure for opaque "Couldn't load teams." surfaced during 116 HUMAN-UAT after local `BALLDONTLIE_API_KEY` env-gap exposed missing route try/catch)
 - v3.7 ROADMAP.md landed 2026-04-27 — 5 phases (115-119): 115 Calendar picker (+ POLISH-01 ride-along), 116 Sports picker, 117 Auth-email rate-limit UX, 118 Test-user cleanup, 119 DMARC quarantine ramp; 7/7 v1 requirements mapped
 
 ### Decisions

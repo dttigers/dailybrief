@@ -283,6 +283,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 
 - [x] **Phase 115: Calendar source picker (+ ThoughtRow whitespace polish)** — Users select which Google calendars feed the brief from PWA Settings; multi-line thought captures preserve line breaks in row view (completed 2026-04-27)
 - [x] **Phase 116: Sports source picker** — Users select which leagues + favorite teams feed the brief from PWA Settings; sports-service respects per-user picks instead of hardcoded teamIds (completed 2026-04-29)
+- [ ] **Phase 116.1: Sports route + PWA error-class differentiation (INSERTED)** — Wrap BDL fetches in route try/catch returning structured 502 (no provider-name leak per T-73-01); PWA distinguishes 5xx-server vs 502-upstream vs network/auth in `loadTeamsForLeague` error UI
 - [ ] **Phase 117: Auth-email rate-limit UX hardening** — Server raises/refines rate-limit caps across all 4 token endpoints; PWA renders distinct 429 copy with Retry-After countdown
 - [ ] **Phase 118: Production test-user cleanup** — Test rows `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) plus cascaded children deleted from Railway prod with documented runbook
 - [ ] **Phase 119: DMARC quarantine ramp** — `vigilhub.io` Cloudflare DNS DMARC policy advances `p=none → p=quarantine` after 2026-05-06 auto-eval gate passes
@@ -410,6 +411,19 @@ Plans:
 - [x] 116-04-PLAN.md — brief-assembly threading + env-var deprecation (read app_settings.sports_selections; pass to fetchAllLeagues)
 - [x] 116-05-PLAN.md — PWA Settings sports picker (UI + 3 typed api/client helpers + tests)
 **UI hint**: yes
+
+### Phase 116.1: Sports route + PWA error-class differentiation (INSERTED)
+**Goal**: A user with a misconfigured local env or transient BDL outage sees a useful error class, not "Couldn't load teams." with no diagnostic. Surface BDL upstream failures with structured error responses instead of generic 500s.
+**Depends on**: Phase 116
+**Requirements**: SPORTS-01b (gap closure)
+**Success Criteria** (what must be TRUE):
+  1. **Server**: wrap `service.fetchTeams` and `service.fetchAllLeagues` per-league calls in try/catch at the route layer; return 502 with `{error: "Upstream sports provider unavailable"}` on BDL fetch failures (do NOT leak `BALLDONTLIE` or provider name — preserve T-73-01).
+  2. **PWA**: distinguish 5xx-server vs 502-upstream vs network/auth failures in `loadTeamsForLeague` error UI; show "Sports data temporarily unavailable" copy for 502s with optional retry-after if surfaced.
+  3. Tests cover: route returns 502 (not 500) when fetcher throws; error body contains no provider name; PWA renders distinct copy per error class.
+**Out of scope**: WR-01 (`encodeURIComponent` on `teamId`) and WR-02 (`mapSports teamName` from env-var) — both already surfaced in 116-REVIEW.md and worth fixing in the same phase IF time permits, but the primary deliverable is observability, not defense-in-depth.
+**Plans**: 0 plans
+- [ ] TBD (run /gsd-plan-phase 116.1 to break down)
+**UI hint**: yes (PWA error UI changes)
 
 ### Phase 117: Auth-email rate-limit UX hardening
 **Goal**: A user retrying verify-email / resend-verification / forgot-password / reset-password from a single IP can complete a legitimate flow without tripping the rate limit AND, when they DO hit the limit, sees distinct copy with a Retry-After countdown instead of the D-21 single-bucket "this link is no longer valid" misdirection.
