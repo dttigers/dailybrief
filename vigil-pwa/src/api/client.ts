@@ -822,3 +822,61 @@ export async function setCalendarSelections(ids: string[]): Promise<void> {
   })
   if (!res.ok) throw new Error(`Failed to save calendar selections: ${res.status}`)
 }
+
+// ── Sports source picker (Phase 116 SPORTS-01) ───────────────────────
+
+/** Mirror of vigil-core's League union. */
+export type League = 'mlb' | 'nfl' | 'nba' | 'nhl'
+
+/** Mirror of vigil-core's SportsSelections shape (D-02 / D-05). */
+export interface SportsSelections {
+  enabledLeagues: League[]
+  favoriteTeams: {
+    mlb?: string
+    nfl?: string
+    nba?: string
+    nhl?: string
+  }
+}
+
+/** Mirror of vigil-core's TeamListEntry shape (D-05: id is BDL team_id as string). */
+export interface TeamListEntry {
+  id: string
+  name: string
+}
+
+/**
+ * Fetches the user's persisted sports picker selections.
+ * Server returns the empty default { enabledLeagues: [], favoriteTeams: {} }
+ * when no row exists (D-10) — the caller does NOT need to handle 404.
+ */
+export async function getSportsSelections(): Promise<SportsSelections> {
+  const res = await vigilFetch('/v1/sports/selections')
+  if (!res.ok) throw new Error(`Failed to fetch sports selections: ${res.status}`)
+  return (await res.json()) as SportsSelections
+}
+
+/**
+ * Persists the user's sports picker selections. Server overwrites wholesale (D-03).
+ * Empty default { enabledLeagues: [], favoriteTeams: {} } IS valid input.
+ * Validation (max 4 enabled, allowlisted league keys, string team values) enforced server-side.
+ */
+export async function setSportsSelections(s: SportsSelections): Promise<void> {
+  const res = await vigilFetch('/v1/sports/selections', {
+    method: 'PUT',
+    body: JSON.stringify(s),
+  })
+  if (!res.ok) throw new Error(`Failed to save sports selections: ${res.status}`)
+}
+
+/**
+ * Fetches the team roster for a league for the picker dropdown.
+ * Server-side cached for 24h (D-07); client-side caching handled by the caller's component state.
+ * Unwraps the { teams } envelope — caller gets the array directly.
+ */
+export async function getSportsTeams(league: League): Promise<TeamListEntry[]> {
+  const res = await vigilFetch(`/v1/sports/teams/${league}`)
+  if (!res.ok) throw new Error(`Failed to fetch teams for ${league}: ${res.status}`)
+  const body = (await res.json()) as { teams: TeamListEntry[] }
+  return body.teams
+}
