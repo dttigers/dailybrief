@@ -2,6 +2,20 @@
 // Supports MLB, NFL, NBA, NHL with injectable fetch for testability.
 // In-memory cache with 5-min TTL prevents redundant API calls (critical on free tier: 5 req/min).
 // Security: BALLDONTLIE_API_KEY is NEVER logged or included in any response body.
+//
+// Phase 116 SPORTS-01:
+//   - fetchAllLeagues(selections?) respects per-user picker selections (D-14, D-15).
+//   - LeagueResult.status union includes 'disabled' for non-enabled leagues (D-15).
+//   - Standings-only path when league enabled but no favorite team set (D-16).
+//   - Zero outbound calls when selections.enabledLeagues is empty (D-17).
+//   - Legacy SPORTS_*_TEAM_ID env-var fallback retained for tests (D-13) — only
+//     triggered when fetchAllLeagues is called WITHOUT a selections argument
+//     (i.e., the legacy signature path). Production code (brief-assembly-service)
+//     always passes selections from Plan 04 onward.
+
+import type { SportsSelections } from "./sports-preferences-service.js";
+
+export type { SportsSelections };
 
 export interface SportsResponse {
   fetchedAt: string;
@@ -15,7 +29,7 @@ export interface SportsResponse {
 }
 
 export interface LeagueResult {
-  status: "ok" | "error" | "off_season";
+  status: "ok" | "error" | "off_season" | "disabled";
   error?: string;
   data?: LeagueData;
 }
@@ -234,8 +248,8 @@ function normalizeStandings(rawList: BDLStandingsEntry[]): StandingsEntry[] {
 // ── Factory ────────────────────────────────────────────────────────────────────
 
 export function createSportsService(deps: SportsServiceDeps = {}): {
-  fetchLeague: (league: League) => Promise<LeagueResult>;
-  fetchAllLeagues: () => Promise<SportsResponse>;
+  fetchLeague: (league: League, opts?: { teamId?: string; standingsOnly?: boolean }) => Promise<LeagueResult>;
+  fetchAllLeagues: (selections?: SportsSelections) => Promise<SportsResponse>;
   clearCache: () => void;
   fetchTeams: (league: League) => Promise<TeamListEntry[]>;
 } {
@@ -290,11 +304,30 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
     return res.json() as Promise<T>;
   }
 
-  async function fetchLeagueMLB(): Promise<LeagueResult> {
-    const teamId = getTeamId("mlb");
+  async function fetchLeagueMLB(opts: { teamId?: string; standingsOnly?: boolean } = {}): Promise<LeagueResult> {
+    // D-13 legacy fallback: opts.teamId from selections (Plan 04 prod path), else getTeamId() env-var (test fixtures).
+    const teamId = opts.teamId ?? getTeamId("mlb");
     const yesterday = getYesterday();
     const today = getToday();
     const tomorrow = getTomorrow();
+
+    // D-16 standings-only: enabled league with no favorite team — skip recent/upcoming game fetches.
+    if (opts.standingsOnly) {
+      try {
+        const res = await fetchJSON<{ data: BDLStandingsEntry[] }>(`${BASE_URLS.mlb}/standings?season=2026`);
+        return {
+          status: "ok",
+          data: {
+            recentGame: null,
+            upcomingGame: null,
+            standings: normalizeStandings(res.data ?? []),
+          },
+        };
+      } catch (err) {
+        return { status: "error", error: err instanceof Error ? err.message : String(err) };
+      }
+    }
+
     const recentUrl = `${BASE_URLS.mlb}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
     const upcomingUrl = `${BASE_URLS.mlb}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.mlb}/standings?season=2026`;
@@ -314,7 +347,7 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       return { status: "off_season" };
     }
 
-    const teamIdNum = parseInt(getTeamId("mlb"), 10);
+    const teamIdNum = parseInt(teamId, 10);
     const firstGame = games[0] ?? upcoming[0];
     const configuredTeamEntry = firstGame
       ? (firstGame.home_team.id === teamIdNum ? firstGame.home_team_name : firstGame.away_team_name)
@@ -350,11 +383,30 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
     };
   }
 
-  async function fetchLeagueNFL(): Promise<LeagueResult> {
-    const teamId = getTeamId("nfl");
+  async function fetchLeagueNFL(opts: { teamId?: string; standingsOnly?: boolean } = {}): Promise<LeagueResult> {
+    // D-13 legacy fallback: opts.teamId from selections (Plan 04 prod path), else getTeamId() env-var (test fixtures).
+    const teamId = opts.teamId ?? getTeamId("nfl");
     const yesterday = getYesterday();
     const today = getToday();
     const tomorrow = getTomorrow();
+
+    // D-16 standings-only: enabled league with no favorite team — skip recent/upcoming game fetches.
+    if (opts.standingsOnly) {
+      try {
+        const res = await fetchJSON<{ data: BDLStandingsEntry[] }>(`${BASE_URLS.nfl}/standings?season=2026`);
+        return {
+          status: "ok",
+          data: {
+            recentGame: null,
+            upcomingGame: null,
+            standings: normalizeStandings(res.data ?? []),
+          },
+        };
+      } catch (err) {
+        return { status: "error", error: err instanceof Error ? err.message : String(err) };
+      }
+    }
+
     const recentUrl = `${BASE_URLS.nfl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
     const upcomingUrl = `${BASE_URLS.nfl}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nfl}/standings?season=2026`;
@@ -374,7 +426,7 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       return { status: "off_season" };
     }
 
-    const nflTeamId = parseInt(getTeamId("nfl"), 10);
+    const nflTeamId = parseInt(teamId, 10);
     const nflFirst = games[0] ?? upcoming[0];
     const configuredTeamEntry = nflFirst
       ? (nflFirst.home_team.id === nflTeamId ? nflFirst.home_team.full_name : nflFirst.visitor_team.full_name)
@@ -410,11 +462,30 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
     };
   }
 
-  async function fetchLeagueNBA(): Promise<LeagueResult> {
-    const teamId = getTeamId("nba");
+  async function fetchLeagueNBA(opts: { teamId?: string; standingsOnly?: boolean } = {}): Promise<LeagueResult> {
+    // D-13 legacy fallback: opts.teamId from selections (Plan 04 prod path), else getTeamId() env-var (test fixtures).
+    const teamId = opts.teamId ?? getTeamId("nba");
     const yesterday = getYesterday();
     const today = getToday();
     const tomorrow = getTomorrow();
+
+    // D-16 standings-only: enabled league with no favorite team — skip recent/upcoming game fetches.
+    if (opts.standingsOnly) {
+      try {
+        const res = await fetchJSON<{ data: BDLStandingsEntry[] }>(`${BASE_URLS.nba}/standings?season=2026`);
+        return {
+          status: "ok",
+          data: {
+            recentGame: null,
+            upcomingGame: null,
+            standings: normalizeStandings(res.data ?? []),
+          },
+        };
+      } catch (err) {
+        return { status: "error", error: err instanceof Error ? err.message : String(err) };
+      }
+    }
+
     const recentUrl = `${BASE_URLS.nba}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
     const upcomingUrl = `${BASE_URLS.nba}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nba}/standings?season=2026`;
@@ -434,7 +505,7 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       return { status: "off_season" };
     }
 
-    const nbaTeamId = parseInt(getTeamId("nba"), 10);
+    const nbaTeamId = parseInt(teamId, 10);
     const nbaFirst = games[0] ?? upcoming[0];
     const configuredTeamEntry = nbaFirst
       ? (nbaFirst.home_team.id === nbaTeamId ? nbaFirst.home_team.full_name : nbaFirst.visitor_team.full_name)
@@ -470,11 +541,30 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
     };
   }
 
-  async function fetchLeagueNHL(): Promise<LeagueResult> {
-    const teamId = getTeamId("nhl");
+  async function fetchLeagueNHL(opts: { teamId?: string; standingsOnly?: boolean } = {}): Promise<LeagueResult> {
+    // D-13 legacy fallback: opts.teamId from selections (Plan 04 prod path), else getTeamId() env-var (test fixtures).
+    const teamId = opts.teamId ?? getTeamId("nhl");
     const yesterday = getYesterday();
     const today = getToday();
     const tomorrow = getTomorrow();
+
+    // D-16 standings-only: enabled league with no favorite team — skip recent/upcoming game fetches.
+    if (opts.standingsOnly) {
+      try {
+        const res = await fetchJSON<{ data: BDLStandingsEntry[] }>(`${BASE_URLS.nhl}/standings?season=2026`);
+        return {
+          status: "ok",
+          data: {
+            recentGame: null,
+            upcomingGame: null,
+            standings: normalizeStandings(res.data ?? []),
+          },
+        };
+      } catch (err) {
+        return { status: "error", error: err instanceof Error ? err.message : String(err) };
+      }
+    }
+
     const recentUrl = `${BASE_URLS.nhl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
     const upcomingUrl = `${BASE_URLS.nhl}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nhl}/standings?season=2026`;
@@ -494,7 +584,7 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       return { status: "off_season" };
     }
 
-    const nhlTeamId = parseInt(getTeamId("nhl"), 10);
+    const nhlTeamId = parseInt(teamId, 10);
     const nhlFirst = games[0] ?? upcoming[0];
     const configuredTeamEntry = nhlFirst
       ? (nhlFirst.home_team.id === nhlTeamId ? nhlFirst.home_team.full_name : nhlFirst.away_team.full_name)
@@ -553,25 +643,32 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
     return teams;
   }
 
-  async function fetchLeague(league: League): Promise<LeagueResult> {
-    // Cache check first
-    const cached = getCachedLeague(league);
-    if (cached) return cached;
+  async function fetchLeague(
+    league: League,
+    opts: { teamId?: string; standingsOnly?: boolean } = {},
+  ): Promise<LeagueResult> {
+    // Cache check first — only for full-fetch paths. Standings-only requests bypass the cache to
+    // avoid contamination: the cache key is `league:${league}` and selections do NOT enter the key,
+    // so a standings-only result must NOT be served to a later full-fetch request and vice versa.
+    if (!opts.standingsOnly) {
+      const cached = getCachedLeague(league);
+      if (cached) return cached;
+    }
 
     let result: LeagueResult;
     try {
       switch (league) {
         case "mlb":
-          result = await fetchLeagueMLB();
+          result = await fetchLeagueMLB(opts);
           break;
         case "nfl":
-          result = await fetchLeagueNFL();
+          result = await fetchLeagueNFL(opts);
           break;
         case "nba":
-          result = await fetchLeagueNBA();
+          result = await fetchLeagueNBA(opts);
           break;
         case "nhl":
-          result = await fetchLeagueNHL();
+          result = await fetchLeagueNHL(opts);
           break;
       }
     } catch (err) {
@@ -581,16 +678,70 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       };
     }
 
-    setCachedLeague(league, result);
+    // Don't cache standings-only results — different request shape, same cache key would mix content.
+    if (!opts.standingsOnly) {
+      setCachedLeague(league, result);
+    }
     return result;
   }
 
-  async function fetchAllLeagues(): Promise<SportsResponse> {
+  /**
+   * Fetch all four leagues' data, respecting per-user picker selections.
+   *
+   * @param selections — when provided (Plan 04 prod path), only enabledLeagues
+   *                     are fetched; non-enabled leagues return { status: 'disabled' }
+   *                     with zero HTTP calls (D-15, D-17).
+   *                     When undefined (D-13 legacy test path), all four leagues
+   *                     are fetched using getTeamId() env-var fallback —
+   *                     preserves sports-service.test.ts:7-10 fixtures.
+   *
+   * Within each enabled league:
+   *   - With favoriteTeams[league] set: full fetch (recent + upcoming + standings) using that team_id.
+   *   - With favoriteTeams[league] undefined: standings-only path (D-16) — recentGame and upcomingGame are null.
+   *
+   * Response shape stays stable: { fetchedAt, partial, leagues: { mlb, nfl, nba, nhl } }
+   * with all four keys ALWAYS present.
+   */
+  async function fetchAllLeagues(selections?: SportsSelections): Promise<SportsResponse> {
+    // D-17: short-circuit when no leagues are enabled — zero outbound calls.
+    if (selections && selections.enabledLeagues.length === 0) {
+      return {
+        fetchedAt: new Date().toISOString(),
+        partial: false,
+        leagues: {
+          mlb: { status: "disabled" },
+          nfl: { status: "disabled" },
+          nba: { status: "disabled" },
+          nhl: { status: "disabled" },
+        },
+      };
+    }
+
+    function planLeague(league: League): { teamId?: string; standingsOnly?: boolean } | "disabled" {
+      // D-13: no selections arg → legacy path, all leagues enabled with env-var teamIds.
+      if (!selections) return { teamId: undefined, standingsOnly: false };
+      // D-15: not in enabledLeagues → disabled, no fetch. Note: only the four hard-coded
+      // league literals reach this function (T-116-03-01 — corrupted league strings can never
+      // be in enabledLeagues for one of the four because we iterate the literals, not the array).
+      if (!selections.enabledLeagues.includes(league)) return "disabled";
+      const teamId = selections.favoriteTeams[league];
+      // D-16: enabled but no favorite team → standings-only.
+      if (!teamId) return { teamId: undefined, standingsOnly: true };
+      // Full fetch with selected team.
+      return { teamId, standingsOnly: false };
+    }
+
+    async function fetchOrDisabled(league: League): Promise<LeagueResult> {
+      const plan = planLeague(league);
+      if (plan === "disabled") return { status: "disabled" };
+      return fetchLeague(league, plan);
+    }
+
     const [mlbResult, nflResult, nbaResult, nhlResult] = await Promise.allSettled([
-      fetchLeague("mlb"),
-      fetchLeague("nfl"),
-      fetchLeague("nba"),
-      fetchLeague("nhl"),
+      fetchOrDisabled("mlb"),
+      fetchOrDisabled("nfl"),
+      fetchOrDisabled("nba"),
+      fetchOrDisabled("nhl"),
     ]);
 
     function settledToResult(r: PromiseSettledResult<LeagueResult>): LeagueResult {
@@ -605,7 +756,11 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
       nhl: settledToResult(nhlResult),
     };
 
-    const partial = Object.values(leagues).some((l) => l.status !== "ok");
+    // 'partial' is true when ANY league is in error/off_season state.
+    // 'disabled' is NOT a partial signal — it's an intentional opt-out.
+    const partial = Object.values(leagues).some(
+      (l) => l.status !== "ok" && l.status !== "disabled",
+    );
 
     return {
       fetchedAt: new Date().toISOString(),
