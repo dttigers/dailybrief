@@ -5,6 +5,7 @@ import { MemoryRouter } from 'react-router'
 import SettingsPage from './SettingsPage'
 import { GoogleStatusProvider } from '../hooks/GoogleStatusContext'
 import { ToastProvider } from '../hooks/useToast'
+import ToastHost from '../components/ToastHost'
 
 function renderPage({
   initialEntries = ['/settings'],
@@ -22,6 +23,7 @@ function renderPage({
       <GoogleStatusProvider>
         <ToastProvider>
           <SettingsPage />
+          <ToastHost />
         </ToastProvider>
       </GoogleStatusProvider>
     </MemoryRouter>,
@@ -636,6 +638,215 @@ describe('SettingsPage', () => {
         await waitFor(() => expect(getPutCalls().length).toBe(1))
         // The PUT body MUST be the full updated array preserving a + c, NOT [] + nothing.
         expect(getPutCalls()[0].body).toEqual({ selectedCalendarIds: ['cal-a', 'cal-c'] })
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+  })
+
+  // ── Phase 116 SPORTS-01 picker tests ──
+  describe('sports source picker (SPORTS-01)', () => {
+    function makeSportsFetchImpl(opts: {
+      googleStatus?: object | null
+      sportsSelections?: { enabledLeagues: Array<'mlb'|'nfl'|'nba'|'nhl'>; favoriteTeams: Record<string, string> }
+      teamsByLeague?: Partial<Record<'mlb'|'nfl'|'nba'|'nhl', Array<{ id: string, name: string }> | { errorStatus: number }>>
+      putResponse?: { status: number; body?: object }
+      authMe?: object
+    }) {
+      const putCalls: Array<{ url: string; body: unknown }> = []
+      // Track per-league GET-teams call counts for retry tests.
+      const teamsCallCounts: Record<string, number> = {}
+
+      const fetchImpl = async (url: string, init?: RequestInit): Promise<Response> => {
+        const u = String(url)
+        if (u.includes('/v1/google/status')) {
+          return new Response(JSON.stringify(opts.googleStatus ?? { calendar: 'connected', gmail: 'connected' }), { status: 200 })
+        }
+        if (u.includes('/v1/calendar/list')) {
+          // Phase 115 picker is also on this page — return needs_reauth so its subsection doesn't render
+          // (avoids interference; calendar tests have their own coverage).
+          return new Response(JSON.stringify({ status: 'needs_reauth' }), { status: 200 })
+        }
+        if (u.includes('/v1/sports/selections')) {
+          if (init?.method === 'PUT') {
+            putCalls.push({ url: u, body: init.body ? JSON.parse(init.body as string) : null })
+            const body = opts.putResponse?.body ?? { ok: true }
+            return new Response(JSON.stringify(body), { status: opts.putResponse?.status ?? 200 })
+          }
+          const sel = opts.sportsSelections ?? { enabledLeagues: [], favoriteTeams: {} }
+          return new Response(JSON.stringify(sel), { status: 200 })
+        }
+        if (u.includes('/v1/sports/teams/')) {
+          const match = u.match(/\/v1\/sports\/teams\/(mlb|nfl|nba|nhl)/)
+          const league = match ? match[1] as 'mlb'|'nfl'|'nba'|'nhl' : null
+          if (!league) return new Response(JSON.stringify({ error: 'unknown' }), { status: 400 })
+          teamsCallCounts[league] = (teamsCallCounts[league] ?? 0) + 1
+          const stub = opts.teamsByLeague?.[league]
+          if (!stub) return new Response(JSON.stringify({ teams: [] }), { status: 200 })
+          if ('errorStatus' in stub) {
+            // Use call count to flip from error to success on retry: errorStatus on first call, 200 on subsequent.
+            if (teamsCallCounts[league] === 1) {
+              return new Response(JSON.stringify({ error: 'down' }), { status: stub.errorStatus })
+            }
+            return new Response(JSON.stringify({ teams: [{ id: '116', name: 'Detroit Tigers' }] }), { status: 200 })
+          }
+          return new Response(JSON.stringify({ teams: stub }), { status: 200 })
+        }
+        if (u.includes('/v1/auth/me')) {
+          return new Response(JSON.stringify(opts.authMe ?? { id: 1, email: 'a@b.com', emailVerifiedAt: '2026-01-01' }), { status: 200 })
+        }
+        if (u.includes('/v1/me')) {
+          return new Response(JSON.stringify({ userId: '1', email: 'a@b.com' }), { status: 200 })
+        }
+        // schedules + timezone — silent success
+        return new Response(JSON.stringify({ hour: 4, minute: 0, enabled: true }), { status: 200 })
+      }
+      return { fetchImpl, getPutCalls: () => putCalls, getTeamsCallCounts: () => teamsCallCounts }
+    }
+
+    it('SPORTS-01-picker-render-empty: renders 4 unchecked league checkboxes + empty-leagues helper', async () => {
+      const { fetchImpl } = makeSportsFetchImpl({})
+      renderPage({ fetchImpl })
+      expect(await screen.findByTestId('sports-section')).toBeInTheDocument()
+      const cbMlb = await screen.findByTestId('sports-checkbox-mlb') as HTMLInputElement
+      const cbNfl = await screen.findByTestId('sports-checkbox-nfl') as HTMLInputElement
+      const cbNba = await screen.findByTestId('sports-checkbox-nba') as HTMLInputElement
+      const cbNhl = await screen.findByTestId('sports-checkbox-nhl') as HTMLInputElement
+      expect(cbMlb.checked).toBe(false)
+      expect(cbNfl.checked).toBe(false)
+      expect(cbNba.checked).toBe(false)
+      expect(cbNhl.checked).toBe(false)
+      expect(await screen.findByText(/No leagues selected — sports section will be omitted from your brief\./)).toBeInTheDocument()
+    })
+
+    it('SPORTS-01-picker-league-toggle-saves: clicking MLB checkbox triggers lazy team fetch + debounced PUT', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const { fetchImpl, getPutCalls, getTeamsCallCounts } = makeSportsFetchImpl({
+          sportsSelections: { enabledLeagues: [], favoriteTeams: {} },
+          teamsByLeague: { mlb: [{ id: '116', name: 'Detroit Tigers' }] },
+        })
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        renderPage({ fetchImpl })
+        const cb = await screen.findByTestId('sports-checkbox-mlb')
+        await user.click(cb)
+        // Lazy fetch fired immediately on enable (no debounce on the GET).
+        await waitFor(() => expect(getTeamsCallCounts().mlb ?? 0).toBeGreaterThanOrEqual(1))
+        // PUT not yet (still in debounce window).
+        expect(getPutCalls().length).toBe(0)
+        await act(async () => { vi.advanceTimersByTime(450) })
+        await waitFor(() => expect(getPutCalls().length).toBe(1))
+        expect(getPutCalls()[0].body).toEqual({ enabledLeagues: ['mlb'], favoriteTeams: {} })
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('SPORTS-01-picker-team-select-saves: clicking a team radio PUTs favoriteTeams update', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const { fetchImpl, getPutCalls } = makeSportsFetchImpl({
+          sportsSelections: { enabledLeagues: ['mlb'], favoriteTeams: {} },
+          teamsByLeague: {
+            mlb: [{ id: '116', name: 'Detroit Tigers' }, { id: '5', name: 'Cleveland Guardians' }],
+          },
+        })
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        renderPage({ fetchImpl })
+        const radio = await screen.findByTestId('sports-radio-mlb-116') as HTMLInputElement
+        await user.click(radio)
+        await act(async () => { vi.advanceTimersByTime(450) })
+        await waitFor(() => expect(getPutCalls().length).toBe(1))
+        expect(getPutCalls()[0].body).toEqual({ enabledLeagues: ['mlb'], favoriteTeams: { mlb: '116' } })
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('SPORTS-01-picker-mount-prefetches-teams-D23: NFL team list fetched on mount when enabledLeagues includes nfl', async () => {
+      const { fetchImpl, getTeamsCallCounts } = makeSportsFetchImpl({
+        sportsSelections: { enabledLeagues: ['nfl'], favoriteTeams: {} },
+        teamsByLeague: { nfl: [{ id: '13', name: 'Detroit Lions' }] },
+      })
+      renderPage({ fetchImpl })
+      // Wait for the NFL team radio to appear — implies the lazy mount-time fetch resolved.
+      await screen.findByTestId('sports-radio-nfl-13')
+      expect(getTeamsCallCounts().nfl).toBeGreaterThanOrEqual(1)
+    })
+
+    it('SPORTS-01-picker-empty-leagues-helper: helper visible when enabledLeagues is empty after fetch', async () => {
+      const { fetchImpl } = makeSportsFetchImpl({
+        sportsSelections: { enabledLeagues: [], favoriteTeams: {} },
+      })
+      renderPage({ fetchImpl })
+      expect(await screen.findByText(/No leagues selected — sports section will be omitted from your brief\./)).toBeInTheDocument()
+    })
+
+    it('SPORTS-01-picker-no-team-helper: standings-only helper shown when league enabled but no team selected', async () => {
+      const { fetchImpl } = makeSportsFetchImpl({
+        sportsSelections: { enabledLeagues: ['mlb'], favoriteTeams: {} },
+        teamsByLeague: { mlb: [{ id: '116', name: 'Detroit Tigers' }] },
+      })
+      renderPage({ fetchImpl })
+      // Wait for the radios to render first (proves lazy fetch resolved).
+      await screen.findByTestId('sports-radio-mlb-116')
+      expect(await screen.findByText(/No favorite team selected — standings only\./)).toBeInTheDocument()
+    })
+
+    it('SPORTS-01-picker-team-list-error-retry: error response renders Retry; click triggers second fetch', async () => {
+      const { fetchImpl, getTeamsCallCounts } = makeSportsFetchImpl({
+        sportsSelections: { enabledLeagues: ['mlb'], favoriteTeams: {} },
+        teamsByLeague: { mlb: { errorStatus: 500 } },
+      })
+      const user = userEvent.setup()
+      renderPage({ fetchImpl })
+      const retry = await screen.findByTestId('sports-retry-mlb')
+      const before = getTeamsCallCounts().mlb ?? 0
+      await user.click(retry)
+      await waitFor(() => expect(getTeamsCallCounts().mlb ?? 0).toBeGreaterThan(before))
+    })
+
+    it('SPORTS-01-picker-rollback-on-put-failure-D21: PUT 500 rolls back state + fires error toast', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const { fetchImpl } = makeSportsFetchImpl({
+          sportsSelections: { enabledLeagues: ['mlb'], favoriteTeams: { mlb: '116' } },
+          teamsByLeague: { mlb: [{ id: '116', name: 'Detroit Tigers' }] },
+          putResponse: { status: 500, body: { error: 'down' } },
+        })
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        renderPage({ fetchImpl })
+        const cb = await screen.findByTestId('sports-checkbox-mlb') as HTMLInputElement
+        // Confirm initial state is checked (matches server-saved value).
+        await waitFor(() => expect(cb.checked).toBe(true))
+        // Toggle off.
+        await user.click(cb)
+        // Optimistic: instantly unchecked.
+        expect(cb.checked).toBe(false)
+        // Advance debounce → PUT fails → rollback.
+        await act(async () => { vi.advanceTimersByTime(450) })
+        await waitFor(() => expect(cb.checked).toBe(true))  // rolled back
+        expect(await screen.findByText(/Couldn't save sports settings — try again\./)).toBeInTheDocument()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('SPORTS-01-picker-disable-preserves-team-D24: toggling league OFF keeps favoriteTeams in PUT body', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const { fetchImpl, getPutCalls } = makeSportsFetchImpl({
+          sportsSelections: { enabledLeagues: ['mlb'], favoriteTeams: { mlb: '116' } },
+          teamsByLeague: { mlb: [{ id: '116', name: 'Detroit Tigers' }] },
+        })
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        renderPage({ fetchImpl })
+        const cb = await screen.findByTestId('sports-checkbox-mlb')
+        await user.click(cb)  // disable MLB
+        await act(async () => { vi.advanceTimersByTime(450) })
+        await waitFor(() => expect(getPutCalls().length).toBe(1))
+        // D-24: favoriteTeams preserved even though league disabled.
+        expect(getPutCalls()[0].body).toEqual({ enabledLeagues: [], favoriteTeams: { mlb: '116' } })
       } finally {
         vi.useRealTimers()
       }
