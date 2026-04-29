@@ -15,8 +15,11 @@ import {
   storeKey,
   getCalendarList,
   setCalendarSelections,
+  getSportsSelections,
+  setSportsSelections,
+  getSportsTeams,
 } from '../api/client'
-import type { CalendarInfo } from '../api/client'
+import type { CalendarInfo, SportsSelections, League, TeamListEntry } from '../api/client'
 import { useToast } from '../hooks/useToast'
 import { ScheduleCard } from '../components/ScheduleCard'
 
@@ -31,6 +34,16 @@ const GOOGLE_ERROR_MESSAGES: Record<string, string> = {
   access_denied: 'Access was denied.',
   no_code: 'Connection attempt failed. Please try again.',
 }
+
+// Phase 116 SPORTS-01 — UI-SPEC copywriting contract: "MLB — Baseball" / "NFL — Football" / etc.
+// Module scope (not component scope) so the literal map is not recreated on every render.
+const LEAGUE_LABELS: Record<League, string> = {
+  mlb: 'MLB — Baseball',
+  nfl: 'NFL — Football',
+  nba: 'NBA — Basketball',
+  nhl: 'NHL — Hockey',
+}
+const LEAGUE_ORDER: League[] = ['mlb', 'nfl', 'nba', 'nhl']
 
 /**
  * Google integration Settings page (Phase 81) + Phase 86 schedule split.
@@ -105,6 +118,18 @@ export default function SettingsPage() {
   const calendarSaveTimerRef = useRef<number | null>(null)
   const lastSavedSelectionRef = useRef<string[]>([])
   const { showToast } = useToast()
+
+  // Phase 116 SPORTS-01 — picker state (D-19 through D-24)
+  const [sportsSelections, setSportsSelectionsState] = useState<SportsSelections>({ enabledLeagues: [], favoriteTeams: {} })
+  const [sportsListStatus, setSportsListStatus] = useState<'loading' | 'ok' | 'error'>('loading')
+  const [sportsListError, setSportsListError] = useState<string | null>(null)
+  /** Per-league teams cache + per-league fetch status. 'loading' / 'error' / TeamListEntry[]. */
+  const [teamsByLeague, setTeamsByLeague] = useState<Record<League, TeamListEntry[] | 'loading' | 'error' | null>>({
+    mlb: null, nfl: null, nba: null, nhl: null,
+  })
+  const sportsSaveTimerRef = useRef<number | null>(null)
+  /** Server-confirmed last good selections value — rollback target on PUT failure (D-21). */
+  const lastSavedSportsRef = useRef<SportsSelections>({ enabledLeagues: [], favoriteTeams: {} })
 
   // WR-02: clear any pending collapse timer when the component unmounts.
   useEffect(() => {
@@ -204,6 +229,62 @@ export default function SettingsPage() {
       if (calendarSaveTimerRef.current !== null) {
         window.clearTimeout(calendarSaveTimerRef.current)
         calendarSaveTimerRef.current = null
+      }
+    }
+  }, [])
+
+  // Phase 116 SPORTS-01 D-23: lazy team-list fetch per league. Cached in component state.
+  // Plain (non-useCallback) async fn so it can be invoked from inside loadSportsSelections
+  // without listing it as a dep — kept stable by being module-private to the component closure.
+  const loadTeamsForLeagueImpl = async (league: League): Promise<void> => {
+    setTeamsByLeague((prev) => ({ ...prev, [league]: 'loading' }))
+    try {
+      const teams = await getSportsTeams(league)
+      setTeamsByLeague((prev) => ({ ...prev, [league]: teams }))
+    } catch {
+      setTeamsByLeague((prev) => ({ ...prev, [league]: 'error' }))
+    }
+  }
+
+  const loadTeamsForLeague = useCallback((league: League) => loadTeamsForLeagueImpl(league), [])
+
+  // Phase 116 SPORTS-01 D-09: fetch user's sports selections on mount.
+  const loadSportsSelections = useCallback(async () => {
+    setSportsListStatus('loading')
+    setSportsListError(null)
+    try {
+      const raw = await getSportsSelections()
+      // Defensive normalization: server contract guarantees both keys (D-10 empty default),
+      // but a stale/proxy/test response might omit them. Treat anything missing as the empty
+      // default rather than crashing the picker.
+      const result: SportsSelections = {
+        enabledLeagues: Array.isArray(raw?.enabledLeagues) ? raw.enabledLeagues : [],
+        favoriteTeams: raw?.favoriteTeams && typeof raw.favoriteTeams === 'object' ? raw.favoriteTeams : {},
+      }
+      setSportsSelectionsState(result)
+      lastSavedSportsRef.current = result
+      setSportsListStatus('ok')
+      // D-23: pre-fetch team lists for already-enabled leagues so radios populate on first paint.
+      for (const league of result.enabledLeagues) {
+        // Fire-and-forget; loadTeamsForLeagueImpl handles its own state updates.
+        void loadTeamsForLeagueImpl(league)
+      }
+    } catch (err) {
+      setSportsListStatus('error')
+      setSportsListError(err instanceof Error ? err.message : 'Failed to load sports settings')
+    }
+  }, [])
+
+  useEffect(() => {
+    loadSportsSelections()
+  }, [loadSportsSelections])
+
+  // Phase 116 SPORTS-01 D-21: debounced save cleanup on unmount (mirrors Phase 115 WR-02).
+  useEffect(() => {
+    return () => {
+      if (sportsSaveTimerRef.current !== null) {
+        window.clearTimeout(sportsSaveTimerRef.current)
+        sportsSaveTimerRef.current = null
       }
     }
   }, [])
@@ -432,6 +513,53 @@ export default function SettingsPage() {
         })
       }
     }, 400)
+  }
+
+  // Phase 116 SPORTS-01 D-21: schedule a debounced PUT with rollback on failure.
+  function scheduleSportsSave(next: SportsSelections) {
+    if (sportsSaveTimerRef.current !== null) {
+      window.clearTimeout(sportsSaveTimerRef.current)
+    }
+    sportsSaveTimerRef.current = window.setTimeout(async () => {
+      sportsSaveTimerRef.current = null
+      try {
+        await setSportsSelections(next)
+        lastSavedSportsRef.current = next
+      } catch {
+        // D-21 rollback + error toast.
+        setSportsSelectionsState(lastSavedSportsRef.current)
+        showToast({ variant: 'error', body: "Couldn't save sports settings — try again." })
+      }
+    }, 400)
+  }
+
+  // Phase 116 SPORTS-01 D-20 + D-24: toggle a league. Disabling does NOT clear favoriteTeams[league].
+  function handleSportsLeagueToggle(league: League) {
+    const wasEnabled = sportsSelections.enabledLeagues.includes(league)
+    const nextEnabled = wasEnabled
+      ? sportsSelections.enabledLeagues.filter((l) => l !== league)
+      : [...sportsSelections.enabledLeagues, league]
+    // D-24: favoriteTeams unchanged — preservation rule.
+    const next: SportsSelections = {
+      enabledLeagues: nextEnabled,
+      favoriteTeams: sportsSelections.favoriteTeams,
+    }
+    setSportsSelectionsState(next)
+    // D-23: lazy fetch when a league is enabled for the first time and we don't have its teams yet.
+    if (!wasEnabled && teamsByLeague[league] === null) {
+      void loadTeamsForLeague(league)
+    }
+    scheduleSportsSave(next)
+  }
+
+  // Phase 116 SPORTS-01 D-20: select a favorite team within an enabled league.
+  function handleSportsTeamSelect(league: League, teamId: string) {
+    const next: SportsSelections = {
+      enabledLeagues: sportsSelections.enabledLeagues,
+      favoriteTeams: { ...sportsSelections.favoriteTeams, [league]: teamId },
+    }
+    setSportsSelectionsState(next)
+    scheduleSportsSave(next)
   }
 
   const handleTimezoneSave = async () => {
@@ -774,6 +902,118 @@ export default function SettingsPage() {
               </>
             )}
           </div>
+        )}
+      </section>
+
+      {/* Phase 116 SPORTS-01 — Sports source picker (D-19) */}
+      <section
+        data-testid="sports-section"
+        aria-labelledby="sports-heading"
+        className="bg-gray-900 border border-gray-900/40 rounded-lg p-5 mt-4"
+      >
+        <h2 id="sports-heading" className="text-lg font-medium">Sports</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Choose which leagues and favorite teams appear in your daily brief.
+        </p>
+
+        {sportsListStatus === 'loading' && (
+          <p className="text-gray-400 text-sm">Loading sports settings…</p>
+        )}
+
+        {sportsListStatus === 'error' && (
+          <div className="bg-red-900/20 border border-red-900/40 rounded p-3">
+            <p className="text-red-400 text-sm mb-2">
+              {sportsListError ?? "Couldn't load sports settings."}
+            </p>
+            <button
+              onClick={loadSportsSelections}
+              className="text-xs text-teal-400 hover:text-teal-300"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {sportsListStatus === 'ok' && (
+          <>
+            <ul className="space-y-1.5">
+              {LEAGUE_ORDER.map((league, idx) => {
+                const enabled = sportsSelections.enabledLeagues.includes(league)
+                const teamsState = teamsByLeague[league]
+                const selectedTeamId = sportsSelections.favoriteTeams[league]
+                return (
+                  <li
+                    key={league}
+                    className={idx === 0 ? '' : 'mt-4 border-t border-gray-900/40 pt-4'}
+                    data-testid={`sports-league-${league}`}
+                  >
+                    <label className="flex items-center gap-2 cursor-pointer py-1">
+                      <input
+                        type="checkbox"
+                        checked={enabled}
+                        onChange={() => handleSportsLeagueToggle(league)}
+                        className="w-4 h-4 rounded border-gray-400/30 bg-gray-900/80 accent-teal-600 cursor-pointer"
+                        data-testid={`sports-checkbox-${league}`}
+                      />
+                      <span className="text-sm text-gray-100">{LEAGUE_LABELS[league]}</span>
+                    </label>
+
+                    {/* Indented team list for enabled league (D-20) */}
+                    {enabled && (
+                      <div className="mt-2 ml-6">
+                        {teamsState === null || teamsState === 'loading' ? (
+                          <p className="text-gray-400 text-sm">Loading teams…</p>
+                        ) : teamsState === 'error' ? (
+                          <div className="bg-red-900/20 border border-red-900/40 rounded p-3">
+                            <p className="text-red-400 text-sm mb-2">Couldn't load teams.</p>
+                            <button
+                              onClick={() => loadTeamsForLeague(league)}
+                              className="text-xs text-teal-400 hover:text-teal-300"
+                              data-testid={`sports-retry-${league}`}
+                            >
+                              Retry
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <ul className="space-y-1.5">
+                              {teamsState.map((team) => (
+                                <li key={team.id}>
+                                  <label className="flex items-center gap-2 cursor-pointer py-1">
+                                    <input
+                                      type="radio"
+                                      name={`team-${league}`}
+                                      value={team.id}
+                                      checked={selectedTeamId === team.id}
+                                      onChange={() => handleSportsTeamSelect(league, team.id)}
+                                      className="w-4 h-4 accent-teal-600 cursor-pointer"
+                                      data-testid={`sports-radio-${league}-${team.id}`}
+                                    />
+                                    <span className="text-sm text-gray-100">{team.name}</span>
+                                  </label>
+                                </li>
+                              ))}
+                            </ul>
+                            {selectedTeamId === undefined && (
+                              <p className="mt-2 text-xs text-gray-500">
+                                No favorite team selected — standings only.
+                              </p>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
+            </ul>
+
+            {sportsSelections.enabledLeagues.length === 0 && (
+              <p className="mt-4 text-xs text-gray-500">
+                No leagues selected — sports section will be omitted from your brief.
+              </p>
+            )}
+          </>
         )}
       </section>
 
