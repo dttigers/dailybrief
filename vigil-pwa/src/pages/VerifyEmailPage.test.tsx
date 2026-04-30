@@ -243,4 +243,141 @@ describe('VerifyEmailPage (AUTH-11)', () => {
     // And the idle UI is rendered (token was parsed at render time via useMemo).
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Verify your email')
   })
+
+  // ── Phase 117 (AUTH-12) — rate-limited bucket tests ─────────────────────
+
+  it('AUTH-12-VEP-01-429-RENDERS-COUNTDOWN: 429 + Retry-After: 120 renders rate-limited UX with mm:ss', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: 'Too many requests' }), {
+          status: 429,
+          headers: { 'Retry-After': '120', 'Content-Type': 'application/json' },
+        }),
+      ),
+    )
+    renderAt('/auth/verify?token=abc123')
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Too many attempts')
+    })
+    // Body shows initial countdown — 2m 0s (120 seconds).
+    expect(screen.getByText(/Try again in 2m 0s\./)).toBeInTheDocument()
+    // Confirm button is disabled while countdown active.
+    const confirm = screen.getByRole('button', { name: 'Confirm' }) as HTMLButtonElement
+    expect(confirm.disabled).toBe(true)
+    // Legacy "This link is no longer valid" copy is NOT rendered.
+    expect(screen.queryByText(/This link is no longer valid/)).toBeNull()
+  })
+
+  it('AUTH-12-VEP-02-COUNTDOWN-TICKS: countdown ticks down each second and re-enables Confirm at zero', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValueOnce(
+          new Response(JSON.stringify({ error: 'Too many requests' }), {
+            status: 429,
+            headers: { 'Retry-After': '3', 'Content-Type': 'application/json' },
+          }),
+        ),
+      )
+      renderAt('/auth/verify?token=abc123')
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+      // Wait for the rate-limited UX to render (post-fetch).
+      await waitFor(() => {
+        expect(screen.getByText(/Try again in 0m 3s\./)).toBeInTheDocument()
+      })
+      // Tick 1s → 0m 2s
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(screen.getByText(/Try again in 0m 2s\./)).toBeInTheDocument()
+      // Tick another 1s → 0m 1s
+      await vi.advanceTimersByTimeAsync(1000)
+      expect(screen.getByText(/Try again in 0m 1s\./)).toBeInTheDocument()
+      // Tick the final second → countdown clears AND state returns to idle.
+      await vi.advanceTimersByTimeAsync(1000)
+      await waitFor(() => {
+        // Idle UX returns: 'Verify your email' heading, Confirm enabled, rate-limited copy gone.
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Verify your email')
+      })
+      const confirm = screen.getByRole('button', { name: 'Confirm' }) as HTMLButtonElement
+      expect(confirm.disabled).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('AUTH-12-VEP-03-NO-RETRYAFTER-FALLBACK: 429 with no Retry-After renders rate-limited copy WITHOUT countdown', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: 'Too many requests' }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' }, // no Retry-After
+        }),
+      ),
+    )
+    renderAt('/auth/verify?token=abc123')
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Too many attempts')
+    })
+    // No mm:ss countdown — generic fallback copy.
+    expect(screen.queryByText(/\d+m \d+s/)).toBeNull()
+    // Confirm button NOT disabled (no countdown to wait on).
+    const confirm = screen.getByRole('button', { name: 'Confirm' }) as HTMLButtonElement
+    expect(confirm.disabled).toBe(false)
+  })
+
+  it('AUTH-12-VEP-04-400-RENDERS-LEGACY-ERROR: 400 renders existing "This link is no longer valid" UX (D-21 preserved)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValueOnce(
+        new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    )
+    renderAt('/auth/verify?token=abc123')
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/This link is no longer valid/)
+    })
+    // Rate-limited copy NOT rendered for 400 — D-21 single-bucket preserved for non-429.
+    expect(screen.queryByText(/Too many attempts/)).toBeNull()
+  })
+
+  it('AUTH-12-VEP-05-CLEANUP-ON-UNMOUNT: unmounting mid-countdown does not warn about setState-after-unmount', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValueOnce(
+          new Response(JSON.stringify({ error: 'Too many requests' }), {
+            status: 429,
+            headers: { 'Retry-After': '120', 'Content-Type': 'application/json' },
+          }),
+        ),
+      )
+      const { unmount } = renderAt('/auth/verify?token=abc123')
+      fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+      await waitFor(() => {
+        expect(screen.getByText(/Try again in 2m 0s\./)).toBeInTheDocument()
+      })
+      // Unmount mid-countdown.
+      unmount()
+      // Advance fake timers past where ticks would have fired post-unmount.
+      await vi.advanceTimersByTimeAsync(5000)
+      // No setState-after-unmount warnings should have been logged.
+      const setStateWarnings = errorSpy.mock.calls.filter((call) =>
+        String(call[0] ?? '').match(/state update on an unmounted|act\(\)/i),
+      )
+      expect(setStateWarnings.length).toBe(0)
+    } finally {
+      errorSpy.mockRestore()
+      vi.useRealTimers()
+    }
+  })
 })
