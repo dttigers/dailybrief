@@ -1138,4 +1138,79 @@ describe("assembleAndRender — Phase 116.1 SPORTS-01b PostHog telemetry", () =>
     assert.equal(sportsEvents[0].userId, 42);
     assert.equal(sportsEvents[0].props.status, "error");
   });
+
+  test("SPORTS-01b-brief-posthog-event-fires-on-source-timeout-WR01", async () => {
+    // WR-01: when the entire sports source rejects (e.g., withTimeout fires
+    // "Source timeout"), a single catastrophic event must emit so dashboards
+    // can distinguish source-level failures from per-league failures.
+    const trackEventCalls: Array<{ userId: number | string; event: string; props: Record<string, unknown> }> = [];
+    const trackEventMock = (userId: number | string, event: string, props: Record<string, unknown>) => {
+      trackEventCalls.push({ userId, event, props });
+    };
+
+    const db = makeKeyAwareDb({
+      "sports_selections": [{ value: { enabledLeagues: ["mlb"], favoriteTeams: { mlb: "116" } } }],
+      "user_timezone": [],
+    });
+
+    // Sports service hangs forever — _sourceTimeoutMs=10ms forces withTimeout
+    // to reject with "Source timeout" before the service ever resolves.
+    const assembler = createBriefAssemblyService({
+      sportsService: {
+        fetchAllLeagues: () => new Promise(() => { /* never resolves */ }),
+      },
+      calendarService: { fetchTodaysEvents: async () => ({ status: "ok", events: [], fetchedAt: new Date().toISOString() }) },
+      pdfRenderer: { renderBrief: async () => Buffer.from("pdf") },
+      dbClient: db as unknown as PostgresJsDatabase<typeof schema>,
+      callClaudeFn: async () => "fallback affirmation",
+      parseAIJsonFn: <T>(_raw: string) => ({} as T),
+      trackEventFn: trackEventMock as never,
+      _cacheDir: tmpDir4,
+      _sourceTimeoutMs: 10,
+    });
+
+    await assembler.assembleAndRender("2026-04-29", 42);
+
+    const sportsEvents = trackEventCalls.filter((c) => c.event === "sports_league_fetch_failed");
+    assert.equal(sportsEvents.length, 1, "exactly one catastrophic event should emit");
+    assert.equal(sportsEvents[0].userId, 42);
+    assert.equal(sportsEvents[0].props.league, "all");
+    assert.equal(sportsEvents[0].props.status, "error");
+    assert.equal(sportsEvents[0].props.error_class, "timeout");
+  });
+
+  test("SPORTS-01b-brief-posthog-event-fires-on-synchronous-throw-WR01", async () => {
+    // WR-01: when the sports service throws synchronously (not a timeout),
+    // a single catastrophic event must emit with error_class="unknown".
+    const trackEventCalls: Array<{ userId: number | string; event: string; props: Record<string, unknown> }> = [];
+    const trackEventMock = (userId: number | string, event: string, props: Record<string, unknown>) => {
+      trackEventCalls.push({ userId, event, props });
+    };
+
+    const db = makeKeyAwareDb({
+      "sports_selections": [{ value: { enabledLeagues: ["mlb"], favoriteTeams: { mlb: "116" } } }],
+      "user_timezone": [],
+    });
+
+    const assembler = createBriefAssemblyService({
+      sportsService: {
+        fetchAllLeagues: async () => { throw new Error("boom"); },
+      },
+      calendarService: { fetchTodaysEvents: async () => ({ status: "ok", events: [], fetchedAt: new Date().toISOString() }) },
+      pdfRenderer: { renderBrief: async () => Buffer.from("pdf") },
+      dbClient: db as unknown as PostgresJsDatabase<typeof schema>,
+      callClaudeFn: async () => "fallback affirmation",
+      parseAIJsonFn: <T>(_raw: string) => ({} as T),
+      trackEventFn: trackEventMock as never,
+      _cacheDir: tmpDir4,
+    });
+
+    await assembler.assembleAndRender("2026-04-29", 42);
+
+    const sportsEvents = trackEventCalls.filter((c) => c.event === "sports_league_fetch_failed");
+    assert.equal(sportsEvents.length, 1, "exactly one catastrophic event should emit");
+    assert.equal(sportsEvents[0].props.league, "all");
+    assert.equal(sportsEvents[0].props.status, "error");
+    assert.equal(sportsEvents[0].props.error_class, "unknown");
+  });
 });

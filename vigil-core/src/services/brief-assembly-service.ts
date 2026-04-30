@@ -576,6 +576,20 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     // Log failed sources by name (never log credentials)
     if (sportsR.status === "rejected") {
       console.log(`[brief-assembly] Sports source failed: ${sportsR.reason instanceof Error ? sportsR.reason.message : "unknown"}`);
+      // Phase 116.1 SPORTS-01b WR-01: emit a single catastrophic event so dashboards
+      // can distinguish "BDL had a bad day" (per-league fulfilled-with-error events
+      // below) from "our timeout fired / source threw synchronously" (this branch).
+      // T-73-01 preserved: properties are enum literals — no URL, no apiKey, no
+      // stack trace text. The "Source timeout" string is constructed in withTimeout
+      // (line ~101) so we can match on it to differentiate timeout vs. unknown.
+      trackEventImpl(userId, "sports_league_fetch_failed", {
+        league: "all",
+        status: "error",
+        error_class:
+          sportsR.reason instanceof Error && sportsR.reason.message === "Source timeout"
+            ? "timeout"
+            : "unknown",
+      });
     }
 
     // Phase 116.1 SPORTS-01b D-06: emit a PostHog event per failed league for cohort/funnel analytics.
