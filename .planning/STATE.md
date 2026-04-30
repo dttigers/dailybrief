@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Phase 117 context gathered
-last_updated: "2026-04-30T16:13:23.311Z"
-last_activity: 2026-04-30 -- Phase 117 planning complete
+stopped_at: Completed 117-01-PLAN.md
+last_updated: "2026-04-30T16:23:08.430Z"
+last_activity: 2026-04-30
 progress:
   total_phases: 14
   completed_phases: 9
   total_plans: 51
-  completed_plans: 48
-  percent: 94
+  completed_plans: 49
+  percent: 96
 ---
 
 # Project State
@@ -21,15 +21,15 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 116 — sports-source-picker
+**Current focus:** Phase 117 — auth-email-rate-limit-ux-hardening
 
 ## Current Position
 
 Milestone: v3.7 (started 2026-04-27)
-Phase: 999.1
-Plan: Not started
+Phase: 117 (auth-email-rate-limit-ux-hardening) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-04-30 -- Phase 117 planning complete
+Last activity: 2026-04-30
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -69,6 +69,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 116.1 P02 | 20 | 1 tasks | 3 files |
 | Phase 116.1 P04 | 20min | 1 tasks | 2 files |
 | Phase 116.1 P03 | 10 | 3 tasks | 3 files |
+| Phase 117 P01 | 6min | 4 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -123,6 +124,9 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 116.1]: [Rule 1 fix] fetchLeague's generic catch block was missing the D-10 UpstreamError re-throw; standings-only catchers had the fix from Plan 01 but fetchLeague itself did not — added  before the fallback status:error result
 - [Phase 116.1]: mapSports explicit status branches (disabled→continue, error→placeholder, off_season→continue, ok→full render) replaces implicit status!==ok catch-all; extractErrorClass regex recovers UpstreamError kind from Plan 01 stable message without touching LeagueResult shape; trackEventFn injectable test seam at factory level
 - [Phase 116.1]: classifyFetchError is async (parses 502 body via res.clone().json()); Array.isArray() narrowing required in JSX after union widening; teamsThrowFor throws before teamsCallCounts increment; retryCountdownValue explicit double-reference to satisfy retryCountdowns grep criterion
+- [Phase 117]: Phase 117-01: split forgot-password's single RATE_LIMIT_MAX into RATE_LIMIT_MAX_IP (20) + RATE_LIMIT_MAX_EMAIL (5) — required because the existing takeSlot helper is shared across both axes; chose per-call max parameter over duplicating the helper to keep the sliding-window invariant single-sourced
+- [Phase 117]: Phase 117-01: drift-detector test pattern (fs.readFileSync + regex match) preferred over runtime-introspection — runtime constants can be transformed by minifiers/bundlers, but the source file is the single source of truth for policy review
+- [Phase 117]: Phase 117-01: forgot-password Test 7 per-email cap loop bound left at 6 verbatim — only doc-update applied. Locks per-email cap at 5 via existing assertion sendSpy.callCount() <= 5; Phase 117 D-05 enum-safety guard preserved
 
 ### Pending Todos
 
@@ -158,7 +162,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-30T15:49:06.472Z
-Stopped at: Phase 117 context gathered
-Resume file: .planning/phases/117-auth-email-rate-limit-ux-hardening/117-CONTEXT.md
+Last session: 2026-04-30T16:23:08.424Z
+Stopped at: Completed 117-01-PLAN.md
+Resume file: None
 Next action: /gsd-plan-phase 115

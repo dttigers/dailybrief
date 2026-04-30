@@ -15,7 +15,7 @@
 ### Auth Email UX Hardening (D-13/D-21 friction across both flows)
 
 - [ ] **AUTH-12**: 429 (rate-limited) responses from `POST /v1/auth/verify-email`, `POST /v1/auth/resend-verification`, `POST /v1/auth/forgot-password`, and `POST /v1/auth/reset-password` render distinct PWA copy with a Retry-After countdown ("Too many attempts — try again in N minutes") instead of the D-21 single-bucket "This link is no longer valid". Server continues to return Retry-After header (already present in Phase 112/113 implementations); change is PWA-side error-bucket split + new copy.
-- [ ] **AUTH-13**: Rate-limit policy tuning across `verify-email` + `resend-verification` + `forgot-password` + `reset-password` — raise the 5/hr per-IP cap to a more legitimate-user-tolerant value AND/OR add a per-userId axis (where a userId is identifiable, e.g. `resend-verification` uses bearerAuth so already has userId; `forgot-password` only knows email, but per-email is a similar axis). Final per-endpoint policy chosen during phase planning; security goal preserved (brute-force protection intact, enumeration-safety unchanged).
+- [x] **AUTH-13**: Rate-limit policy tuning across `verify-email` + `resend-verification` + `forgot-password` + `reset-password` — raise the 5/hr per-IP cap to a more legitimate-user-tolerant value AND/OR add a per-userId axis (where a userId is identifiable, e.g. `resend-verification` uses bearerAuth so already has userId; `forgot-password` only knows email, but per-email is a similar axis). Final per-endpoint policy chosen during phase planning; security goal preserved (brute-force protection intact, enumeration-safety unchanged).
 
 ### Production Hygiene
 
@@ -59,7 +59,7 @@ Populated 2026-04-27 by gsd-roadmapper during ROADMAP.md creation.
 | POLISH-01 | Phase 115 | Complete |
 | SPORTS-01 | Phase 116 | Complete |
 | AUTH-12 | Phase 117 | Pending |
-| AUTH-13 | Phase 117 | Pending |
+| AUTH-13 | Phase 117 | Complete |
 | OPS-01 | Phase 118 | Pending |
 | OPS-02 | Phase 119 | Pending |
 

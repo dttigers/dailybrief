@@ -438,7 +438,7 @@ Plans:
   3. Brute-force protection is structurally preserved — abuse patterns (e.g., 100 attempts/min from one IP) still hit 429; enumeration safety on `/v1/auth/forgot-password` is unchanged (no oracle leak in the new copy).
   4. The PWA error-bucket split is exhaustive: time-expired tokens still render "no longer valid"; rate-limited responses render the new 429 copy; no path renders both or neither.
 **Plans**: 5 plans
-- [ ] 117-01-PLAN.md — Server rate-limit cap raises (verify-email/reset-password 5→20, resend-verification 3→5, forgot-password per-IP 5→20 with per-email cap unchanged at 5 for enum-safety)
+- [x] 117-01-PLAN.md — Server rate-limit cap raises (verify-email/reset-password 5→20, resend-verification 3→5, forgot-password per-IP 5→20 with per-email cap unchanged at 5 for enum-safety)
 - [ ] 117-02-PLAN.md — Extend classifyFetchError with rate-limited bucket (status === 429 + Retry-After header/body parsing)
 - [ ] 117-03-PLAN.md — VerifyEmailPage 5th visual state (rate_limited) with mm:ss countdown + cleanup-on-unmount
 - [ ] 117-04-PLAN.md — ResetPasswordPage rate-limited state + countdown + form-state preservation across rate_limited→idle
@@ -595,7 +595,7 @@ Plans:
 
 | 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 4/4 | Complete    | 2026-04-28 |
 | 116. Sports source picker | v3.7 | 5/5 | Complete    | 2026-04-29 |
-| 117. Auth-email rate-limit UX hardening | v3.7 | 0/TBD | Not started | - |
+| 117. Auth-email rate-limit UX hardening | v3.7 | 1/5 | In Progress|  |
 | 118. Production test-user cleanup | v3.7 | 0/TBD | Not started | - |
 | 119. DMARC quarantine ramp | v3.7 | 0/TBD | Not started | - |
 
@@ -609,7 +609,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 4/4 plans complete
+**Plans:** 1/5 plans executed
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
