@@ -314,7 +314,7 @@ describe('SettingsPage', () => {
       })
     })
 
-    it('AUTH-11-B2-RESEND-RATE-LIMITED: 429 → inline rate-limit error, button hidden', async () => {
+    it('AUTH-11-B2-RESEND-RATE-LIMITED: 429 → inline rate-limit error, button hidden (Phase 117 AUTH-12 D-08 copy)', async () => {
       renderPage({
         fetchImpl: async (url) => {
           if (url.includes('/v1/auth/me')) {
@@ -337,9 +337,12 @@ describe('SettingsPage', () => {
       const user = userEvent.setup()
       await user.click(screen.getByRole('button', { name: 'Resend' }))
 
+      // Phase 117 (AUTH-12 D-08): updated copy. No Retry-After header in this
+      // response → fallback "later." form (no mm:ss). Old copy "You've requested
+      // too many. Try again later." retired in favor of the unified D-08 string.
       await waitFor(() => {
         expect(
-          screen.getByText("You've requested too many. Try again later."),
+          screen.getByText('Too many attempts — try again later.'),
         ).toBeInTheDocument()
       })
       // Button should be gone in rate-limited state
@@ -937,6 +940,186 @@ describe('SettingsPage', () => {
       )
       expect(screen.queryByTestId('sports-countdown-mlb')).toBeNull()
       expect(screen.getByTestId('sports-retry-mlb')).not.toBeDisabled()
+    })
+  })
+
+  // ── Phase 117 (AUTH-12 D-08/D-09) Resend-verification 429 countdown UX ──
+  //
+  // Replaces the legacy terminal "You've requested too many. Try again later."
+  // copy (AUTH-11 D-25) with the unified D-08 string + live mm:ss countdown
+  // sourced from the Retry-After header (parsed via classifyFetchError, Plan 02).
+  // Pattern mirrors VerifyEmailPage (Plan 03) + ResetPasswordPage (Plan 04).
+  describe('resend-verification countdown (AUTH-12 D-08/D-09)', () => {
+    function makeResendFetchImpl(opts: {
+      resendStatus: number
+      retryAfterHeader?: string
+      retryAfterBody?: number
+    }) {
+      return async (url: string): Promise<Response> => {
+        if (url.includes('/v1/auth/me')) {
+          return new Response(
+            JSON.stringify({ id: 1, email: 'u@x.io', emailVerifiedAt: null }),
+            { status: 200 },
+          )
+        }
+        if (url.includes('/v1/me')) {
+          return new Response(
+            JSON.stringify({ userId: '1', email: 'u@x.io' }),
+            { status: 200 },
+          )
+        }
+        if (url.includes('/v1/auth/resend-verification')) {
+          const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+          if (opts.retryAfterHeader !== undefined) {
+            headers['Retry-After'] = opts.retryAfterHeader
+          }
+          const body =
+            opts.retryAfterBody !== undefined
+              ? JSON.stringify({ error: 'Too many requests', retryAfter: opts.retryAfterBody })
+              : JSON.stringify({ error: 'Too many requests' })
+          return new Response(body, { status: opts.resendStatus, headers })
+        }
+        // Default 404 for /v1/google/status (not connected)
+        return new Response(null, { status: 404 })
+      }
+    }
+
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('AUTH-12-SP-01-RESEND-429-RENDERS-COUNTDOWN: 429 + Retry-After: 120 renders D-08 copy with mm:ss', async () => {
+      renderPage({
+        fetchImpl: makeResendFetchImpl({ resendStatus: 429, retryAfterHeader: '120' }),
+      })
+
+      const resendBtn = await screen.findByRole('button', { name: 'Resend' })
+      const user = userEvent.setup()
+      await user.click(resendBtn)
+
+      await waitFor(() => {
+        expect(
+          screen.getByText('Too many attempts — try again in 2m 0s.'),
+        ).toBeInTheDocument()
+      })
+      // In the rate_limited render branch the button is hidden (mirrors AUTH-11-B2-RESEND-RATE-LIMITED).
+      expect(screen.queryByRole('button', { name: 'Resend' })).not.toBeInTheDocument()
+    })
+
+    it('AUTH-12-SP-02-RESEND-COUNTDOWN-TICKS: countdown ticks down each second and Resend re-enables at zero', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        renderPage({
+          fetchImpl: makeResendFetchImpl({ resendStatus: 429, retryAfterHeader: '3' }),
+        })
+
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        const resendBtn = await screen.findByRole('button', { name: 'Resend' })
+        await user.click(resendBtn)
+
+        await waitFor(() => {
+          expect(
+            screen.getByText('Too many attempts — try again in 0m 3s.'),
+          ).toBeInTheDocument()
+        })
+
+        // 1s tick → 0m 2s
+        await act(async () => { vi.advanceTimersByTime(1000) })
+        await waitFor(() => {
+          expect(
+            screen.getByText('Too many attempts — try again in 0m 2s.'),
+          ).toBeInTheDocument()
+        })
+
+        // Advance past zero — countdown completes, resendState returns to idle,
+        // Resend button re-enables, rate-limit copy disappears.
+        await act(async () => { vi.advanceTimersByTime(2000) })
+        await waitFor(() => {
+          expect(screen.queryByText(/Too many attempts/)).toBeNull()
+        })
+        expect(screen.getByRole('button', { name: 'Resend' })).toBeInTheDocument()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('AUTH-12-SP-03-RESEND-NO-RETRYAFTER-FALLBACK: 429 with no Retry-After renders D-08 copy WITHOUT countdown', async () => {
+      renderPage({
+        fetchImpl: makeResendFetchImpl({ resendStatus: 429 }),
+      })
+
+      const resendBtn = await screen.findByRole('button', { name: 'Resend' })
+      const user = userEvent.setup()
+      await user.click(resendBtn)
+
+      await waitFor(() => {
+        // Generic "later" fallback (no countdown).
+        expect(
+          screen.getByText('Too many attempts — try again later.'),
+        ).toBeInTheDocument()
+      })
+      // No mm:ss substring anywhere in the rate-limit copy.
+      expect(screen.queryByText(/\d+m \d+s/)).toBeNull()
+    })
+
+    it('AUTH-12-SP-04-RESEND-5XX-RENDERS-LEGACY-ERROR: 503 renders existing error state copy (D-11 non-429 unchanged)', async () => {
+      renderPage({
+        fetchImpl: makeResendFetchImpl({ resendStatus: 503 }),
+      })
+
+      const resendBtn = await screen.findByRole('button', { name: 'Resend' })
+      const user = userEvent.setup()
+      await user.click(resendBtn)
+
+      await waitFor(() => {
+        // Existing 'error' state copy (D-11 — non-429 paths preserved).
+        expect(screen.getByText('Could not send. Try again.')).toBeInTheDocument()
+      })
+      // New rate-limited copy NOT present.
+      expect(screen.queryByText(/Too many attempts/)).toBeNull()
+      // Resend button re-enables (error state shows it).
+      expect(screen.getByRole('button', { name: 'Resend' })).toBeInTheDocument()
+    })
+
+    it('AUTH-12-SP-05-RESEND-CLEANUP-ON-UNMOUNT: unmounting mid-countdown does not warn about setState-after-unmount', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+      try {
+        vi.stubGlobal(
+          'fetch',
+          vi.fn((url) => makeResendFetchImpl({ resendStatus: 429, retryAfterHeader: '120' })(String(url))),
+        )
+        const { unmount } = render(
+          <MemoryRouter>
+            <GoogleStatusProvider>
+              <ToastProvider>
+                <SettingsPage />
+                <ToastHost />
+              </ToastProvider>
+            </GoogleStatusProvider>
+          </MemoryRouter>,
+        )
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        const resendBtn = await screen.findByRole('button', { name: 'Resend' })
+        await user.click(resendBtn)
+
+        await waitFor(() => {
+          expect(
+            screen.getByText('Too many attempts — try again in 2m 0s.'),
+          ).toBeInTheDocument()
+        })
+
+        unmount()
+        await act(async () => { vi.advanceTimersByTime(5000) })
+
+        const setStateWarnings = errorSpy.mock.calls.filter((call) =>
+          /state update on an unmounted|act\(\)/i.test(String(call[0] ?? '')),
+        )
+        expect(setStateWarnings.length).toBe(0)
+      } finally {
+        errorSpy.mockRestore()
+        vi.useRealTimers()
+      }
     })
   })
 })
