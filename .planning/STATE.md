@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Completed 117-03-PLAN.md
-last_updated: "2026-04-30T16:37:36.213Z"
+stopped_at: Completed 117-04-PLAN.md
+last_updated: "2026-04-30T16:44:10.966Z"
 last_activity: 2026-04-30
 progress:
   total_phases: 14
   completed_phases: 9
   total_plans: 51
-  completed_plans: 51
+  completed_plans: 52
   percent: 100
 ---
 
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 Milestone: v3.7 (started 2026-04-27)
 Phase: 117 (auth-email-rate-limit-ux-hardening) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-04-30
 
@@ -72,6 +72,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 117 P01 | 6min | 4 tasks | 8 files |
 | Phase 117 P02 | ~3.5 minutes | 1 tasks | 2 files |
 | Phase 117 P03 | ~4 minutes | 1 tasks | 2 files |
+| Phase 117 P04 | ~3 minutes | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -135,6 +136,10 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 117]: Phase 117-03: D-08 copy split across heading ('Too many attempts') + body ('Try again in Xm Ys.') — visual hierarchy preserves substantive content verbatim; locked as canonical pattern for Plans 04/05
 - [Phase 117]: Phase 117-03: countdownTimerRef + useEffect-cleanup-only mirrors Phase 116.1 SettingsPage WR-02; classifier import is mount-safe because it's only awaited inside click handler, never useEffect
 - [Phase 117]: Phase 117-03: act-wrapped vi.advanceTimersByTime instead of advanceTimersByTimeAsync — matches existing SettingsPage countdown test pattern for codebase uniformity
+- [Phase 117]: Phase 117-04: render branch precedence rateLimited > tokenInvalid > form — 429 takes structural precedence over D-20 because the user might hit both states in a single session; rate-limited is actionable (countdown resolves) while tokenInvalid is terminal
+- [Phase 117]: Phase 117-04: newPw state preserved across rate_limited → idle (AUTH-12-RPP-06) — typed password not cleared on 429 path; STRIDE T-117-04-01 mitigated since state is in-memory only, never persisted to storage
+- [Phase 117]: Phase 117-04: rate_limited render shows only 'Back to login' link (no Submit button) — simpler than disabled-Submit; user waits for countdown (form auto-returns with newPw preserved) or navigates away
+- [Phase 117]: Phase 117-04: D-08 heading+body copy now verbatim across Plan 03 VerifyEmailPage + Plan 04 ResetPasswordPage — single source-of-truth string locked across the app; Plan 05 must mirror
 
 ### Pending Todos
 
@@ -170,7 +175,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-30T16:37:36.207Z
-Stopped at: Completed 117-03-PLAN.md
+Last session: 2026-04-30T16:44:10.960Z
+Stopped at: Completed 117-04-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 115
