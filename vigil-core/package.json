@@ -19,7 +19,9 @@
     "db:migrate-sqlite": "tsx scripts/migrate-sqlite.ts",
     "set-password": "tsx --env-file=.env scripts/set-password.ts",
     "smoke-test": "tsx scripts/smoke-test.ts",
-    "smoke-test:verify-email": "tsx --env-file=.env scripts/smoke-test-verify-email.ts"
+    "smoke-test:verify-email": "tsx --env-file=.env scripts/smoke-test-verify-email.ts",
+    "cleanup:test-users:dry-run": "tsx scripts/cleanup-test-users.ts --dry-run",
+    "cleanup:test-users:commit": "tsx scripts/cleanup-test-users.ts --commit"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.88.0",
