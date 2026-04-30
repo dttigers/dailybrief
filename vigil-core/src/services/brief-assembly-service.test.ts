@@ -1009,3 +1009,122 @@ describe("assembleAndRender — Phase 116 SPORTS-01 selections threading", () =>
       "corrupt row should fall back to empty default (defense-in-depth READ check)");
   });
 });
+
+// ── Phase 116.1 SPORTS-01b: per-league placeholder + all-failed short-circuit + PostHog telemetry ──
+
+describe("mapSports — Phase 116.1 SPORTS-01b placeholder + all-failed", () => {
+  test("SPORTS-01b-brief-per-league-placeholder", async () => {
+    const response: SportsResponse = {
+      fetchedAt: new Date().toISOString(),
+      partial: true,
+      leagues: {
+        mlb: { status: "ok", data: { recentGame: null, upcomingGame: null, standings: [] } },
+        nfl: { status: "error", error: "Upstream sports provider failed (server-error)" },
+        nba: { status: "ok", data: { recentGame: null, upcomingGame: null, standings: [] } },
+        nhl: { status: "error", error: "Upstream sports provider failed (timeout)" },
+      },
+    };
+    const mapped = mapSports({ status: "fulfilled", value: response });
+    assert.equal(mapped.length, 4);
+    const nfl = mapped.find((m) => m.sport === "nfl");
+    const nhl = mapped.find((m) => m.sport === "nhl");
+    assert.ok(nfl, "NFL placeholder must exist");
+    assert.equal(nfl!.teamName, "NFL data temporarily unavailable.");
+    assert.equal(nfl!.recentGame, null);
+    assert.equal(nfl!.upcomingGame, null);
+    assert.equal(nfl!.standings.length, 0);
+    assert.ok(nhl, "NHL placeholder must exist");
+    assert.equal(nhl!.teamName, "NHL data temporarily unavailable.");
+  });
+
+  test("SPORTS-01b-brief-all-leagues-error-renders-single-block-D07", async () => {
+    const response: SportsResponse = {
+      fetchedAt: new Date().toISOString(),
+      partial: true,
+      leagues: {
+        mlb: { status: "error", error: "Upstream sports provider failed (server-error)" },
+        nfl: { status: "error", error: "Upstream sports provider failed (rate-limited)" },
+        nba: { status: "error", error: "Upstream sports provider failed (auth)" },
+        nhl: { status: "error", error: "Upstream sports provider failed (timeout)" },
+      },
+    };
+    const mapped = mapSports({ status: "fulfilled", value: response });
+    assert.equal(mapped.length, 1);
+    assert.equal(mapped[0].sport, "all-failed");
+    assert.equal(mapped[0].displayName, "Sports");
+    assert.equal(mapped[0].teamName, "Sports data temporarily unavailable. Try again on tomorrow's brief.");
+  });
+
+  test("SPORTS-01b-brief-disabled-still-omitted-D18-cascade", async () => {
+    const response: SportsResponse = {
+      fetchedAt: new Date().toISOString(),
+      partial: false,
+      leagues: {
+        mlb: { status: "disabled" },
+        nfl: { status: "disabled" },
+        nba: { status: "disabled" },
+        nhl: { status: "disabled" },
+      },
+    };
+    const mapped = mapSports({ status: "fulfilled", value: response });
+    assert.equal(mapped.length, 0, "all-disabled cascade preserved — pdf-service.ts:281 guard fires");
+  });
+});
+
+describe("assembleAndRender — Phase 116.1 SPORTS-01b PostHog telemetry", () => {
+  let tmpDir4: string;
+
+  beforeEach(() => {
+    tmpDir4 = fs.mkdtempSync(path.join(os.tmpdir(), "brief-sports01b-test-"));
+  });
+
+  afterEach(() => {
+    try { fs.rmSync(tmpDir4, { recursive: true, force: true }); } catch {}
+  });
+
+  test("SPORTS-01b-brief-posthog-event-fires-per-failed-league-D06", async () => {
+    const trackEventCalls: Array<{ userId: number | string; event: string; props: Record<string, unknown> }> = [];
+    const trackEventMock = (userId: number | string, event: string, props: Record<string, unknown>) => {
+      trackEventCalls.push({ userId, event, props });
+    };
+
+    const failingResponse: SportsResponse = {
+      fetchedAt: new Date().toISOString(),
+      partial: true,
+      leagues: {
+        mlb: { status: "ok", data: { recentGame: null, upcomingGame: null, standings: [] } },
+        nfl: { status: "error", error: "Upstream sports provider failed (server-error)" },
+        nba: { status: "error", error: "Upstream sports provider failed (rate-limited)" },
+        nhl: { status: "ok", data: { recentGame: null, upcomingGame: null, standings: [] } },
+      },
+    };
+
+    const db = makeKeyAwareDb({
+      "sports_selections": [{ value: { enabledLeagues: ["mlb", "nfl", "nba", "nhl"], favoriteTeams: {} } }],
+      "user_timezone": [],
+    });
+
+    const assembler = createBriefAssemblyService({
+      sportsService: { fetchAllLeagues: async () => failingResponse },
+      calendarService: { fetchTodaysEvents: async () => ({ status: "ok", events: [], fetchedAt: new Date().toISOString() }) },
+      pdfRenderer: { renderBrief: async () => Buffer.from("pdf") },
+      dbClient: db as unknown as PostgresJsDatabase<typeof schema>,
+      callClaudeFn: async () => "fallback affirmation",
+      parseAIJsonFn: <T>(_raw: string) => ({} as T),
+      trackEventFn: trackEventMock as never,
+      _cacheDir: tmpDir4,
+    });
+
+    await assembler.assembleAndRender("2026-04-29", 42);
+
+    const sportsEvents = trackEventCalls.filter((c) => c.event === "sports_league_fetch_failed");
+    assert.equal(sportsEvents.length, 2, "exactly 2 failed leagues should emit");
+    const leagues = new Set(sportsEvents.map((e) => e.props.league));
+    assert.ok(leagues.has("nfl"));
+    assert.ok(leagues.has("nba"));
+    const errorClasses = sportsEvents.map((e) => e.props.error_class).sort();
+    assert.deepEqual(errorClasses, ["rate-limited", "server-error"]);
+    assert.equal(sportsEvents[0].userId, 42);
+    assert.equal(sportsEvents[0].props.status, "error");
+  });
+});
