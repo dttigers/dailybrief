@@ -19,7 +19,7 @@
 
 ### Production Hygiene
 
-- [ ] **OPS-01**: Test users `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) — and any cascaded children (oauth_tokens, password_reset_tokens, work_order_statuses, brief_pdfs, briefs, thoughts, etc.) — deleted from Railway prod. One-shot DB hygiene operation with documented runbook + before/after row counts.
+- [x] **OPS-01**: Test users `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) — and any cascaded children (oauth_tokens, password_reset_tokens, work_order_statuses, brief_pdfs, briefs, thoughts, etc.) — deleted from Railway prod. One-shot DB hygiene operation with documented runbook + before/after row counts.
 - [ ] **OPS-02**: SEED-003 DMARC ramp `p=none → p=quarantine` on `vigilhub.io` Cloudflare DNS, gated on the auto-eval routine that fires 2026-05-06 (≥7 days clean aggregate reports + ≥3 days verify-email production volume). Phase implementation lands the runbook + ramp action; ramp action only fires after gate passes.
 
 ### PWA Polish
@@ -60,7 +60,7 @@ Populated 2026-04-27 by gsd-roadmapper during ROADMAP.md creation.
 | SPORTS-01 | Phase 116 | Complete |
 | AUTH-12 | Phase 117 | Complete |
 | AUTH-13 | Phase 117 | Complete |
-| OPS-01 | Phase 118 | Pending |
+| OPS-01 | Phase 118 | Complete |
 | OPS-02 | Phase 119 | Pending |
 
 **Coverage:**

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
-status: verifying
-stopped_at: Phase 118 context gathered
-last_updated: "2026-04-30T21:53:12.270Z"
+status: executing
+stopped_at: Completed 118-01-cleanup-script-PLAN.md
+last_updated: "2026-04-30T23:02:16.398Z"
 last_activity: 2026-04-30
 progress:
   total_phases: 15
   completed_phases: 10
-  total_plans: 51
-  completed_plans: 53
+  total_plans: 53
+  completed_plans: 54
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 117 — auth-email-rate-limit-ux-hardening
+**Current focus:** Phase 118 — production-test-user-cleanup
 
 ## Current Position
 
 Milestone: v3.7 (started 2026-04-27)
-Phase: 999.1
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 118 (production-test-user-cleanup) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-04-30
 
 Progress: [░░░░░░░░░░] 0%
@@ -74,6 +74,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 117 P03 | ~4 minutes | 1 tasks | 2 files |
 | Phase 117 P04 | ~3 minutes | 1 tasks | 2 files |
 | Phase 117 P05 | ~4 minutes | 1 tasks | 2 files |
+| Phase 118 P01 | 3min | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -145,6 +146,9 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 117]: Phase 117-05: resendRetryCountdown + resendCountdownTimerRef are STRUCTURALLY INDEPENDENT from per-league sports countdowns (different ref names, single-value vs Record-per-league); Phase 116.1 system untouched — verified by acceptance grep
 - [Phase 117]: Phase 117-05: ResendState 'rate_limited' is no longer terminal — recovers to 'idle' on countdown completion, matching D-09 visual unification with VerifyEmailPage/ResetPasswordPage Confirm/Submit recovery
 - [Phase 117]: Phase 117-05: renamed (not deleted) AUTH-11-B2-RESEND-RATE-LIMITED test asserting old copy verbatim — preserved test ID for git-blame continuity, updated assertion to D-08 fallback copy; T-117-05-03 anticipated this regression
+- [Phase 118]: Phase 118-01: tsconfig.scripts.json rootDir widened to project root + include src/**/* — scripts importing from ../src/ now type-check cleanly under tsc --noEmit. Restores parity with existing tsx-only scripts (seed-local.ts, set-password.ts) while adding compile-time gate.
+- [Phase 118]: Phase 118-01: optional npm scripts cleanup:test-users:dry-run / :commit added without --env-file=.env — preserves D-01 (Railway CLI is the sole DATABASE_URL injection path; no DATABASE_URL on local disk). Plan 02 invokes via railway run.
+- [Phase 118]: Phase 118-01: DryRunRollback custom error class (extends Error) chosen over generic throw — type-narrowable via instanceof in catch block, distinguishes the dry-run rollback path from any genuine tx failure. Pattern reusable for future ops scripts with --dry-run/--commit gates.
 
 ### Pending Todos
 
@@ -180,7 +184,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-30T21:53:12.264Z
-Stopped at: Phase 118 context gathered
-Resume file: .planning/phases/118-production-test-user-cleanup/118-CONTEXT.md
+Last session: 2026-04-30T23:02:16.391Z
+Stopped at: Completed 118-01-cleanup-script-PLAN.md
+Resume file: None
 Next action: /gsd-plan-phase 115

@@ -455,7 +455,7 @@ Plans:
   3. A runbook (markdown checklist or SQL script with comments) is committed under `.planning/phases/118-*/` capturing exact commands run, before-row-counts, after-row-counts, and rollback notes.
   4. No real user data is collateral damage — a smoke pass confirms the seed user (`jamesonmorrill1@gmail.com`) and any other live accounts still authenticate, generate briefs, and read their thoughts.
 **Plans**: 2 plans
-- [ ] 118-01-cleanup-script-PLAN.md — Build idempotent `vigil-core/scripts/cleanup-test-users.ts` with --dry-run/--commit gate, pre-flight email assertion, and 14-table single-tx delete in D-05 order
+- [x] 118-01-cleanup-script-PLAN.md — Build idempotent `vigil-core/scripts/cleanup-test-users.ts` with --dry-run/--commit gate, pre-flight email assertion, and 14-table single-tx delete in D-05 order
 - [ ] 118-02-prod-execution-runbook-PLAN.md — Run dry-run + commit against Railway prod via `railway run`, capture stdout to `118-RUN-LOG.txt`, write `118-RUNBOOK.md` with before/after counts + smoke-pass + rollback notes
 
 ### Phase 119: DMARC quarantine ramp
@@ -598,7 +598,7 @@ Plans:
 | 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 4/4 | Complete    | 2026-04-28 |
 | 116. Sports source picker | v3.7 | 5/5 | Complete    | 2026-04-29 |
 | 117. Auth-email rate-limit UX hardening | v3.7 | 5/5 | Complete    | 2026-04-30 |
-| 118. Production test-user cleanup | v3.7 | 0/TBD | Not started | - |
+| 118. Production test-user cleanup | v3.7 | 1/2 | In Progress|  |
 | 119. DMARC quarantine ramp | v3.7 | 0/TBD | Not started | - |
 
 ## Backlog
@@ -611,7 +611,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 5/5 plans complete
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
