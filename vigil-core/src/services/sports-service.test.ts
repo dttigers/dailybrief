@@ -1,6 +1,6 @@
 import { test, beforeEach } from "node:test";
 import assert from "node:assert/strict";
-import { createSportsService } from "./sports-service.js";
+import { createSportsService, UpstreamError } from "./sports-service.js";
 
 // ── Environment Setup ─────────────────────────────────────────────────────────
 // Set team IDs in process.env so the service can read them
@@ -404,9 +404,10 @@ test("SPORTS-01-teams-bdl-error-throws: BDL non-200 throws and does NOT populate
     return new Response("server error", { status: 500 });
   };
   const service = createSportsService({ fetchFn });
-  await assert.rejects(() => service.fetchTeams("mlb"), /BDL fetch failed/);
+  // Phase 116.1: fetchJSON now throws UpstreamError (kind='server-error') instead of generic Error.
+  await assert.rejects(() => service.fetchTeams("mlb"), /Upstream sports provider failed/);
   // Subsequent call still hits fetchFn — proves error did NOT populate cache.
-  await assert.rejects(() => service.fetchTeams("mlb"), /BDL fetch failed/);
+  await assert.rejects(() => service.fetchTeams("mlb"), /Upstream sports provider failed/);
   assert.equal(callCount, 2);
 });
 
@@ -552,4 +553,99 @@ test("SPORTS-01-selections-typed-LeagueResult-disabled: 'disabled' is a valid Le
   // This test passing at runtime is sufficient evidence the type was extended.
   const x: import("./sports-service.js").LeagueResult = { status: "disabled" };
   assert.equal(x.status, "disabled");
+});
+
+// ── Phase 116.1 SPORTS-01b: UpstreamError classification ──────────────────────
+
+function createFailingMockFetch(opts: {
+  status?: number;
+  headers?: Record<string, string>;
+  throws?: Error;
+}): (url: string, init?: RequestInit) => Promise<Response> {
+  return async (_url: string, _init?: RequestInit) => {
+    if (opts.throws) throw opts.throws;
+    return new Response("{}", {
+      status: opts.status ?? 500,
+      headers: opts.headers ?? {},
+    });
+  };
+}
+
+test("SPORTS-01b-svc-throws-UpstreamError-on-401: fetchTeams rejects with UpstreamError kind 'auth' on 401", async () => {
+  const service = createSportsService({ fetchFn: createFailingMockFetch({ status: 401 }) });
+  const err = await service.fetchTeams("mlb").catch((e: unknown) => e);
+  assert.ok(err instanceof UpstreamError, `Expected UpstreamError, got ${String(err)}`);
+  assert.equal(err.kind, "auth");
+  assert.equal(err.retryAfter, undefined);
+  assert.ok(!err.message.match(/balldontlie/i), `Error message must not contain 'balldontlie': ${err.message}`);
+});
+
+test("SPORTS-01b-svc-throws-UpstreamError-on-429-with-Retry-After: kind='rate-limited', retryAfter=45 (number)", async () => {
+  const service = createSportsService({
+    fetchFn: createFailingMockFetch({ status: 429, headers: { "Retry-After": "45" } }),
+  });
+  const err = await service.fetchTeams("nfl").catch((e: unknown) => e);
+  assert.ok(err instanceof UpstreamError, `Expected UpstreamError, got ${String(err)}`);
+  assert.equal(err.kind, "rate-limited");
+  assert.equal(err.retryAfter, 45);
+  assert.equal(typeof err.retryAfter, "number");
+});
+
+test("SPORTS-01b-svc-throws-UpstreamError-on-429-without-Retry-After: kind='rate-limited', retryAfter=undefined", async () => {
+  const service = createSportsService({
+    fetchFn: createFailingMockFetch({ status: 429 }),
+  });
+  const err = await service.fetchTeams("nfl").catch((e: unknown) => e);
+  assert.ok(err instanceof UpstreamError, `Expected UpstreamError, got ${String(err)}`);
+  assert.equal(err.kind, "rate-limited");
+  assert.equal(err.retryAfter, undefined);
+});
+
+test("SPORTS-01b-svc-throws-UpstreamError-on-500: kind='server-error', retryAfter=undefined", async () => {
+  const service = createSportsService({
+    fetchFn: createFailingMockFetch({ status: 500 }),
+  });
+  const err = await service.fetchTeams("mlb").catch((e: unknown) => e);
+  assert.ok(err instanceof UpstreamError, `Expected UpstreamError, got ${String(err)}`);
+  assert.equal(err.kind, "server-error");
+  assert.equal(err.retryAfter, undefined);
+});
+
+test("SPORTS-01b-svc-throws-UpstreamError-on-network-failure: fetchFn throws → UpstreamError kind='server-error' with original cause", async () => {
+  const originalErr = new Error("ECONNREFUSED");
+  const service = createSportsService({
+    fetchFn: createFailingMockFetch({ throws: originalErr }),
+  });
+  const err = await service.fetchTeams("nba").catch((e: unknown) => e);
+  assert.ok(err instanceof UpstreamError, `Expected UpstreamError, got ${String(err)}`);
+  assert.equal(err.kind, "server-error");
+  assert.equal(err.retryAfter, undefined);
+  // Original message must NOT appear in UpstreamError.message (generic message only).
+  assert.ok(!err.message.includes("ECONNREFUSED"), `UpstreamError.message must be generic, not contain original: ${err.message}`);
+  // Original error MUST appear in .cause for ops diagnostics.
+  assert.ok((err as Error & { cause?: unknown }).cause === originalErr, "Original error must be in .cause");
+});
+
+test("SPORTS-01b-svc-encodes-teamId-in-recent-and-upcoming-URLs-D11: teamId with injection chars is encoded", async () => {
+  const urls: string[] = [];
+  const capturingFetch = async (url: string, _init?: RequestInit): Promise<Response> => {
+    urls.push(url);
+    // Return valid empty responses so fetchAllLeagues completes without error.
+    return new Response(JSON.stringify({ data: [] }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    });
+  };
+  const service = createSportsService({ fetchFn: capturingFetch });
+  // Malicious teamId that would inject a query parameter if not encoded.
+  await service.fetchAllLeagues({
+    enabledLeagues: ["mlb"],
+    favoriteTeams: { mlb: "116&season=2027" },
+  });
+  // At least one captured URL must contain the ENCODED form.
+  const hasEncoded = urls.some((u) => u.includes("team_ids[]=116%26season%3D2027"));
+  // No captured URL must contain the raw injection string.
+  const hasRaw = urls.some((u) => u.includes("team_ids[]=116&season=2027"));
+  assert.ok(hasEncoded, `Expected URL with encoded team_ids[]=116%26season%3D2027, got: ${urls.join(", ")}`);
+  assert.equal(hasRaw, false, `URL must NOT contain raw injection string team_ids[]=116&season=2027`);
 });

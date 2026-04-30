@@ -17,6 +17,34 @@ import type { SportsSelections } from "./sports-preferences-service.js";
 
 export type { SportsSelections };
 
+/**
+ * Phase 116.1 SPORTS-01b D-10: Single classification source for all BDL upstream
+ * failures. Thrown by fetchJSON; consumers (route layer in Plan 02, brief-assembly
+ * in Plan 04) catch and map to HTTP 502 + body or per-league placeholder.
+ *
+ * T-73-01 invariant: `message` MUST NOT contain "balldontlie" or "BALLDONTLIE"
+ * substring (asserted in tests). The provider name lives ONLY in the existing
+ * console.log line at fetchJSON's catch site, never in thrown errors or HTTP bodies.
+ */
+export class UpstreamError extends Error {
+  readonly kind: "rate-limited" | "server-error" | "timeout" | "auth";
+  readonly retryAfter?: number;
+  constructor(opts: {
+    kind: "rate-limited" | "server-error" | "timeout" | "auth";
+    retryAfter?: number;
+    cause?: unknown;
+  }) {
+    // Generic message — provider name MUST NOT appear here (T-73-01).
+    super(`Upstream sports provider failed (${opts.kind})`);
+    this.name = "UpstreamError";
+    this.kind = opts.kind;
+    this.retryAfter = opts.retryAfter;
+    if (opts.cause !== undefined) {
+      (this as Error & { cause?: unknown }).cause = opts.cause;
+    }
+  }
+}
+
 export interface SportsResponse {
   fetchedAt: string;
   partial: boolean;
@@ -72,6 +100,11 @@ export interface UpcomingGame {
 export interface SportsServiceDeps {
   fetchFn?: (url: string, init?: RequestInit) => Promise<Response>;
   teamIds?: Record<League, string>;
+  /**
+   * Phase 116.1 SPORTS-01b D-03 — override 10s default for tests.
+   * Production code MUST NOT pass this. Plan 02's route-layer timeout test uses 10ms.
+   */
+  _timeoutMsOverride?: number;
 }
 
 // ── Internals ─────────────────────────────────────────────────────────────────
@@ -254,6 +287,7 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
   fetchTeams: (league: League) => Promise<TeamListEntry[]>;
 } {
   const fetchFn = deps.fetchFn ?? globalThis.fetch.bind(globalThis);
+  const FETCH_TIMEOUT_MS = deps._timeoutMsOverride ?? 10_000;
   const cache = new Map<string, CacheEntry<LeagueResult>>();
   // Teams cache (Phase 116 D-07): 24h TTL, global (shared across users), keyed by league.
   const teamsCache = new Map<League, CacheEntry<TeamListEntry[]>>();
@@ -294,12 +328,46 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
   async function fetchJSON<T>(url: string): Promise<T> {
     // Authorization: raw key only — NOT "Bearer <key>" (balldontlie.io requirement)
     const apiKey = process.env["BALLDONTLIE_API_KEY"] ?? "";
-    const res = await fetchFn(url, {
-      headers: { Authorization: apiKey },
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+    let res: Response;
+    try {
+      res = await fetchFn(url, {
+        headers: { Authorization: apiKey },
+        signal: controller.signal,
+      });
+    } catch (err) {
+      clearTimeout(timeoutId);
+      // AbortController abort surfaces as DOMException name="AbortError" OR Error name="AbortError" depending on runtime
+      if (err instanceof Error && (err.name === "AbortError" || (err as Error & { code?: string }).code === "ABORT_ERR")) {
+        throw new UpstreamError({ kind: "timeout", cause: err });
+      }
+      // Network/DNS/socket failure
+      throw new UpstreamError({ kind: "server-error", cause: err });
+    }
+    clearTimeout(timeoutId);
+
     if (!res.ok) {
       // Log URL and status only — never log the API key value (T-73-01)
-      throw new Error(`BDL fetch failed: ${url} → ${res.status}`);
+      // T-73-01: This log line is the ONLY place provider name + URL appears in code paths reachable from a failure.
+      // The thrown UpstreamError below uses a generic message.
+      console.log(`BDL fetch failed: ${url} → ${res.status}`);
+
+      // Classify by status code (D-04, D-01).
+      if (res.status === 401 || res.status === 403) {
+        throw new UpstreamError({ kind: "auth" });
+      }
+      if (res.status === 429) {
+        // D-02 / D-15: parse Retry-After header. BDL returns seconds (numeric string).
+        // T-2 mitigation: sanitize to numeric-only — reject non-integer values to prevent header injection downstream.
+        const raw = res.headers.get("Retry-After");
+        const parsed = raw !== null ? parseInt(raw, 10) : NaN;
+        const retryAfter = Number.isFinite(parsed) && parsed > 0 && parsed <= 86_400 ? parsed : undefined;
+        throw new UpstreamError({ kind: "rate-limited", retryAfter });
+      }
+      // 4xx (other) and 5xx both classify as server-error.
+      throw new UpstreamError({ kind: "server-error" });
     }
     return res.json() as Promise<T>;
   }
@@ -324,12 +392,19 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
           },
         };
       } catch (err) {
+        // Phase 116.1 D-10: UpstreamError must propagate (route layer maps to 502; brief-assembly renders placeholder).
+        // Non-Upstream errors keep the existing fallback shape for backward compat.
+        if (err instanceof UpstreamError) throw err;
         return { status: "error", error: err instanceof Error ? err.message : String(err) };
       }
     }
 
-    const recentUrl = `${BASE_URLS.mlb}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
-    const upcomingUrl = `${BASE_URLS.mlb}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
+    // Phase 116.1 D-11 / WR-01: percent-encode teamId before inserting into URL — defense-in-depth
+    // against a corrupt favoriteTeams[league] value (e.g. "116&season=2027") injecting query params.
+    // For valid numeric teamIds the encoding is a no-op ("116" → "116").
+    const encodedTeamId = encodeURIComponent(teamId);
+    const recentUrl = `${BASE_URLS.mlb}/games?dates[]=${yesterday}&team_ids[]=${encodedTeamId}&per_page=5`;
+    const upcomingUrl = `${BASE_URLS.mlb}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${encodedTeamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.mlb}/standings?season=2026`;
 
     const [gamesRes, upcomingRes, standingsRes] = await Promise.allSettled([
@@ -403,12 +478,19 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
           },
         };
       } catch (err) {
+        // Phase 116.1 D-10: UpstreamError must propagate (route layer maps to 502; brief-assembly renders placeholder).
+        // Non-Upstream errors keep the existing fallback shape for backward compat.
+        if (err instanceof UpstreamError) throw err;
         return { status: "error", error: err instanceof Error ? err.message : String(err) };
       }
     }
 
-    const recentUrl = `${BASE_URLS.nfl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
-    const upcomingUrl = `${BASE_URLS.nfl}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
+    // Phase 116.1 D-11 / WR-01: percent-encode teamId before inserting into URL — defense-in-depth
+    // against a corrupt favoriteTeams[league] value (e.g. "13&season=2027") injecting query params.
+    // For valid numeric teamIds the encoding is a no-op ("13" → "13").
+    const encodedTeamId = encodeURIComponent(teamId);
+    const recentUrl = `${BASE_URLS.nfl}/games?dates[]=${yesterday}&team_ids[]=${encodedTeamId}&per_page=5`;
+    const upcomingUrl = `${BASE_URLS.nfl}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${encodedTeamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nfl}/standings?season=2026`;
 
     const [gamesRes, upcomingRes, standingsRes] = await Promise.allSettled([
@@ -482,12 +564,19 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
           },
         };
       } catch (err) {
+        // Phase 116.1 D-10: UpstreamError must propagate (route layer maps to 502; brief-assembly renders placeholder).
+        // Non-Upstream errors keep the existing fallback shape for backward compat.
+        if (err instanceof UpstreamError) throw err;
         return { status: "error", error: err instanceof Error ? err.message : String(err) };
       }
     }
 
-    const recentUrl = `${BASE_URLS.nba}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
-    const upcomingUrl = `${BASE_URLS.nba}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
+    // Phase 116.1 D-11 / WR-01: percent-encode teamId before inserting into URL — defense-in-depth
+    // against a corrupt favoriteTeams[league] value injecting query params.
+    // For valid numeric teamIds the encoding is a no-op ("10" → "10").
+    const encodedTeamId = encodeURIComponent(teamId);
+    const recentUrl = `${BASE_URLS.nba}/games?dates[]=${yesterday}&team_ids[]=${encodedTeamId}&per_page=5`;
+    const upcomingUrl = `${BASE_URLS.nba}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${encodedTeamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nba}/standings?season=2026`;
 
     const [gamesRes, upcomingRes, standingsRes] = await Promise.allSettled([
@@ -561,12 +650,19 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
           },
         };
       } catch (err) {
+        // Phase 116.1 D-10: UpstreamError must propagate (route layer maps to 502; brief-assembly renders placeholder).
+        // Non-Upstream errors keep the existing fallback shape for backward compat.
+        if (err instanceof UpstreamError) throw err;
         return { status: "error", error: err instanceof Error ? err.message : String(err) };
       }
     }
 
-    const recentUrl = `${BASE_URLS.nhl}/games?dates[]=${yesterday}&team_ids[]=${teamId}&per_page=5`;
-    const upcomingUrl = `${BASE_URLS.nhl}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${teamId}&per_page=5`;
+    // Phase 116.1 D-11 / WR-01: percent-encode teamId before inserting into URL — defense-in-depth
+    // against a corrupt favoriteTeams[league] value injecting query params.
+    // For valid numeric teamIds the encoding is a no-op ("10" → "10").
+    const encodedTeamId = encodeURIComponent(teamId);
+    const recentUrl = `${BASE_URLS.nhl}/games?dates[]=${yesterday}&team_ids[]=${encodedTeamId}&per_page=5`;
+    const upcomingUrl = `${BASE_URLS.nhl}/games?dates[]=${today}&dates[]=${tomorrow}&team_ids[]=${encodedTeamId}&per_page=5`;
     const standingsUrl = `${BASE_URLS.nhl}/standings?season=2026`;
 
     const [gamesRes, upcomingRes, standingsRes] = await Promise.allSettled([
