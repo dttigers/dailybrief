@@ -1,5 +1,5 @@
 import { Hono } from "hono";
-import { createSportsService } from "../services/sports-service.js";
+import { createSportsService, UpstreamError } from "../services/sports-service.js";
 import type { SportsServiceDeps } from "../services/sports-service.js";
 import {
   createSportsPreferencesService,
@@ -18,15 +18,49 @@ export type SportsRouterDeps = SportsServiceDeps & SportsPreferencesServiceDeps;
 
 // ── Factory (injected deps — used by tests) ───────────────────────────────────
 
+/**
+ * Phase 116.1 SPORTS-01b D-01 / D-02 / D-04: Single classification source — all
+ * UpstreamError kinds (auth, rate-limited, server-error, timeout) collapse to the
+ * SAME 502 contract. The only variance is the optional retryAfter field + header
+ * for rate-limited kind. Body string is verbatim per CONTEXT.md D-01 — never
+ * includes the provider name (T-73-01).
+ */
+function upstreamErrorToResponse(c: import("hono").Context, err: UpstreamError) {
+  const body: { error: string; retryAfter?: number } = {
+    error: "Upstream sports provider unavailable",
+  };
+  if (err.retryAfter !== undefined) {
+    body.retryAfter = err.retryAfter;
+  }
+  // D-02: defense-in-depth — set header AND body field. Clients that read either get the same data.
+  // T-2 mitigation: err.retryAfter was already sanitized to a positive integer ≤ 86400 in fetchJSON
+  // (Plan 01 step 3); String() of a number cannot inject CRLF or other header tampering.
+  if (err.retryAfter !== undefined) {
+    c.header("Retry-After", String(err.retryAfter));
+  }
+  return c.json(body, 502);
+}
+
 export function createSportsRouter(deps?: SportsRouterDeps): Hono {
   const service = createSportsService(deps);
   const prefsService = createSportsPreferencesService(deps);
   const router = new Hono();
 
   // Aggregate — primary consumer path for brief generation (per D-04)
+  // Phase 116.1 D-09 route 3: fetchAllLeagues uses Promise.allSettled internally so per-league
+  // UpstreamErrors get caught and reduced to LeagueResult.status === "error" via settledToResult.
+  // This catch is dormant for typical BDL failures BUT defense-in-depth for synchronous throws
+  // in the function's setup or future refactors that change the error-handling shape.
   router.get("/sports", async (c) => {
-    const result = await service.fetchAllLeagues();
-    return c.json(result);
+    try {
+      const result = await service.fetchAllLeagues();
+      return c.json(result);
+    } catch (err) {
+      if (err instanceof UpstreamError) {
+        return upstreamErrorToResponse(c, err);
+      }
+      throw err;
+    }
   });
 
   // GET /sports/selections — return user's persisted picker state, or the empty
@@ -78,8 +112,15 @@ export function createSportsRouter(deps?: SportsRouterDeps): Hono {
     if (!VALID_LEAGUES.includes(league as League)) {
       return c.json({ error: `Unknown league. Valid: mlb, nfl, nba, nhl` }, 400);
     }
-    const teams = await service.fetchTeams(league as League);
-    return c.json({ teams });
+    try {
+      const teams = await service.fetchTeams(league as League);
+      return c.json({ teams });
+    } catch (err) {
+      if (err instanceof UpstreamError) {
+        return upstreamErrorToResponse(c, err);
+      }
+      throw err;  // Non-Upstream errors → Hono default 500 (preserves existing behavior for unknown throws)
+    }
   });
 
   // Per-league — validates :league param against allowlist (T-73-03 mitigation).
@@ -90,8 +131,15 @@ export function createSportsRouter(deps?: SportsRouterDeps): Hono {
     if (!VALID_LEAGUES.includes(league as League)) {
       return c.json({ error: `Unknown league. Valid: mlb, nfl, nba, nhl` }, 400);
     }
-    const result = await service.fetchLeague(league as League);
-    return c.json(result);
+    try {
+      const result = await service.fetchLeague(league as League);
+      return c.json(result);
+    } catch (err) {
+      if (err instanceof UpstreamError) {
+        return upstreamErrorToResponse(c, err);
+      }
+      throw err;
+    }
   });
 
   return router;

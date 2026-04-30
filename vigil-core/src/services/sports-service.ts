@@ -768,6 +768,10 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
           break;
       }
     } catch (err) {
+      // Phase 116.1 D-10: UpstreamError must propagate to the route layer (which maps it to 502).
+      // Non-Upstream errors keep the existing LeagueResult.status === "error" fallback for
+      // backward compat (e.g., JSON parse failures, unexpected throws).
+      if (err instanceof UpstreamError) throw err;
       result = {
         status: "error",
         error: err instanceof Error ? err.message : String(err),
