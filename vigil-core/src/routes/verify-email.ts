@@ -1,9 +1,10 @@
 // ── Phase 113 Plan 03 — POST /v1/auth/verify-email (AUTH-11) ─────────────────
 // Unauthenticated endpoint. Closes the AUTH-11 verify-email flow:
 //   - D-12: in the bearerAuth bypass list (token IS the auth credential).
-//   - D-13: rate limit 5/hour per-IP only (no per-user axis — body has no
-//     user identifier; per-IP defends against brute-force token guessing
-//     on top of 256-bit token entropy).
+//   - D-13 + Phase 117 D-03: rate limit 20/hour per-IP only (raised 5 → 20
+//     to tolerate household-NAT retry patterns; no per-user axis — body
+//     has no user identifier; per-IP defends against brute-force token
+//     guessing on top of 256-bit token entropy).
 //   - D-10: atomic single-use UPDATE-RETURNING claim with type='email_verify'
 //     filter — first DB op. PG row-lock makes it safe under concurrent
 //     claims without a transaction wrapper.
@@ -31,12 +32,18 @@ import * as crypto from "node:crypto";
 import { db as defaultDb } from "../db/connection.js";
 import { users, passwordResetTokens } from "../db/schema.js";
 
-// ── Rate limit (D-13: per-IP only, 5/h, sliding window) ─────────────────────
-// Mirrors reset-password.ts:48-87 verbatim. No per-user axis — body has no
+// ── Rate limit (D-13 + Phase 117 D-03: per-IP only, 20/h, sliding window) ──
+// Mirrors reset-password.ts verbatim. No per-user axis — body has no
 // email/userId field; the token IS the auth credential. Per-IP catches
 // brute-force token guessing (although 256-bit entropy makes that
 // effectively impossible — belt-and-suspenders against T-113-02).
-const RATE_LIMIT_MAX = 5;
+//
+// Phase 117 (AUTH-13 D-03): raised 5 → 20 to tolerate household-NAT retry
+// patterns (~4 users × 5 retries/hr each ≈ 20). Brute-force protection
+// structurally preserved — 20/hr from a single IP still hard-blocks 100/min
+// abuse patterns. 256-bit token entropy makes guessing infeasible regardless
+// (belt-and-suspenders against T-113-02).
+const RATE_LIMIT_MAX = 20;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const ipBuckets = new Map<string, number[]>();
 

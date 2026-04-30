@@ -270,8 +270,8 @@ describe("POST /v1/auth/verify-email (AUTH-11)", () => {
     assert.deepEqual(await res2.json(), { error: "Invalid or expired token" });
   });
 
-  // ── AUTH-11-V4-01: rate limit — 6th request from same IP returns 429 ─────
-  it("AUTH-11-V4-01: rate limit — 6th POST from same IP returns 429 with Retry-After", async () => {
+  // ── AUTH-11-V4-01: rate limit — 21st request from same IP (AUTH-13 D-03 cap = 20) returns 429 ──
+  it("AUTH-11-V4-01: rate limit — 21st POST from same IP returns 429 with Retry-After", async () => {
     const route = createVerifyEmailRoute();
     const { Hono: HonoClass } = await import("hono");
     const app = new HonoClass();
@@ -279,7 +279,7 @@ describe("POST /v1/auth/verify-email (AUTH-11)", () => {
 
     const uniqueIp = `10.4.1.${Math.floor(Math.random() * 200) + 10}`;
     let lastRes: Response | null = null;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 21; i++) {
       lastRes = await app.request("/v1/auth/verify-email", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-forwarded-for": uniqueIp },
@@ -303,8 +303,8 @@ describe("POST /v1/auth/verify-email (AUTH-11)", () => {
     const ipA = `10.4.2.${Math.floor(Math.random() * 100) + 10}`;
     const ipB = `10.4.3.${Math.floor(Math.random() * 100) + 10}`;
 
-    // Exhaust IP-A's bucket (5 requests)
-    for (let i = 0; i < 5; i++) {
+    // Exhaust IP-A's bucket (20 requests — AUTH-13 D-03 cap raised 5 → 20)
+    for (let i = 0; i < 20; i++) {
       await app.request("/v1/auth/verify-email", {
         method: "POST",
         headers: { "Content-Type": "application/json", "x-forwarded-for": ipA },
@@ -319,6 +319,41 @@ describe("POST /v1/auth/verify-email (AUTH-11)", () => {
       body: JSON.stringify({ token: crypto.randomBytes(32).toString("base64url") }),
     });
     assert.notEqual(resB.status, 429, "IP-B should not be rate-limited after IP-A exhausts its bucket");
+  });
+
+  // ── AUTH-13-V-CAP-20: lock the per-IP cap constant against accidental drift ─
+  it("AUTH-13-V-CAP-20: source file declares RATE_LIMIT_MAX = 20 verbatim (drift detector)", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const url = await import("node:url");
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.join(here, "verify-email.ts"), "utf8");
+    assert.match(
+      src,
+      /const RATE_LIMIT_MAX = 20;/,
+      "verify-email.ts must declare RATE_LIMIT_MAX = 20 verbatim (Phase 117 AUTH-13 D-03 lock)",
+    );
+  });
+
+  // ── AUTH-13-V-FIRST-20-OK: first 20 requests from a fresh IP do NOT trip 429 ─
+  it("AUTH-13-V-FIRST-20-OK: first 20 POSTs from a single IP all return non-429 (token validation runs)", async () => {
+    const route = createVerifyEmailRoute();
+    const { Hono: HonoClass } = await import("hono");
+    const app = new HonoClass();
+    app.route("/v1", route);
+    const uniqueIp = `10.117.1.${Math.floor(Math.random() * 200) + 10}`;
+    for (let i = 0; i < 20; i++) {
+      const res = await app.request("/v1/auth/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-forwarded-for": uniqueIp },
+        body: JSON.stringify({ token: crypto.randomBytes(32).toString("base64url") }),
+      });
+      assert.notEqual(
+        res.status,
+        429,
+        `request ${i + 1} of 20 must NOT be rate-limited (cap is 20/hr)`,
+      );
+    }
   });
 
   // ── AUTH-11-G-01: grandfathering — already-verified user re-verify succeeds (DB required) ──
