@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Completed 117-01-PLAN.md
-last_updated: "2026-04-30T16:23:08.430Z"
+stopped_at: Completed 117-02-PLAN.md
+last_updated: "2026-04-30T16:29:17.273Z"
 last_activity: 2026-04-30
 progress:
   total_phases: 14
   completed_phases: 9
   total_plans: 51
-  completed_plans: 49
-  percent: 96
+  completed_plans: 50
+  percent: 98
 ---
 
 # Project State
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 Milestone: v3.7 (started 2026-04-27)
 Phase: 117 (auth-email-rate-limit-ux-hardening) — EXECUTING
-Plan: 2 of 5
+Plan: 3 of 5
 Status: Ready to execute
 Last activity: 2026-04-30
 
@@ -70,6 +70,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 116.1 P04 | 20min | 1 tasks | 2 files |
 | Phase 116.1 P03 | 10 | 3 tasks | 3 files |
 | Phase 117 P01 | 6min | 4 tasks | 8 files |
+| Phase 117 P02 | ~3.5 minutes | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -127,6 +128,9 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 117]: Phase 117-01: split forgot-password's single RATE_LIMIT_MAX into RATE_LIMIT_MAX_IP (20) + RATE_LIMIT_MAX_EMAIL (5) — required because the existing takeSlot helper is shared across both axes; chose per-call max parameter over duplicating the helper to keep the sliding-window invariant single-sourced
 - [Phase 117]: Phase 117-01: drift-detector test pattern (fs.readFileSync + regex match) preferred over runtime-introspection — runtime constants can be transformed by minifiers/bundlers, but the source file is the single source of truth for policy review
 - [Phase 117]: Phase 117-01: forgot-password Test 7 per-email cap loop bound left at 6 verbatim — only doc-update applied. Locks per-email cap at 5 via existing assertion sendSpy.callCount() <= 5; Phase 117 D-05 enum-safety guard preserved
+- [Phase 117]: Phase 117-02: header preferred over body for retryAfter source-of-truth — RFC 7231 §7.1.3 wire-format compliance; body fallback is defense-in-depth for hypothetical non-Hono future endpoints; pinned by RL-03-BOTH-HEADER-WINS test
+- [Phase 117]: Phase 117-02: HTTP-date Retry-After format rejected (delay-seconds only) — accepted residual risk per Phase 116.1 precedent; auth routes only emit String(retryAfterSec); strict parseInt + String(parsed) === headerRaw.trim() rejects HTTP-date AND non-pure-numeric tokens
+- [Phase 117]: Phase 117-02: 429 branch ordered before 502 in source — clean reading order; not load-bearing for correctness since status codes never collide
 
 ### Pending Todos
 
@@ -162,7 +166,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-30T16:23:08.424Z
-Stopped at: Completed 117-01-PLAN.md
+Last session: 2026-04-30T16:29:17.267Z
+Stopped at: Completed 117-02-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 115
