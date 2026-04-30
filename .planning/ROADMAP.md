@@ -425,7 +425,7 @@ Plans:
 - [x] 116.1-01-PLAN.md — UpstreamError class + service-layer try/catch + AbortController + WR-01 encodeURIComponent fix
 - [x] 116.1-02-PLAN.md — Route layer 502 mapping + Retry-After header propagation for all 3 sports routes
 - [ ] 116.1-03-PLAN.md — PWA classifyFetchError helper + 4-bucket copy + countdown UI in loadTeamsForLeagueImpl
-- [ ] 116.1-04-PLAN.md — Brief-assembly per-league placeholder + PostHog telemetry + all-failed copy
+- [x] 116.1-04-PLAN.md — Brief-assembly per-league placeholder + PostHog telemetry + all-failed copy
 **UI hint**: yes (PWA error UI changes)
 
 ### Phase 117: Auth-email rate-limit UX hardening
@@ -604,7 +604,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 2/4 plans executed
+**Plans:** 3/4 plans executed
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
