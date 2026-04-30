@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
-import { API_BASE } from '../api/client'
+import { API_BASE, classifyFetchError } from '../api/client'
 
 /**
  * Phase 113 (AUTH-11) — Verify Email Page (UI-SPEC Component 1).
@@ -42,7 +42,10 @@ export default function VerifyEmailPage() {
   const token = useMemo(() => searchParams.get('token'), [searchParams])
   const navigate = useNavigate()
 
-  type VerifyState = 'idle' | 'loading' | 'success' | 'error' | 'missing_token'
+  // Phase 117 (AUTH-12 D-10/D-11): added 'rate_limited' state. The existing
+  // 'error' state continues to handle 4xx-non-429, 5xx, and network failures
+  // (D-21 single-bucket preserved). Only 429 routes into 'rate_limited'.
+  type VerifyState = 'idle' | 'loading' | 'success' | 'error' | 'missing_token' | 'rate_limited'
 
   // Initialize directly from the URL — no useEffect transition. If token
   // is null/empty at mount, the terminal MISSING_TOKEN state renders
@@ -50,6 +53,27 @@ export default function VerifyEmailPage() {
   const [state, setState] = useState<VerifyState>(
     token && token.length > 0 ? 'idle' : 'missing_token',
   )
+
+  // Phase 117 (AUTH-12 D-06): Retry-After countdown for rate_limited state.
+  // Mirrors the Phase 116.1 SettingsPage per-league countdown pattern: state
+  // holds seconds remaining (or null when no countdown active); ref holds
+  // setInterval ID so we can clearInterval on tick-to-zero AND on unmount.
+  const [retryCountdown, setRetryCountdown] = useState<number | null>(null)
+  const countdownTimerRef = useRef<number | null>(null)
+
+  // Phase 117 (AUTH-12 D-06): clear countdown timer on unmount to avoid
+  // setState-after-unmount warning. Mirrors SettingsPage WR-02 pattern.
+  // NOTE: This useEffect ONLY returns a cleanup function — it never fires
+  // a fetch. AUTH-11-P-MOUNT-NO-FETCH (Apple Mail prefetch defense) is
+  // structurally preserved.
+  useEffect(() => {
+    return () => {
+      if (countdownTimerRef.current !== null) {
+        window.clearInterval(countdownTimerRef.current)
+        countdownTimerRef.current = null
+      }
+    }
+  }, [])
 
   async function handleConfirm() {
     if (!token) return
@@ -63,10 +87,50 @@ export default function VerifyEmailPage() {
       })
       if (res.ok) {
         setState('success')
-      } else {
-        // D-21 single-bucket: 400 / 5xx all collapse here.
-        setState('error')
+        return
       }
+      // Phase 117 (AUTH-12 D-10/D-11): classify the error.
+      // 429 → rate_limited bucket with countdown. Everything else (400/5xx/...)
+      // collapses to the legacy 'error' state (D-21 single-bucket preserved).
+      if (res.status === 429) {
+        const errorClass = await classifyFetchError(res)
+        if (errorClass.kind === 'rate-limited') {
+          setState('rate_limited')
+          // D-06: kick off countdown if retryAfter present. If undefined, the
+          // rate_limited state still renders but without the mm:ss countdown
+          // (the user can re-click Confirm immediately — server will 429 again
+          // until the per-IP window passes; UX is graceful, not pathological).
+          if (errorClass.retryAfter !== undefined) {
+            const seconds = errorClass.retryAfter
+            setRetryCountdown(seconds)
+            // Clear any in-flight timer (defensive — should not happen since
+            // handleConfirm is gated by 'idle' but we don't enforce).
+            if (countdownTimerRef.current !== null) {
+              window.clearInterval(countdownTimerRef.current)
+            }
+            const timerId = window.setInterval(() => {
+              setRetryCountdown((cur) => {
+                if (cur === null || cur <= 1) {
+                  // Hit zero — clear timer + return to idle so user can retry.
+                  if (countdownTimerRef.current !== null) {
+                    window.clearInterval(countdownTimerRef.current)
+                    countdownTimerRef.current = null
+                  }
+                  setState('idle')
+                  return null
+                }
+                return cur - 1
+              })
+            }, 1000)
+            countdownTimerRef.current = timerId
+          }
+          return
+        }
+        // 429 but classifier returned non-rate-limited (theoretically impossible
+        // with Plan 02's classifier — defensive fallthrough): D-21 single-bucket.
+      }
+      // D-21 single-bucket: 400 / 5xx / non-429 all collapse here.
+      setState('error')
     } catch {
       // Network error — same single-bucket as 4xx/5xx.
       setState('error')
@@ -115,6 +179,45 @@ export default function VerifyEmailPage() {
           >
             Go to app
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (state === 'rate_limited') {
+    // Phase 117 (AUTH-12 D-08): unified rate-limited copy across 3 PWA pages.
+    // Substantive content "Too many attempts — try again in {Xm Ys}." is split
+    // across heading + body for visual hierarchy per Claude's Discretion in
+    // CONTEXT.md. Plans 04 and 05 must use the SAME heading+body split for
+    // D-08/D-09 unification.
+    const minutes = retryCountdown !== null ? Math.floor(retryCountdown / 60) : 0
+    const seconds = retryCountdown !== null ? retryCountdown % 60 : 0
+    const hasCountdown = retryCountdown !== null && retryCountdown > 0
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-900">
+        <div className="bg-gray-900 rounded-lg p-8 w-full max-w-md mx-4">
+          <h1 className="text-2xl font-medium text-white mb-4">
+            Too many attempts
+          </h1>
+          <p className="text-sm text-gray-300 mb-6" aria-live="polite">
+            {hasCountdown
+              ? `Try again in ${minutes}m ${seconds}s.`
+              : 'Try again later.'}
+          </p>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={hasCountdown}
+            aria-disabled={hasCountdown}
+            className="w-full py-2 bg-teal-600 hover:bg-teal-800 text-white rounded font-medium disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-teal-400"
+          >
+            Confirm
+          </button>
+          <div className="mt-4 text-center">
+            <Link to="/" className="text-sm text-gray-400 hover:text-gray-200">
+              Back to app
+            </Link>
+          </div>
         </div>
       </div>
     )

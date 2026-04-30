@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 
 // vi.hoisted ensures these spies are available in vi.mock factory functions,
@@ -289,13 +289,13 @@ describe('VerifyEmailPage (AUTH-11)', () => {
         expect(screen.getByText(/Try again in 0m 3s\./)).toBeInTheDocument()
       })
       // Tick 1s → 0m 2s
-      await vi.advanceTimersByTimeAsync(1000)
+      await act(async () => { vi.advanceTimersByTime(1000) })
       expect(screen.getByText(/Try again in 0m 2s\./)).toBeInTheDocument()
       // Tick another 1s → 0m 1s
-      await vi.advanceTimersByTimeAsync(1000)
+      await act(async () => { vi.advanceTimersByTime(1000) })
       expect(screen.getByText(/Try again in 0m 1s\./)).toBeInTheDocument()
       // Tick the final second → countdown clears AND state returns to idle.
-      await vi.advanceTimersByTimeAsync(1000)
+      await act(async () => { vi.advanceTimersByTime(1000) })
       await waitFor(() => {
         // Idle UX returns: 'Verify your email' heading, Confirm enabled, rate-limited copy gone.
         expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Verify your email')
@@ -369,7 +369,7 @@ describe('VerifyEmailPage (AUTH-11)', () => {
       // Unmount mid-countdown.
       unmount()
       // Advance fake timers past where ticks would have fired post-unmount.
-      await vi.advanceTimersByTimeAsync(5000)
+      await act(async () => { vi.advanceTimersByTime(5000) })
       // No setState-after-unmount warnings should have been logged.
       const setStateWarnings = errorSpy.mock.calls.filter((call) =>
         String(call[0] ?? '').match(/state update on an unmounted|act\(\)/i),
