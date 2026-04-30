@@ -28,7 +28,13 @@ import { sendEmailVerificationEmail as realSendEmailVerificationEmail } from "..
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const VERIFY_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24h (matches Plan 02 register helper)
-const RATE_LIMIT_MAX = 3;                          // D-16: 3 per hour per userId
+// Phase 117 (AUTH-13 D-04): raised 3 → 5 to tolerate user retrying when an
+// earlier verification email lands in spam/clutter folder. Per-userId axis
+// (not per-IP) — bearerAuth means we KNOW the userId, so the threat is one
+// user spamming the email-send pipeline, not anonymous brute-force. 5/hr
+// is enough headroom for "re-send, check spam, re-send to other inbox,
+// re-send after typo, one extra" without enabling abuse.
+const RATE_LIMIT_MAX = 5;                          // D-16 + Phase 117 D-04: 5 per hour per userId
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const RATE_KEY_PREFIX = "verify-resend:userId:";   // D-16 exact format — namespacing prevents Map collisions
 

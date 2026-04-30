@@ -119,8 +119,8 @@ describe("POST /v1/auth/resend-verification (AUTH-11)", () => {
     assert.equal(sendCalled, false, "sendEmailFn must NOT be called for already-verified user");
   });
 
-  // ── AUTH-11-S2-01: rate limit — 4th request from same userId returns 429 ───
-  it("AUTH-11-S2-01: rate limit — 4th POST from same userId returns 429 with Retry-After", async () => {
+  // ── AUTH-11-S2-01: rate limit — 6th request from same userId returns 429 (Phase 117 AUTH-13 D-04 cap = 5) ───
+  it("AUTH-11-S2-01: rate limit — 6th POST from same userId returns 429 with Retry-After", async () => {
     const router = createResendVerificationRoute({
       userLookupFn: async () => ({ email: "u@example.com", emailVerifiedAt: null }),
       sendEmailFn: async () => ({ status: "sent" as const, id: "x" }),
@@ -128,7 +128,7 @@ describe("POST /v1/auth/resend-verification (AUTH-11)", () => {
     });
     const app = buildAppWithUserId(router, 99);
     let lastRes: Response | null = null;
-    for (let i = 0; i < 4; i++) {
+    for (let i = 0; i < 6; i++) {
       lastRes = await app.request("/v1/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -151,10 +151,10 @@ describe("POST /v1/auth/resend-verification (AUTH-11)", () => {
         dbOverride: null as unknown as typeof import("../db/connection.js").db,
       });
 
-    // Exhaust userId-A (100) — 3 requests
+    // Exhaust userId-A (100) — 5 requests (Phase 117 AUTH-13 D-04 cap raised 3 → 5)
     const routerA = makeRouter(100);
     const appA = buildAppWithUserId(routerA, 100);
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       await appA.request("/v1/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -191,22 +191,22 @@ describe("POST /v1/auth/resend-verification (AUTH-11)", () => {
       dbOverride: null as unknown as typeof import("../db/connection.js").db,
     });
 
-    // Make 3 requests with userId 201 (exhaust limit)
+    // Make 5 requests with userId 201 (exhaust limit — Phase 117 D-04 cap = 5)
     const appU201 = buildAppWithUserId(router1, 201);
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 5; i++) {
       await appU201.request("/v1/auth/resend-verification", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
     }
-    // 4th from userId 201 → 429
+    // 6th from userId 201 → 429
     const res429 = await appU201.request("/v1/auth/resend-verification", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({}),
     });
-    assert.equal(res429.status, 429, "userId 201 should be rate-limited after 3 requests");
+    assert.equal(res429.status, 429, "userId 201 should be rate-limited after 5 requests");
 
     // First from userId 202 on a fresh router (same Map, different key) → not 429
     const appU202 = buildAppWithUserId(router2, 202);
@@ -216,6 +216,38 @@ describe("POST /v1/auth/resend-verification (AUTH-11)", () => {
       body: JSON.stringify({}),
     });
     assert.notEqual(resU202.status, 429, "userId 202 must not be rate-limited by userId 201's bucket");
+  });
+
+  // ── AUTH-13-RV-CAP-5: lock the per-userId cap constant ─────────────────
+  it("AUTH-13-RV-CAP-5: source file declares RATE_LIMIT_MAX = 5 verbatim (drift detector)", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const url = await import("node:url");
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.join(here, "resend-verification.ts"), "utf8");
+    assert.match(
+      src,
+      /const RATE_LIMIT_MAX = 5;/,
+      "resend-verification.ts must declare RATE_LIMIT_MAX = 5 verbatim (Phase 117 AUTH-13 D-04 lock)",
+    );
+  });
+
+  // ── AUTH-13-RV-FIRST-5-OK: first 5 requests from a single userId do NOT trip 429 ─
+  it("AUTH-13-RV-FIRST-5-OK: first 5 POSTs from same unverified userId all return non-429", async () => {
+    const router = createResendVerificationRoute({
+      userLookupFn: async () => ({ email: "rv-cap@example.com", emailVerifiedAt: null }),
+      sendEmailFn: async () => ({ status: "sent" as const, id: "x" }),
+      dbOverride: null as unknown as typeof import("../db/connection.js").db,
+    });
+    const app = buildAppWithUserId(router, 90117);
+    for (let i = 0; i < 5; i++) {
+      const res = await app.request("/v1/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      assert.notEqual(res.status, 429, `request ${i + 1} of 5 must NOT be rate-limited (cap is 5/hr)`);
+    }
   });
 
   // ── AUTH-11-S3-01: invalidate-prior + new token (DB required) ────────────
