@@ -26,15 +26,22 @@ export type { SportsSelections };
  * substring (asserted in tests). The provider name lives ONLY in the existing
  * console.log line at fetchJSON's catch site, never in thrown errors or HTTP bodies.
  */
+export type UpstreamErrorKind = "rate-limited" | "server-error" | "timeout" | "auth";
+
 export class UpstreamError extends Error {
-  readonly kind: "rate-limited" | "server-error" | "timeout" | "auth";
+  readonly kind: UpstreamErrorKind;
   readonly retryAfter?: number;
   constructor(opts: {
-    kind: "rate-limited" | "server-error" | "timeout" | "auth";
+    kind: UpstreamErrorKind;
     retryAfter?: number;
     cause?: unknown;
   }) {
     // Generic message — provider name MUST NOT appear here (T-73-01).
+    // NOTE: This message format is parsed downstream as a fallback only. The
+    // structured `kind` field is the canonical source — propagated to
+    // LeagueResult.errorKind in fetchAllLeagues' settledToResult below, and
+    // read directly by brief-assembly-service.ts for telemetry. Do not rely
+    // on the message string for kind extraction.
     super(`Upstream sports provider failed (${opts.kind})`);
     this.name = "UpstreamError";
     this.kind = opts.kind;
@@ -59,6 +66,13 @@ export interface SportsResponse {
 export interface LeagueResult {
   status: "ok" | "error" | "off_season" | "disabled";
   error?: string;
+  /**
+   * Phase 116.1 SPORTS-01b WR-02: structured error class, populated when the
+   * underlying rejection was an UpstreamError. brief-assembly-service reads this
+   * directly for PostHog telemetry instead of regex-parsing `error`. Absent for
+   * non-Upstream errors (e.g., synchronous throws in fetchAllLeagues itself).
+   */
+  errorKind?: UpstreamErrorKind;
   data?: LeagueData;
 }
 
@@ -846,6 +860,16 @@ export function createSportsService(deps: SportsServiceDeps = {}): {
 
     function settledToResult(r: PromiseSettledResult<LeagueResult>): LeagueResult {
       if (r.status === "fulfilled") return r.value;
+      // Phase 116.1 SPORTS-01b WR-02: when the rejection is an UpstreamError,
+      // propagate the structured `kind` so downstream telemetry can read it
+      // directly without regex-parsing the message string.
+      if (r.reason instanceof UpstreamError) {
+        return {
+          status: "error",
+          error: r.reason.message,
+          errorKind: r.reason.kind,
+        };
+      }
       return { status: "error", error: String(r.reason) };
     }
 

@@ -649,3 +649,47 @@ test("SPORTS-01b-svc-encodes-teamId-in-recent-and-upcoming-URLs-D11: teamId with
   assert.ok(hasEncoded, `Expected URL with encoded team_ids[]=116%26season%3D2027, got: ${urls.join(", ")}`);
   assert.equal(hasRaw, false, `URL must NOT contain raw injection string team_ids[]=116&season=2027`);
 });
+
+test("SPORTS-01b-svc-fetchAllLeagues-propagates-errorKind-on-upstream-failure-WR02: settledToResult attaches structured kind", async () => {
+  // WR-02 contract: when a per-league fetch rejects with UpstreamError, the
+  // resulting LeagueResult must carry a structured `errorKind` matching the
+  // UpstreamError's `kind`. Downstream consumers (brief-assembly telemetry)
+  // read this directly instead of regex-parsing the message string.
+  const fetchFn = async (_url: string, _init?: RequestInit) => {
+    return new Response("server error", { status: 500 });
+  };
+  const service = createSportsService({ fetchFn });
+  const result = await service.fetchAllLeagues({
+    enabledLeagues: ["mlb"],
+    favoriteTeams: { mlb: "116" },
+  });
+  // MLB rejected with UpstreamError(kind='server-error') → LeagueResult.errorKind='server-error'.
+  assert.equal(result.leagues.mlb.status, "error");
+  assert.equal(result.leagues.mlb.errorKind, "server-error");
+});
+
+test("SPORTS-01b-svc-fetchAllLeagues-propagates-errorKind-rate-limited-WR02: 429 → errorKind='rate-limited'", async () => {
+  const fetchFn = async (_url: string, _init?: RequestInit) => {
+    return new Response("rate limited", { status: 429, headers: { "Retry-After": "30" } });
+  };
+  const service = createSportsService({ fetchFn });
+  const result = await service.fetchAllLeagues({
+    enabledLeagues: ["nfl"],
+    favoriteTeams: { nfl: "13" },
+  });
+  assert.equal(result.leagues.nfl.status, "error");
+  assert.equal(result.leagues.nfl.errorKind, "rate-limited");
+});
+
+test("SPORTS-01b-svc-fetchAllLeagues-propagates-errorKind-auth-WR02: 401 → errorKind='auth'", async () => {
+  const fetchFn = async (_url: string, _init?: RequestInit) => {
+    return new Response("unauthorized", { status: 401 });
+  };
+  const service = createSportsService({ fetchFn });
+  const result = await service.fetchAllLeagues({
+    enabledLeagues: ["nba"],
+    favoriteTeams: { nba: "10" },
+  });
+  assert.equal(result.leagues.nba.status, "error");
+  assert.equal(result.leagues.nba.errorKind, "auth");
+});

@@ -1102,8 +1102,10 @@ describe("assembleAndRender — Phase 116.1 SPORTS-01b PostHog telemetry", () =>
       partial: true,
       leagues: {
         mlb: { status: "ok", data: { recentGame: null, upcomingGame: null, standings: [] } },
-        nfl: { status: "error", error: "Upstream sports provider failed (server-error)" },
-        nba: { status: "error", error: "Upstream sports provider failed (rate-limited)" },
+        // Phase 116.1 WR-02: structured errorKind is now the canonical source
+        // for telemetry; sports-service's settledToResult populates it.
+        nfl: { status: "error", error: "Upstream sports provider failed (server-error)", errorKind: "server-error" },
+        nba: { status: "error", error: "Upstream sports provider failed (rate-limited)", errorKind: "rate-limited" },
         nhl: { status: "ok", data: { recentGame: null, upcomingGame: null, standings: [] } },
       },
     };

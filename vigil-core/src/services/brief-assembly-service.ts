@@ -67,14 +67,13 @@ const PER_LEAGUE_FAILURE_COPY = (league: League): string =>
   `${league.toUpperCase()} data temporarily unavailable.`;
 const ALL_FAILED_COPY = "Sports data temporarily unavailable. Try again on tomorrow's brief.";
 
-// Phase 116.1 SPORTS-01b D-06: regex to extract kind from Plan 01's UpstreamError message format.
-// Plan 01 sets message = `Upstream sports provider failed (${kind})` so we can recover kind for telemetry.
-// Falls back to "unknown" if a non-Upstream error reached settledToResult (e.g., a synchronous throw).
-const UPSTREAM_KIND_RE = /Upstream sports provider failed \((auth|server-error|timeout|rate-limited)\)/;
-function extractErrorClass(errorString: string | undefined): string {
-  if (!errorString) return "unknown";
-  const match = errorString.match(UPSTREAM_KIND_RE);
-  return match ? match[1] : "unknown";
+// Phase 116.1 SPORTS-01b WR-02: kind is read directly from the structured
+// LeagueResult.errorKind field populated by sports-service's settledToResult.
+// Falls back to "unknown" when errorKind is absent (e.g., a non-Upstream
+// synchronous throw, or a `withTimeout` "Source timeout" rejection that
+// short-circuits before fetchAllLeagues' settledToResult runs).
+function extractErrorClass(errorKind: string | undefined): string {
+  return errorKind ?? "unknown";
 }
 
 // Helper: build a placeholder BriefSportLeague entry that drawSportSection (pdf-service.ts:377)
@@ -592,7 +591,8 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
           trackEventImpl(userId, "sports_league_fetch_failed", {
             league: key,
             status: "error",
-            error_class: extractErrorClass(lr.error),
+            // WR-02: read structured errorKind directly — no regex parsing.
+            error_class: extractErrorClass(lr.errorKind),
           });
         }
       }
