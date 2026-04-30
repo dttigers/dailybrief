@@ -18,8 +18,9 @@ import {
   getSportsSelections,
   setSportsSelections,
   getSportsTeams,
+  classifyFetchError,
 } from '../api/client'
-import type { CalendarInfo, SportsSelections, League, TeamListEntry } from '../api/client'
+import type { CalendarInfo, SportsSelections, League, TeamListEntry, ErrorClass } from '../api/client'
 import { useToast } from '../hooks/useToast'
 import { ScheduleCard } from '../components/ScheduleCard'
 
@@ -123,8 +124,18 @@ export default function SettingsPage() {
   const [sportsSelections, setSportsSelectionsState] = useState<SportsSelections>({ enabledLeagues: [], favoriteTeams: {} })
   const [sportsListStatus, setSportsListStatus] = useState<'loading' | 'ok' | 'error'>('loading')
   const [sportsListError, setSportsListError] = useState<string | null>(null)
-  /** Per-league teams cache + per-league fetch status. 'loading' / 'error' / TeamListEntry[]. */
-  const [teamsByLeague, setTeamsByLeague] = useState<Record<League, TeamListEntry[] | 'loading' | 'error' | null>>({
+  /** Per-league teams cache + per-league fetch status. 'loading' / ErrorClass object / TeamListEntry[]. */
+  type TeamsByLeagueState = Record<League, TeamListEntry[] | 'loading' | { kind: 'error'; class: ErrorClass } | null>
+  const [teamsByLeague, setTeamsByLeague] = useState<TeamsByLeagueState>({
+    mlb: null, nfl: null, nba: null, nhl: null,
+  })
+  // Phase 116.1 D-15: live Retry-After countdown per league.
+  // Value is seconds remaining; null when no countdown active.
+  const [retryCountdowns, setRetryCountdowns] = useState<Record<League, number | null>>({
+    mlb: null, nfl: null, nba: null, nhl: null,
+  })
+  // Per-league setInterval IDs so we can clear individually.
+  const countdownTimersRef = useRef<Record<League, number | null>>({
     mlb: null, nfl: null, nba: null, nhl: null,
   })
   const sportsSaveTimerRef = useRef<number | null>(null)
@@ -238,11 +249,41 @@ export default function SettingsPage() {
   // without listing it as a dep — kept stable by being module-private to the component closure.
   const loadTeamsForLeagueImpl = async (league: League): Promise<void> => {
     setTeamsByLeague((prev) => ({ ...prev, [league]: 'loading' }))
+    // Clear any in-flight countdown for this league when starting a new fetch.
+    if (countdownTimersRef.current[league] !== null) {
+      window.clearInterval(countdownTimersRef.current[league] as number)
+      countdownTimersRef.current[league] = null
+    }
+    setRetryCountdowns((prev) => ({ ...prev, [league]: null }))
     try {
       const teams = await getSportsTeams(league)
       setTeamsByLeague((prev) => ({ ...prev, [league]: teams }))
-    } catch {
-      setTeamsByLeague((prev) => ({ ...prev, [league]: 'error' }))
+    } catch (err) {
+      // D-13: classifyFetchError accepts the original Response (attached to err.response by getSportsTeams)
+      // OR the bare Error/throw (network failure). Pass whichever is available.
+      const responseAttached = (err as Error & { response?: Response })?.response
+      const errorClass = await classifyFetchError(responseAttached ?? err)
+      setTeamsByLeague((prev) => ({ ...prev, [league]: { kind: 'error', class: errorClass } }))
+      // D-15: if upstream + retryAfter present, kick off the countdown.
+      if (errorClass.kind === 'upstream' && errorClass.retryAfter !== undefined) {
+        const seconds = errorClass.retryAfter
+        setRetryCountdowns((prev) => ({ ...prev, [league]: seconds }))
+        const timerId = window.setInterval(() => {
+          setRetryCountdowns((prev) => {
+            const cur = prev[league]
+            if (cur === null || cur <= 1) {
+              // Hit zero — clear the timer + return null so countdown disappears.
+              if (countdownTimersRef.current[league] !== null) {
+                window.clearInterval(countdownTimersRef.current[league] as number)
+                countdownTimersRef.current[league] = null
+              }
+              return { ...prev, [league]: null }
+            }
+            return { ...prev, [league]: cur - 1 }
+          })
+        }, 1000)
+        countdownTimersRef.current[league] = timerId
+      }
     }
   }
 
@@ -285,6 +326,19 @@ export default function SettingsPage() {
       if (sportsSaveTimerRef.current !== null) {
         window.clearTimeout(sportsSaveTimerRef.current)
         sportsSaveTimerRef.current = null
+      }
+    }
+  }, [])
+
+  // Phase 116.1 D-15: clear all per-league countdown timers on unmount.
+  useEffect(() => {
+    return () => {
+      for (const league of ['mlb', 'nfl', 'nba', 'nhl'] as League[]) {
+        const timerId = countdownTimersRef.current[league]
+        if (timerId !== null) {
+          window.clearInterval(timerId)
+          countdownTimersRef.current[league] = null
+        }
       }
     }
   }, [])
@@ -963,21 +1017,48 @@ export default function SettingsPage() {
                       <div className="mt-2 ml-6">
                         {teamsState === null || teamsState === 'loading' ? (
                           <p className="text-gray-400 text-sm">Loading teams…</p>
-                        ) : teamsState === 'error' ? (
+                        ) : (typeof teamsState === 'object' && teamsState !== null && 'kind' in teamsState && teamsState.kind === 'error') ? (
                           <div className="bg-red-900/20 border border-red-900/40 rounded p-3">
-                            <p className="text-red-400 text-sm mb-2">Couldn't load teams.</p>
-                            <button
-                              onClick={() => loadTeamsForLeague(league)}
-                              className="text-xs text-teal-400 hover:text-teal-300"
-                              data-testid={`sports-retry-${league}`}
-                            >
-                              Retry
-                            </button>
+                            <p className="text-red-400 text-sm mb-2">
+                              {teamsState.class.kind === 'network'
+                                ? 'No network connection.'
+                                : teamsState.class.kind === 'server'
+                                ? 'Sports settings unavailable. Try again.'
+                                : /* upstream or auth fallback */ 'Sports data temporarily unavailable.'}
+                            </p>
+                            {(() => {
+                              // D-15: read per-league countdown from retryCountdowns map.
+                              const retryCountdownValue = retryCountdowns[league]
+                              const isCountingDown = retryCountdownValue !== null && retryCountdowns[league] !== null && retryCountdownValue > 0
+                              const minutes = isCountingDown ? Math.floor((retryCountdownValue as number) / 60) : 0
+                              const seconds = isCountingDown ? (retryCountdownValue as number) % 60 : 0
+                              const secondsPadded = String(seconds).padStart(2, '0')
+                              return (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => loadTeamsForLeague(league)}
+                                    disabled={isCountingDown}
+                                    className={`text-xs text-teal-400 hover:text-teal-300 ${isCountingDown ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                    data-testid={`sports-retry-${league}`}
+                                  >
+                                    Retry
+                                  </button>
+                                  {isCountingDown && (
+                                    <span
+                                      className="text-xs text-gray-400"
+                                      data-testid={`sports-countdown-${league}`}
+                                    >
+                                      Try again in {minutes}:{secondsPadded}
+                                    </span>
+                                  )}
+                                </div>
+                              )
+                            })()}
                           </div>
-                        ) : (
+                        ) : Array.isArray(teamsState) ? (
                           <>
                             <ul className="space-y-1.5">
-                              {teamsState.map((team) => (
+                              {(teamsState as TeamListEntry[]).map((team) => (
                                 <li key={team.id}>
                                   <label className="flex items-center gap-2 cursor-pointer py-1">
                                     <input
@@ -1000,7 +1081,7 @@ export default function SettingsPage() {
                               </p>
                             )}
                           </>
-                        )}
+                        ) : null}
                       </div>
                     )}
                   </li>
