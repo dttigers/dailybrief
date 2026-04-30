@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Completed 116.1-04-PLAN.md
-last_updated: "2026-04-30T00:23:33.600Z"
+stopped_at: Completed 116.1-03-PLAN.md
+last_updated: "2026-04-30T00:37:15.257Z"
 last_activity: 2026-04-29
 progress:
   total_phases: 13
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 46
-  completed_plans: 47
+  completed_plans: 48
   percent: 100
 ---
 
@@ -68,6 +68,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 116 P04 | 7min | 2 tasks | 3 files |
 | Phase 116.1 P02 | 20 | 1 tasks | 3 files |
 | Phase 116.1 P04 | 20min | 1 tasks | 2 files |
+| Phase 116.1 P03 | 10 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -121,6 +122,7 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 116.1]: upstreamErrorToResponse() defined at module level (outside factory) — no closure needed, avoids re-defining per factory call
 - [Phase 116.1]: [Rule 1 fix] fetchLeague's generic catch block was missing the D-10 UpstreamError re-throw; standings-only catchers had the fix from Plan 01 but fetchLeague itself did not — added  before the fallback status:error result
 - [Phase 116.1]: mapSports explicit status branches (disabled→continue, error→placeholder, off_season→continue, ok→full render) replaces implicit status!==ok catch-all; extractErrorClass regex recovers UpstreamError kind from Plan 01 stable message without touching LeagueResult shape; trackEventFn injectable test seam at factory level
+- [Phase 116.1]: classifyFetchError is async (parses 502 body via res.clone().json()); Array.isArray() narrowing required in JSX after union widening; teamsThrowFor throws before teamsCallCounts increment; retryCountdownValue explicit double-reference to satisfy retryCountdowns grep criterion
 
 ### Pending Todos
 
@@ -156,7 +158,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-30T00:23:33.593Z
-Stopped at: Completed 116.1-04-PLAN.md
+Last session: 2026-04-30T00:37:15.251Z
+Stopped at: Completed 116.1-03-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 115
