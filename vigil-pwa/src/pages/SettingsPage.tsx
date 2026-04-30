@@ -105,11 +105,18 @@ export default function SettingsPage() {
 
   // Phase 113 (AUTH-11 D-25) — Resend button lifecycle:
   //   idle → sending → (200 → sent → 10s → idle)
-  //                  | (429 → rate_limited, terminal until page reload)
+  //                  | (429 → rate_limited; Phase 117 AUTH-12: recovers to 'idle' on countdown completion)
   //                  | (5xx/network → error → idle re-enabled immediately)
   type ResendState = 'idle' | 'sending' | 'sent' | 'rate_limited' | 'error'
   const [resendState, setResendState] = useState<ResendState>('idle')
   const resendSentTimerRef = useRef<number | null>(null)
+
+  // Phase 117 (AUTH-12 D-06/D-09): Retry-After countdown for the 'rate_limited'
+  // ResendState. INDEPENDENT of the Phase 116.1 per-league countdowns (those use
+  // retryCountdowns/countdownTimersRef Records). Single value here — there is
+  // only one /v1/auth/resend-verification endpoint, not a per-league axis.
+  const [resendRetryCountdown, setResendRetryCountdown] = useState<number | null>(null)
+  const resendCountdownTimerRef = useRef<number | null>(null)
 
   // Phase 115 CAL-01 — calendar picker state
   const [calendarList, setCalendarList] = useState<CalendarInfo[] | null>(null)
@@ -160,6 +167,18 @@ export default function SettingsPage() {
       if (resendSentTimerRef.current !== null) {
         window.clearTimeout(resendSentTimerRef.current)
         resendSentTimerRef.current = null
+      }
+    }
+  }, [])
+
+  // Phase 117 (AUTH-12 D-06): clear resend-verification countdown timer on unmount.
+  // INDEPENDENT cleanup from the per-league sports countdowns (Phase 116.1) and
+  // from the resendSentTimerRef (Phase 113 sent→idle transition).
+  useEffect(() => {
+    return () => {
+      if (resendCountdownTimerRef.current !== null) {
+        window.clearInterval(resendCountdownTimerRef.current)
+        resendCountdownTimerRef.current = null
       }
     }
   }, [])
@@ -509,7 +528,7 @@ export default function SettingsPage() {
 
   // Phase 113 (AUTH-11 D-25) — Resend button click handler.
   // Lifecycle: idle → sending → (200 → sent → 10s → idle)
-  //                           | (429 → rate_limited terminal)
+  //                           | (429 → rate_limited; Phase 117 AUTH-12 → countdown → idle)
   //                           | (5xx/network → error → idle re-enabled)
   async function handleResendClick() {
     if (resendState !== 'idle' && resendState !== 'error') return
@@ -517,7 +536,32 @@ export default function SettingsPage() {
     try {
       const res = await vigilFetch('/v1/auth/resend-verification', { method: 'POST' })
       if (res.status === 429) {
+        // Phase 117 (AUTH-12 D-09/D-10): set resendState + kick off countdown via
+        // classifyFetchError. resendState 'rate_limited' is preserved (used by the
+        // render branch); the new resendRetryCountdown state drives the mm:ss UI.
         setResendState('rate_limited')
+        const errorClass = await classifyFetchError(res)
+        if (errorClass.kind === 'rate-limited' && errorClass.retryAfter !== undefined) {
+          const seconds = errorClass.retryAfter
+          setResendRetryCountdown(seconds)
+          if (resendCountdownTimerRef.current !== null) {
+            window.clearInterval(resendCountdownTimerRef.current)
+          }
+          const timerId = window.setInterval(() => {
+            setResendRetryCountdown((cur) => {
+              if (cur === null || cur <= 1) {
+                if (resendCountdownTimerRef.current !== null) {
+                  window.clearInterval(resendCountdownTimerRef.current)
+                  resendCountdownTimerRef.current = null
+                }
+                setResendState('idle')  // re-enable button when countdown completes
+                return null
+              }
+              return cur - 1
+            })
+          }, 1000)
+          resendCountdownTimerRef.current = timerId
+        }
         return
       }
       if (!res.ok) {
@@ -669,8 +713,19 @@ export default function SettingsPage() {
           </p>
           <div aria-live="polite" className="ml-3 flex items-center">
             {resendState === 'rate_limited' ? (
-              <span className="text-xs text-red-400">
-                You've requested too many. Try again later.
+              <span className="text-xs text-red-400" aria-live="polite">
+                {(() => {
+                  // Phase 117 (AUTH-12 D-08): unified copy across 3 PWA pages.
+                  // Inline single-line form fits the verify-email banner real estate
+                  // (vs heading+body split on VerifyEmailPage / ResetPasswordPage).
+                  // Substantive content verbatim per spec.
+                  if (resendRetryCountdown !== null && resendRetryCountdown > 0) {
+                    const minutes = Math.floor(resendRetryCountdown / 60)
+                    const seconds = resendRetryCountdown % 60
+                    return `Too many attempts — try again in ${minutes}m ${seconds}s.`
+                  }
+                  return 'Too many attempts — try again later.'
+                })()}
               </span>
             ) : resendState === 'sent' ? (
               <span className="text-sm text-warning-400">Sent! Check your inbox.</span>
