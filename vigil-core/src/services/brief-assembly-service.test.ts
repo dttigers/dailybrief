@@ -382,17 +382,26 @@ describe("mapSports", () => {
 
     const result = mapSports(fulfilled);
 
-    // Should have exactly 1 league (MLB) — NFL errored, NBA/NHL off_season
-    assert.equal(result.length, 1);
-    assert.equal(result[0].sport, "mlb");
-    assert.equal(result[0].displayName, "MLB");
-    assert.equal(result[0].recentGame?.homeTeam, "Detroit Tigers");
-    assert.equal(result[0].recentGame?.homeScore, 5);
-    assert.equal(result[0].recentGame?.result, "W");
-    assert.equal(result[0].recentGame?.gameDate, "2026-04-11");
-    assert.equal(result[0].upcomingGame?.venue, "Comerica Park");
-    assert.equal(result[0].standings.length, 2);
-    assert.equal(result[0].standings[0].team, "Detroit Tigers");
+    // Phase 116.1 SPORTS-01b: NFL errored → placeholder entry (D-05); NBA/NHL off_season → omitted.
+    // Result: 2 entries — MLB (ok, full data) + NFL (error, placeholder).
+    assert.equal(result.length, 2);
+    const mlb = result.find((r) => r.sport === "mlb");
+    const nfl = result.find((r) => r.sport === "nfl");
+    assert.ok(mlb, "MLB must be present");
+    assert.ok(nfl, "NFL placeholder must be present");
+    assert.equal(mlb!.displayName, "MLB");
+    assert.equal(mlb!.recentGame?.homeTeam, "Detroit Tigers");
+    assert.equal(mlb!.recentGame?.homeScore, 5);
+    assert.equal(mlb!.recentGame?.result, "W");
+    assert.equal(mlb!.recentGame?.gameDate, "2026-04-11");
+    assert.equal(mlb!.upcomingGame?.venue, "Comerica Park");
+    assert.equal(mlb!.standings.length, 2);
+    assert.equal(mlb!.standings[0].team, "Detroit Tigers");
+    // NFL placeholder shape (D-05)
+    assert.equal(nfl!.teamName, "NFL data temporarily unavailable.");
+    assert.equal(nfl!.recentGame, null);
+    assert.equal(nfl!.upcomingGame, null);
+    assert.equal(nfl!.standings.length, 0);
   });
 
   test("Test 5b: rejected SportsResponse returns empty array", () => {

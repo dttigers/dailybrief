@@ -25,6 +25,7 @@ import { desc, isNull, eq as drizzleEq, gte, lt, and, ne } from "drizzle-orm";
 import { getCurrentWeekWindow } from "../utils/date-window.js";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import type * as schema from "../db/schema.js";
+import { trackEvent } from "../analytics/posthog.js";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,12 @@ export interface BriefAssemblyDeps {
   parseAIJsonFn?: <T>(raw: string) => T;
   getAIClientFn?: () => any;
   nowFn?: () => Date;
+  /**
+   * Phase 116.1 SPORTS-01b D-06: PostHog telemetry hook (test seam).
+   * Production: defaults to the trackEvent wrapper from analytics/posthog.js.
+   * Tests: inject a capturing mock to assert event firing.
+   */
+  trackEventFn?: typeof trackEvent;
   // Internal: overridable for testing
   _sourceTimeoutMs?: number;
   _workOrderRows?: any[];
@@ -52,6 +59,38 @@ const AFFIRMATION_CACHE_DIR = path.join(os.homedir(), ".cache", "dailybrief");
 // Phase 116 SPORTS-01 D-10: empty default when no app_settings row exists for the
 // caller. sports-service short-circuits to all-disabled with zero BDL calls (D-17).
 const EMPTY_SELECTIONS: SportsSelections = { enabledLeagues: [], favoriteTeams: {} };
+
+// Phase 116.1 SPORTS-01b D-05/D-07: placeholder copies for upstream-failed leagues.
+// Per-league: "{LEAGUE} data temporarily unavailable." (D-05)
+// All-failed: single block when every non-disabled league errors. (D-07)
+const PER_LEAGUE_FAILURE_COPY = (league: League): string =>
+  `${league.toUpperCase()} data temporarily unavailable.`;
+const ALL_FAILED_COPY = "Sports data temporarily unavailable. Try again on tomorrow's brief.";
+
+// Phase 116.1 SPORTS-01b D-06: regex to extract kind from Plan 01's UpstreamError message format.
+// Plan 01 sets message = `Upstream sports provider failed (${kind})` so we can recover kind for telemetry.
+// Falls back to "unknown" if a non-Upstream error reached settledToResult (e.g., a synchronous throw).
+const UPSTREAM_KIND_RE = /Upstream sports provider failed \((auth|server-error|timeout|rate-limited)\)/;
+function extractErrorClass(errorString: string | undefined): string {
+  if (!errorString) return "unknown";
+  const match = errorString.match(UPSTREAM_KIND_RE);
+  return match ? match[1] : "unknown";
+}
+
+// Helper: build a placeholder BriefSportLeague entry that drawSportSection (pdf-service.ts:377)
+// can render without modification — recentGame=null + upcomingGame=null + standings=[] are all
+// already-handled paths in the renderer (line 418 "No recent game" branch).
+function buildSportsPlaceholder(sportKey: string, displayName: string, teamName: string): BriefSportLeague {
+  return {
+    sport: sportKey,
+    displayName,
+    teamName,
+    divisionName: "",
+    recentGame: null,
+    upcomingGame: null,
+    standings: [],
+  };
+}
 
 // ── Timeout helper (T-76-02 mitigation) ──────────────────────────────────────
 
@@ -70,16 +109,38 @@ export function mapSports(result: PromiseSettledResult<SportsResponse>): BriefSp
   if (result.status === "rejected") return [];
 
   const { leagues } = result.value;
+  const orderedKeys = ["mlb", "nfl", "nba", "nhl"] as const;
+
+  // Phase 116.1 SPORTS-01b D-07 detection: count non-disabled leagues + how many are 'error'.
+  // All-failed condition: every non-disabled league is 'error' AND there's at least 1 such league.
+  const nonDisabled = orderedKeys.filter((k) => leagues[k].status !== "disabled");
+  const errored = nonDisabled.filter((k) => leagues[k].status === "error");
+  if (nonDisabled.length > 0 && errored.length === nonDisabled.length) {
+    // D-07: short-circuit to single all-failed block.
+    return [buildSportsPlaceholder("all-failed", "Sports", ALL_FAILED_COPY)];
+  }
+
   const mapped: BriefSportLeague[] = [];
 
-  for (const key of ["mlb", "nfl", "nba", "nhl"] as League[]) {
+  for (const key of orderedKeys) {
     const league = leagues[key];
-    // Phase 116 SPORTS-01 D-15/D-18: this filter drops { status: 'disabled' } too —
-    // when all four leagues are disabled, mapped is empty and pdf-service's
+
+    // Phase 116 SPORTS-01 D-15/D-18: 'disabled' status → silent omission (cascade preserved).
+    // When all four leagues are disabled, mapped is empty and pdf-service's
     // `data.sports.length > 0` guard at pdf-service.ts:281 suppresses the entire
     // sports section (header + content). No renderer changes needed.
+    if (league.status === "disabled") continue;
+
+    // Phase 116.1 SPORTS-01b D-05: per-league placeholder for upstream failures.
+    if (league.status === "error") {
+      mapped.push(buildSportsPlaceholder(key, key.toUpperCase(), PER_LEAGUE_FAILURE_COPY(key)));
+      continue;
+    }
+
+    // 'off_season' or any other non-'ok' status: continue to skip (preserve current behavior).
     if (league.status !== "ok" || !league.data) continue;
 
+    // Happy path — UNCHANGED from existing implementation.
     const data = league.data;
     const teamName = process.env[`SPORTS_${key.toUpperCase()}_TEAM_NAME`] ?? "My Team";
 
@@ -203,6 +264,8 @@ export function mapThoughts(
 export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
   const SOURCE_TIMEOUT_MS = deps._sourceTimeoutMs ?? 10_000;
   const CACHE_DIR = deps._cacheDir ?? AFFIRMATION_CACHE_DIR;
+  // Phase 116.1 SPORTS-01b D-06: PostHog telemetry hook; injectable for tests.
+  const trackEventImpl = deps.trackEventFn ?? trackEvent;
 
   // ── DB query helpers ────────────────────────────────────────────────────
 
@@ -515,6 +578,26 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     if (sportsR.status === "rejected") {
       console.log(`[brief-assembly] Sports source failed: ${sportsR.reason instanceof Error ? sportsR.reason.message : "unknown"}`);
     }
+
+    // Phase 116.1 SPORTS-01b D-06: emit a PostHog event per failed league for cohort/funnel analytics.
+    // Orthogonal to the console.log above: that fires when the entire Promise rejected (catastrophic
+    // failure); this fires per-league inside a fulfilled SportsResponse (partial failures).
+    // Property names use snake_case per Phase 105 PostHog convention (D-01..D-04 type contract).
+    // T-73-01 preserved: properties are enum literals only — no URL, no apiKey, no BDL response body.
+    if (sportsR.status === "fulfilled") {
+      const sportsValue = sportsR.value as SportsResponse;
+      for (const key of ["mlb", "nfl", "nba", "nhl"] as const) {
+        const lr = sportsValue.leagues[key];
+        if (lr.status === "error") {
+          trackEventImpl(userId, "sports_league_fetch_failed", {
+            league: key,
+            status: "error",
+            error_class: extractErrorClass(lr.error),
+          });
+        }
+      }
+    }
+
     if (calendarR.status === "rejected") {
       console.log(`[brief-assembly] Calendar source failed: ${calendarR.reason instanceof Error ? calendarR.reason.message : "unknown"}`);
     }
