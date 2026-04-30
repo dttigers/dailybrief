@@ -4,7 +4,7 @@ milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: verifying
 stopped_at: Completed 117-05-PLAN.md
-last_updated: "2026-04-30T16:52:42.057Z"
+last_updated: "2026-04-30T21:45:12.804Z"
 last_activity: 2026-04-30
 progress:
   total_phases: 14
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 ## Current Position
 
 Milestone: v3.7 (started 2026-04-27)
-Phase: 117 (auth-email-rate-limit-ux-hardening) — EXECUTING
-Plan: 5 of 5
+Phase: 999.1
+Plan: Not started
 Status: Phase complete — ready for verification
 Last activity: 2026-04-30
 
