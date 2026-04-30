@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
-status: executing
-stopped_at: Completed 117-04-PLAN.md
-last_updated: "2026-04-30T16:44:10.966Z"
+status: verifying
+stopped_at: Completed 117-05-PLAN.md
+last_updated: "2026-04-30T16:52:42.057Z"
 last_activity: 2026-04-30
 progress:
   total_phases: 14
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 51
-  completed_plans: 52
+  completed_plans: 53
   percent: 100
 ---
 
@@ -28,7 +28,7 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 Milestone: v3.7 (started 2026-04-27)
 Phase: 117 (auth-email-rate-limit-ux-hardening) — EXECUTING
 Plan: 5 of 5
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-04-30
 
 Progress: [░░░░░░░░░░] 0%
@@ -73,6 +73,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 117 P02 | ~3.5 minutes | 1 tasks | 2 files |
 | Phase 117 P03 | ~4 minutes | 1 tasks | 2 files |
 | Phase 117 P04 | ~3 minutes | 1 tasks | 2 files |
+| Phase 117 P05 | ~4 minutes | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -140,6 +141,10 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 117]: Phase 117-04: newPw state preserved across rate_limited → idle (AUTH-12-RPP-06) — typed password not cleared on 429 path; STRIDE T-117-04-01 mitigated since state is in-memory only, never persisted to storage
 - [Phase 117]: Phase 117-04: rate_limited render shows only 'Back to login' link (no Submit button) — simpler than disabled-Submit; user waits for countdown (form auto-returns with newPw preserved) or navigates away
 - [Phase 117]: Phase 117-04: D-08 heading+body copy now verbatim across Plan 03 VerifyEmailPage + Plan 04 ResetPasswordPage — single source-of-truth string locked across the app; Plan 05 must mirror
+- [Phase 117]: Phase 117-05: D-08 copy variation — inline single-line form 'Too many attempts — try again in {Xm Ys}.' fits the verify-email banner real estate (no heading hierarchy); VerifyEmailPage/ResetPasswordPage's heading+body split is structurally inappropriate for this micro-UI
+- [Phase 117]: Phase 117-05: resendRetryCountdown + resendCountdownTimerRef are STRUCTURALLY INDEPENDENT from per-league sports countdowns (different ref names, single-value vs Record-per-league); Phase 116.1 system untouched — verified by acceptance grep
+- [Phase 117]: Phase 117-05: ResendState 'rate_limited' is no longer terminal — recovers to 'idle' on countdown completion, matching D-09 visual unification with VerifyEmailPage/ResetPasswordPage Confirm/Submit recovery
+- [Phase 117]: Phase 117-05: renamed (not deleted) AUTH-11-B2-RESEND-RATE-LIMITED test asserting old copy verbatim — preserved test ID for git-blame continuity, updated assertion to D-08 fallback copy; T-117-05-03 anticipated this regression
 
 ### Pending Todos
 
@@ -175,7 +180,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-30T16:44:10.960Z
-Stopped at: Completed 117-04-PLAN.md
+Last session: 2026-04-30T16:52:42.051Z
+Stopped at: Completed 117-05-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 115

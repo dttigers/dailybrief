@@ -284,7 +284,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 115: Calendar source picker (+ ThoughtRow whitespace polish)** — Users select which Google calendars feed the brief from PWA Settings; multi-line thought captures preserve line breaks in row view (completed 2026-04-27)
 - [x] **Phase 116: Sports source picker** — Users select which leagues + favorite teams feed the brief from PWA Settings; sports-service respects per-user picks instead of hardcoded teamIds (completed 2026-04-29)
 - [x] **Phase 116.1: Sports route + PWA error-class differentiation (INSERTED)** — Wrap BDL fetches in route try/catch returning structured 502 (no provider-name leak per T-73-01); PWA distinguishes 5xx-server vs 502-upstream vs network/auth in `loadTeamsForLeague` error UI (completed 2026-04-30)
-- [ ] **Phase 117: Auth-email rate-limit UX hardening** — Server raises/refines rate-limit caps across all 4 token endpoints; PWA renders distinct 429 copy with Retry-After countdown
+- [x] **Phase 117: Auth-email rate-limit UX hardening** — Server raises/refines rate-limit caps across all 4 token endpoints; PWA renders distinct 429 copy with Retry-After countdown (completed 2026-04-30)
 - [ ] **Phase 118: Production test-user cleanup** — Test rows `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) plus cascaded children deleted from Railway prod with documented runbook
 - [ ] **Phase 119: DMARC quarantine ramp** — `vigilhub.io` Cloudflare DNS DMARC policy advances `p=none → p=quarantine` after 2026-05-06 auto-eval gate passes
 
@@ -442,7 +442,7 @@ Plans:
 - [x] 117-02-PLAN.md — Extend classifyFetchError with rate-limited bucket (status === 429 + Retry-After header/body parsing)
 - [x] 117-03-PLAN.md — VerifyEmailPage 5th visual state (rate_limited) with mm:ss countdown + cleanup-on-unmount
 - [x] 117-04-PLAN.md — ResetPasswordPage rate-limited state + countdown + form-state preservation across rate_limited→idle
-- [ ] 117-05-PLAN.md — SettingsPage Resend Verification 'rate_limited' branch with countdown (independent of Phase 116.1 per-league timers)
+- [x] 117-05-PLAN.md — SettingsPage Resend Verification 'rate_limited' branch with countdown (independent of Phase 116.1 per-league timers)
 **UI hint**: yes
 
 ### Phase 118: Production test-user cleanup
@@ -595,7 +595,7 @@ Plans:
 
 | 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 4/4 | Complete    | 2026-04-28 |
 | 116. Sports source picker | v3.7 | 5/5 | Complete    | 2026-04-29 |
-| 117. Auth-email rate-limit UX hardening | v3.7 | 4/5 | In Progress|  |
+| 117. Auth-email rate-limit UX hardening | v3.7 | 5/5 | Complete   | 2026-04-30 |
 | 118. Production test-user cleanup | v3.7 | 0/TBD | Not started | - |
 | 119. DMARC quarantine ramp | v3.7 | 0/TBD | Not started | - |
 
@@ -609,7 +609,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 4/5 plans executed
+**Plans:** 5/5 plans complete
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
