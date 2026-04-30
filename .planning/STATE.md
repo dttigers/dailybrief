@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Phase 116.1 context gathered
-last_updated: "2026-04-29T15:30:29.387Z"
+stopped_at: Completed 116.1-02-PLAN.md
+last_updated: "2026-04-30T00:13:00.986Z"
 last_activity: 2026-04-29
 progress:
   total_phases: 13
   completed_phases: 8
-  total_plans: 42
-  completed_plans: 44
+  total_plans: 46
+  completed_plans: 46
   percent: 100
 ---
 
@@ -66,6 +66,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 116 P03 | 5min | 1 tasks | 2 files |
 | Phase 116 P05 | 13min | 3 tasks | 3 files |
 | Phase 116 P04 | 7min | 2 tasks | 3 files |
+| Phase 116.1 P02 | 20 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,8 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 116]: Phase 116-04: Defensive READ shape-check on sports_selections jsonb (rejects non-array enabledLeagues, missing favoriteTeams, non-object value) — defense-in-depth against direct psql tampering / schema drift even though Plan 01's WRITE path validates first (T-116-04-01)
 - [Phase 116]: Phase 116-04: D-18 satisfied STRUCTURALLY — mapSports's existing 'status !== ok' filter drops 'disabled' (added in Plan 03), so disabled leagues never reach BriefRenderData.sports; pdf-service.ts:281 guard suppresses section. NO renderer changes needed — comment-as-contract locks the cascade against future filter 'simplification' refactors
 - [Phase 116]: Phase 116-04: D-12 SPORTS_*_TEAM_ID env-var deletion is a manual Railway ops step (NOT a code change) — env-var fallback inside sports-service.ts is preserved as TEST-ONLY (D-13 from Plan 03's Detroit-team fixtures); index.ts paper-trail comment + SUMMARY runbook document the deletion procedure
+- [Phase 116.1]: upstreamErrorToResponse() defined at module level (outside factory) — no closure needed, avoids re-defining per factory call
+- [Phase 116.1]: [Rule 1 fix] fetchLeague's generic catch block was missing the D-10 UpstreamError re-throw; standings-only catchers had the fix from Plan 01 but fetchLeague itself did not — added  before the fallback status:error result
 
 ### Pending Todos
 
@@ -151,7 +154,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-29T15:30:29.381Z
-Stopped at: Phase 116.1 context gathered
-Resume file: .planning/phases/116.1-sports-route-pwa-error-class-differentiation/116.1-CONTEXT.md
+Last session: 2026-04-30T00:13:00.980Z
+Stopped at: Completed 116.1-02-PLAN.md
+Resume file: None
 Next action: /gsd-plan-phase 115
