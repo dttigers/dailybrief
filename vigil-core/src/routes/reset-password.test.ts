@@ -340,11 +340,11 @@ describe("POST /v1/auth/reset-password", () => {
     assert.equal(row!.usedAt, null);
   });
 
-  // ── Test 10: per-IP rate limit (5/h) — 6th call returns 429 ────────────────
-  it("per-IP rate limit (5/h) — 6th call from same IP returns 429", async () => {
+  // ── Test 10: per-IP rate limit (20/h, raised in Phase 117 AUTH-13 D-03) — 21st call returns 429 ──
+  it("per-IP rate limit (20/h) — 21st call from same IP returns 429", async () => {
     let last: Response | null = null;
     const ipForThisTest = `10.0.0.${Math.floor(Math.random() * 200) + 1}`;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 21; i++) {
       last = await app.request("/v1/auth/reset-password", {
         method: "POST",
         headers: {
@@ -363,6 +363,44 @@ describe("POST /v1/auth/reset-password", () => {
       last!.headers.get("Retry-After") !== null,
       "Retry-After header should be set on 429",
     );
+  });
+
+  // ── AUTH-13-R-CAP-20: lock the per-IP cap constant against accidental drift ─
+  it("AUTH-13-R-CAP-20: source file declares RATE_LIMIT_MAX = 20 verbatim (drift detector)", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const url = await import("node:url");
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.join(here, "reset-password.ts"), "utf8");
+    assert.match(
+      src,
+      /const RATE_LIMIT_MAX = 20;/,
+      "reset-password.ts must declare RATE_LIMIT_MAX = 20 verbatim (Phase 117 AUTH-13 D-03 lock)",
+    );
+  });
+
+  // ── AUTH-13-R-FIRST-20-OK: first 20 requests from a fresh IP do NOT trip 429 ─
+  it("AUTH-13-R-FIRST-20-OK: first 20 POSTs from a single IP all return non-429", async () => {
+    const route = createResetPasswordRoute();
+    const { Hono: HonoClass } = await import("hono");
+    const localApp = new HonoClass();
+    localApp.route("/v1", route);
+    const uniqueIp = `10.117.2.${Math.floor(Math.random() * 200) + 10}`;
+    for (let i = 0; i < 20; i++) {
+      const res = await localApp.request("/v1/auth/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-forwarded-for": uniqueIp },
+        body: JSON.stringify({
+          token: crypto.randomBytes(32).toString("base64url"),
+          newPassword: "ValidNewPass123!",
+        }),
+      });
+      assert.notEqual(
+        res.status,
+        429,
+        `request ${i + 1} of 20 must NOT be rate-limited (cap is 20/hr)`,
+      );
+    }
   });
 
   // ── Test 11: D-11 ORDERING PIN — mock DB throws on user.update ─────────────

@@ -45,11 +45,17 @@ import { hashPassword } from "../utils/password.js";
 const MIN_PASSWORD = 12;
 const MAX_PASSWORD = 128;
 
-// ── Rate limit (D-13: per-IP only, 5/h, sliding window) ─────────────────────
+// ── Rate limit (D-13 + Phase 117 D-03: per-IP only, 20/h, sliding window) ──
 // No per-email axis — the body has no email field; the token IS the auth.
 // Per-IP defends against brute-force token guessing (although 256-bit entropy
 // makes that effectively impossible — belt-and-suspenders).
-const RATE_LIMIT_MAX = 5;
+//
+// Phase 117 (AUTH-13 D-03): raised 5 → 20 to tolerate household-NAT retry
+// patterns. Brute-force protection structurally preserved — 20/hr per-IP
+// still hard-blocks 100/min abuse. Token entropy is 256-bit, mirroring
+// verify-email.ts cap policy verbatim (kept in sync intentionally —
+// both endpoints share the same threat profile per CONTEXT D-03).
+const RATE_LIMIT_MAX = 20;
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
 const ipBuckets = new Map<string, number[]>();
 
