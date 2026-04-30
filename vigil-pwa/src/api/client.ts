@@ -873,10 +873,80 @@ export async function setSportsSelections(s: SportsSelections): Promise<void> {
  * Fetches the team roster for a league for the picker dropdown.
  * Server-side cached for 24h (D-07); client-side caching handled by the caller's component state.
  * Unwraps the { teams } envelope — caller gets the array directly.
+ *
+ * Phase 116.1 D-13: on non-ok response, throws an Error whose `.response` is the original Response
+ * so the caller can pass `err.response` (or the catch'd value if it's already a Response) to
+ * classifyFetchError. Network-level throws (fetch itself rejecting) propagate as-is — the caller
+ * passes the raw Error to classifyFetchError which returns kind:'network'.
  */
 export async function getSportsTeams(league: League): Promise<TeamListEntry[]> {
   const res = await vigilFetch(`/v1/sports/teams/${league}`)
-  if (!res.ok) throw new Error(`Failed to fetch teams for ${league}: ${res.status}`)
+  if (!res.ok) {
+    const err = new Error(`Failed to fetch teams for ${league}: ${res.status}`) as Error & { response?: Response }
+    err.response = res  // attach Response for classifier; do NOT consume body here (classifyFetchError calls .clone().json())
+    throw err
+  }
   const body = (await res.json()) as { teams: TeamListEntry[] }
   return body.teams
+}
+
+// ── Phase 116.1 SPORTS-01b: error-class taxonomy (D-13, D-14, D-15) ────────────────
+
+/**
+ * 4-bucket taxonomy for fetch failures, calibrated to USER ACTIONABILITY:
+ *   - auth (401/403): vigilFetch already redirected to /auth — picker won't re-render this case
+ *   - upstream (502): server reached BDL; BDL failed. Body MAY include `retryAfter` (seconds).
+ *   - server (other 5xx): our server is broken. User can only wait.
+ *   - network (no Response): fetch threw — DNS, offline, CORS, AbortError. User: check connection.
+ *
+ * D-13: single source of truth in PWA. Used by sports picker today; any future PWA helper
+ * that needs class-aware error UI consumes this same helper.
+ */
+export type ErrorClass =
+  | { kind: 'auth' }
+  | { kind: 'upstream'; retryAfter?: number }
+  | { kind: 'server' }
+  | { kind: 'network' }
+
+/**
+ * Classify a caught fetch failure into one of 4 buckets per D-14.
+ *
+ * @param input — either a non-ok Response (status >= 400) OR an Error from a fetch throw.
+ *                Pass `unknown` from a catch block; the helper is tolerant.
+ *
+ * Mirror of Plan 01's UpstreamError taxonomy on the server side. Server-side: kind union is
+ * { rate-limited, server-error, timeout, auth }. Client-side: { auth, upstream, server, network }.
+ * The client doesn't distinguish rate-limited from server-error from timeout — they all
+ * reach the PWA as 502 (collapsed by Plan 02's route mapping). retryAfter is the sole
+ * within-bucket variance (only present for the original rate-limited kind).
+ */
+export async function classifyFetchError(input: Response | Error | unknown): Promise<ErrorClass> {
+  // Non-Response throws (TypeError, AbortError, DOMException) → network bucket.
+  // Treat anything that isn't a Response as network. This includes:
+  //   - fetch() throwing (DNS fail, CORS preflight fail, offline)
+  //   - getSportsTeams() throwing its own Error wrapper (we'll re-classify via the original Response when available)
+  if (!(input instanceof Response)) {
+    return { kind: 'network' }
+  }
+
+  const res = input
+  if (res.status === 401 || res.status === 403) {
+    return { kind: 'auth' }
+  }
+  if (res.status === 502) {
+    // Try to extract retryAfter from body. Body shape from Plan 02: { error, retryAfter? }.
+    // If body parse fails or retryAfter is missing/invalid, return upstream without it.
+    try {
+      const body = await res.clone().json() as { error?: string; retryAfter?: unknown }
+      const ra = body?.retryAfter
+      if (typeof ra === 'number' && Number.isFinite(ra) && ra > 0 && ra <= 86_400) {
+        return { kind: 'upstream', retryAfter: ra }
+      }
+    } catch {
+      // Body parse failure — fall through to no-retryAfter upstream.
+    }
+    return { kind: 'upstream' }
+  }
+  // 500, 503, 504, any other 5xx, and unexpected non-ok responses → server bucket.
+  return { kind: 'server' }
 }
