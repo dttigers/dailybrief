@@ -904,21 +904,26 @@ export async function getSportsTeams(league: League): Promise<TeamListEntry[]> {
  */
 export type ErrorClass =
   | { kind: 'auth' }
+  | { kind: 'rate-limited'; retryAfter?: number }   // Phase 117 (AUTH-12 D-10): auth-route 429 bucket
   | { kind: 'upstream'; retryAfter?: number }
   | { kind: 'server' }
   | { kind: 'network' }
 
 /**
- * Classify a caught fetch failure into one of 4 buckets per D-14.
+ * Classify a caught fetch failure into one of 5 buckets per D-14 + Phase 117 D-10.
  *
  * @param input — either a non-ok Response (status >= 400) OR an Error from a fetch throw.
  *                Pass `unknown` from a catch block; the helper is tolerant.
  *
  * Mirror of Plan 01's UpstreamError taxonomy on the server side. Server-side: kind union is
- * { rate-limited, server-error, timeout, auth }. Client-side: { auth, upstream, server, network }.
- * The client doesn't distinguish rate-limited from server-error from timeout — they all
- * reach the PWA as 502 (collapsed by Plan 02's route mapping). retryAfter is the sole
- * within-bucket variance (only present for the original rate-limited kind).
+ * { rate-limited, server-error, timeout, auth }. Client-side: { auth, rate-limited, upstream, server, network }.
+ * The client doesn't distinguish server-error from timeout — they all
+ * reach the PWA as 502 (collapsed by Plan 02's route mapping). retryAfter is within-bucket
+ * variance for both rate-limited (NEW Phase 117) and upstream (Phase 116.1).
+ *
+ * Phase 117 (AUTH-12 D-10): adds 5th bucket `rate-limited` for status === 429.
+ * retryAfter sourced from Retry-After header (preferred) with body field fallback.
+ * Same range guard as upstream bucket: 1 ≤ retryAfter ≤ 86400.
  */
 export async function classifyFetchError(input: Response | Error | unknown): Promise<ErrorClass> {
   // Non-Response throws (TypeError, AbortError, DOMException) → network bucket.
@@ -933,6 +938,37 @@ export async function classifyFetchError(input: Response | Error | unknown): Pro
   if (res.status === 401 || res.status === 403) {
     return { kind: 'auth' }
   }
+
+  // Phase 117 (AUTH-12 D-10): 429 rate-limited bucket. retryAfter sourced
+  // from Retry-After header (preferred — HTTP-spec source of truth) with
+  // fallback to body.retryAfter field. Range-guard mirrors the 502 branch
+  // below: must be a finite positive number ≤ 86400. If neither source is
+  // valid, return without retryAfter (countdown UI suppresses itself).
+  if (res.status === 429) {
+    // Try header first.
+    const headerRaw = res.headers.get('Retry-After')
+    if (headerRaw !== null) {
+      // Only accept delay-seconds (RFC 7231 §7.1.3) — HTTP-date format not supported.
+      // Strict equality `String(parsed) === headerRaw.trim()` rejects "120abc",
+      // "120.5", and "Wed, 21 Oct..." that parseInt would otherwise accept.
+      const parsed = parseInt(headerRaw, 10)
+      if (Number.isFinite(parsed) && parsed > 0 && parsed <= 86_400 && String(parsed) === headerRaw.trim()) {
+        return { kind: 'rate-limited', retryAfter: parsed }
+      }
+    }
+    // Header missing or invalid — fall back to body.retryAfter field.
+    try {
+      const body = await res.clone().json() as { error?: string; retryAfter?: unknown }
+      const ra = body?.retryAfter
+      if (typeof ra === 'number' && Number.isFinite(ra) && ra > 0 && ra <= 86_400) {
+        return { kind: 'rate-limited', retryAfter: ra }
+      }
+    } catch {
+      // Body parse failure — return without retryAfter.
+    }
+    return { kind: 'rate-limited' }
+  }
+
   if (res.status === 502) {
     // Try to extract retryAfter from body. Body shape from Plan 02: { error, retryAfter? }.
     // If body parse fails or retryAfter is missing/invalid, return upstream without it.
