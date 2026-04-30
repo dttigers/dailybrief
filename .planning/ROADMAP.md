@@ -454,7 +454,9 @@ Plans:
   2. No orphaned child rows remain in `oauth_tokens`, `password_reset_tokens`, `work_order_statuses`, `brief_pdfs`, `briefs`, `thoughts`, or any other userId-scoped table for ids 3 or 44 (verified via SELECT against each table).
   3. A runbook (markdown checklist or SQL script with comments) is committed under `.planning/phases/118-*/` capturing exact commands run, before-row-counts, after-row-counts, and rollback notes.
   4. No real user data is collateral damage — a smoke pass confirms the seed user (`jamesonmorrill1@gmail.com`) and any other live accounts still authenticate, generate briefs, and read their thoughts.
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 118-01-cleanup-script-PLAN.md — Build idempotent `vigil-core/scripts/cleanup-test-users.ts` with --dry-run/--commit gate, pre-flight email assertion, and 14-table single-tx delete in D-05 order
+- [ ] 118-02-prod-execution-runbook-PLAN.md — Run dry-run + commit against Railway prod via `railway run`, capture stdout to `118-RUN-LOG.txt`, write `118-RUNBOOK.md` with before/after counts + smoke-pass + rollback notes
 
 ### Phase 119: DMARC quarantine ramp
 **Goal**: `vigilhub.io` DMARC policy advances from `p=none` (monitoring-only) to `p=quarantine` (spoof attempts go to spam) on Cloudflare DNS, with the ramp action gated on the 2026-05-06 auto-eval routine confirming ≥7 days clean aggregate reports + ≥3 days production verify-email volume.
