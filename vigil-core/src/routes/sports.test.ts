@@ -423,3 +423,104 @@ test("SPORTS-01-teams-route-no-leak: 400 error body does NOT mention BALLDONTLIE
   assert.ok(!/BALLDONTLIE/i.test(text), "Response must not mention BALLDONTLIE");
   assert.ok(!/apiKey/i.test(text), "Response must not mention apiKey");
 });
+
+// ── Phase 116.1 SPORTS-01b: Route-layer UpstreamError → 502 mapping ──────────
+
+import type { SportsServiceDeps as SportsServiceDepsForRoute } from "../services/sports-service.js";
+
+/**
+ * Helper for SPORTS-01b-route-* tests.
+ * Returns SportsServiceDeps with a fetchFn that simulates BDL failures:
+ * - status/headers: returns a Response with given status + headers
+ * - throws: fetchFn itself throws the given error (e.g. ECONNREFUSED)
+ * - neverResolves: returns a Promise that never resolves (but honors AbortSignal for timeout path)
+ * - timeoutMsOverride: passed as _timeoutMsOverride to make timeout tests fast
+ */
+function makeFailingDeps(opts: {
+  status?: number;
+  headers?: Record<string, string>;
+  throws?: Error;
+  neverResolves?: boolean;
+  timeoutMsOverride?: number;
+}): SportsServiceDepsForRoute {
+  return {
+    teamIds: { mlb: "1", nfl: "1", nba: "1", nhl: "1" },
+    _timeoutMsOverride: opts.timeoutMsOverride,
+    fetchFn: async (_url: string, init?: RequestInit) => {
+      if (opts.neverResolves) {
+        // Honor abort signal so the AbortController timeout in fetchJSON fires.
+        return new Promise<Response>((_resolve, reject) => {
+          if (init?.signal) {
+            init.signal.addEventListener("abort", () => {
+              const e = new Error("aborted") as Error & { name: string };
+              e.name = "AbortError";
+              reject(e);
+            });
+          }
+        });
+      }
+      if (opts.throws) throw opts.throws;
+      return new Response("{}", {
+        status: opts.status ?? 500,
+        headers: opts.headers ?? {},
+      });
+    },
+  };
+}
+
+test("SPORTS-01b-route-teams-401-returns-502-no-provider-name", async () => {
+  const deps = makeFailingDeps({ status: 401 });
+  const app = createSportsRouter(deps);
+  const res = await app.request("/sports/teams/mlb");
+  assert.equal(res.status, 502);
+  const text = await res.text();
+  const body = JSON.parse(text) as { error: string; retryAfter?: number };
+  assert.deepEqual(body, { error: "Upstream sports provider unavailable" });
+  assert.equal(res.headers.get("Retry-After"), null);
+  assert.doesNotMatch(text, /balldontlie/i);  // T-73-01
+});
+
+test("SPORTS-01b-route-teams-429-returns-502-with-retryAfter-and-header", async () => {
+  const deps = makeFailingDeps({ status: 429, headers: { "Retry-After": "30" } });
+  const app = createSportsRouter(deps);
+  const res = await app.request("/sports/teams/mlb");
+  assert.equal(res.status, 502);
+  const body = await res.json() as { error: string; retryAfter?: number };
+  assert.equal(body.error, "Upstream sports provider unavailable");
+  assert.equal(body.retryAfter, 30);
+  assert.equal(res.headers.get("Retry-After"), "30");
+});
+
+test("SPORTS-01b-route-teams-500-returns-502-no-retryAfter-field", async () => {
+  const deps = makeFailingDeps({ status: 500 });
+  const app = createSportsRouter(deps);
+  const res = await app.request("/sports/teams/mlb");
+  assert.equal(res.status, 502);
+  const text = await res.text();
+  const body = JSON.parse(text) as Record<string, unknown>;
+  assert.equal(body["error"], "Upstream sports provider unavailable");
+  // Verify the field is actually absent from JSON, not present-but-undefined
+  assert.equal("retryAfter" in body, false, "retryAfter MUST NOT be present in body for non-rate-limited errors");
+  assert.equal(res.headers.get("Retry-After"), null);
+  assert.doesNotMatch(text, /balldontlie/i);  // T-73-01
+});
+
+test("SPORTS-01b-route-league-network-failure-returns-502", async () => {
+  const deps = makeFailingDeps({ throws: new Error("ECONNREFUSED") });
+  const app = createSportsRouter(deps);
+  const res = await app.request("/sports/nba");
+  assert.equal(res.status, 502);
+  const text = await res.text();
+  const body = JSON.parse(text) as { error: string };
+  assert.equal(body.error, "Upstream sports provider unavailable");
+  assert.doesNotMatch(text, /balldontlie/i);  // T-73-01
+});
+
+test("SPORTS-01b-route-teams-timeout-returns-502", async () => {
+  const deps = makeFailingDeps({ neverResolves: true, timeoutMsOverride: 10 });
+  const app = createSportsRouter(deps);
+  const res = await app.request("/sports/teams/nfl");
+  assert.equal(res.status, 502);
+  const body = await res.json() as { error: string };
+  assert.equal(body.error, "Upstream sports provider unavailable");
+});
