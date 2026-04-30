@@ -1,0 +1,85 @@
+============================================================
+Phase 118 — Production Test-User Cleanup — Run Log
+============================================================
+Date: 2026-04-30T23:03:57Z
+Operator: jamesonmorrill@Jamesons-iMac.local
+Railway project:
+Project: vigil-core
+Environment: production
+Service: vigil-core
+Script: vigil-core/scripts/cleanup-test-users.ts
+Targets: id=3 (upper@case.com), id=44 (test+phase104@local.test)
+============================================================
+
+--- DRY-RUN INVOCATION ---
+==================================================================
+MODE: DRY-RUN (no commit) — counts only, transaction will ROLLBACK
+==================================================================
+cleanup-test-users: FAILED
+DrizzleQueryError: Failed query: select "id", "email" from "users" where "users"."id" in ($1, $2)
+params: 3,44
+    at PostgresJsPreparedQuery.queryWithCache (/Users/jamesonmorrill/Desktop/Local AI/dailybrief/vigil-core/node_modules/src/pg-core/session.ts:73:11)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async <anonymous> (/Users/jamesonmorrill/Desktop/Local AI/dailybrief/vigil-core/node_modules/src/postgres-js/session.ts:58:17)
+    at async main (/Users/jamesonmorrill/Desktop/Local AI/dailybrief/vigil-core/scripts/cleanup-test-users.ts:168:17) {
+  query: 'select "id", "email" from "users" where "users"."id" in ($1, $2)',
+  params: [ 3, 44 ],
+  cause: Error: getaddrinfo ENOTFOUND postgres.railway.internal
+      at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:121:26) {
+    errno: -3008,
+    code: 'ENOTFOUND',
+    syscall: 'getaddrinfo',
+    hostname: 'postgres.railway.internal'
+  }
+}
+--- DRY-RUN EXIT CODE (first attempt, vigil-core service): 1 (DNS ENOTFOUND postgres.railway.internal — internal-only host) ---
+
+============================================================
+DEVIATION (Rule 3 — Blocking): vigil-core service DATABASE_URL is internal-only
+============================================================
+The plan's invocation form `railway run npx tsx scripts/cleanup-test-users.ts --dry-run`
+sources DATABASE_URL from the linked vigil-core service, which uses the internal
+hostname postgres.railway.internal:5432 — only resolvable from inside Railway's
+private network. From a developer laptop this fails with getaddrinfo ENOTFOUND.
+
+The Postgres service in this same project exposes a parallel DATABASE_PUBLIC_URL
+via the public proxy (hopper.proxy.rlwy.net:22526) pointing at the same database
+(credential parity verified). Re-invoking with --service Postgres + DATABASE_URL
+remap below. Per D-01 the public URL is sourced via `railway run` and never
+written to disk; the script reads DATABASE_URL only from process.env at start.
+============================================================
+
+--- DRY-RUN INVOCATION (corrected — Postgres service public URL) ---
+==================================================================
+MODE: DRY-RUN (no commit) — counts only, transaction will ROLLBACK
+==================================================================
+Pre-flight OK: id=3 -> upper@case.com, id=44 -> test+phase104@local.test
+
+
+TABLE                       ROWS DELETED
+--------------------------  ------------
+thought_links                          0
+brief_pdfs                             8
+briefs                                 8
+thoughts                               0
+projects                               0
+api_keys                               0
+chat_sessions                          0
+work_order_statuses                    0
+work_orders                            0
+oauth_tokens                           0
+app_settings                           0
+ai_cache                               0
+password_reset_tokens                  0
+users                                  2
+--------------------------  ------------
+TOTAL                                 18
+
+==========================================================
+MODE: DRY-RUN — TRANSACTION ROLLED BACK (no prod mutation)
+==========================================================
+
+--- DRY-RUN EXIT CODE: 0 ---
+(Authoritative exit captured via silent re-run of identical invocation:
+ `set -o pipefail; railway run --service Postgres -- bash -c 'DATABASE_URL="$DATABASE_PUBLIC_URL" npx tsx scripts/cleanup-test-users.ts --dry-run' >/dev/null 2>&1; echo $?` => 0.
+ First in-band capture lost the code due to PIPESTATUS scoping inside the tee'd pipeline.)
