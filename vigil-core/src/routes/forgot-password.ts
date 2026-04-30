@@ -39,7 +39,14 @@ const DUMMY_HASH =
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const TOKEN_TTL_MS = 60 * 60 * 1000;             // D-21: 1h expiry
-const RATE_LIMIT_MAX = 5;                         // D-04
+// Phase 117 (AUTH-13 D-05): per-axis caps split. Per-IP raised 5 → 20 to
+// tolerate household-NAT retry patterns. Per-email STAYS at 5 — that axis
+// is the enum-safety defense (a single email getting 5+ attempts/hr is
+// suspicious and the existing 200-enum-safe response shape masks it).
+// Both axes still resolve to the same 200-enum-safe response on trip per
+// D-04 from Phase 112 (preserved).
+const RATE_LIMIT_MAX_IP = 20;                     // Phase 117 D-05: raised 5 → 20
+const RATE_LIMIT_MAX_EMAIL = 5;                   // Phase 117 D-05: UNCHANGED — enum-safety guard
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;      // D-04: 1h sliding window
 
 // ── Enumeration-safe response body (D-03 verbatim) ──────────────────────────
@@ -76,10 +83,12 @@ setInterval(() => {
   }
 }, RATE_LIMIT_WINDOW_MS).unref();
 
-function takeSlot(map: Map<string, number[]>, key: string, now: number): boolean {
+// Phase 117 (AUTH-13 D-05): max is now a per-call parameter so per-IP and
+// per-email axes can have different caps (20 vs 5).
+function takeSlot(map: Map<string, number[]>, key: string, now: number, max: number): boolean {
   const cutoff = now - RATE_LIMIT_WINDOW_MS;
   const arr = (map.get(key) ?? []).filter((t) => t >= cutoff);
-  if (arr.length >= RATE_LIMIT_MAX) {
+  if (arr.length >= max) {
     map.set(key, arr);
     return false;
   }
@@ -126,8 +135,8 @@ export function createForgotPasswordRoute(deps?: ForgotPasswordDeps): Hono {
     // that limiting occurred at all; 200 preferred at single-user scale).
     const ip = c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
     const now = nowFn();
-    const ipOk = takeSlot(ipBuckets, ip, now);
-    const emailOk = email ? takeSlot(emailBuckets, email, now) : true;
+    const ipOk = takeSlot(ipBuckets, ip, now, RATE_LIMIT_MAX_IP);
+    const emailOk = email ? takeSlot(emailBuckets, email, now, RATE_LIMIT_MAX_EMAIL) : true;
     if (!ipOk || !emailOk) {
       return c.json(ENUM_SAFE_BODY, 200);
     }

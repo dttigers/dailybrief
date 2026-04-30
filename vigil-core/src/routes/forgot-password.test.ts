@@ -339,7 +339,11 @@ describe("POST /v1/auth/forgot-password", () => {
   });
 
   // ── Test 7: per-email rate limit (5/h) — 6th call still 200 enum-safe ─────
-  it("per-email rate limit fires after 5 requests within 1 hour for the same email", async (t) => {
+  // Phase 117 D-05: per-email cap UNCHANGED at 5 (enum-safety guard). The
+  // per-email axis is the dominant defense against enumeration via repeated
+  // attempts on a single address. Loop bound stays at 6 (proves the 6th call
+  // is rate-limited at the per-email axis even though per-IP is now 20).
+  it("per-email rate limit fires after 5 requests within 1 hour for the same email (Phase 117 D-05: per-email cap UNCHANGED at 5 — enum-safety guard)", async (t) => {
     if (!process.env["DATABASE_URL"]) {
       t.skip("DATABASE_URL required");
       return;
@@ -376,8 +380,8 @@ describe("POST /v1/auth/forgot-password", () => {
     );
   });
 
-  // ── Test 8: per-IP rate limit (5/h) across different emails ───────────────
-  it("per-IP rate limit fires after 5 requests within 1 hour from the same IP across DIFFERENT emails", async (t) => {
+  // ── Test 8: per-IP rate limit (20/h) across different emails (Phase 117 D-05: per-IP cap raised 5 → 20) ──
+  it("per-IP rate limit fires after 20 requests within 1 hour from the same IP across DIFFERENT emails (Phase 117 D-05: per-IP cap raised 5 → 20)", async (t) => {
     if (!process.env["DATABASE_URL"]) {
       t.skip("DATABASE_URL required");
       return;
@@ -389,7 +393,7 @@ describe("POST /v1/auth/forgot-password", () => {
     sendSpy.mock.resetCalls();
     const baseTs = Date.now();
     const ipForThisTest = `10.0.0.${Math.floor(Math.random() * 200) + 1}`;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < 21; i++) {
       const email = `rl-ip-${baseTs}-${Math.random()}-${i}@example.com`;
       await seedUser(email);
       const res = await app.request("/v1/auth/forgot-password", {
@@ -408,9 +412,63 @@ describe("POST /v1/auth/forgot-password", () => {
       });
     }
     assert.ok(
-      sendSpy.mock.callCount() <= 5,
-      `sendPasswordResetEmail called ${sendSpy.mock.callCount()} times — must be <= 5 (per-IP cap)`,
+      sendSpy.mock.callCount() <= 20,
+      `sendPasswordResetEmail called ${sendSpy.mock.callCount()} times — must be <= 20 (per-IP cap raised in Phase 117 D-05)`,
     );
+  });
+
+  // ── AUTH-13-FP-CAP-IP-20: lock the per-IP cap constant ────────────────
+  it("AUTH-13-FP-CAP-IP-20: source file declares RATE_LIMIT_MAX_IP = 20 verbatim (drift detector)", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const url = await import("node:url");
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.join(here, "forgot-password.ts"), "utf8");
+    assert.match(
+      src,
+      /const RATE_LIMIT_MAX_IP = 20;/,
+      "forgot-password.ts must declare RATE_LIMIT_MAX_IP = 20 verbatim (Phase 117 AUTH-13 D-05 lock)",
+    );
+  });
+
+  // ── AUTH-13-FP-CAP-EMAIL-5: lock the per-email cap constant — enum-safety guard ─
+  it("AUTH-13-FP-CAP-EMAIL-5: source file declares RATE_LIMIT_MAX_EMAIL = 5 verbatim (enum-safety lock)", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const url = await import("node:url");
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.join(here, "forgot-password.ts"), "utf8");
+    assert.match(
+      src,
+      /const RATE_LIMIT_MAX_EMAIL = 5;/,
+      "forgot-password.ts must declare RATE_LIMIT_MAX_EMAIL = 5 verbatim (Phase 117 AUTH-13 D-05 enum-safety guard)",
+    );
+  });
+
+  // ── AUTH-13-FP-ENUM-SAFE-PRESERVED: 21st request from same IP still returns 200 enum-safe (NOT 429) ─
+  it("AUTH-13-FP-ENUM-SAFE-PRESERVED: 21st POST from same IP returns 200 enum-safe (D-05 — no shape change)", async (t) => {
+    if (!process.env["DATABASE_URL"]) { t.skip("DATABASE_URL required"); return; }
+    if (!db) { t.skip("db not initialized"); return; }
+    sendSpy.mock.resetCalls();
+    const baseTs = Date.now();
+    const ipForThisTest = `10.117.4.${Math.floor(Math.random() * 200) + 1}`;
+    let lastRes: Response | null = null;
+    for (let i = 0; i < 21; i++) {
+      const email = `rl-117-${baseTs}-${Math.random()}-${i}@example.com`;
+      await seedUser(email);
+      lastRes = await app.request("/v1/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-forwarded-for": ipForThisTest },
+        body: JSON.stringify({ email }),
+      });
+    }
+    // 21st call still returns 200, NOT 429 — enum-safety means rate-limit
+    // never surfaces as a distinct status code.
+    assert.equal(lastRes!.status, 200, "21st call must still return 200 (enum-safe response shape unchanged)");
+    assert.deepEqual(await lastRes!.json(), {
+      ok: true,
+      message: "If your account exists, a reset link has been sent.",
+    });
   });
 
   // ── Test 9: invalid JSON body returns 200 enum-safe ───────────────────────
