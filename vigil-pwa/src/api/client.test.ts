@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { getGoogleStatus, disconnectGoogle, redirectToGoogleAuth, getPrintSchedule, setPrintSchedule, signOut, vigilFetch } from './client'
+import { getGoogleStatus, disconnectGoogle, redirectToGoogleAuth, getPrintSchedule, setPrintSchedule, signOut, vigilFetch, classifyFetchError } from './client'
 
 describe('api/client Google methods', () => {
   beforeEach(() => {
@@ -284,5 +284,106 @@ describe("vigilFetch — D-19 'Session expired' handler", () => {
     const res = await vigilFetch('/v1/some-route')
     expect(res.status).toBe(200)
     expect(sessionStorage.getItem('vigil_jwt')).toBe('test-jwt')
+  })
+})
+
+// ── Phase 117 (AUTH-12 D-10): rate-limited bucket on classifyFetchError ────────
+//
+// 8 new tests covering 429 + Retry-After header (preferred) and body retryAfter
+// (fallback) + range guard + HTTP-date rejection + regression of pre-existing
+// buckets unchanged from Phase 116.1.
+
+describe('classifyFetchError — Phase 117 AUTH-12 D-10 rate-limited bucket', () => {
+  it('AUTH-12-CFE-RL-01-HEADER-ONLY: 429 + Retry-After: 120 header → { kind: "rate-limited", retryAfter: 120 }', async () => {
+    const res = new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers: { 'Retry-After': '120', 'Content-Type': 'application/json' },
+    })
+    const result = await classifyFetchError(res)
+    expect(result).toEqual({ kind: 'rate-limited', retryAfter: 120 })
+  })
+
+  it('AUTH-12-CFE-RL-02-BODY-ONLY: 429 + body.retryAfter=90 (no header) → { kind: "rate-limited", retryAfter: 90 }', async () => {
+    const res = new Response(JSON.stringify({ error: 'Too many requests', retryAfter: 90 }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json' },
+    })
+    const result = await classifyFetchError(res)
+    expect(result).toEqual({ kind: 'rate-limited', retryAfter: 90 })
+  })
+
+  it('AUTH-12-CFE-RL-03-BOTH-HEADER-WINS: 429 + header=120 + body=90 → header wins (retryAfter: 120)', async () => {
+    const res = new Response(JSON.stringify({ error: 'Too many requests', retryAfter: 90 }), {
+      status: 429,
+      headers: { 'Retry-After': '120', 'Content-Type': 'application/json' },
+    })
+    const result = await classifyFetchError(res)
+    expect(result).toEqual({ kind: 'rate-limited', retryAfter: 120 })
+  })
+
+  it('AUTH-12-CFE-RL-04-NEITHER: 429 with no header AND no body retryAfter → { kind: "rate-limited" } (no retryAfter)', async () => {
+    const res = new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json' },
+    })
+    const result = await classifyFetchError(res)
+    expect(result.kind).toBe('rate-limited')
+    // retryAfter must be absent (NOT present-but-undefined). Use 'in' check.
+    expect('retryAfter' in result ? result.retryAfter : undefined).toBeUndefined()
+  })
+
+  it('AUTH-12-CFE-RL-05-HEADER-OUT-OF-RANGE: 429 + Retry-After: 100000 (> 86400) → no retryAfter (range guard)', async () => {
+    const res = new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers: { 'Retry-After': '100000', 'Content-Type': 'application/json' },
+    })
+    const result = await classifyFetchError(res)
+    expect(result.kind).toBe('rate-limited')
+    expect('retryAfter' in result ? result.retryAfter : undefined).toBeUndefined()
+  })
+
+  it('AUTH-12-CFE-RL-06-HEADER-NEGATIVE: 429 + Retry-After: -5 → no retryAfter (range guard)', async () => {
+    const res = new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers: { 'Retry-After': '-5', 'Content-Type': 'application/json' },
+    })
+    const result = await classifyFetchError(res)
+    expect(result.kind).toBe('rate-limited')
+    expect('retryAfter' in result ? result.retryAfter : undefined).toBeUndefined()
+  })
+
+  it('AUTH-12-CFE-RL-07-HEADER-NON-NUMERIC: 429 + Retry-After: HTTP-date string → no retryAfter (delay-seconds only)', async () => {
+    const res = new Response(JSON.stringify({ error: 'Too many requests' }), {
+      status: 429,
+      headers: { 'Retry-After': 'Wed, 21 Oct 2015 07:28:00 GMT', 'Content-Type': 'application/json' },
+    })
+    const result = await classifyFetchError(res)
+    expect(result.kind).toBe('rate-limited')
+    expect('retryAfter' in result ? result.retryAfter : undefined).toBeUndefined()
+  })
+
+  it('AUTH-12-CFE-REGRESSION-OTHERS: 401/403/500/502/non-Response unchanged from Phase 116.1', async () => {
+    // 401 → auth (unchanged)
+    const r401 = new Response('', { status: 401 })
+    expect(await classifyFetchError(r401)).toEqual({ kind: 'auth' })
+
+    // 403 → auth (unchanged)
+    const r403 = new Response('', { status: 403 })
+    expect(await classifyFetchError(r403)).toEqual({ kind: 'auth' })
+
+    // 500 → server (unchanged)
+    const r500 = new Response('', { status: 500 })
+    expect(await classifyFetchError(r500)).toEqual({ kind: 'server' })
+
+    // 502 with body retryAfter=30 → upstream with retryAfter (Phase 116.1 — unchanged)
+    const r502 = new Response(JSON.stringify({ error: 'Upstream sports provider unavailable', retryAfter: 30 }), {
+      status: 502,
+      headers: { 'Content-Type': 'application/json' },
+    })
+    expect(await classifyFetchError(r502)).toEqual({ kind: 'upstream', retryAfter: 30 })
+
+    // Non-Response → network (unchanged)
+    expect(await classifyFetchError(new Error('boom'))).toEqual({ kind: 'network' })
+    expect(await classifyFetchError('not a response')).toEqual({ kind: 'network' })
   })
 })
