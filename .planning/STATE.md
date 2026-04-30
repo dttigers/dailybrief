@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
-stopped_at: Completed 116.1-03-PLAN.md
-last_updated: "2026-04-30T15:37:59.201Z"
+stopped_at: Phase 117 context gathered
+last_updated: "2026-04-30T15:49:06.478Z"
 last_activity: 2026-04-30
 progress:
-  total_phases: 13
+  total_phases: 14
   completed_phases: 9
   total_plans: 46
   completed_plans: 48
@@ -158,7 +158,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-30T00:37:15.251Z
-Stopped at: Completed 116.1-03-PLAN.md
-Resume file: None
+Last session: 2026-04-30T15:49:06.472Z
+Stopped at: Phase 117 context gathered
+Resume file: .planning/phases/117-auth-email-rate-limit-ux-hardening/117-CONTEXT.md
 Next action: /gsd-plan-phase 115
