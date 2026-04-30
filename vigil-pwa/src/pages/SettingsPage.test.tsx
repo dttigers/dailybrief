@@ -649,7 +649,9 @@ describe('SettingsPage', () => {
     function makeSportsFetchImpl(opts: {
       googleStatus?: object | null
       sportsSelections?: { enabledLeagues: Array<'mlb'|'nfl'|'nba'|'nhl'>; favoriteTeams: Record<string, string> }
-      teamsByLeague?: Partial<Record<'mlb'|'nfl'|'nba'|'nhl', Array<{ id: string, name: string }> | { errorStatus: number }>>
+      // Phase 116.1 D-13: errorBody allows driving structured 502 responses; teamsThrowFor simulates network bucket (fetch throws, no Response)
+      teamsByLeague?: Partial<Record<'mlb'|'nfl'|'nba'|'nhl', Array<{ id: string, name: string }> | { errorStatus: number; errorBody?: object }>>
+      teamsThrowFor?: Array<'mlb'|'nfl'|'nba'|'nhl'>
       putResponse?: { status: number; body?: object }
       authMe?: object
     }) {
@@ -680,13 +682,19 @@ describe('SettingsPage', () => {
           const match = u.match(/\/v1\/sports\/teams\/(mlb|nfl|nba|nhl)/)
           const league = match ? match[1] as 'mlb'|'nfl'|'nba'|'nhl' : null
           if (!league) return new Response(JSON.stringify({ error: 'unknown' }), { status: 400 })
+          // Phase 116.1 D-13: simulate network bucket — fetchImpl throws for these leagues
+          if (opts.teamsThrowFor?.includes(league)) {
+            throw new TypeError('Failed to fetch')  // simulates browser fetch rejection (DNS / offline / CORS)
+          }
           teamsCallCounts[league] = (teamsCallCounts[league] ?? 0) + 1
           const stub = opts.teamsByLeague?.[league]
           if (!stub) return new Response(JSON.stringify({ teams: [] }), { status: 200 })
           if ('errorStatus' in stub) {
             // Use call count to flip from error to success on retry: errorStatus on first call, 200 on subsequent.
             if (teamsCallCounts[league] === 1) {
-              return new Response(JSON.stringify({ error: 'down' }), { status: stub.errorStatus })
+              // Phase 116.1: errorBody allows driving structured 502 response bodies
+              const body = stub.errorBody ?? { error: 'down' }
+              return new Response(JSON.stringify(body), { status: stub.errorStatus })
             }
             return new Response(JSON.stringify({ teams: [{ id: '116', name: 'Detroit Tigers' }] }), { status: 200 })
           }
@@ -800,6 +808,8 @@ describe('SettingsPage', () => {
       })
       const user = userEvent.setup()
       renderPage({ fetchImpl })
+      // Phase 116.1 D-14: errorStatus: 500 now classifies as 'server' bucket → new copy.
+      await waitFor(() => expect(screen.getByText('Sports settings unavailable. Try again.')).toBeInTheDocument())
       const retry = await screen.findByTestId('sports-retry-mlb')
       const before = getTeamsCallCounts().mlb ?? 0
       await user.click(retry)
@@ -850,6 +860,83 @@ describe('SettingsPage', () => {
       } finally {
         vi.useRealTimers()
       }
+    })
+
+    it('SPORTS-01b-pwa-upstream-bucket-with-countdown: 502 + retryAfter renders upstream copy + live countdown + disabled Retry', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const { fetchImpl } = makeSportsFetchImpl({
+          sportsSelections: { enabledLeagues: [], favoriteTeams: {} },
+          teamsByLeague: {
+            mlb: { errorStatus: 502, errorBody: { error: 'Upstream sports provider unavailable', retryAfter: 5 } },
+          },
+        })
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        renderPage({ fetchImpl })
+        const cb = await screen.findByTestId('sports-checkbox-mlb')
+        await user.click(cb)
+        // Wait for the error state to land.
+        await waitFor(() =>
+          expect(screen.getByText('Sports data temporarily unavailable.')).toBeInTheDocument()
+        )
+        // Countdown renders with starting value (5 seconds → "0:05"), Retry disabled.
+        await waitFor(() =>
+          expect(screen.getByTestId('sports-countdown-mlb')).toHaveTextContent(/Try again in 0:0[345]/)
+        )
+        expect(screen.getByTestId('sports-retry-mlb')).toBeDisabled()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('SPORTS-01b-pwa-upstream-bucket-no-countdown: 502 without retryAfter renders upstream copy + enabled Retry + no countdown', async () => {
+      const { fetchImpl } = makeSportsFetchImpl({
+        sportsSelections: { enabledLeagues: [], favoriteTeams: {} },
+        teamsByLeague: {
+          mlb: { errorStatus: 502, errorBody: { error: 'Upstream sports provider unavailable' } },
+        },
+      })
+      const user = userEvent.setup()
+      renderPage({ fetchImpl })
+      const cb = await screen.findByTestId('sports-checkbox-mlb')
+      await user.click(cb)
+      await waitFor(() =>
+        expect(screen.getByText('Sports data temporarily unavailable.')).toBeInTheDocument()
+      )
+      expect(screen.queryByTestId('sports-countdown-mlb')).toBeNull()
+      expect(screen.getByTestId('sports-retry-mlb')).not.toBeDisabled()
+    })
+
+    it('SPORTS-01b-pwa-server-bucket: 500 renders server copy + no countdown + enabled Retry', async () => {
+      const { fetchImpl } = makeSportsFetchImpl({
+        sportsSelections: { enabledLeagues: [], favoriteTeams: {} },
+        teamsByLeague: { mlb: { errorStatus: 500 } },
+      })
+      const user = userEvent.setup()
+      renderPage({ fetchImpl })
+      const cb = await screen.findByTestId('sports-checkbox-mlb')
+      await user.click(cb)
+      await waitFor(() =>
+        expect(screen.getByText('Sports settings unavailable. Try again.')).toBeInTheDocument()
+      )
+      expect(screen.queryByTestId('sports-countdown-mlb')).toBeNull()
+      expect(screen.getByTestId('sports-retry-mlb')).not.toBeDisabled()
+    })
+
+    it('SPORTS-01b-pwa-network-bucket: fetch throws renders network copy + no countdown', async () => {
+      const { fetchImpl } = makeSportsFetchImpl({
+        sportsSelections: { enabledLeagues: [], favoriteTeams: {} },
+        teamsThrowFor: ['mlb'],
+      })
+      const user = userEvent.setup()
+      renderPage({ fetchImpl })
+      const cb = await screen.findByTestId('sports-checkbox-mlb')
+      await user.click(cb)
+      await waitFor(() =>
+        expect(screen.getByText('No network connection.')).toBeInTheDocument()
+      )
+      expect(screen.queryByTestId('sports-countdown-mlb')).toBeNull()
+      expect(screen.getByTestId('sports-retry-mlb')).not.toBeDisabled()
     })
   })
 })
