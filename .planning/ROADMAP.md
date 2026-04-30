@@ -437,7 +437,12 @@ Plans:
   2. A legitimate user retrying any of the 4 flows from a single IP no longer trips the rate limit on routine retry patterns (cap raised and/or per-userId/per-email axis added per endpoint as chosen during plan-phase).
   3. Brute-force protection is structurally preserved — abuse patterns (e.g., 100 attempts/min from one IP) still hit 429; enumeration safety on `/v1/auth/forgot-password` is unchanged (no oracle leak in the new copy).
   4. The PWA error-bucket split is exhaustive: time-expired tokens still render "no longer valid"; rate-limited responses render the new 429 copy; no path renders both or neither.
-**Plans**: TBD
+**Plans**: 5 plans
+- [ ] 117-01-PLAN.md — Server rate-limit cap raises (verify-email/reset-password 5→20, resend-verification 3→5, forgot-password per-IP 5→20 with per-email cap unchanged at 5 for enum-safety)
+- [ ] 117-02-PLAN.md — Extend classifyFetchError with rate-limited bucket (status === 429 + Retry-After header/body parsing)
+- [ ] 117-03-PLAN.md — VerifyEmailPage 5th visual state (rate_limited) with mm:ss countdown + cleanup-on-unmount
+- [ ] 117-04-PLAN.md — ResetPasswordPage rate-limited state + countdown + form-state preservation across rate_limited→idle
+- [ ] 117-05-PLAN.md — SettingsPage Resend Verification 'rate_limited' branch with countdown (independent of Phase 116.1 per-league timers)
 **UI hint**: yes
 
 ### Phase 118: Production test-user cleanup
