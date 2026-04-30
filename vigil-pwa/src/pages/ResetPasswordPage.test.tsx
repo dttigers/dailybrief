@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 
 // Mock useNavigate so tests can assert on navigation calls.
@@ -100,14 +100,15 @@ describe('ResetPasswordPage', () => {
     expect(screen.queryByLabelText(/new password/i)).not.toBeInTheDocument()
   })
 
-  it('submit returns 429 → inline error banner, form stays mounted', async () => {
+  it('AUTH-12-RPP-01-429-RENDERS-COUNTDOWN: 429 + Retry-After: 120 renders rate-limited UX with mm:ss (form unmounts)', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        status: 429,
-        ok: false,
-        json: async () => ({ error: 'Too many requests' }),
-      }),
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: 'Too many requests' }), {
+          status: 429,
+          headers: { 'Retry-After': '120', 'Content-Type': 'application/json' },
+        }),
+      ),
     )
     renderAt('/auth/reset?token=abc-test-token-xyz')
     fireEvent.change(screen.getByLabelText(/new password/i), {
@@ -115,10 +116,159 @@ describe('ResetPasswordPage', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: /reset password/i }))
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(/too many attempts/i)
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Too many attempts')
     })
-    // Form still rendered.
-    expect(screen.getByLabelText(/new password/i)).toBeInTheDocument()
+    expect(screen.getByText(/Try again in 2m 0s\./)).toBeInTheDocument()
+    // Form unmounted — password input gone.
+    expect(screen.queryByLabelText(/new password/i)).toBeNull()
+    // Legacy "This link is no longer valid" not rendered.
+    expect(screen.queryByText(/This link is no longer valid/)).toBeNull()
+  })
+
+  it('AUTH-12-RPP-02-COUNTDOWN-TICKS: countdown ticks down each second and form returns at zero', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(JSON.stringify({ error: 'Too many requests' }), {
+            status: 429,
+            headers: { 'Retry-After': '3', 'Content-Type': 'application/json' },
+          }),
+        ),
+      )
+      renderAt('/auth/reset?token=abc-test-token-xyz')
+      fireEvent.change(screen.getByLabelText(/new password/i), {
+        target: { value: 'ValidNewPass123!' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: /reset password/i }))
+      await waitFor(() => {
+        expect(screen.getByText(/Try again in 0m 3s\./)).toBeInTheDocument()
+      })
+      // Tick 1s → 0m 2s
+      await act(async () => { vi.advanceTimersByTime(1000) })
+      expect(screen.getByText(/Try again in 0m 2s\./)).toBeInTheDocument()
+      // Tick 1s → 0m 1s
+      await act(async () => { vi.advanceTimersByTime(1000) })
+      expect(screen.getByText(/Try again in 0m 1s\./)).toBeInTheDocument()
+      // Tick the final second → form returns.
+      await act(async () => { vi.advanceTimersByTime(1000) })
+      await waitFor(() => {
+        expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/Set a new password/i)
+      })
+      expect(screen.getByLabelText(/new password/i)).toBeInTheDocument()
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('AUTH-12-RPP-03-NO-RETRYAFTER-FALLBACK: 429 with no Retry-After renders rate-limited copy WITHOUT countdown', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: 'Too many requests' }), {
+          status: 429,
+          headers: { 'Content-Type': 'application/json' }, // no Retry-After
+        }),
+      ),
+    )
+    renderAt('/auth/reset?token=abc-test-token-xyz')
+    fireEvent.change(screen.getByLabelText(/new password/i), {
+      target: { value: 'ValidNewPass123!' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /reset password/i }))
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Too many attempts')
+    })
+    // No mm:ss countdown.
+    expect(screen.queryByText(/\d+m \d+s/)).toBeNull()
+  })
+
+  it('AUTH-12-RPP-04-400-RENDERS-LEGACY-INVALID-TOKEN: 400 renders existing tokenInvalid UX (D-20 preserved)', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(JSON.stringify({ error: 'Invalid or expired token' }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      ),
+    )
+    renderAt('/auth/reset?token=abc-test-token-xyz')
+    fireEvent.change(screen.getByLabelText(/new password/i), {
+      target: { value: 'ValidNewPass123!' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /reset password/i }))
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(/This link is no longer valid/)
+    })
+    expect(screen.queryByText(/Too many attempts/)).toBeNull()
+  })
+
+  it('AUTH-12-RPP-05-CLEANUP-ON-UNMOUNT: unmounting mid-countdown does not warn about setState-after-unmount', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    try {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(JSON.stringify({ error: 'Too many requests' }), {
+            status: 429,
+            headers: { 'Retry-After': '120', 'Content-Type': 'application/json' },
+          }),
+        ),
+      )
+      const { unmount } = renderAt('/auth/reset?token=abc-test-token-xyz')
+      fireEvent.change(screen.getByLabelText(/new password/i), {
+        target: { value: 'ValidNewPass123!' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: /reset password/i }))
+      await waitFor(() => {
+        expect(screen.getByText(/Try again in 2m 0s\./)).toBeInTheDocument()
+      })
+      unmount()
+      await act(async () => { vi.advanceTimersByTime(5000) })
+      const setStateWarnings = errorSpy.mock.calls.filter((call) =>
+        String(call[0] ?? '').match(/state update on an unmounted|act\(\)/i),
+      )
+      expect(setStateWarnings.length).toBe(0)
+    } finally {
+      errorSpy.mockRestore()
+      vi.useRealTimers()
+    }
+  })
+
+  it('AUTH-12-RPP-06-PASSWORD-PRESERVED-ACROSS-429-IDLE: typed password is preserved across rate_limited → idle transition', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn().mockResolvedValue(
+          new Response(JSON.stringify({ error: 'Too many requests' }), {
+            status: 429,
+            headers: { 'Retry-After': '1', 'Content-Type': 'application/json' },
+          }),
+        ),
+      )
+      renderAt('/auth/reset?token=abc-test-token-xyz')
+      fireEvent.change(screen.getByLabelText(/new password/i), {
+        target: { value: 'PreservedPass123!' },
+      })
+      fireEvent.click(screen.getByRole('button', { name: /reset password/i }))
+      await waitFor(() => {
+        expect(screen.getByText(/Try again in 0m 1s\./)).toBeInTheDocument()
+      })
+      // Tick the final second → form returns.
+      await act(async () => { vi.advanceTimersByTime(1000) })
+      await waitFor(() => {
+        expect(screen.getByLabelText(/new password/i)).toBeInTheDocument()
+      })
+      // Typed password preserved across rate_limited → idle transition.
+      const input = screen.getByLabelText(/new password/i) as HTMLInputElement
+      expect(input.value).toBe('PreservedPass123!')
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('show/hide eye-toggle flips input type between password and text', () => {
