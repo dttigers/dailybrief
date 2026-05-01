@@ -285,7 +285,7 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 116: Sports source picker** — Users select which leagues + favorite teams feed the brief from PWA Settings; sports-service respects per-user picks instead of hardcoded teamIds (completed 2026-04-29)
 - [x] **Phase 116.1: Sports route + PWA error-class differentiation (INSERTED)** — Wrap BDL fetches in route try/catch returning structured 502 (no provider-name leak per T-73-01); PWA distinguishes 5xx-server vs 502-upstream vs network/auth in `loadTeamsForLeague` error UI (completed 2026-04-30)
 - [x] **Phase 117: Auth-email rate-limit UX hardening** — Server raises/refines rate-limit caps across all 4 token endpoints; PWA renders distinct 429 copy with Retry-After countdown (completed 2026-04-30)
-- [ ] **Phase 118: Production test-user cleanup** — Test rows `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) plus cascaded children deleted from Railway prod with documented runbook
+- [x] **Phase 118: Production test-user cleanup** — Test rows `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) plus cascaded children deleted from Railway prod with documented runbook (completed 2026-05-01)
 - [ ] **Phase 119: DMARC quarantine ramp** — `vigilhub.io` Cloudflare DNS DMARC policy advances `p=none → p=quarantine` after 2026-05-06 auto-eval gate passes
 
 ## 🚧 v3.5 Observability, G2 Resubmit & Capture Repair (In Progress)
@@ -456,7 +456,7 @@ Plans:
   4. No real user data is collateral damage — a smoke pass confirms the seed user (`jamesonmorrill1@gmail.com`) and any other live accounts still authenticate, generate briefs, and read their thoughts.
 **Plans**: 2 plans
 - [x] 118-01-cleanup-script-PLAN.md — Build idempotent `vigil-core/scripts/cleanup-test-users.ts` with --dry-run/--commit gate, pre-flight email assertion, and 14-table single-tx delete in D-05 order
-- [ ] 118-02-prod-execution-runbook-PLAN.md — Run dry-run + commit against Railway prod via `railway run`, capture stdout to `118-RUN-LOG.txt`, write `118-RUNBOOK.md` with before/after counts + smoke-pass + rollback notes
+- [x] 118-02-prod-execution-runbook-PLAN.md — Run dry-run + commit against Railway prod via `railway run`, capture stdout to `118-RUN-LOG.txt`, write `118-RUNBOOK.md` with before/after counts + smoke-pass + rollback notes
 
 ### Phase 119: DMARC quarantine ramp
 **Goal**: `vigilhub.io` DMARC policy advances from `p=none` (monitoring-only) to `p=quarantine` (spoof attempts go to spam) on Cloudflare DNS, with the ramp action gated on the 2026-05-06 auto-eval routine confirming ≥7 days clean aggregate reports + ≥3 days production verify-email volume.
@@ -598,7 +598,7 @@ Plans:
 | 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 4/4 | Complete    | 2026-04-28 |
 | 116. Sports source picker | v3.7 | 5/5 | Complete    | 2026-04-29 |
 | 117. Auth-email rate-limit UX hardening | v3.7 | 5/5 | Complete    | 2026-04-30 |
-| 118. Production test-user cleanup | v3.7 | 1/2 | In Progress|  |
+| 118. Production test-user cleanup | v3.7 | 2/2 | Complete   | 2026-05-01 |
 | 119. DMARC quarantine ramp | v3.7 | 0/TBD | Not started | - |
 
 ## Backlog
@@ -611,7 +611,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 1/2 plans executed
+**Plans:** 2/2 plans complete
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe

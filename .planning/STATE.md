@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
-status: executing
-stopped_at: Completed 118-01-cleanup-script-PLAN.md
-last_updated: "2026-04-30T23:02:16.398Z"
-last_activity: 2026-04-30
+status: verifying
+stopped_at: Completed 118-02-prod-execution-runbook-PLAN.md
+last_updated: "2026-05-01T14:05:01.940Z"
+last_activity: 2026-05-01
 progress:
   total_phases: 15
-  completed_phases: 10
+  completed_phases: 11
   total_plans: 53
-  completed_plans: 54
+  completed_plans: 55
   percent: 100
 ---
 
@@ -28,8 +28,8 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 Milestone: v3.7 (started 2026-04-27)
 Phase: 118 (production-test-user-cleanup) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-04-30
+Status: Phase complete — ready for verification
+Last activity: 2026-05-01
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -75,6 +75,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 117 P04 | ~3 minutes | 1 tasks | 2 files |
 | Phase 117 P05 | ~4 minutes | 1 tasks | 2 files |
 | Phase 118 P01 | 3min | 1 tasks | 3 files |
+| Phase 118 P02 | 25min | 3 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -149,6 +150,9 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 118]: Phase 118-01: tsconfig.scripts.json rootDir widened to project root + include src/**/* — scripts importing from ../src/ now type-check cleanly under tsc --noEmit. Restores parity with existing tsx-only scripts (seed-local.ts, set-password.ts) while adding compile-time gate.
 - [Phase 118]: Phase 118-01: optional npm scripts cleanup:test-users:dry-run / :commit added without --env-file=.env — preserves D-01 (Railway CLI is the sole DATABASE_URL injection path; no DATABASE_URL on local disk). Plan 02 invokes via railway run.
 - [Phase 118]: Phase 118-01: DryRunRollback custom error class (extends Error) chosen over generic throw — type-narrowable via instanceof in catch block, distinguishes the dry-run rollback path from any genuine tx failure. Pattern reusable for future ops scripts with --dry-run/--commit gates.
+- [Phase 118]: Phase 118-02: deviation Rule 3 — corrected plan invocation to railway run --service Postgres + DATABASE_PUBLIC_URL remap (vigil-core service exposes only internal-only postgres.railway.internal hostname); D-01 (no DATABASE_URL on disk) preserved
+- [Phase 118]: Phase 118-02: COMMIT EXIT CODE inferred as 0 (Option A annotation) — bash PIPESTATUS scoping under tee'd pipeline silently dropped exit code; safe silent-re-run impossible post-cleanup (pre-flight assertion would now fail), so inferred from TRANSACTION COMMITTED banner + all-zero AFTER SELECTs
+- [Phase 118]: Phase 118-02: Postgres password rotation queued as ops follow-up (NOT a Phase 118 deliverable) — railway variables --service Postgres --kv emitted plaintext into agent context during URL discovery; verified absent from 118-RUN-LOG.txt; rotation is defense-in-depth
 
 ### Pending Todos
 
@@ -184,7 +188,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-04-30T23:02:16.391Z
-Stopped at: Completed 118-01-cleanup-script-PLAN.md
+Last session: 2026-05-01T14:05:01.934Z
+Stopped at: Completed 118-02-prod-execution-runbook-PLAN.md
 Resume file: None
 Next action: /gsd-plan-phase 115
