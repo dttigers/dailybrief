@@ -471,7 +471,9 @@ Plans:
 **Notes / Constraints**:
 - Phase implementation (runbook + ramp script/checklist) can land any time; the ramp action itself is gated and only fires on or after 2026-05-06.
 - Final `p=quarantine → p=reject` ramp is explicitly OUT OF SCOPE for v3.7 (deferred to v3.8+ after ≥30 days clean quarantine telemetry per REQUIREMENTS.md).
-**Plans**: TBD
+**Plans**: 2 plans
+- [ ] 119-01-PLAN.md — Author and commit 119-RUNBOOK.md before 2026-05-06 with all D-04 sections (pre-ramp dig, click-path, before/after, post-ramp dig, two-path smoke, PASS/FAIL/DEFERRED branches, rollback, cross-refs)
+- [ ] 119-02-PLAN.md — Execute the manual ramp on or after 2026-05-06 — gated on trig_01RZLcj1jpxvDQAwnFmUG9d9 PASS — Cloudflare dashboard edit, post-ramp dig, two-path smoke, PASS/FAIL/DEFERRED annotation, rollback if D-06 trigger fires
 
 ## Progress
 
