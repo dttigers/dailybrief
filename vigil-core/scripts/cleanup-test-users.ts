@@ -31,12 +31,14 @@
  *
  * NOTE on schema drift: this script lists 14 user-scoped tables verbatim. If a
  * future migration adds a 15th user-scoped table, this script MUST be updated
- * alongside that migration. Detection in Plan 02 runbook: post-cleanup verify
- * SELECTs check for orphans across known tables; a missed table would surface
- * as orphaned children if the deleted ids were ever reused.
+ * alongside that migration. As of IN-04, `assertNoSchemaDrift()` introspects
+ * information_schema for any `user_id` column not in TABLE_ORDER and aborts
+ * before any DELETE is issued. Detection in Plan 02 runbook: post-cleanup
+ * verify SELECTs check for orphans across known tables; a missed table would
+ * surface as orphaned children if the deleted ids were ever reused.
  */
 
-import { inArray } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import { db, closeConnection } from "../src/db/connection.js";
 import {
   thoughtLinks,
@@ -131,6 +133,43 @@ function printBanner(line: string): void {
   console.log(bar);
 }
 
+/**
+ * Schema-drift guard (IN-04 follow-up).
+ *
+ * Queries information_schema for every table in `public` that has a `user_id`
+ * column and compares it against the hardcoded TABLE_ORDER list. If a future
+ * migration introduces a 15th user-scoped table without updating this script,
+ * the runtime check fails closed BEFORE any DELETE is issued.
+ *
+ * Note: `users` itself is the parent (has `id`, not `user_id`), so it is in
+ * TABLE_ORDER but not expected from the introspection query.
+ */
+async function assertNoSchemaDrift(
+  database: NonNullable<typeof db>,
+): Promise<void> {
+  const rows = await database.execute(sql`
+    SELECT DISTINCT table_name
+    FROM information_schema.columns
+    WHERE column_name = 'user_id'
+      AND table_schema = 'public'
+  `);
+  const found = (rows as unknown as Array<{ table_name: string }>).map(
+    (r) => r.table_name,
+  );
+  const known = new Set<string>(TABLE_ORDER);
+  const unknown = found.filter((name) => !known.has(name));
+  if (unknown.length > 0) {
+    console.error(
+      `Schema drift detected: tables with user_id not in TABLE_ORDER: ${unknown.join(", ")}`,
+    );
+    console.error(
+      "Update TABLE_ORDER, add a tx.delete() call for each new table, and re-run.",
+    );
+    console.error("Aborting per IN-04 (no DELETE issued).");
+    process.exit(1);
+  }
+}
+
 function printCountsTable(counts: Record<string, number>): void {
   console.log("");
   console.log("TABLE                       ROWS DELETED");
@@ -160,6 +199,11 @@ async function main(): Promise<void> {
     );
     process.exit(1);
   }
+
+  // IN-04: programmatic schema-drift guard. Catches the case where a future
+  // migration adds a user-scoped table without updating TABLE_ORDER + the
+  // explicit tx.delete() block below. Fails closed before any mutation.
+  await assertNoSchemaDrift(db);
 
   printBanner(
     isCommit
