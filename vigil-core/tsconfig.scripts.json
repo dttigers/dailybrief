@@ -2,9 +2,9 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./dist/scripts",
-    "rootDir": "./",
+    "rootDir": "./scripts",
     "noEmit": false,
     "declaration": false
   },
-  "include": ["scripts/migrate-102-seed.ts", "scripts/cleanup-test-users.ts", "src/**/*"]
+  "include": ["scripts/migrate-102-seed.ts"]
 }
