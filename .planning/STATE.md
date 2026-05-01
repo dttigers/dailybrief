@@ -158,9 +158,13 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 
 Captured for v3.7 execution (already in REQUIREMENTS once roadmap lands):
 
-- Test users `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) cleanup → OPS-01
+- ~~Test users `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) cleanup → OPS-01~~ ✓ Phase 118 complete 2026-05-01
 - DMARC ramp `p=none → p=quarantine` (auto-eval 2026-05-06) → OPS-02
 - ThoughtRow.tsx:399 `whitespace-pre-line` → POLISH-01
+
+Ops follow-ups (defense-in-depth, not milestone-blocking):
+
+- Rotate Railway Postgres password (Phase 118 Observation #4) → `.planning/todos/pending/2026-05-01-rotate-railway-postgres-password.md`
 
 Captured but explicitly out of v3.7 scope:
 
