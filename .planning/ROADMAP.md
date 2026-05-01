@@ -598,7 +598,7 @@ Plans:
 | 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 4/4 | Complete    | 2026-04-28 |
 | 116. Sports source picker | v3.7 | 5/5 | Complete    | 2026-04-29 |
 | 117. Auth-email rate-limit UX hardening | v3.7 | 5/5 | Complete    | 2026-04-30 |
-| 118. Production test-user cleanup | v3.7 | 2/2 | Complete   | 2026-05-01 |
+| 118. Production test-user cleanup | v3.7 | 2/2 | Complete    | 2026-05-01 |
 | 119. DMARC quarantine ramp | v3.7 | 0/TBD | Not started | - |
 
 ## Backlog
