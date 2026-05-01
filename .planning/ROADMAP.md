@@ -472,7 +472,7 @@ Plans:
 - Phase implementation (runbook + ramp script/checklist) can land any time; the ramp action itself is gated and only fires on or after 2026-05-06.
 - Final `p=quarantine → p=reject` ramp is explicitly OUT OF SCOPE for v3.7 (deferred to v3.8+ after ≥30 days clean quarantine telemetry per REQUIREMENTS.md).
 **Plans**: 2 plans
-- [ ] 119-01-PLAN.md — Author and commit 119-RUNBOOK.md before 2026-05-06 with all D-04 sections (pre-ramp dig, click-path, before/after, post-ramp dig, two-path smoke, PASS/FAIL/DEFERRED branches, rollback, cross-refs)
+- [x] 119-01-PLAN.md — Author and commit 119-RUNBOOK.md before 2026-05-06 with all D-04 sections (pre-ramp dig, click-path, before/after, post-ramp dig, two-path smoke, PASS/FAIL/DEFERRED branches, rollback, cross-refs)
 - [ ] 119-02-PLAN.md — Execute the manual ramp on or after 2026-05-06 — gated on trig_01RZLcj1jpxvDQAwnFmUG9d9 PASS — Cloudflare dashboard edit, post-ramp dig, two-path smoke, PASS/FAIL/DEFERRED annotation, rollback if D-06 trigger fires
 
 ## Progress
@@ -601,7 +601,7 @@ Plans:
 | 116. Sports source picker | v3.7 | 5/5 | Complete    | 2026-04-29 |
 | 117. Auth-email rate-limit UX hardening | v3.7 | 5/5 | Complete    | 2026-04-30 |
 | 118. Production test-user cleanup | v3.7 | 2/2 | Complete    | 2026-05-01 |
-| 119. DMARC quarantine ramp | v3.7 | 0/TBD | Not started | - |
+| 119. DMARC quarantine ramp | v3.7 | 1/2 | In Progress|  |
 
 ## Backlog
 
@@ -613,7 +613,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
 **Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 2/2 plans complete
+**Plans:** 1/2 plans executed
 
 Plans:
 - [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe

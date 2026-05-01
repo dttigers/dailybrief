@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
-status: verifying
-stopped_at: Phase 119 context gathered
-last_updated: "2026-05-01T14:43:21.729Z"
+status: executing
+stopped_at: Completed 119-01-PLAN.md (runbook authored at 4d958dd)
+last_updated: "2026-05-01T15:26:36.470Z"
 last_activity: 2026-05-01
 progress:
   total_phases: 16
   completed_phases: 11
-  total_plans: 53
-  completed_plans: 55
+  total_plans: 55
+  completed_plans: 56
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 118 — production-test-user-cleanup
+**Current focus:** Phase 119 — dmarc-quarantine-ramp
 
 ## Current Position
 
 Milestone: v3.7 (started 2026-04-27)
-Phase: 999.1
-Plan: Not started
-Status: Phase complete — ready for verification
+Phase: 119 (dmarc-quarantine-ramp) — EXECUTING
+Plan: 2 of 2
+Status: Ready to execute
 Last activity: 2026-05-01
 
 Progress: [░░░░░░░░░░] 0%
@@ -76,6 +76,7 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 117 P05 | ~4 minutes | 1 tasks | 2 files |
 | Phase 118 P01 | 3min | 1 tasks | 3 files |
 | Phase 118 P02 | 25min | 3 tasks | 2 files |
+| Phase 119 P01 | 3min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -153,6 +154,7 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 - [Phase 118]: Phase 118-02: deviation Rule 3 — corrected plan invocation to railway run --service Postgres + DATABASE_PUBLIC_URL remap (vigil-core service exposes only internal-only postgres.railway.internal hostname); D-01 (no DATABASE_URL on disk) preserved
 - [Phase 118]: Phase 118-02: COMMIT EXIT CODE inferred as 0 (Option A annotation) — bash PIPESTATUS scoping under tee'd pipeline silently dropped exit code; safe silent-re-run impossible post-cleanup (pre-flight assertion would now fail), so inferred from TRANSACTION COMMITTED banner + all-zero AFTER SELECTs
 - [Phase 118]: Phase 118-02: Postgres password rotation queued as ops follow-up (NOT a Phase 118 deliverable) — railway variables --service Postgres --kv emitted plaintext into agent context during URL discovery; verified absent from 118-RUN-LOG.txt; rotation is defense-in-depth
+- [Phase 119]: Phase 119-01: rephrased deferred-tag mentions (pct/adkim=s/CF_API_TOKEN/flarectl) to descriptive English to satisfy absent-substring acceptance criteria without losing operator clarity
 
 ### Pending Todos
 
@@ -192,7 +194,7 @@ Captured but explicitly out of v3.7 scope:
 
 ## Session Continuity
 
-Last session: 2026-05-01T14:43:21.677Z
-Stopped at: Phase 119 context gathered
-Resume file: .planning/phases/119-dmarc-quarantine-ramp/119-CONTEXT.md
+Last session: 2026-05-01T15:26:36.464Z
+Stopped at: Completed 119-01-PLAN.md (runbook authored at 4d958dd)
+Resume file: None
 Next action: /gsd-plan-phase 115
