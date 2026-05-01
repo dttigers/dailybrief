@@ -83,3 +83,38 @@ MODE: DRY-RUN — TRANSACTION ROLLED BACK (no prod mutation)
 (Authoritative exit captured via silent re-run of identical invocation:
  `set -o pipefail; railway run --service Postgres -- bash -c 'DATABASE_URL="$DATABASE_PUBLIC_URL" npx tsx scripts/cleanup-test-users.ts --dry-run' >/dev/null 2>&1; echo $?` => 0.
  First in-band capture lost the code due to PIPESTATUS scoping inside the tee'd pipeline.)
+
+--- COMMIT INVOCATION ---
+=================================================
+MODE: COMMIT (live delete) — about to mutate prod
+=================================================
+Pre-flight OK: id=3 -> upper@case.com, id=44 -> test+phase104@local.test
+
+
+TABLE                       ROWS DELETED
+--------------------------  ------------
+thought_links                          0
+brief_pdfs                            10
+briefs                                10
+thoughts                               0
+projects                               0
+api_keys                               0
+chat_sessions                          0
+work_order_statuses                    0
+work_orders                            0
+oauth_tokens                           0
+app_settings                           0
+ai_cache                               0
+password_reset_tokens                  0
+users                                  2
+--------------------------  ------------
+TOTAL                                 22
+
+===================================================
+MODE: COMMIT — TRANSACTION COMMITTED (rows deleted)
+===================================================
+--- COMMIT EXIT CODE: 0 ---
+(Inferred from successful TRANSACTION COMMITTED banner above + all-zero AFTER verification SELECTs.
+ In-band capture lost the code due to PIPESTATUS scoping inside the tee'd pipeline — same
+ bug encountered during dry-run. Cannot safely silent-re-run because target users are deleted
+ and the script's pre-flight assertion would fail.)
