@@ -173,11 +173,11 @@ async function main(): Promise<void> {
   const found = await db
     .select({ id: users.id, email: users.email })
     .from(users)
-    .where(inArray(users.id, [3, 44]));
+    .where(inArray(users.id, TARGET_IDS));
 
-  if (found.length !== 2) {
+  if (found.length !== TARGET_IDS.length) {
     console.error(
-      `Pre-flight FAILED: expected 2 rows for ids [3, 44], found ${found.length}`,
+      `Pre-flight FAILED: expected ${TARGET_IDS.length} rows for ids ${JSON.stringify(TARGET_IDS)}, found ${found.length}`,
     );
     console.error(`  Found: ${JSON.stringify(found)}`);
     console.error(`  Aborting per D-03 (no DELETE issued).`);
@@ -211,7 +211,7 @@ async function main(): Promise<void> {
       counts.thought_links = (
         await tx
           .delete(thoughtLinks)
-          .where(inArray(thoughtLinks.userId, [3, 44]))
+          .where(inArray(thoughtLinks.userId, TARGET_IDS))
           .returning({ id: thoughtLinks.id })
       ).length;
 
@@ -219,7 +219,7 @@ async function main(): Promise<void> {
       counts.brief_pdfs = (
         await tx
           .delete(briefPdfs)
-          .where(inArray(briefPdfs.userId, [3, 44]))
+          .where(inArray(briefPdfs.userId, TARGET_IDS))
           .returning({ briefId: briefPdfs.briefId })
       ).length;
 
@@ -227,7 +227,7 @@ async function main(): Promise<void> {
       counts.briefs = (
         await tx
           .delete(briefs)
-          .where(inArray(briefs.userId, [3, 44]))
+          .where(inArray(briefs.userId, TARGET_IDS))
           .returning({ id: briefs.id })
       ).length;
 
@@ -235,7 +235,7 @@ async function main(): Promise<void> {
       counts.thoughts = (
         await tx
           .delete(thoughts)
-          .where(inArray(thoughts.userId, [3, 44]))
+          .where(inArray(thoughts.userId, TARGET_IDS))
           .returning({ id: thoughts.id })
       ).length;
 
@@ -243,7 +243,7 @@ async function main(): Promise<void> {
       counts.projects = (
         await tx
           .delete(projects)
-          .where(inArray(projects.userId, [3, 44]))
+          .where(inArray(projects.userId, TARGET_IDS))
           .returning({ id: projects.id })
       ).length;
 
@@ -251,7 +251,7 @@ async function main(): Promise<void> {
       counts.api_keys = (
         await tx
           .delete(apiKeys)
-          .where(inArray(apiKeys.userId, [3, 44]))
+          .where(inArray(apiKeys.userId, TARGET_IDS))
           .returning({ id: apiKeys.id })
       ).length;
 
@@ -259,7 +259,7 @@ async function main(): Promise<void> {
       counts.chat_sessions = (
         await tx
           .delete(chatSessions)
-          .where(inArray(chatSessions.userId, [3, 44]))
+          .where(inArray(chatSessions.userId, TARGET_IDS))
           .returning({ id: chatSessions.id })
       ).length;
 
@@ -267,7 +267,7 @@ async function main(): Promise<void> {
       counts.work_order_statuses = (
         await tx
           .delete(workOrderStatuses)
-          .where(inArray(workOrderStatuses.userId, [3, 44]))
+          .where(inArray(workOrderStatuses.userId, TARGET_IDS))
           .returning({ caseNumber: workOrderStatuses.caseNumber })
       ).length;
 
@@ -275,7 +275,7 @@ async function main(): Promise<void> {
       counts.work_orders = (
         await tx
           .delete(workOrders)
-          .where(inArray(workOrders.userId, [3, 44]))
+          .where(inArray(workOrders.userId, TARGET_IDS))
           .returning({ caseNumber: workOrders.caseNumber })
       ).length;
 
@@ -283,7 +283,7 @@ async function main(): Promise<void> {
       counts.oauth_tokens = (
         await tx
           .delete(oauthTokens)
-          .where(inArray(oauthTokens.userId, [3, 44]))
+          .where(inArray(oauthTokens.userId, TARGET_IDS))
           .returning({ id: oauthTokens.id })
       ).length;
 
@@ -291,7 +291,7 @@ async function main(): Promise<void> {
       counts.app_settings = (
         await tx
           .delete(appSettings)
-          .where(inArray(appSettings.userId, [3, 44]))
+          .where(inArray(appSettings.userId, TARGET_IDS))
           .returning({ key: appSettings.key })
       ).length;
 
@@ -299,7 +299,7 @@ async function main(): Promise<void> {
       counts.ai_cache = (
         await tx
           .delete(aiCache)
-          .where(inArray(aiCache.userId, [3, 44]))
+          .where(inArray(aiCache.userId, TARGET_IDS))
           .returning({ id: aiCache.id })
       ).length;
 
@@ -307,7 +307,7 @@ async function main(): Promise<void> {
       counts.password_reset_tokens = (
         await tx
           .delete(passwordResetTokens)
-          .where(inArray(passwordResetTokens.userId, [3, 44]))
+          .where(inArray(passwordResetTokens.userId, TARGET_IDS))
           .returning({ id: passwordResetTokens.id })
       ).length;
 
@@ -315,7 +315,7 @@ async function main(): Promise<void> {
       counts.users = (
         await tx
           .delete(users)
-          .where(inArray(users.id, [3, 44]))
+          .where(inArray(users.id, TARGET_IDS))
           .returning({ id: users.id })
       ).length;
 
