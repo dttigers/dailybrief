@@ -37,7 +37,7 @@
  */
 
 import { inArray } from "drizzle-orm";
-import { db } from "../src/db/connection.js";
+import { db, closeConnection } from "../src/db/connection.js";
 import {
   thoughtLinks,
   briefPdfs,
@@ -327,6 +327,7 @@ async function main(): Promise<void> {
       console.error("");
       console.error("Transaction FAILED — ROLLED BACK. No prod mutation.");
       console.error(err);
+      await closeConnection();
       process.exit(1);
     }
   }
@@ -340,11 +341,19 @@ async function main(): Promise<void> {
     printBanner("MODE: DRY-RUN — TRANSACTION ROLLED BACK (no prod mutation)");
   }
 
-  process.exit(0);
+  // Graceful pool teardown — lets the event loop drain naturally without a
+  // hard process.exit. Future maintainers adding telemetry / async observers
+  // after this point will not have their final flush killed mid-flight.
+  await closeConnection();
 }
 
-main().catch((err) => {
+main().catch(async (err) => {
   console.error("cleanup-test-users: FAILED");
   console.error(err);
+  try {
+    await closeConnection();
+  } catch {
+    // best-effort — already failing, don't mask the original error
+  }
   process.exit(1);
 });
