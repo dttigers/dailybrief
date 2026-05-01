@@ -57,11 +57,16 @@ import {
 
 // ── Constants (D-03 + D-05 locked verbatim) ──────────────────────────────────
 
-const TARGET_IDS = [3, 44] as const;
-const EXPECTED_EMAILS: Record<number, string> = {
+// Single source of truth — id → expected email mapping for the test users
+// being purged. To target additional ids (or correct an email), edit this
+// map only; TARGET_IDS and EXPECTED_EMAILS derive from it automatically.
+const TARGETS = {
   3: "upper@case.com",
   44: "test+phase104@local.test",
-};
+} as const;
+
+const TARGET_IDS: number[] = Object.keys(TARGETS).map(Number);
+const EXPECTED_EMAILS: Record<number, string> = TARGETS;
 
 // Custom error class so the dry-run rollback path is type-narrowable inside
 // the catch block (and not confused with any genuine tx-internal failure).
