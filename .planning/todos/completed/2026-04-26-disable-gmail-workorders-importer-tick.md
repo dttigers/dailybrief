@@ -1,5 +1,7 @@
 ---
 created: 2026-04-26T17:07:43.948Z
+completed: 2026-05-02T22:35:00Z
+resolution: moot — self-recovered
 title: Disable gmail-workorders importer tick — invalid_grant since 2026-04-26
 area: api
 files:
@@ -7,6 +9,23 @@ files:
   - vigil-core/src/services/gmail-workorder-service.ts:183
   - vigil-core/src/services/gmail-workorder-service.ts:287
 ---
+
+## Resolution (2026-05-02)
+
+**Moot — importer self-recovered.** Verified live in vigil-core production logs after the 2026-05-02 redeploy:
+
+```
+[gmail-workorders] started (5m tick interval)
+[gmail-workorders] Work order CS0356295 updated: ...
+[gmail-workorders] Imported 8 work order(s)
+[gmail-workorders] No new work orders to import
+```
+
+No `invalid_grant`, actively importing and updating ServiceNow work-order notification emails. Likely cause of recovery: OAuth refresh-token regenerated automatically once usage resumed, OR the 2026-05-02 vigil-core redeploy (triggered for the unrelated DB password rotation) reset some cached auth state.
+
+Either way: importer is healthy, no code change needed. Closing without action.
+
+If `invalid_grant` returns: re-do Google OAuth consent flow for the importer's service account credentials (Google's refresh tokens expire after 6 months of inactivity for unverified apps).
 
 ## Problem
 

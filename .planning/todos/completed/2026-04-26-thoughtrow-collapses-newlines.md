@@ -1,11 +1,21 @@
 ---
 created: 2026-04-26T18:14:00.000Z
+completed: 2026-05-02T22:42:00Z
 title: ThoughtRow collapses newlines in displayed content (whitespace-pre-line missing)
 area: ui
 files:
-  - vigil-pwa/src/components/ThoughtRow.tsx:399
+  - vigil-pwa/src/components/ThoughtRow.tsx:399 (already fixed in Phase 115-03)
   - vigil-pwa/src/components/ThoughtAssignmentRow.tsx:32
+  - vigil-pwa/src/pages/PhotoUploadPage.tsx:183 (audit-discovered third instance)
 ---
+
+## Resolution (2026-05-02)
+
+- `ThoughtRow.tsx:399` — already had `whitespace-pre-line` from Phase 115-03 D-16 (extension multi-line capture display fix). No change needed; verified in current source.
+- `ThoughtAssignmentRow.tsx:32` — added `whitespace-pre-line` to the `<p>` className.
+- `PhotoUploadPage.tsx:183` — surfaced via audit grep for `thought.content` rendering; OCR'd photo thoughts can be multi-line, so same fix applied for consistency.
+
+Three instances now consistent. Pure CSS change, no risk, no migration. Untested visually — flagged for the next time you `npm run dev` on the PWA. The pre-existing `M vigil-pwa/src/index.css` change is unrelated.
 
 ## Problem
 

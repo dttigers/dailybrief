@@ -1,10 +1,41 @@
 ---
 created: 2026-04-26T21:05:00.000Z
+completed: 2026-05-02T22:30:00Z
 title: gsd-tools milestone complete globs all phases — archives wrong content when prior milestone is paused
 area: tooling
 files:
-  - $HOME/.claude/get-shit-done/bin/gsd-tools.cjs
+  - $HOME/.claude/get-shit-done/bin/lib/core.cjs
+  - $HOME/.claude/get-shit-done/bin/lib/milestone.cjs
 ---
+
+## Resolution (2026-05-02)
+
+Fix landed before v3.7 closeout (2026-05-06). The CLI no longer relies on STATE.md being in sync — caller passes the version arg explicitly. Two files changed in `$HOME/.claude/get-shit-done/bin/lib/`:
+
+**`core.cjs`:**
+- `extractCurrentMilestone(content, cwd, explicitVersion?)` — added optional 3rd param so callers can override the STATE.md fallback.
+- `getMilestonePhaseFilter(cwd, explicitVersion?)` — rewritten to slice ONLY the target milestone's section (heading → next sibling vX.Y heading, or EOF), no longer uses `extractCurrentMilestone` (whose preamble can leak in-progress neighbor sections like v3.7 above v3.5).
+- New phase pattern: tries bold-list (`**Phase 115:`) first since that's the milestone-scoped manifest format, falls back to heading (`### Phase 115:`) only if bold matches nothing — preserves backward compat with older project layouts.
+
+**`milestone.cjs`:**
+- `cmdMilestoneComplete` now passes `version` to `getMilestonePhaseFilter` explicitly.
+- New empty-set guard: aborts with a clear error if no phases resolve for the version, instead of silently degrading to pass-all.
+- ROADMAP archive is now scoped via `extractCurrentMilestone(roadmap, cwd, version)` instead of wholesale copy.
+
+**Verified against current project state:**
+- v3.7 explicit → 6 phases (115, 116, 116.1, 117, 118, 119) ✓
+- v3.5 explicit → 5 phases (103-107) ✓ (no v3.7 leak)
+- STATE.md fallback (no arg) → v3.7 phases ✓
+- Bogus `v99.9` → empty-set guard fires with clear error, no side-effects (STATE/MILESTONES untouched) ✓
+
+**Workflow contract items NOT in CLI scope** (handled by `/gsd-complete-milestone` workflow, not the CLI):
+- ROADMAP.md backlog preservation + collapse to milestone grouping
+- `git rm REQUIREMENTS.md`
+- Git tag + commit
+
+The 2026-04-26 incident's missed steps (REQUIREMENTS.md not deleted, ROADMAP.md not collapsed) were workflow-execution issues, not CLI bugs — Claude was driving and skipped those steps. Future closes that follow the workflow markdown should land all 8 closure tasks correctly.
+
+**Note for next time:** the fix lives in `$HOME/.claude/get-shit-done/`, which is global tooling, not in this project's repo. Commits to this project's `.planning/` won't include the fix. The get-shit-done dir doesn't have its own git repo — if you want versioning/backup, set one up.
 
 ## Problem
 

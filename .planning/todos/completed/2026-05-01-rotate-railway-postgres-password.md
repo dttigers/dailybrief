@@ -1,11 +1,22 @@
 ---
 created: 2026-05-01T14:17:00.796Z
+completed: 2026-05-02T22:08:28Z
 title: Rotate Railway Postgres password
 area: tooling
 files:
   - .planning/phases/118-production-test-user-cleanup/118-RUNBOOK.md (Observation #4)
   - .planning/phases/118-production-test-user-cleanup/118-RUN-LOG.txt (anti-leak grep clean)
 ---
+
+## Resolution (2026-05-02)
+
+Rotated successfully but the path deviated significantly from what this todo documented. Updated `project_railway_deploy.md` memory so this is not re-learned. Summary:
+
+1. Dashboard "Reset password" updated POSTGRES_PASSWORD env BUT did NOT run `ALTER USER postgres PASSWORD ...` on the live DB → cluster locked out of itself, vigil-core crash-looped on `auth_failed`.
+2. vigil-core's DATABASE_URL was a literal copy of the old URL (not a `${{Postgres.DATABASE_URL}}` reference) — converted to reference during recovery.
+3. Recovery: ran `ALTER USER postgres WITH PASSWORD '<new>'` via Railway dashboard's Postgres Data/SQL tab (admin path, no user-password auth needed).
+4. `railway restart` did NOT pick up the new injection — references resolve at deploy time. `railway redeploy --service vigil-core` was required for a fresh build to re-resolve DATABASE_URL with the current password.
+5. Verified green: HTTP 200 + `database: "connected"` at 2026-05-02T22:08:28Z; PWA login + thought capture confirmed by user.
 
 ## Problem
 
