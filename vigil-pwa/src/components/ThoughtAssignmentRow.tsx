@@ -29,7 +29,7 @@ export default function ThoughtAssignmentRow({ thought, onUnassign }: ThoughtAss
   return (
     <div className="px-3 py-2 flex items-start gap-3 text-sm border-t border-gray-900/40">
       <div className="flex-1 min-w-0">
-        <p className="text-gray-100 line-clamp-2 leading-snug">{thought.content}</p>
+        <p className="text-gray-100 line-clamp-2 leading-snug whitespace-pre-line">{thought.content}</p>
         <div className="flex items-center gap-2 mt-1">
           {thought.category && (
             <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${categoryColor}`}>

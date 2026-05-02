@@ -180,7 +180,7 @@ export default function PhotoUploadPage() {
           </p>
           {previewResult.thoughts.map((thought, i) => (
             <div key={i} className="bg-gray-900/80 p-3 rounded-lg">
-              <p className="text-gray-100 text-sm">{thought.content}</p>
+              <p className="text-gray-100 text-sm whitespace-pre-line">{thought.content}</p>
             </div>
           ))}
         </div>
