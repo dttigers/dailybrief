@@ -346,18 +346,23 @@ function drawPageOne(
         .fillColor(COLORS.bodyText)
         .text(event.title, titleX, y, { width: titleW, lineBreak: false });
 
-      y += layout.bodySize + 2;
+      y += layout.bodySize + 4;
 
       if (event.location) {
+        // Collapse any embedded newlines (Google Calendar locations sometimes
+        // arrive as "Venue Name\n123 Address St, City") so the location renders
+        // as a single line. PDFKit honors explicit \n even when lineBreak:false,
+        // and a wrapped second line would land on top of the next event's row.
+        const locationText = event.location.replace(/\s*[\r\n]+\s*/g, ", ");
         doc
           .font("Inter-Regular")
           .fontSize(layout.tinySize)
           .fillColor(COLORS.subtext)
-          .text(event.location, leftX + timeW, y, {
+          .text(locationText, leftX + timeW, y, {
             width: titleW,
             lineBreak: false,
           });
-        y += layout.tinySize + 2;
+        y += layout.tinySize + 4;
       }
     }
 
