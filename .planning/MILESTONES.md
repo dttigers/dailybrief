@@ -1,5 +1,40 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v3.5 Observability, G2 Resubmit & Capture Repair (Shipped: 2026-05-05)
+
+**Phases completed:** 8 phases (103, 104, 105, 106, 107, 107.1, 107.2, 107.3), 33 plans
+**Active execution:** 4 days (2026-04-19 → 2026-04-22)
+**Paused:** 13 days (2026-04-22 → 2026-05-05) waiting on G2 hardware delivery (8 days ahead of DHL ETA)
+**Hardware UAT + ship:** 2026-05-05 (single evening, ~2 hours)
+**Production:** vigil-core + PWA + Safari extension live throughout; G2 plugin `vigil.ehpk` (27,256 bytes) submitted to Even Hub store dashboard
+**Known deferred items at close:** 15 (see STATE.md Deferred Items) — most are v3.7 work, NOT v3.5; 4 are v3.5 verification ceremony items (Phase 105 / 107.1 / 107.2 `human_needed`) acknowledged as ceremony-incomplete but functionally verified via v3.6 production usage since 2026-04-26.
+
+**Key accomplishments:**
+
+- **Server-side observability foundation (Phase 103, ANLY-01 + CAP-01 + CAP-02 + AUTH-08)** — `posthog-node@^5.29.2` singleton with D-12 before_send redactor on 6 sensitive routes (strips request_body + headers inside SDK before network send), D-13 enableExceptionAutocapture for uncaughtException + unhandledRejection, D-14 sealed wrapper API (redactEvent/trackEvent/captureException/shutdownPosthog), D-10 key-absence gate (`posthog === null` when POSTHOG_API_KEY unset, no NODE_ENV coupling). HEIC conversion pipeline fixed (heic-convert sync triage replaced sharp). New `GET /v1/me` returning `{userId, email}` for authenticated identity hydration.
+- **PWA auth + browser observability (Phase 104, AUTH-06 + AUTH-07 + ANLY-01 browser half)** — Email/password signup + login flow on `/auth` page with sessionStorage JWT (NOT localStorage), generic identical error copy on wrong-email vs wrong-password (no enumeration), posthog-js init + ErrorBoundary catching React render errors, Settings Vigil Account section with email + sign-out.
+- **Product analytics + per-route metrics (Phase 105, ANLY-02 + ANLY-03 + ANLY-04)** — 5 capture-funnel events wired into route handlers (thought_created, triage_completed, photo_uploaded, brief_generated, identifyUser), api_request middleware capturing per-route status/latency/route enum, BLOCKED_PROPERTY_NAMES guard preventing user-generated string content from leaking into event properties, server-side `identifyUser` in /v1/me with email + createdAt person properties.
+- **G2 store resubmit shipped (Phase 106, G2-01 + G2-02 + G2-03) — atomic 4/5 → 5/5 over hardware UAT** — `vigil.ehpk` (27,256 bytes) packed and submitted to Even Hub. G2-01: native 576×288 store screenshots from `@evenrealities/evenhub-simulator@0.6.2` (newly available since RESEARCH Q2 audit — closed the simulator gap that grounded HARDWARE-BLOCKED.md), `VITE_SCREENSHOT_MODE` flag + DEMO constants with Vite dead-code-elimination verified both directions. G2-02: home double-tap fires `bridge.shutDownPageContainer(1)` (host-rendered dialog per D-01, no custom UI). G2-03: unified `buildVigilHeader` factory + 1px greyscale body borders + Vigil-voice fallbacks across 4 screens. Hardware UAT discovered SDK validator strict-enforces `containerName ≤16 chars` (simulator was lenient) — fixed in same session by renaming work-orders/affirmation/task-detail prefixes. 6 simulator/hardware divergences captured in `HARDWARE-DIVERGENCE.md`. UAT 6/6 passed, security audit 16/16 threats closed.
+- **Safari extension survives Mac reboot (Phase 107, EXT-01)** — `SMAppService.mainApp.register()` in AppDelegate + LSUIElement=true (accessory-mode window suppression), first-launch NSAlert + persistence pill UI in ViewController. Tests 3+4 pass; Tests 1/2/5 ship-with-uat-pending for physical reboot test (later confirmed in v3.6 production usage).
+- **Local dev environment (Phase 107.1 INSERTED, DEV-01)** — Prod-parity Docker Postgres + hot-reload stack via `npm run dev` on iMac. install.sh handles cold-start (Docker pull + container start + migration apply). Retired the launchd daemon `com.jamesonmorrill.vigilcore` on both machines (iMac + MacBook Pro) that was conflicting with `:3001` during local dev — daemon now bootout'd by design.
+- **Tailscale cross-machine dev access (Phase 107.2 INSERTED, DEV-02) — research-only phase** — 3 summaries documenting secure bind via Tailscale magic DNS instead of `0.0.0.0` exposure, CORS allow-list for cross-machine PWA dev. Research-only because the actual implementation revealed itself as a 1-line config change after the threat model was complete.
+- **Prod bind default fix + doctor cleanup (Phase 107.3 INSERTED — emergency bug-fix)** — Phase 107.2-01's "prod probe" booted green locally but Railway's proxy cannot reach a container bound to loopback; full 502 on api.vigilhub.io for ~30 min on 2026-04-22 until `VIGIL_BIND_HOST=0.0.0.0` was set in Railway env. Fixed `vigil-core/src/index.ts:186` default + added external HTTP probe against `https://api.vigilhub.io/v1/health` to verify-harness. Plus: `scripts/dailybrief-doctor.sh` no longer flags stale drift for the retired vigilcore daemon plist (demoted to informational-only with retired-state branch logic).
+
+**Infrastructure milestones reached during v3.5:**
+
+- PostHog Cloud now receiving server + browser events from production (debugging blind problem solved)
+- HEIC pipeline fully functional (no more silent capture failures)
+- Local dev environment matches Railway production (Postgres + hot reload)
+- Two dev machines (iMac + MacBook Pro) work cross-machine over Tailscale
+- Safari extension persists across Mac reboots via SMAppService
+
+**v3.5 deferrals — captured for follow-up:**
+
+- Phase 105 / 107.1 / 107.2 VERIFICATION.md status `human_needed` — ceremony-incomplete but functionally validated via v3.6 production usage since 2026-04-26. Recorded in STATE.md Deferred Items.
+- Hardware divergences from `HARDWARE-DIVERGENCE.md` — list-container SCROLL-out-of-list, home body overflow, device-status flutter — captured for v3.8+ follow-up phases.
+
+---
+
 ## v3.6 Multi-User Completion, Auth UX & Safari Parity (Shipped: 2026-04-26)
 
 **Phases completed:** 7 phases (108-114), 27 plans, all 8 v3.6 requirements satisfied

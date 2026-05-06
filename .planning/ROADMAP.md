@@ -22,7 +22,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v3.2 Freshness & Capture Parity** — Phases 88-95 (shipped 2026-04-16)
 - ✅ **v3.3 Stability & Chat Context** — Phases 96-98 (shipped 2026-04-17)
 - ✅ **v3.4 Multi-User Foundation & PWA Polish** — Phases 99-102 (shipped 2026-04-18)
-- ⏸ **v3.5 Observability, G2 Resubmit & Capture Repair** — Phases 103-107 (paused pre-ship, blocked on G2 hardware UAT)
+- ✅ **v3.5 Observability, G2 Resubmit & Capture Repair** — Phases 103-107 + inserts 107.1-107.3 (shipped 2026-05-05, vigil.ehpk submitted to Even Hub)
 - ✅ **v3.6 Multi-User Completion, Auth UX & Safari Parity** — Phases 108-114 (shipped 2026-04-26)
 - 🚧 **v3.7 Source Pickers, Verify-Email UX & Closeout Cleanup** — Phases 115-119 (in progress, started 2026-04-27)
 
@@ -288,97 +288,25 @@ Deferred: Phases 29-32 (Export System, Brief History, Brief Enhancements, Polish
 - [x] **Phase 118: Production test-user cleanup** — Test rows `upper@case.com` (id=3) and `test+phase104@local.test` (id=44) plus cascaded children deleted from Railway prod with documented runbook (completed 2026-05-01)
 - [ ] **Phase 119: DMARC quarantine ramp** — `vigilhub.io` Cloudflare DNS DMARC policy advances `p=none → p=quarantine` after 2026-05-06 auto-eval gate passes
 
-## 🚧 v3.5 Observability, G2 Resubmit & Capture Repair (In Progress)
+<details>
+<summary>✅ v3.5 Observability, G2 Resubmit & Capture Repair (Phases 103-107 + 107.1/107.2/107.3) — SHIPPED 2026-05-05</summary>
 
-**Milestone Goal:** Fix the capture pipeline, unblock G2 store approval, and land analytics/error tracking so we stop debugging blind — plus close the multi-user loop with a real login UI.
+Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-ROADMAP.md) and shipped narrative in [MILESTONES.md](MILESTONES.md). Phase directories archived to [milestones/v3.5-phases/](milestones/v3.5-phases/).
 
-## Phases
+- [x] Phase 103: Capture Repair & Server Observability Foundations (5/5 plans) — completed 2026-04-19
+- [x] Phase 104: PWA Auth UI & Browser Observability (3/3 plans) — completed 2026-04-19
+- [x] Phase 105: Product Events, API Metrics & User Identity (3/3 plans) — completed 2026-04-20
+- [x] Phase 106: G2 Store Resubmit (Atomic) (5/5 plans) — completed 2026-05-05 via hardware UAT, vigil.ehpk submitted to Even Hub
+- [x] Phase 107: Safari Extension Persistence (6/6 plans) — completed 2026-04-20
+- [x] Phase 107.1: Local dev environment with Postgres + hot reload (7/7 plans, INSERTED) — completed 2026-04-22
+- [x] Phase 107.2: Cross-machine Tailscale dev access (3 SUMMARYs, research-only INSERTED) — completed 2026-04-22
+- [x] Phase 107.3: Prod bind default + install.sh + doctor cleanup (4/4 plans, INSERTED emergency fix) — completed 2026-04-22
 
-- [x] **Phase 103: Capture Repair & Server Observability Foundations** - Fix photo pipeline bugs + PostHog singleton + /v1/me endpoint on vigil-core (completed 2026-04-19)
-- [x] **Phase 104: PWA Auth UI & Browser Observability** - Email/password login+register forms + posthog-js init + error boundary in PWA (completed 2026-04-19)
-- [x] **Phase 105: Product Events, API Metrics & User Identity** - Capture funnel events, per-route API metrics, and posthog.identify on login (completed 2026-04-20)
-- [ ] **Phase 106: G2 Store Resubmit (Atomic)** - Screenshots + double-tap exit dialogue + brand-compliant WebView, all gated together
-- [x] **Phase 107: Safari Extension Persistence** - Login Item registration so extension survives Mac reboots (completed 2026-04-20)
+</details>
 
 ## Phase Details
 
-### Phase 103: Capture Repair & Server Observability Foundations
-**Goal**: The photo capture pipeline works correctly for all clients, and server exceptions are observable in PostHog
-**Depends on**: Phase 102 (multi-user foundation in production)
-**Requirements**: CAP-01, CAP-02, ANLY-01 (server half), AUTH-08
-**Success Criteria** (what must be TRUE):
-  1. A HEIC file dropped into the Mac watched folder (iCloud path) produces a thought with non-empty content — no silent failure
-  2. A photo uploaded via `POST /v1/process-photo` returns a thought with a non-null category field (verified via curl before any code is written)
-  3. Unhandled exceptions thrown in vigil-core routes appear in PostHog Cloud with stack traces (verified by intentionally triggering a test error)
-  4. `GET /v1/me` returns `{ userId, email }` for a valid JWT — prerequisite for Phase 104
-  5. Local `npm run dev` events do NOT appear in PostHog Cloud; Railway production events DO appear
-**Plans**: 5 plans
-  - [x] 103-00-PLAN.md — Wave 0 diagnostic curl + RED-by-default test scaffolds for Plans 01/02/03
-  - [x] 103-01-PLAN.md — PostHog Node SDK singleton + sealed wrapper API (ANLY-01 server half)
-  - [x] 103-02-PLAN.md — HEIC conversion + sync parallel triage in /v1/process-photo (CAP-01, CAP-02)
-  - [x] 103-03-PLAN.md — GET /v1/me identity endpoint (AUTH-08)
-  - [x] 103-04-PLAN.md — Wire PostHog + /v1/me + app.onError + shutdown into index.ts; live verification of all 5 success criteria
-
-### Phase 104: PWA Auth UI & Browser Observability
-**Goal**: PWA visitors can sign up and log in with email/password, and browser-side errors are tracked in PostHog
-**Depends on**: Phase 103 (needs /v1/me for posthog.identify, PostHog server singleton for env consistency)
-**Requirements**: AUTH-06, AUTH-07, ANLY-01 (browser half)
-**Success Criteria** (what must be TRUE):
-  1. A new user can complete the signup form (email + password) and land on the dashboard authenticated — no page reload or manual key entry required
-  2. An existing user can log in with email + password and is redirected to the dashboard with their email visible in the header or settings area
-  3. Wrong email and wrong password both display the identical generic error message — no user enumeration possible
-  4. React render errors caught by the error boundary appear in PostHog — verified by triggering a test throw
-  5. JWT is stored in sessionStorage, not localStorage — confirmed in DevTools Application tab
-**Plans**: 3 plans
-Plans:
-- [x] 104-01-PLAN.md — Wave 0: Test scaffolds (sessionStorage shim + 3 updated test files + 3 new RED test stubs for AuthPage, ErrorBoundary, posthog)
-- [x] 104-02-PLAN.md — Storage migration (client.ts) + AuthPage email/password form + posthog.ts singleton + ErrorBoundary + main.tsx wiring
-- [x] 104-03-PLAN.md — App.tsx identify wiring + SettingsPage Vigil Account section + human verification checkpoint
-
-### Phase 105: Product Events, API Metrics & User Identity
-**Goal**: The capture funnel, API error rates, and user identity are visible in the PostHog dashboard
-**Depends on**: Phase 103 + Phase 104 (both PostHog SDKs must be initialized before any capture() calls are written)
-**Requirements**: ANLY-02, ANLY-03, ANLY-04
-**Success Criteria** (what must be TRUE):
-  1. After capturing a thought and completing triage, two distinct events appear in PostHog with the same userId: `thought_created` (server) and `triage_completed` (server) — no double-counting from client
-  2. After a photo upload, a `photo_uploaded` event appears in PostHog filtered by the authenticated userId
-  3. Per-route API metrics (status code, latency, route name) are populated in PostHog for authenticated requests — visible in a dashboard query
-  4. No event property contains user-generated string content — grep of all `capture()` calls confirms the property allowlist (enums, booleans, numbers only)
-**Plans**: 3 plans
-Plans:
-- [x] 105-01-PLAN.md — Extend trackEvent with BLOCKED_PROPERTY_NAMES guard + add identifyUser wrapper
-- [x] 105-02-PLAN.md — Metrics middleware (api_request) + wire 5 capture-funnel events into route handlers
-- [x] 105-03-PLAN.md — Server-side identifyUser in /v1/me with email + createdAt person properties
-
-### Phase 106: G2 Store Resubmit (Atomic)
-**Goal**: All three Even Hub store rejection items are resolved and verified on the simulator before a single resubmission is made
-**Depends on**: Nothing (independent of all server/PWA work)
-**Requirements**: G2-01, G2-02, G2-03
-**Success Criteria** (what must be TRUE):
-  1. Fresh simulator screenshots exist at the correct resolution from the current Even Realities iPhone app (v0.6.2+)
-  2. A double-tap on the G2 home screen shows a visible exit confirmation — a second double-tap within 3 seconds exits the plugin; waiting lets it reset to home (single-tap to task detail still works, swipe navigation still works)
-  3. The G2 plugin WebView renders brand-compliant UI on the 4-bit greyscale canvas (unified VIGIL wordmark header, 1px greyscale body borders, Vigil-voice copy) with no blank or placeholder states — amended from the original "Vigil brand colors and Inter font" wording per CONTEXT D-06 (teal/Inter cannot physically render on 4-bit greyscale)
-  4. All three items are verified on the simulator in a single session before the `.ehpk` is uploaded — no partial resubmission
-**Plans**: 5 plans
-  - [x] 106-01-PLAN.md — Wave 0: atomic-gate scaffold (store-assets/, check-verified.mjs, VERIFIED.md template, package:ehpk script, app.json v0.2.0)
-  - [x] 106-02-PLAN.md — Wave 1: G2-02 home-branch exit-confirm edge in handleNavEvent (shutDownPageContainer(1))
-  - [x] 106-03-PLAN.md — Wave 1: G2-03 unified buildVigilHeader + greyscale body borders + exit-gesture footers + Vigil-voice fallbacks across all 4 screens
-  - [x] 106-04-PLAN.md — Wave 1: G2-01 code side — VITE_SCREENSHOT_MODE guard + DEMO_BRIEF/DEMO_AFFIRMATION/DEMO_SUMMARY constants in api.ts
-  - [ ] 106-05-PLAN.md — Wave 2: single simulator session — capture both PNGs at 576×288, fill VERIFIED.md with real timestamp + observations, stale-gate negative test, run npm run package:ehpk → vigil.ehpk (requires human on simulator)
-
-### Phase 107: Safari Extension Persistence
-**Goal**: The Safari extension remains enabled after a Mac reboot without the user manually re-enabling it
-**Depends on**: Nothing (independent Xcode project, no server or PWA deps)
-**Requirements**: EXT-01
-**Success Criteria** (what must be TRUE):
-  1. After a full macOS restart (not just Safari restart), the Vigil Capture extension shows as enabled in Safari > Settings > Extensions — verified on physical hardware
-  2. `SMAppService.mainApp.register()` is called in `AppDelegate.applicationDidFinishLaunching` and the app suppresses its window on launch (no visible window on startup)
-**Plans**: 5 plans
-  - [x] 107-00-PLAN.md — Wave 0: verify-phase-107.sh harness + 107-HUMAN-UAT.md scaffold (ship-with-uat-pending)
-  - [x] 107-01-PLAN.md — Wave 1: Info.plist LSUIElement=true (accessory-mode window suppression)
-  - [x] 107-02-PLAN.md — Wave 2: AppDelegate SMAppService status-guarded register() + first-launch NSAlert
-  - [x] 107-03-PLAN.md — Wave 2: ViewController + Main.html + Script.js + Style.css persistence pill (D-04)
-  - [x] 107-04-PLAN.md — Wave 3: full verify + HUMAN-UAT finalization + human eyeball checkpoint (Tests 3+4 pass; Tests 1/2/5 ship-with-uat-pending for reboot)
+<!-- Phase 103-107 details archived to milestones/v3.5-ROADMAP.md when v3.5 shipped 2026-05-05 -->
 
 ### Phase 115: Calendar source picker (+ ThoughtRow whitespace polish)
 **Goal**: Users pick which Google calendars contribute to their daily brief from PWA Settings, and multi-line thought captures stop collapsing to a single line in the row view.
@@ -586,8 +514,11 @@ Plans:
 | 103. Capture Repair & Server Observability Foundations | v3.5 | 5/5 | Complete   | 2026-04-19 |
 | 104. PWA Auth UI & Browser Observability | v3.5 | 3/3 | Complete    | 2026-04-19 |
 | 105. Product Events, API Metrics & User Identity | v3.5 | 3/3 | Complete    | 2026-04-20 |
-| 106. G2 Store Resubmit (Atomic) | v3.5 | 4/5 | In Progress|  |
+| 106. G2 Store Resubmit (Atomic) | v3.5 | 5/5 | Complete    | 2026-05-05 |
 | 107. Safari Extension Persistence | v3.5 | 6/6 | Complete    | 2026-04-21 |
+| 107.1. Local dev environment with Postgres + hot reload (INSERTED) | v3.5 | 7/7 | Complete    | 2026-04-22 |
+| 107.2. Cross-machine Tailscale dev access (INSERTED, research-only) | v3.5 | 3/3 | Complete    | 2026-04-22 |
+| 107.3. Prod bind default + install.sh + doctor cleanup (INSERTED) | v3.5 | 4/4 | Complete    | 2026-04-22 |
 
 | 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 3/3 | Complete    | 2026-04-23 |
 | 109. Per-User Scheduler Fan-Out | v3.6 | 3/3 | Complete    | 2026-04-23 |
@@ -607,62 +538,7 @@ Plans:
 
 Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
-### Phase 107.3: prod bind default + install.sh silent-fail + doctor stale-drift cleanup (INSERTED)
-
-**Goal:** Close three paper-cuts surfaced during a fresh MacBook Pro cross-machine bootstrap on 2026-04-22, so the next new-machine setup doesn't repeat them.
-
-**Requirements:** TBD (likely extends REQ-DEV-CROSS-MACHINE)
-**Depends on:** Phase 107.2 (the bind-host bug originated there)
-**Plans:** 1/2 plans executed
-
-Plans:
-- [ ] 107.3-01-PLAN.md — vigil-core bind 0.0.0.0 on Railway via RAILWAY_SERVICE_ID + post-deploy --external probe
-- [ ] 107.3-02-PLAN.md — install.sh awk identity-resolution (pipefail-immune)
-- [ ] 107.3-03-PLAN.md — doctor three-way branch: retired vs present vs missing plist
-- [ ] 107.3-04-PLAN.md — verify-phase-107.sh --external mode (live prod /v1/health probe)
-
-**Details:**
-
-1. **vigil-core prod bind default is wrong** — [vigil-core/src/index.ts:186](../../vigil-core/src/index.ts#L186) defaults `VIGIL_BIND_HOST` to `127.0.0.1`. Comment at [vigil-core/src/index.ts:183-184](../../vigil-core/src/index.ts#L183-L184) incorrectly claims "Railway prod leaves VIGIL_BIND_HOST unset → defaults to 127.0.0.1 behind Railway's proxy." Railway's proxy cannot reach a container bound to loopback — container bound to 127.0.0.1 caused full 502 "Application failed to respond" on api.vigilhub.io (confirmed 2026-04-22, fixed by manually setting `VIGIL_BIND_HOST=0.0.0.0` in Railway env). Phase 107.2-01's local "prod probe" booted green because it ran `NODE_ENV=production` on localhost and never tested proxy reachability. Fix options:
-   - Flip default to `0.0.0.0` and require opt-in to `127.0.0.1` for dev (inverts the security bias — needs thought)
-   - Detect Railway via `RAILWAY_ENVIRONMENT` env var and force `0.0.0.0` when present
-   - Add an **external** HTTP probe against `https://api.vigilhub.io/v1/health` to Phase 107.2's verify harness so this class of bug can't ship quietly again
-
-2. **Scripts/install.sh silent-fails when Developer ID cert is missing** — the identity-resolution pipeline at [Scripts/install.sh:28-32](../../Scripts/install.sh#L28-L32) uses `security find-identity -v -p codesigning | grep "Developer ID Application" | head -1 | grep -o '...' | tr -d '"'`. With `set -euo pipefail`, if grep finds no match, the whole pipeline exits non-zero and the script aborts **before** reaching the `if [[ -z "$IDENTITY" ]]` branch that prints the remediation message. Observed symptom on MacBook Pro: script prints only `=== DailyBrief Installer ===` then exits silently. Fix: capture with `|| true`, or restructure the guard so the error message actually fires.
-
-3. **scripts/dailybrief-doctor.sh flags stale drift for retired daemon plist** — the doctor reports `plist EnvironmentVariables | (missing) | ✗` for `com.jamesonmorrill.vigilcore.plist`'s `ANTHROPIC_API_KEY`. But Phase 107.1-04 retired that plist **by design** on both machines. The ✗ is drift against a file that intentionally no longer exists. Fix: either drop the plist row, or demote to informational-only (like the local-DB row) with branch logic that detects the retired state.
-
-**Context:** All three discovered during a normal cross-machine bootstrap flow (pulled 957 commits from 2026-04-08 Phase 57 state to current). They're real paper-cuts for anyone setting up a fresh machine — including future-self.
-
----
-
-### Phase 107.2: cross-machine Tailscale dev access with secure bind and CORS (INSERTED)
-
-**Goal:** Make the iMac's local dev stack (vigil-core :3001 + Vite :5173) reachable from the MacBook Pro over Tailscale — thin-client model, single source of truth, without weakening prod. Prod refuses to boot without CORS_ORIGINS; dev opt-in via VIGIL_BIND_HOST; preflight Check 5 surfaces the bind+firewall state.
-**Requirements**: REQ-DEV-CROSS-MACHINE
-**Depends on:** Phase 107
-**Plans:** 3/3 plans complete
-
-Plans:
-- [x] 107.2-01: env-gated bind hostname + prod CORS FATAL guard (completed 2026-04-22)
-- [x] 107.2-02: Vite proxy rewrite with loadEnv + host:true + Pitfall 4 closure (completed 2026-04-22)
-- [x] 107.2-03: preflight Check 5 — VIGIL_BIND_HOST + macOS firewall state (completed 2026-04-22)
-
-### Phase 107.1: local dev environment with Postgres and hot-reload stack (INSERTED)
-
-**Goal:** Local Postgres + one-command dev orchestrator for vigil-core + vigil-pwa, with daemon retired and prod secrets off the dev disk — so `npm run dev` at repo root no longer mutates Railway.
-**Requirements**: REQ-DEV-LOCAL-ENV
-**Depends on:** Phase 107
-**Plans:** 7/7 plans complete
-
-Plans:
-- [x] 107.1-01-PLAN.md — Homebrew postgresql@16 provision + create vigil_dev + LOCAL-ONLY .env.example
-- [x] 107.1-02-PLAN.md — scripts/seed-local.ts fixture (idempotent) + seed:local npm script
-- [x] 107.1-03-PLAN.md — scripts/dev-setup.sh + scripts/preflight-check.sh + scripts/dev-reset.sh
-- [x] 107.1-04-PLAN.md — com.jamesonmorrill.vigilcore daemon retirement (iMac + MacBook Pro) with reversibility artifact
-- [x] 107.1-05-PLAN.md — Root package.json + concurrently + tsx --env-file fix + VITE_API_BASE verify
-- [x] 107.1-06-PLAN.md — vigil-core/.env LOCAL-only rewrite + Anthropic dev workspace ($20/mo) + sync-anthropic-key.sh update
-- [x] 107.1-07-PLAN.md — dailybrief-doctor.sh D-19 INFORMATIONAL row + RUNBOOK/README docs + REQ-DEV-LOCAL-ENV traceability
+<!-- Phase 107.1, 107.2, 107.3 inserted entries archived to milestones/v3.5-ROADMAP.md when v3.5 shipped 2026-05-05 -->
 
 ### Phase 999.1: Restore ubiquity entitlement for iCloud photo download (BACKLOG)
 

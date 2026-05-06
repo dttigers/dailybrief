@@ -99,6 +99,54 @@
 
 ---
 
+## Milestone: v3.5 — Observability, G2 Resubmit & Capture Repair
+
+**Shipped:** 2026-05-05 (active 4 days + paused 13 days waiting on hardware + 1 evening UAT/ship)
+**Phases:** 8 (103, 104, 105, 106, 107, 107.1, 107.2, 107.3) | **Plans:** 33
+
+### What Was Built
+
+- **Server + browser observability** (Phases 103-105): `posthog-node@^5.29.2` singleton with redaction + autocapture + sealed wrapper API, posthog-js init in PWA with ErrorBoundary, 5 capture-funnel events + per-route api_request middleware, BLOCKED_PROPERTY_NAMES guard preventing user-content leakage into events, server-side `identifyUser` in /v1/me. PostHog Cloud now receiving events from prod (debugging blind problem solved).
+- **HEIC capture pipeline fixed** (Phase 103): heic-convert sync triage replaced sharp; photos dropped into iCloud watched folder now produce thoughts with non-empty content.
+- **PWA email/password auth** (Phase 104): generic identical error copy on wrong-email/wrong-password (no enumeration), sessionStorage JWT (NOT localStorage), Settings Vigil Account section.
+- **G2 store resubmit** (Phase 106): vigil.ehpk packed at 27,256 bytes and submitted to Even Hub. Atomic gate (G2-01 screenshots + G2-02 host exit dialog + G2-03 unified header/border/fallback) all verified on physical hardware in single evening session.
+- **Safari extension persistence** (Phase 107): SMAppService.mainApp.register() + LSUIElement window suppression + persistence pill UI.
+- **Local dev environment + cross-machine Tailscale access** (Phases 107.1-107.3): Postgres + hot-reload via `npm run dev` at repo root, retired the conflicting vigilcore launchd daemon on both dev machines, Tailscale magic DNS for cross-machine access without 0.0.0.0 exposure, prod bind default fixed (was causing 502s on api.vigilhub.io).
+
+### What Worked
+
+- **Pre-staging the runbook before hardware arrival** (`.planning/v3.5-G2-HARDWARE-UAT-RUNBOOK.md` authored 2026-05-02 before glasses landed 2026-05-05). When the hardware showed up 8 days early, "delivery day was execution, not design." Single-evening close from "glasses in hand" to "submitted to Even Hub" in ~2 hours.
+- **Atomic gate pattern** (`check-verified.mjs` + 24h staleness) for the G2 ship blocker. Forced UAT discipline; the negative test (40h backdate → exit 1) verified the gate fail-closes as designed.
+- **`evenhub-simulator` capture path** turned out to be the unblocker (it didn't exist when HARDWARE-BLOCKED.md was authored 2026-04-20; it became available between then and 2026-05-05). Native 576×288 PNGs straight from the simulator window's 📸 button — no cropping or downscaling.
+- **Web Inspector USB attach during hardware UAT** — surfaced the actual SDK validator behavior (containerName 16-char limit) in real-time, allowing same-session patch + retest. Without the inspector, we'd have shipped a non-rendering plugin.
+
+### What Was Inefficient
+
+- **Phase 107.2 prod-probe didn't test proxy reachability**, causing a full 502 on api.vigilhub.io when 107.2-01 shipped because the local "prod probe" boots `NODE_ENV=production` on localhost — Railway's proxy can't reach a container bound to 127.0.0.1. ~30 min of production downtime until VIGIL_BIND_HOST=0.0.0.0 was set. Fixed by Phase 107.3 (emergency insert) adding an external HTTP probe against `https://api.vigilhub.io/v1/health` to the verify harness. Lesson: "prod probe" must mean external network, not localhost in NODE_ENV=production.
+- **Phase 45's simulator-only validation hid the SDK validator strictness**. The `containerName ≤16 chars` SDK constraint was documented in the SDK README all along but the older simulator was lenient. Hardware UAT discovered + fixed in same session — but if we'd shipped to Even Hub without the hardware retest, we'd have had a 4/5 partial pack that didn't render on glasses.
+- **iPhone canvas assumption in v3.5 hardware UAT runbook** ("PNG written to vigil-g2-plugin/store-assets/01-work-orders.png" implied iPhone-side capture). Turns out iPhone Even app is launcher-only — plugin runs on glasses LED display directly. Took ~30 min of confusion + a screenshot of an empty iPhone screen to realize this. Pivot to evenhub-simulator was clean once identified, but the runbook's screenshot-mechanism step was a gap.
+
+### Patterns Established
+
+- **Hardware UAT runbook supersedes RESEARCH simulator-only assumptions** — on-arrival, re-test container constraints (containerName length, glyph rendering) before assuming code-as-built will pass.
+- **Pre-stage runbooks before hardware/external delivery** (DMARC, glasses, etc.) — every minute of pre-staging during the wait pays off 10× during execution.
+- **`evenhub-simulator` is the canonical screenshot path** for G2 plugin work going forward (not iPhone canvas, not glasses-LED photography). HARDWARE-DIVERGENCE.md captures this for future phases.
+- **Per-phase SECURITY.md is selective, not universal** — your project pattern is to run /gsd-secure-phase only on phases with significant security surface (auth, secrets, T8 leak classes). Phase 106 fit because of the T8-leak-1/T8-leak-2 surface area (VITE_SCREENSHOT_MODE production-mode + evenhub credentials).
+- **Atomic ship gates** for store-listing-style submissions: a single check-verified.mjs gate that fail-closes the entire pack pipeline keeps "partial submission" structurally impossible.
+
+### Key Lessons
+
+- When a milestone is gated on external delivery (hardware, third-party gate, etc.), pre-staging the runbook is **not optional** — it's the difference between "deliver day execution" and "deliver day design under pressure."
+- The 16-char containerName limit fits a class of bugs: **documented constraints that the dev surface (simulator/mock) fails to enforce**. Future SDK integrations: re-read the README on hardware day before assuming code-as-built will pass.
+- v3.5's 13-day pause didn't feel like wasted time because the v3.6 + v3.7 milestones progressed in parallel. The "pause" only applied to the G2 ship gate, not to forward motion. Pattern worth repeating when a milestone has a single hardware blocker.
+
+### Cost Observations
+
+- Single-evening hardware UAT + ship cycle (~2 hours including debugging): produced 5 commits (71973e3, 47cf9c7, 7157896, 49ea883, f4988e6) covering source patches, store assets, UAT, SUMMARY for plan 05, and 16-threat security audit.
+- Active execution timeline (excluding 13-day hardware pause): ~4 days for 33 plans across 8 phases — strong velocity helped by Wave-0 RED scaffolds + decision-ID grep guards established in v3.4.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -107,6 +155,7 @@
 |-----------|----------|--------|------------|
 | v3.2 | ~2 days | 8 | Shared utility pattern; cache-first hooks; lazy archive |
 | v3.4 | ~24h | 4 | Wave-0 TDD scaffolds; decision-ID grep guards; runbook-first deploy |
+| v3.5 | ~4 active days + 13d paused | 8 | Pre-staged hardware-UAT runbook; evenhub-simulator screenshot path; per-phase SECURITY.md selectivity |
 
 ### Top Lessons (Verified Across Milestones)
 

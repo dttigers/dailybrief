@@ -54,7 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 | Milestone | Phases | Plans | Timeline |
 |-----------|--------|-------|----------|
 | v1.0–v3.4 | 1-102 | ~211 | ~18 days |
-| v3.5 | 103-107 (+107.1/107.2/107.3) | 34 | ready-to-close — vigil.ehpk submitted to Even Hub 2026-05-05 (sha 71973e3) |
+| v3.5 | 103-107 (+107.1/107.2/107.3) | 33 | shipped 2026-05-05 — vigil.ehpk submitted to Even Hub (sha 71973e3); milestone closed at sha {MILESTONE_CLOSE_SHA} |
 | v3.6 | 108-114 | 27 | shipped 2026-04-26 |
 | v3.7 | 5 (115-119) | TBD | started 2026-04-27, roadmap 2026-04-27 |
 | Phase 115 P01 | 5min | 3 tasks | 5 files |
@@ -78,6 +78,28 @@ Progress: [░░░░░░░░░░] 0%
 | Phase 118 P02 | 25min | 3 tasks | 2 files |
 | Phase 119 P01 | 3min | 1 tasks | 1 files |
 
+## Deferred Items
+
+Items acknowledged and deferred at v3.5 milestone close on 2026-05-06:
+
+| Category | Item | Status | Note |
+|----------|------|--------|------|
+| verification | Phase 105 (105-VERIFICATION.md) | human_needed | Shipped to production via v3.6 (2026-04-26); functional verification implicit. Formal /gsd-verify-work ceremony not run. |
+| verification | Phase 107.1 (107.1-VERIFICATION.md) | human_needed | Same as above — local dev environment phase, in-use since 2026-04-22. |
+| uat | Phase 107.1 (107.1-HUMAN-UAT.md) | partial | 1 pending scenario; phase shipped and in daily use. |
+| verification | Phase 107.2 (107.2-VERIFICATION.md) | human_needed | Tailscale cross-machine dev access, in-use since 2026-04-22. |
+| uat | Phase 116 (116-HUMAN-UAT.md) | partial | 6 pending scenarios — v3.7 work, NOT v3.5. Tracked for v3.7 close. |
+| verification | Phase 116 (116-VERIFICATION.md) | human_needed | v3.7 work, NOT v3.5. |
+| uat | Phase 116.1 (116.1-HUMAN-UAT.md) | partial | 2 pending scenarios — v3.7 work, NOT v3.5. |
+| verification | Phase 116.1 (116.1-VERIFICATION.md) | human_needed | v3.7 work, NOT v3.5. |
+| debug | knowledge-base | unknown | Knowledge file, not an active debug session. Tooling false-positive. |
+| quick_task | 260407-jem-fix-pdf-insights-section-cutoff-bug-prin | unknown | Generic dev backlog item dated 260407. |
+| quick_task | 260407-q7d-disable-misleading-folder-watching-ui-in | unknown | Generic dev backlog item dated 260407. |
+| seed | SEED-001-stores-admin-ui | dormant | Stores Admin UI — replace hardcoded Lin's Fresh Market store list. Dormant, not blocking any milestone. |
+| seed | SEED-002-photo-uploads | dormant | Photo uploads — needs scoping discussion. Dormant. |
+| seed | SEED-003-tighten-dmarc-to-quarantine | dormant | Active in v3.7 Phase 119 (in-flight). |
+| seed | SEED-004-verify-email-error-ux-friction | dormant | Out-of-scope of v3.7 explicitly per state earlier. |
+
 ## Accumulated Context
 
 ### Roadmap Evolution
@@ -86,7 +108,8 @@ Progress: [░░░░░░░░░░] 0%
 - Phase 107.2 inserted after Phase 107: cross-machine Tailscale dev access with secure bind and CORS (URGENT)
 - Phase 107.3 inserted after Phase 107 (2026-04-22): prod bind default + install.sh silent-fail + doctor stale-drift cleanup
 - v3.5 paused 2026-04-22 at 34/34 plans, waiting on G2 physical hardware UAT (device delivery unknown)
-- v3.5 hardware UAT executed 2026-05-05 (G2 glasses arrived 8 days ahead of DHL ETA, firmware 2.2.0.28); vigil.ehpk packed at 27,256 bytes and submitted to Even Hub store dashboard at sha 71973e3. v3.5 status: ready-to-close (awaiting `/gsd-verify-work 106` + `/gsd-complete-milestone v3.5`)
+- v3.5 hardware UAT executed 2026-05-05 (G2 glasses arrived 8 days ahead of DHL ETA, firmware 2.2.0.28); vigil.ehpk packed at 27,256 bytes and submitted to Even Hub store dashboard at sha 71973e3. UAT 6/6 passed (sha 7157896), security audit 16/16 threats closed (sha f4988e6).
+- v3.5 milestone closed 2026-05-06 — all 8 phases archived to `.planning/milestones/v3.5-phases/`, ROADMAP.md collapsed, MILESTONES.md updated, RETROSPECTIVE.md v3.5 section appended, git tagged v3.5.
 - v3.6 shipped 2026-04-26: 7 phases (108-114), 27 plans, 8/8 requirements satisfied via live HUMAN-UAT against Railway production
 - v3.7 started 2026-04-27 — themes: PWA Settings source pickers (calendars + sports), auth-email UX hardening (verify-email + forgot-password D-13/D-21 friction), closeout cleanup (DMARC ramp, prod test-user delete, ThoughtRow polish)
 - Phase 116.1 inserted after Phase 116 (2026-04-29): Sports route + PWA error-class differentiation (URGENT — gap closure for opaque "Couldn't load teams." surfaced during 116 HUMAN-UAT after local `BALLDONTLIE_API_KEY` env-gap exposed missing route try/catch)
