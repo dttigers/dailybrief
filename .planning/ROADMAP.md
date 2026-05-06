@@ -338,7 +338,10 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
   2. User can read a Day-1 findings document (committed to the vigil-watch repo README before any production code lands) that either: (a) confirms the assumed mapping table from the spec verbatim, or (b) corrects specific rows of the mapping table against observed schema, or (c) declares the JSONL approach unviable and selects one of three fallback paths (notification observation / VS Code extension / process inspection) with rationale.
   3. User can read explicit answers in the findings document to four spec-flagged questions: how tool approval prompts appear in JSONL, what fields indicate "awaiting input," how session end is signaled, and the structure of an errored tool result.
   4. If a fallback path is selected, the document captures which downstream Phase 122 / 123 goals shift (e.g., "Watcher now monitors Notification Center DB instead of FSEvents on `~/.claude/projects/`") so subsequent phases plan against the chosen reality, not the assumed one.
-**Plans**: TBD
+**Plans**: 3 plans
+- [ ] 120-01-PLAN.md — Bootstrap public MIT-licensed github.com/dttigers/vigil-watch repo (README skeleton + LICENSE + secret-hardened .gitignore)
+- [ ] 120-02-PLAN.md — Capture verification corpus: mine existing ~/.claude/projects/ JSONL files + run user-driven 5-scenario scripted Claude Code session
+- [ ] 120-03-PLAN.md — Author Day-1 findings into vigil-watch README (8-row mapping table, 4 spec-flagged question answers, verdict, hand-curated raw excerpts appendix)
 **UI hint**: no
 
 ### Phase 121: Agent-events API foundation + cross-user isolation lock
@@ -533,7 +536,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 117. Auth-email rate-limit UX hardening | v3.7 | 5/5 | Complete    | 2026-04-30 |
 | 118. Production test-user cleanup | v3.7 | 2/2 | Complete    | 2026-05-01 |
 | 119. DMARC quarantine ramp | v3.7 | 2/2 | Complete (deferred via amendment) | 2026-05-06 |
-| 120. Day-1 JSONL schema verification + detection-strategy lock | v3.8 | 0/TBD | Not started | - |
+| 120. Day-1 JSONL schema verification + detection-strategy lock | v3.8 | 0/3 | Not started | - |
 | 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 0/TBD | Not started | - |
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 0/TBD | Not started | - |
 | 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 0/TBD | Not started | - |
