@@ -20,7 +20,7 @@ export function buildAffirmationScreen(
   const displayText = affirmation || FALLBACK_AFFIRMATION
 
   // Unified VIGIL header (Phase 106 D-07 item 1)
-  const header = buildVigilHeader(ContainerId.AFFIRMATION_HEADER, 'affirmation-header')
+  const header = buildVigilHeader(ContainerId.AFFIRMATION_HEADER, 'af-header')
 
   // Body: centered affirmation text
   const body = new TextContainerProperty({
@@ -33,7 +33,7 @@ export function buildAffirmationScreen(
     borderRadius: 0,
     paddingLength: 8,
     containerID: ContainerId.AFFIRMATION_BODY,
-    containerName: 'affirmation-body',
+    containerName: 'af-body',
     content: displayText,
     isEventCapture: 1,
   })
@@ -49,8 +49,8 @@ export function buildAffirmationScreen(
     borderRadius: 0,
     paddingLength: 8,
     containerID: ContainerId.AFFIRMATION_FOOTER,
-    containerName: 'affirmation-footer',
-    content: '↑ work orders   ⌾ double-tap to exit',
+    containerName: 'af-footer',
+    content: '↑ work orders   () double-tap to exit',
     isEventCapture: 0,
   })
 

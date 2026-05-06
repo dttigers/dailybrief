@@ -31,7 +31,7 @@ function buildHomeContainers(
 
   // Body: task count + top priority + affirmation
   const bodyContent = [
-    `▲ ${pendingCount} tasks pending`,
+    `* ${pendingCount} tasks pending`,
     '',
     'TOP PRIORITY:',
     topPriority,
@@ -67,7 +67,7 @@ function buildHomeContainers(
     paddingLength: 8,
     containerID: ContainerId.HOME_FOOTER,
     containerName: 'home-footer',
-    content: '↓ work orders   ⌾ double-tap to exit',
+    content: '↓ work orders   () double-tap to exit',
     isEventCapture: 0,
   })
 

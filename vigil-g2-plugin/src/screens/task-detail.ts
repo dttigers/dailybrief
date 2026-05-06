@@ -28,7 +28,7 @@ export function buildTaskDetailScreen(task: {
   // Unified VIGIL header (Phase 106 D-07 item 1) — screen label shows status
   const header = buildVigilHeader(
     ContainerId.TASK_DETAIL_HEADER,
-    'task-detail-header',
+    'td-header',
     status,
   )
 
@@ -49,7 +49,7 @@ export function buildTaskDetailScreen(task: {
     borderRadius: 0,
     paddingLength: 8,
     containerID: ContainerId.TASK_DETAIL_BODY,
-    containerName: 'task-detail-body',
+    containerName: 'td-body',
     content: bodyContent,
     isEventCapture: 1,
   })
@@ -65,8 +65,8 @@ export function buildTaskDetailScreen(task: {
     borderRadius: 0,
     paddingLength: 8,
     containerID: ContainerId.TASK_DETAIL_FOOTER,
-    containerName: 'task-detail-footer',
-    content: '↑ back to list   ⌾ double-tap for home',
+    containerName: 'td-footer',
+    content: '↑ back to list   () double-tap for home',
     isEventCapture: 0,
   })
 

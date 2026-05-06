@@ -33,7 +33,7 @@ export function buildWorkOrdersScreen(
   // Unified VIGIL header (Phase 106 D-07 item 1) — screen label shows open-task count
   const header = buildVigilHeader(
     ContainerId.WORK_ORDERS_HEADER,
-    'work-orders-header',
+    'wo-header',
     `${tasks.length} open`,
   )
 
@@ -48,8 +48,8 @@ export function buildWorkOrdersScreen(
     borderRadius: 0,
     paddingLength: 8,
     containerID: ContainerId.WORK_ORDERS_FOOTER,
-    containerName: 'work-orders-footer',
-    content: 'tap task for details   ⌾ double-tap to exit',
+    containerName: 'wo-footer',
+    content: 'tap task for details   () double-tap to exit',
     isEventCapture: 0,
   })
 
@@ -65,7 +65,7 @@ export function buildWorkOrdersScreen(
       borderRadius: 0,
       paddingLength: 8,
       containerID: ContainerId.WORK_ORDERS_LIST,
-      containerName: 'work-orders-list',
+      containerName: 'wo-list',
       content: 'No work orders open. Capture one when it finds you.',
       isEventCapture: 1,
     })
@@ -94,7 +94,7 @@ export function buildWorkOrdersScreen(
     borderRadius: 0,
     paddingLength: 8,
     containerID: ContainerId.WORK_ORDERS_LIST,
-    containerName: 'work-orders-list',
+    containerName: 'wo-list',
     isEventCapture: 1,
     itemContainer: new ListItemContainerProperty({
       itemCount: itemNames.length,
