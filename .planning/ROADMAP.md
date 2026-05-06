@@ -25,6 +25,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v3.5 Observability, G2 Resubmit & Capture Repair** — Phases 103-107 + inserts 107.1-107.3 (shipped 2026-05-05, vigil.ehpk submitted to Even Hub)
 - ✅ **v3.6 Multi-User Completion, Auth UX & Safari Parity** — Phases 108-114 (shipped 2026-04-26)
 - ✅ **v3.7 Source Pickers, Verify-Email UX & Closeout Cleanup** — Phases 115-119 + insert 116.1 (shipped 2026-05-06; OPS-02 DMARC ramp closed via operator amendment, `p=none` accepted as steady state)
+- 🚧 **v3.8 Claude Code Companion** — Phases 120-125 (in progress; G2 glasses as ambient notification layer for Claude Code sessions + 4 G2 polish riders + plugin v0.3.0 resubmit)
 
 ## Completed Milestones
 
@@ -309,104 +310,99 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 
 </details>
 
+## 🚧 v3.8 Claude Code Companion (In Progress)
+
+**Milestone Goal:** Use the Even Realities G2 glasses as an ambient notification + status layer for long-running Claude Code sessions running in VS Code on Morrill House (and the user's local Mac), plus fold in 4 hardware-UAT-evidenced G2 polish fixes from v3.5. Glasses tap on the temple when Claude Code needs the user, finishes a task, or hits something interesting — no code or terminal output on the HUD.
+
+**Spec reference:** [`.planning/v3.8-CLAUDE-CODE-COMPANION-SPEC.md`](v3.8-CLAUDE-CODE-COMPANION-SPEC.md)
+
+### Phases
+
+- [ ] **Phase 120: Day-1 JSONL schema verification + detection-strategy lock** — Confirm the assumed Claude Code JSONL schema against a live VS Code session before any production-mapping code is written; select fallback path if needed.
+- [ ] **Phase 121: Agent-events API foundation + cross-user isolation lock** — `POST /v1/agent-events` and `GET /v1/agent-sessions` persist events scoped per-userId, with a W-01/W-02-style cross-user isolation test pinning the structural guarantee before any vigil-watch posts real data.
+- [ ] **Phase 122: vigil-watch core (watcher + parser + emitter + config)** — Swift daemon observes `~/.claude/projects/` via FSEvents, parses JSONL with persisted byte offsets, emits 5 Vigil event types per detection rules, posts to Vigil Core with retry/backoff and offline queue, and reads `~/.config/vigil/watch.toml` on startup.
+- [ ] **Phase 123: vigil-watch shell — launchd + CLI surface + 24h soak** — `vigil-watch install/uninstall/run/tail/test/status` subcommands cover dev + ops needs; launchd plist round-trips cleanly; daemon survives 24 unattended hours under 30MB RSS.
+- [ ] **Phase 124: G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish** — New 3-line HUD screen with tap interactions subscribes to `/v1/agent-stream` for real-time events fanned out from `POST /v1/agent-events`; folds in G2-POLISH-06 (launch-source registration, naturally co-located with HUD entry-point wiring) and G2-POLISH-07 (home body 210px overflow, naturally co-located with HUD layout work).
+- [ ] **Phase 125: Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo** — Focus/DND honored on HUD, swipe-out-of-list nav fixed, device-status spam debounced, `vigil.ehpk` v0.3.0 packed and resubmitted to Even Hub developer portal, full demo flow recorded under 60s for portfolio.
+
 ## Phase Details
 
-<!-- Phase 103-107 details archived to milestones/v3.5-ROADMAP.md when v3.5 shipped 2026-05-05 -->
+<!-- Phase 103-119 details archived to milestones/v3.5-ROADMAP.md and milestones/v3.7-ROADMAP.md when those milestones shipped -->
 
-### Phase 115: Calendar source picker (+ ThoughtRow whitespace polish)
-**Goal**: Users pick which Google calendars contribute to their daily brief from PWA Settings, and multi-line thought captures stop collapsing to a single line in the row view.
-**Depends on**: Nothing (first v3.7 phase; v3.6 shipped 2026-04-26)
-**Requirements**: CAL-01, POLISH-01
+### Phase 120: Day-1 JSONL schema verification + detection-strategy lock
+**Goal**: Before any production code that maps JSONL line-types to Vigil events is written, the actual schema at `~/.claude/projects/<id>/<sid>.jsonl` is observed in a live Claude Code VS Code session and either confirms the spec's assumed mapping or selects one of three documented fallback paths. The verification gate is load-bearing — if reality diverges, downstream phase goals shift accordingly.
+**Depends on**: Nothing (first v3.8 phase; v3.7 shipped 2026-05-06)
+**Requirements**: VERIFY-01
 **Success Criteria** (what must be TRUE):
-  1. User can open PWA Settings and see a multi-select list of all Google calendars on their connected account, populated from `GET /v1/calendar/list`.
-  2. User can toggle calendars on/off in Settings and the selection persists per-user (round-trips through `oauth_tokens.calendarSelections`); reload preserves the choice.
-  3. The next generated brief only includes events from calendars the user selected; unselected calendars contribute zero events. Empty selection still falls back to "all calendars" (current behavior preserved).
-  4. A multi-line thought (one with embedded `\n` characters) renders with line breaks preserved in the thoughts list row view — no longer collapses to a single line.
-**Plans**: 3 plans
-  - [x] 115-01-PLAN.md — Backend: setCalendarSelections service method + PUT /v1/calendar/selections route + tests + ROADMAP SC#1 path amendment (CAL-01)
-  - [x] 115-02-PLAN.md — PWA: Calendars subsection in SettingsPage with mount-time fetch + optimistic debounced toggle + reauth/error/empty branches (CAL-01)
-  - [x] 115-03-PLAN.md — POLISH-01: append whitespace-pre-line to ThoughtRow's display-mode <p> + regression test
+  1. User can open VS Code, start a real Claude Code session, tail the latest JSONL file under `~/.claude/projects/`, and observe the actual line types written during a tool-approval prompt, a successful tool result, an errored tool result, and a session end — captured verbatim into a verification log.
+  2. User can read a Day-1 findings document (committed to the vigil-watch repo README before any production code lands) that either: (a) confirms the assumed mapping table from the spec verbatim, or (b) corrects specific rows of the mapping table against observed schema, or (c) declares the JSONL approach unviable and selects one of three fallback paths (notification observation / VS Code extension / process inspection) with rationale.
+  3. User can read explicit answers in the findings document to four spec-flagged questions: how tool approval prompts appear in JSONL, what fields indicate "awaiting input," how session end is signaled, and the structure of an errored tool result.
+  4. If a fallback path is selected, the document captures which downstream Phase 122 / 123 goals shift (e.g., "Watcher now monitors Notification Center DB instead of FSEvents on `~/.claude/projects/`") so subsequent phases plan against the chosen reality, not the assumed one.
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 121: Agent-events API foundation + cross-user isolation lock
+**Goal**: Vigil Core exposes a per-userId-scoped `POST /v1/agent-events` and `GET /v1/agent-sessions` so any HTTP client (including the not-yet-built vigil-watch daemon) can persist agent events and read back currently-tracked sessions, with a cross-user isolation test pinning the structural guarantee BEFORE any real daemon starts posting events. Mirrors the W-01 / W-02 lock from Phase 108.
+**Depends on**: Phase 120 (verification confirms event payload shape; if a fallback path was selected in 120, the payload contract may diverge from the spec — this phase respects whatever 120 locked)
+**Requirements**: AGENT-API-01, AGENT-API-02
+**Success Criteria** (what must be TRUE):
+  1. User can `POST /v1/agent-events` with a bearer token (vk_ key or JWT) and observe the event row land in a new `agent_events` table with `user_id` set from the bearer's resolved userId — never from any field in the request body.
+  2. User can `GET /v1/agent-sessions` with a bearer token and receive a list of currently-tracked sessions filtered to the caller's userId, each with last known event/state; userA's sessions never appear in userB's response.
+  3. A cross-user isolation test (mirroring `cross-user-isolation.test.ts` from Phase 108) asserts that a request authenticated as userA cannot read or write events for userB — locking the per-userId guarantee structurally so the future vigil-watch daemon cannot accidentally cross-contaminate even if the payload includes a userId field.
+  4. User can replay the spec's example payload (`session_id`, `event`, `message`, `timestamp`, `label`, `host`, `exit_code`) against the live endpoint on local dev and the row materializes with all fields preserved verbatim and timestamp parsed as ISO-8601.
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 122: vigil-watch core — watcher + parser + emitter + config
+**Goal**: A locally-built `vigil-watch` Swift binary observes `~/.claude/projects/` via FSEventStream, parses each new JSONL line into the 5 Vigil event types per the detection rules locked in Phase 120, persists per-file byte offsets so daemon restarts don't replay history, POSTs events to Vigil Core with retry/backoff and a 100-event offline queue, and reads `~/.config/vigil/watch.toml` on startup. This is the daemon-as-engine — wrapper-shell concerns (launchd, CLI subcommands) come in Phase 123.
+**Depends on**: Phase 121 (`POST /v1/agent-events` exists and is per-user-isolated; this phase is the first real producer)
+**Requirements**: AGENT-WATCH-01, AGENT-WATCH-02, AGENT-WATCH-03, AGENT-WATCH-06
+**Success Criteria** (what must be TRUE):
+  1. User can run `swift build -c release` and the resulting `vigil-watch` binary, when launched in foreground mode against a live Claude Code VS Code session, prints observed JSONL line events to stdout in real time without missing lines or duplicating across daemon restarts.
+  2. User can interact with Claude Code in three ways and see exactly the right Vigil event class emitted to the configured Core endpoint: (a) approve a tool prompt → exactly one `needs_input` event per session within the 30s debounce window, (b) hit a tool error → exactly one `task_failed` event per session (deduped against subsequent errors), (c) let the session sit idle ≥60s while running → at least one `heartbeat` event after silence threshold elapses. `task_complete` and `task_failed` precedence is honored when both could apply (errors followed by clean stop → `task_failed` wins).
+  3. User can kill `vigil-watch` mid-session, restart it, and the daemon resumes parsing from `~/Library/Application Support/vigil-watch/offsets.json` instead of replaying the entire JSONL history — verified by zero duplicate event rows in `agent_events` after the restart.
+  4. User can disconnect the network for 90 seconds while Claude Code emits 5–10 events, reconnect, and within 5 seconds observe all queued events flushed to Vigil Core in order; queue caps at 100 events with oldest dropped on overflow; on `SIGTERM` the daemon drains within 5 seconds and exits cleanly.
+  5. User can edit `~/.config/vigil/watch.toml` to change `api_url`, `heartbeat_seconds`, `needs_input_debounce_seconds`, `milestone_patterns`, `projects_dir`, or `host_label`, restart the daemon, and observe the new values take effect; on first run the file is created with documented defaults if missing; `api_key` falls back to `VIGIL_API_KEY` env var when blank.
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 123: vigil-watch shell — launchd integration + CLI surface + 24h soak
+**Goal**: The `vigil-watch` binary becomes a real ops-grade local daemon: install/uninstall round-trips a launchd plist cleanly, the CLI surfaces 6 subcommands for daily debugging (`run`, `tail`, `test`, `install`, `uninstall`, `status`), and the daemon survives 24 consecutive unattended hours on the user's Mac under 30MB RSS without crashing.
+**Depends on**: Phase 122 (engine works; this phase is the ops shell around it)
+**Requirements**: AGENT-WATCH-04, AGENT-WATCH-05, AGENT-WATCH-07
+**Success Criteria** (what must be TRUE):
+  1. User can run `vigil-watch install` and observe `~/Library/LaunchAgents/com.morrillholdings.vigil.watch.plist` written + `launchctl bootstrap gui/$(id -u)` succeed; the daemon is now running with `RunAtLoad=true` and `KeepAlive=true`. Conversely, `vigil-watch uninstall` removes the plist + `launchctl bootout`s the agent without leaving an orphaned daemon process.
+  2. User can run each of the 5 non-install CLI subcommands and observe the documented behavior: `vigil-watch run --verbose` runs in foreground with stdout logging; `vigil-watch tail <session-id>` prints parsed events for one session without posting to Core; `vigil-watch test` posts a synthetic event and prints the Core round-trip result; `vigil-watch status` reports daemon state, queue depth, and last event timestamp.
+  3. After `vigil-watch install` + a Mac reboot, the daemon comes back up automatically, reconnects to Vigil Core, and resumes parsing live JSONL files — verified by a synthetic `vigil-watch test` succeeding within 30 seconds of login.
+  4. User can leave the daemon running unattended for 24 consecutive hours (real Claude Code sessions interleaved with idle periods) and at the end observe: process still alive (no crash), `ps -o rss=` reports < 30,000 KB resident memory, no orphaned stale offsets in `offsets.json`, and Vigil Core agent-events table contains the expected event mix with no gaps.
+**Plans**: TBD
+**UI hint**: no
+
+### Phase 124: G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish
+**Goal**: A new G2 Companion view subscribes to the existing `/v1/agent-stream` WebSocket — extended to fan out `agent-event` types per-userId from Phase 121's `POST /v1/agent-events` — and renders a glanceable 3-line HUD with tap interactions. Two G2 polish riders fold in naturally because they touch the same plugin code: G2-POLISH-06 (`onLaunchSource` registration distinguishes glassesMenu vs appMenu — naturally co-located with HUD entry-point wiring) and G2-POLISH-07 (home body fits within 210px container — naturally co-located with HUD layout work).
+**Depends on**: Phase 121 (`POST /v1/agent-events` is the producer the WebSocket fan-out reads from), Phase 122/123 (real events are flowing so the HUD has something to render in dev)
+**Requirements**: AGENT-API-03, AGENT-HUD-01, AGENT-HUD-02, G2-POLISH-06, G2-POLISH-07
+**Success Criteria** (what must be TRUE):
+  1. User can open the Vigil plugin tile in the Even Realities iOS app, navigate to the new Companion view on real G2 hardware, and see a 3-line HUD with current session label (top, truncated), state text `idle` / `running` / `waiting` / `done` (middle), and last event message (bottom, scrolling if too long).
+  2. User can trigger a `needs_input` event from a real Claude Code session via vigil-watch and within 2 seconds see a persistent banner appear on the temple HUD; single-tap clears the banner; double-tap on the temple cycles through active sessions when more than one is being tracked; long-press dismisses the current banner until the next state change.
+  3. Two G2 client instances authenticated as different users (single-user UI today, but verified structurally) subscribed to `/v1/agent-stream` each receive only their own `agent-event` payloads — userA's events never surface to userB's HUD even when both clients are connected simultaneously.
+  4. The G2 plugin distinguishes `glassesMenu` vs `appMenu` launch sources via `onLaunchSource` registration, so opening the plugin from the Even Hub glasses menu lands on a different default screen (or behaves contextually) versus opening from the iOS app menu.
+  5. The Home body view fits within the 210px container on real G2 hardware — no overflow, no auto-scroll inconsistency between captures of the same content; verified against the v3.5 hardware UAT regression observed in `HARDWARE-DIVERGENCE.md`.
+**Plans**: TBD
 **UI hint**: yes
 
-### Phase 116: Sports source picker
-**Goal**: Users pick which sports leagues and favorite teams to track from PWA Settings; the sports-service respects per-user selections instead of hardcoded team IDs.
-**Depends on**: Phase 115 (no hard dep, but sequential PWA-deploy rhythm preferred)
-**Requirements**: SPORTS-01
+### Phase 125: Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo
+**Goal**: The HUD respects iOS Focus / DND state for quiet ambient behavior, the last two G2 polish riders land (swipe-out-of-list, device-status spam), the `vigil.ehpk` plugin is packed at version 0.3.0 with the Companion HUD + all four polish riders folded in and resubmitted to the Even Hub developer portal, and the full ambient demo flow is recordable under 60 seconds for portfolio use.
+**Depends on**: Phase 124 (HUD + tap interactions exist; this phase finishes the behavioral envelope and ships)
+**Requirements**: AGENT-HUD-03, G2-POLISH-05, G2-POLISH-08, G2-PLUGIN-01, AGENT-DEMO-01
 **Success Criteria** (what must be TRUE):
-  1. User can open PWA Settings and toggle each of the four leagues (MLB, NFL, NBA, NHL) on/off; per-league team picker appears for enabled leagues.
-  2. User can select favorite team(s) per enabled league; selections persist per-user via new storage (column or table) and survive reload.
-  3. The next generated brief renders only the leagues the user enabled; team-specific data uses the user's picks, not the previously-hardcoded `teamIds` defaults.
-  4. A user with all leagues disabled gets a brief PDF with no sports section (or a clean "no leagues selected" placeholder), not stale hardcoded data.
-**Plans**: 5 plans
-- [x] 116-01-PLAN.md — Sports preferences server (GET/PUT /v1/sports/selections + sports-preferences-service + app_settings upsert)
-- [x] 116-02-PLAN.md — Teams endpoint + 24h cache (GET /v1/sports/teams/:league + per-league name normalization)
-- [x] 116-03-PLAN.md — sports-service selections threading (LeagueResult 'disabled' + standings-only path + per-user teamId override)
-- [x] 116-04-PLAN.md — brief-assembly threading + env-var deprecation (read app_settings.sports_selections; pass to fetchAllLeagues)
-- [x] 116-05-PLAN.md — PWA Settings sports picker (UI + 3 typed api/client helpers + tests)
+  1. With the user's iPhone in Focus / Do Not Disturb mode (state exposed via Even SDK), only `needs_input` and `task_failed` events surface on the HUD — `task_complete`, `milestone`, and `heartbeat` events queue silently and surface in order on the next non-DND state change.
+  2. On real G2 hardware, the user can enter any list view (work orders, reminders, etc.) and exit via swipe — the list-container `SCROLL` event propagates correctly so the user is no longer trapped requiring `DOUBLE_CLICK → home` to escape (resolves the v3.5 hardware UAT regression).
+  3. With the glasses transitioning between connected and disconnected states, the device-status event stream no longer floods the plugin with `connectType: "none"` events — debouncing or deduping keeps the stream useful instead of spammy during transient connection states.
+  4. User can build `vigil.ehpk` at version 0.3.0 (Companion HUD + 4 polish riders folded in), pass SDK validation including `containerName ≤ 16 chars`, and submit the package to the Even Hub developer portal store dashboard; submission is acknowledged in the dashboard.
+  5. User can start a real Claude Code session in VS Code, walk away from the keyboard, receive a `needs_input` tap on the temple, single-tap to acknowledge, and have the entire flow recorded as a single video clip under 60 seconds — usable verbatim as portfolio material.
+**Plans**: TBD
 **UI hint**: yes
-
-### Phase 116.1: Sports route + PWA error-class differentiation (INSERTED)
-**Goal**: A user with a misconfigured local env or transient BDL outage sees a useful error class, not "Couldn't load teams." with no diagnostic. Surface BDL upstream failures with structured error responses instead of generic 500s.
-**Depends on**: Phase 116
-**Requirements**: SPORTS-01b (gap closure)
-**Success Criteria** (what must be TRUE):
-  1. **Server**: wrap `service.fetchTeams` and `service.fetchAllLeagues` per-league calls in try/catch at the route layer; return 502 with `{error: "Upstream sports provider unavailable"}` on BDL fetch failures (do NOT leak `BALLDONTLIE` or provider name — preserve T-73-01).
-  2. **PWA**: distinguish 5xx-server vs 502-upstream vs network/auth failures in `loadTeamsForLeague` error UI; show "Sports data temporarily unavailable" copy for 502s with optional retry-after if surfaced.
-  3. Tests cover: route returns 502 (not 500) when fetcher throws; error body contains no provider name; PWA renders distinct copy per error class.
-**Out of scope**: WR-01 (`encodeURIComponent` on `teamId`) and WR-02 (`mapSports teamName` from env-var) — both already surfaced in 116-REVIEW.md and worth fixing in the same phase IF time permits, but the primary deliverable is observability, not defense-in-depth.
-**Plans**: 4 plans
-- [x] 116.1-01-PLAN.md — UpstreamError class + service-layer try/catch + AbortController + WR-01 encodeURIComponent fix
-- [x] 116.1-02-PLAN.md — Route layer 502 mapping + Retry-After header propagation for all 3 sports routes
-- [x] 116.1-03-PLAN.md — PWA classifyFetchError helper + 4-bucket copy + countdown UI in loadTeamsForLeagueImpl
-- [x] 116.1-04-PLAN.md — Brief-assembly per-league placeholder + PostHog telemetry + all-failed copy
-**UI hint**: yes (PWA error UI changes)
-
-### Phase 117: Auth-email rate-limit UX hardening
-**Goal**: A user retrying verify-email / resend-verification / forgot-password / reset-password from a single IP can complete a legitimate flow without tripping the rate limit AND, when they DO hit the limit, sees distinct copy with a Retry-After countdown instead of the D-21 single-bucket "this link is no longer valid" misdirection.
-**Depends on**: Phase 116 (sequential PWA deploy rhythm)
-**Requirements**: AUTH-12, AUTH-13
-**Success Criteria** (what must be TRUE):
-  1. On all 4 endpoints (`/v1/auth/verify-email`, `/v1/auth/resend-verification`, `/v1/auth/forgot-password`, `/v1/auth/reset-password`), a 429 response renders distinct PWA copy ("Too many attempts — try again in N minutes") with a live Retry-After countdown, NOT the generic "This link is no longer valid" expiry message.
-  2. A legitimate user retrying any of the 4 flows from a single IP no longer trips the rate limit on routine retry patterns (cap raised and/or per-userId/per-email axis added per endpoint as chosen during plan-phase).
-  3. Brute-force protection is structurally preserved — abuse patterns (e.g., 100 attempts/min from one IP) still hit 429; enumeration safety on `/v1/auth/forgot-password` is unchanged (no oracle leak in the new copy).
-  4. The PWA error-bucket split is exhaustive: time-expired tokens still render "no longer valid"; rate-limited responses render the new 429 copy; no path renders both or neither.
-**Plans**: 5 plans
-- [x] 117-01-PLAN.md — Server rate-limit cap raises (verify-email/reset-password 5→20, resend-verification 3→5, forgot-password per-IP 5→20 with per-email cap unchanged at 5 for enum-safety)
-- [x] 117-02-PLAN.md — Extend classifyFetchError with rate-limited bucket (status === 429 + Retry-After header/body parsing)
-- [x] 117-03-PLAN.md — VerifyEmailPage 5th visual state (rate_limited) with mm:ss countdown + cleanup-on-unmount
-- [x] 117-04-PLAN.md — ResetPasswordPage rate-limited state + countdown + form-state preservation across rate_limited→idle
-- [x] 117-05-PLAN.md — SettingsPage Resend Verification 'rate_limited' branch with countdown (independent of Phase 116.1 per-league timers)
-**UI hint**: yes
-
-### Phase 118: Production test-user cleanup
-**Goal**: Two known test-user rows (`upper@case.com` id=3 and `test+phase104@local.test` id=44) and all cascaded child rows are deleted from Railway prod, with a documented runbook and before/after row counts.
-**Depends on**: Phase 117 (no hard dep; ordering by milestone closeout sequence)
-**Requirements**: OPS-01
-**Success Criteria** (what must be TRUE):
-  1. Running `SELECT * FROM users WHERE id IN (3, 44)` against Railway prod returns zero rows after the cleanup operation.
-  2. No orphaned child rows remain in `oauth_tokens`, `password_reset_tokens`, `work_order_statuses`, `brief_pdfs`, `briefs`, `thoughts`, or any other userId-scoped table for ids 3 or 44 (verified via SELECT against each table).
-  3. A runbook (markdown checklist or SQL script with comments) is committed under `.planning/phases/118-*/` capturing exact commands run, before-row-counts, after-row-counts, and rollback notes.
-  4. No real user data is collateral damage — a smoke pass confirms the seed user (`jamesonmorrill1@gmail.com`) and any other live accounts still authenticate, generate briefs, and read their thoughts.
-**Plans**: 2 plans
-- [x] 118-01-cleanup-script-PLAN.md — Build idempotent `vigil-core/scripts/cleanup-test-users.ts` with --dry-run/--commit gate, pre-flight email assertion, and 14-table single-tx delete in D-05 order
-- [x] 118-02-prod-execution-runbook-PLAN.md — Run dry-run + commit against Railway prod via `railway run`, capture stdout to `118-RUN-LOG.txt`, write `118-RUNBOOK.md` with before/after counts + smoke-pass + rollback notes
-
-### Phase 119: DMARC quarantine ramp
-**Goal**: `vigilhub.io` DMARC policy advances from `p=none` (monitoring-only) to `p=quarantine` (spoof attempts go to spam) on Cloudflare DNS, with the ramp action gated on the 2026-05-06 auto-eval routine confirming ≥7 days clean aggregate reports + ≥3 days production verify-email volume.
-**Depends on**: Phase 118 (no hard dep; sequenced as final closeout step)
-**Requirements**: OPS-02
-**Success Criteria** (what must be TRUE):
-  1. The 2026-05-06 auto-eval routine runs and produces a documented PASS/FAIL determination based on (a) ≥7 days of aggregate DMARC reports with no DKIM/SPF failures from legitimate Vigil mail and (b) ≥3 days of real verify-email production volume to validate the signal.
-  2. If gate PASSES: `_dmarc.vigilhub.io` TXT record on Cloudflare DNS is updated `p=none` → `p=quarantine` (other tags preserved), verified via `dig TXT _dmarc.vigilhub.io +short`.
-  3. If gate FAILS: ramp does NOT fire; deferral reason is documented in the phase notes and a re-eval date is captured.
-  4. Post-ramp (PASS branch): the next verify-email or forgot-password mail flowing through Resend still arrives at Gmail Inbox with `dmarc=pass` in the raw headers (no false-positive quarantine of legitimate Vigil mail).
-
-**Notes / Constraints**:
-- Phase implementation (runbook + ramp script/checklist) can land any time; the ramp action itself is gated and only fires on or after 2026-05-06.
-- Final `p=quarantine → p=reject` ramp is explicitly OUT OF SCOPE for v3.7 (deferred to v3.8+ after ≥30 days clean quarantine telemetry per REQUIREMENTS.md).
-**Plans**: 2 plans
-- [x] 119-01-PLAN.md — Author and commit 119-RUNBOOK.md before 2026-05-06 with all D-04 sections (pre-ramp dig, click-path, before/after, post-ramp dig, two-path smoke, PASS/FAIL/DEFERRED branches, rollback, cross-refs)
-- [ ] 119-02-PLAN.md — Execute the manual ramp on or after 2026-05-06 — gated on trig_01RZLcj1jpxvDQAwnFmUG9d9 PASS — Cloudflare dashboard edit, post-ramp dig, two-path smoke, PASS/FAIL/DEFERRED annotation, rollback if D-06 trigger fires
 
 ## Progress
 
@@ -524,7 +520,6 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 107.1. Local dev environment with Postgres + hot reload (INSERTED) | v3.5 | 7/7 | Complete    | 2026-04-22 |
 | 107.2. Cross-machine Tailscale dev access (INSERTED, research-only) | v3.5 | 3/3 | Complete    | 2026-04-22 |
 | 107.3. Prod bind default + install.sh + doctor cleanup (INSERTED) | v3.5 | 4/4 | Complete    | 2026-04-22 |
-
 | 108. work_order_statuses userId Scoping + Isolation Test | v3.6 | 3/3 | Complete    | 2026-04-23 |
 | 109. Per-User Scheduler Fan-Out | v3.6 | 3/3 | Complete    | 2026-04-23 |
 | 110. Change Password + password_changed_at Gate | v3.6 | 3/3 | Complete    | 2026-04-24 |
@@ -532,12 +527,18 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 112. Forgot-Password Email Flow | v3.6 | 5/5 | Complete    | 2026-04-25 |
 | 113. Verify Email on Signup | v3.6 | 5/5 | Complete    | 2026-04-26 |
 | 114. Safari Extension Quick-Capture Parity | v3.6 | 5/5 | Complete    | 2026-04-26 |
-
 | 115. Calendar source picker (+ ThoughtRow polish) | v3.7 | 4/4 | Complete    | 2026-04-28 |
 | 116. Sports source picker | v3.7 | 5/5 | Complete    | 2026-04-29 |
+| 116.1. Sports route + PWA error-class differentiation (INSERTED) | v3.7 | 4/4 | Complete | 2026-04-30 |
 | 117. Auth-email rate-limit UX hardening | v3.7 | 5/5 | Complete    | 2026-04-30 |
 | 118. Production test-user cleanup | v3.7 | 2/2 | Complete    | 2026-05-01 |
 | 119. DMARC quarantine ramp | v3.7 | 2/2 | Complete (deferred via amendment) | 2026-05-06 |
+| 120. Day-1 JSONL schema verification + detection-strategy lock | v3.8 | 0/TBD | Not started | - |
+| 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 0/TBD | Not started | - |
+| 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 0/TBD | Not started | - |
+| 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 0/TBD | Not started | - |
+| 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 0/TBD | Not started | - |
+| 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 0/TBD | Not started | - |
 
 ## Backlog
 

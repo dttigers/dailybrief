@@ -77,27 +77,27 @@
 
 ## Traceability
 
-(Filled by `gsd-roadmapper` after roadmap creation.)
+Filled by `gsd-roadmapper` on 2026-05-06 after roadmap creation. 20/20 v3.8 requirements mapped to exactly one phase. Plans column populated by `/gsd-plan-phase` runs.
 
 | REQ-ID | Phase | Plan(s) |
 |--------|-------|---------|
-| VERIFY-01 | TBD | TBD |
-| AGENT-WATCH-01 | TBD | TBD |
-| AGENT-WATCH-02 | TBD | TBD |
-| AGENT-WATCH-03 | TBD | TBD |
-| AGENT-WATCH-04 | TBD | TBD |
-| AGENT-WATCH-05 | TBD | TBD |
-| AGENT-WATCH-06 | TBD | TBD |
-| AGENT-WATCH-07 | TBD | TBD |
-| AGENT-API-01 | TBD | TBD |
-| AGENT-API-02 | TBD | TBD |
-| AGENT-API-03 | TBD | TBD |
-| AGENT-HUD-01 | TBD | TBD |
-| AGENT-HUD-02 | TBD | TBD |
-| AGENT-HUD-03 | TBD | TBD |
-| G2-PLUGIN-01 | TBD | TBD |
-| AGENT-DEMO-01 | TBD | TBD |
-| G2-POLISH-05 | TBD | TBD |
-| G2-POLISH-06 | TBD | TBD |
-| G2-POLISH-07 | TBD | TBD |
-| G2-POLISH-08 | TBD | TBD |
+| VERIFY-01 | Phase 120 | TBD |
+| AGENT-API-01 | Phase 121 | TBD |
+| AGENT-API-02 | Phase 121 | TBD |
+| AGENT-WATCH-01 | Phase 122 | TBD |
+| AGENT-WATCH-02 | Phase 122 | TBD |
+| AGENT-WATCH-03 | Phase 122 | TBD |
+| AGENT-WATCH-06 | Phase 122 | TBD |
+| AGENT-WATCH-04 | Phase 123 | TBD |
+| AGENT-WATCH-05 | Phase 123 | TBD |
+| AGENT-WATCH-07 | Phase 123 | TBD |
+| AGENT-API-03 | Phase 124 | TBD |
+| AGENT-HUD-01 | Phase 124 | TBD |
+| AGENT-HUD-02 | Phase 124 | TBD |
+| G2-POLISH-06 | Phase 124 | TBD |
+| G2-POLISH-07 | Phase 124 | TBD |
+| AGENT-HUD-03 | Phase 125 | TBD |
+| G2-POLISH-05 | Phase 125 | TBD |
+| G2-POLISH-08 | Phase 125 | TBD |
+| G2-PLUGIN-01 | Phase 125 | TBD |
+| AGENT-DEMO-01 | Phase 125 | TBD |
