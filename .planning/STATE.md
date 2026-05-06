@@ -3,10 +3,11 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: planning
-last_updated: "2026-05-06T16:34:37.385Z"
-last_activity: 2026-05-06
+stopped_at: Phase 120 context gathered
+last_updated: "2026-05-06T16:56:15.669Z"
+last_activity: 2026-05-06 — v3.8 ROADMAP.md landed; 6 phases (120-125) covering 20/20 v3.8 requirements
 progress:
-  total_phases: 6
+  total_phases: 8
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -131,7 +132,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-06 — v3.7 milestone closed; v3.8 milestone started; v3.8 ROADMAP.md landed
-Stopped at: ROADMAP.md created with 6 phases (120-125), 20/20 requirements mapped; STATE.md updated; REQUIREMENTS.md traceability filled
-Resume file: None
+Last session: 2026-05-06T16:56:15.653Z
+Stopped at: Phase 120 context gathered
+Resume file: .planning/phases/120-day-1-jsonl-schema-verification-detection-strategy-lock/120-CONTEXT.md
 Next action: /gsd-plan-phase 120
