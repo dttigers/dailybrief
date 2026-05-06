@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.7
-milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
-status: executing
-stopped_at: Completed 119-01-PLAN.md (runbook authored at 4d958dd)
-last_updated: "2026-05-06T16:02:50.749Z"
+milestone: v3.8
+milestone_name: Claude Code Companion
+status: planning
+last_updated: "2026-05-06T16:34:37.385Z"
 last_activity: 2026-05-06
 progress:
-  total_phases: 8
-  completed_phases: 6
-  total_plans: 22
-  completed_plans: 22
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,23 +24,10 @@ See: .planning/PROJECT.md (updated 2026-04-27 — v3.7 milestone started)
 
 ## Current Position
 
-Milestone: v3.7 (started 2026-04-27)
-Phase: 119 (dmarc-quarantine-ramp) — EXECUTING
-Plan: 2 of 2
-Status: Ready to execute
-Last activity: 2026-05-06
-
-Progress: [░░░░░░░░░░] 0%
-
-**v3.7 phases (115-119, all 0%):**
-
-| Phase | Name | Status |
-|-------|------|--------|
-| 115 | Calendar source picker (+ ThoughtRow polish) | Not started |
-| 116 | Sports source picker | Not started |
-| 117 | Auth-email rate-limit UX hardening | Not started |
-| 118 | Production test-user cleanup | Not started |
-| 119 | DMARC quarantine ramp | Not started |
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-05-06 — Milestone v3.8 started
 
 ## Performance Metrics
 

@@ -8,30 +8,27 @@
 
 **Shipped:** v3.5 Observability, G2 Resubmit & Capture Repair (2026-05-05) — Phases 103-107 + inserts 107.1/107.2/107.3, vigil.ehpk submitted to Even Hub store dashboard, hardware UAT 6/6 PASS on real G2 firmware 2.2.0.28.
 
-## Next Milestone Goals: v3.8 (theme TBD)
+## Current Milestone: v3.8 Claude Code Companion
 
-Six G2 plugin improvement seeds were planted 2026-05-05/06 from the v3.5 hardware UAT findings + forward-looking SDK exploration:
+**Goal:** Use the Even Realities G2 glasses as an ambient notification + status layer for long-running Claude Code sessions, plus fold in 4 hardware-UAT-evidenced G2 polish fixes. Glasses won't display code or terminal output — they tap on the temple when Claude Code needs the user, finishes a task, or hits something interesting.
 
-*UAT-evidenced (from `HARDWARE-DIVERGENCE.md`):*
-- SEED-005: G2 swipe-out-of-list nav broken on hardware (Phase 45 hardware regression — list-container SCROLL events do not bubble; only DOUBLE_CLICK → home works) — **Medium**
-- SEED-006: Glasses-menu launch source unhandled (`onLaunchSource` never registered; `appMenu` vs `glassesMenu` indistinguishable) — Small
-- SEED-007: Home body content overflows 210px container (auto-scroll inconsistency between captures) — Small
-- SEED-008: Device-status events spam with `connectType: "none"` (debounce/dedupe gap) — Small
+**Target features:**
+- `vigil-watch` macOS daemon (Swift) — file-watching observer rooted at `~/.claude/projects/`, emits 5 event types (`needs_input` / `task_complete` / `task_failed` / `milestone` / `heartbeat`) to Vigil Core
+- Vigil Core `POST /v1/agent-events` + `GET /v1/agent-sessions` endpoints, agent events on existing `/v1/agent-stream` WebSocket — **scoped per `userId`** mirroring SCHED-01 fan-out
+- G2 Companion HUD screen (plugin v0.3.0) — 3-line layout (label / state / last event), tap interactions (single = ack, double = cycle, long = dismiss), Quiet mode honoring iOS Focus
+- 4 G2 polish riders from v3.5 hardware UAT: SEED-005 swipe-out-of-list (Medium), SEED-006 launch-source (Small), SEED-007 home overflow (Small), SEED-008 device-status spam (Small)
+- vigil.ehpk v0.3.0 resubmit to Even Hub
 
-*Forward-looking:*
-- SEED-009: Local-storage for last-viewed screen / scroll position (lifecycle UX) — Small
-- SEED-010: Voice capture from G2 via SDK `audioControl` + `audioEvent` PCM stream — **Large, milestone-anchor candidate, likely v3.9**
+**Day-1 verification gate:** JSONL schema at `~/.claude/projects/<id>/<sid>.jsonl` is assumed (community reverse-engineering). Day 1 of execute MUST verify before any production code. Three documented fallback strategies if schema diverges (notification observation / VS Code extension / process inspection).
 
-Two pre-existing backlog phases also in play:
-- 999.1: Restore Ubiquity entitlement for iCloud photo download — Medium
-- 999.2: CaptureBar multi-line input support (paste-side newline preservation) — Small
+**Spec reference:** `.planning/v3.8-CLAUDE-CODE-COMPANION-SPEC.md` (operator-uploaded 2026-05-06).
 
-**Theme decision deferred to `/gsd-new-milestone` planning loop.** Two natural framings: (a) "G2 Hardware Polish" — A/B/C/D fast follows + maybe 999.x backlog; (b) "G2 Voice Capture" anchored on SEED-010 with polish riding along.
-
-**Carried-forward blockers (still not in scope):**
+**Carried-forward (still not in scope):**
 - Phase 85 (iOS Shortcut) — Shortcuts.app bugs
 - Phase 80 (ServiceNow API work orders) — IT token
 - gmail-workorders importer tick disable — defer to whichever milestone unblocks ServiceNow API
+- SEED-009 last-viewed-screen (→ v3.9), SEED-010 voice capture (→ v3.9 anchor candidate)
+- 999.1 Ubiquity entitlement, 999.2 CaptureBar multi-line (stay backlog)
 
 ## What This Is
 
@@ -158,6 +155,12 @@ Capture every thought with zero friction and have the system organize it for you
 
 ### Active
 
+**v3.8 in progress:**
+- [ ] `vigil-watch` macOS daemon — file-watching observer for Claude Code JSONL sessions, 5 event types, launchd-managed (AGENT-WATCH-* — v3.8)
+- [ ] Vigil Core agent-events API — `POST /v1/agent-events`, `GET /v1/agent-sessions`, WebSocket fan-out, per-userId scoping (AGENT-API-* — v3.8)
+- [ ] G2 Companion HUD screen — new plugin screen with tap interactions, Quiet mode, plugin v0.3.0 resubmit (AGENT-HUD-*, G2-PLUGIN-* — v3.8)
+- [ ] G2 polish riders — SEED-005 swipe-out-of-list, SEED-006 launch-source, SEED-007 home overflow, SEED-008 device-status spam (G2-POLISH-* — v3.8)
+
 **v3.5 paused (blocked on G2 hardware):**
 - [ ] G2 resubmit: latest-simulator screenshots (G2-01 — code side done, simulator session pending)
 - [ ] G2 resubmit: double-tap exit dialogue per lifecycle docs (G2-02 — code side done)
@@ -280,4 +283,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-06 after v3.7 milestone close — 6 phases (115, 116, 116.1, 117, 118, 119), 22 plans, 7/7 requirements complete (OPS-02 closed via operator amendment after DMARC auto-eval gate returned DEFERRED on 0/3 conditions; `p=none` accepted as steady-state DMARC posture). Six G2 plugin improvement seeds planted (SEED-005 through SEED-010) for v3.8 milestone consideration; SEED-010 voice-capture flagged as v3.9 milestone-anchor candidate. v3.5 hardware UAT executed mid-milestone (2026-05-05) — vigil.ehpk submitted to Even Hub store dashboard, 6/6 UAT scenarios passed on real G2 firmware 2.2.0.28. v3.5 closed 2026-05-06 alongside v3.7. Next: `/gsd-new-milestone` for v3.8 theme decision.*
+*Last updated: 2026-05-06 — v3.8 Claude Code Companion milestone started. Anchor: `vigil-watch` macOS daemon + agent-events API + G2 Companion HUD screen, with SEED-005/006/007/008 G2 polish riders folded in. Plugin resubmit target: vigil.ehpk v0.3.0. Spec reference: `.planning/v3.8-CLAUDE-CODE-COMPANION-SPEC.md`. Day-1 JSONL schema verification is a load-bearing gate — three documented fallback paths if reality diverges. SEED-009/010 deferred to v3.9; 999.1/999.2 stay backlog.*
