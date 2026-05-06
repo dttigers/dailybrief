@@ -185,6 +185,71 @@ This is where the auto-PR from `trig_01RZLcj1jpxvDQAwnFmUG9d9` appends evidence 
 # Checkpoint: .planning/seeds/SEED-003-checkpoint-2026-05-06.md
 ```
 
+### Operator amendment — accepted as steady state (2026-05-06)
+
+> Operator: jamesonmorrill1@gmail.com. After reviewing the routine's 0-of-3
+> determination, the underlying signal (8-day rua silence since 2026-04-29)
+> is not a transient gate failure — it reflects vigilhub.io's actual
+> production scale. At single-user volume, receivers don't emit daily
+> aggregate reports often enough to satisfy a ≥7-day clean window, and they
+> won't until sustained signup traffic materializes. The DMARC ramp gate as
+> designed is structurally gated on growth that hasn't happened yet.
+>
+> **Decision:** `p=none` is accepted as the steady-state DMARC posture for
+> v3.7 closeout. Phase 119 closes on this amendment, NOT on a future ramp.
+> ROADMAP SC #1 / #2 (PASS-branch criteria) are formally waived; SC #3
+> (FAIL/DEFERRED branch documented) is satisfied by this section.
+
+```text
+# Amendment date: 2026-05-06
+# Steady-state TXT value (no change from pre-ramp):
+#   v=DMARC1; p=none; rua=mailto:jamesonmorrill1@gmail.com
+# What's preserved:
+#   - rua aggregate monitoring continues (zero cost, zero deploy risk)
+#   - Gate routine trig_01RZLcj1jpxvDQAwnFmUG9d9 remains scheduled
+#     (next fire 2026-05-20, abandonment window opens 2026-05-24)
+#   - Cloudflare TXT record: UNTOUCHED
+#   - Section 7 rollback procedure: not applicable (no ramp to roll back)
+# What's released:
+#   - v3.7 milestone close is unblocked — Phase 119 terminates here
+#   - Operator no longer waits on rua volume to accumulate
+```
+
+### Re-activation conditions
+
+The ramp is not abandoned, only deferred to a meaningful trigger. Reopen
+this runbook (or supersede it via a new phase) if ANY of the following
+hold:
+
+1. **Volume materializes.** rua aggregate reports resume daily flow with
+   ≥50 sends/day for ≥7 consecutive days — the original SEED-003
+   threshold. Re-arm `trig_01RZLcj1jpxvDQAwnFmUG9d9` and re-execute
+   Sections 1-5 above.
+2. **Spoofing observed.** A rua report shows `disposition=none` records
+   with `dkim=fail` AND `spf=fail` from a non-Vigil source IP, indicating
+   active spoofing of `@vigilhub.io`. At that point `p=quarantine` becomes
+   user-protective rather than theoretical, and Sections 1-5 execute under
+   incident response (faster than the SEED-003 evidence bar).
+3. **Compliance requirement.** A future enterprise deal, regulatory
+   posture, or downstream receiver (Gmail bulk-sender requirements,
+   Microsoft tenant policies, etc.) mandates `p=quarantine` or stronger.
+   At that point cost/benefit shifts and the ramp executes regardless of
+   organic volume.
+
+### What this amendment does NOT do
+
+- It does NOT delete the gate routine. The routine continues to fire on
+  its existing schedule; if conditions ever spontaneously resolve, the
+  routine will open a PR and the operator can reconsider.
+- It does NOT modify the Cloudflare DNS record. `_dmarc.vigilhub.io` stays
+  at `p=none`. No dashboard touch.
+- It does NOT close SEED-003. The seed remains dormant — its trigger
+  conditions are still well-formed; only the v3.7 deadline is being
+  released.
+- It does NOT preclude tightening to `p=quarantine` later. It simply
+  releases v3.7 from waiting on a precondition that is not load-bearing
+  at current scale.
+
 ---
 
 ## Section 7 — Rollback (D-06)
