@@ -54,7 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 | Milestone | Phases | Plans | Timeline |
 |-----------|--------|-------|----------|
 | v1.0–v3.4 | 1-102 | ~211 | ~18 days |
-| v3.5 | 103-107 (+107.1/107.2/107.3) | 34 | paused pre-ship (G2 hardware UAT) |
+| v3.5 | 103-107 (+107.1/107.2/107.3) | 34 | ready-to-close — vigil.ehpk submitted to Even Hub 2026-05-05 (sha 71973e3) |
 | v3.6 | 108-114 | 27 | shipped 2026-04-26 |
 | v3.7 | 5 (115-119) | TBD | started 2026-04-27, roadmap 2026-04-27 |
 | Phase 115 P01 | 5min | 3 tasks | 5 files |
@@ -86,6 +86,7 @@ Progress: [░░░░░░░░░░] 0%
 - Phase 107.2 inserted after Phase 107: cross-machine Tailscale dev access with secure bind and CORS (URGENT)
 - Phase 107.3 inserted after Phase 107 (2026-04-22): prod bind default + install.sh silent-fail + doctor stale-drift cleanup
 - v3.5 paused 2026-04-22 at 34/34 plans, waiting on G2 physical hardware UAT (device delivery unknown)
+- v3.5 hardware UAT executed 2026-05-05 (G2 glasses arrived 8 days ahead of DHL ETA, firmware 2.2.0.28); vigil.ehpk packed at 27,256 bytes and submitted to Even Hub store dashboard at sha 71973e3. v3.5 status: ready-to-close (awaiting `/gsd-verify-work 106` + `/gsd-complete-milestone v3.5`)
 - v3.6 shipped 2026-04-26: 7 phases (108-114), 27 plans, 8/8 requirements satisfied via live HUMAN-UAT against Railway production
 - v3.7 started 2026-04-27 — themes: PWA Settings source pickers (calendars + sports), auth-email UX hardening (verify-email + forgot-password D-13/D-21 friction), closeout cleanup (DMARC ramp, prod test-user delete, ThoughtRow polish)
 - Phase 116.1 inserted after Phase 116 (2026-04-29): Sports route + PWA error-class differentiation (URGENT — gap closure for opaque "Couldn't load teams." surfaced during 116 HUMAN-UAT after local `BALLDONTLIE_API_KEY` env-gap exposed missing route try/catch)
@@ -179,7 +180,7 @@ Captured but explicitly out of v3.7 scope:
 
 - ServiceNow API token still blocks Phase 80 (from v3.1)
 - Phase 85 (iOS Shortcut) held — Shortcuts.app bugs
-- G2 physical hardware retest pending device delivery (unknown date) — blocks v3.5 ship, NOT v3.7 execution
+- ~~G2 physical hardware retest pending device delivery~~ ✓ resolved 2026-05-05 — hardware UAT executed, vigil.ehpk submitted to Even Hub. v3.5 ready-to-close pending verifier + complete-milestone.
 - Phase 107.1 work_orders schema drift — columns notes/archived_at/last_change_at/last_change_summary defined in schema.ts but never migrated; blocks any plan needing to run live migrations against a freshly-set-up local dev DB
 - vigil-core npm test suite hang: integration tests import index.js which spawns generate-scheduler + gmail-workorders setInterval loops at module load, keeping tsx alive after final assertion. Workaround: run individual files via `npx tsx --test <file>`. Fix candidate: gate scheduler start-up on NODE_ENV !== test, or split buildApp() + bootstrap entrypoint.
 

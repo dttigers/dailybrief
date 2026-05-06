@@ -1,12 +1,23 @@
 ---
-status: blocked
+status: resolved
 phase: 106-g2-store-resubmit-atomic
 plan: 106-05
 blocked_on: G2 hardware pairing required before Even app simulator canvas activates
 discovered: 2026-04-20
+resolved: 2026-05-05
+resolved_at_sha: 71973e3
+resolution: G2 glasses arrived 8 days ahead of DHL ETA (firmware 2.2.0.28, paired to Even iPhone app v2.2.0); screenshot capture path resolved via @evenrealities/evenhub-simulator@0.6.2 (released since this file was authored) — eliminated the "no headless render path" finding below. vigil.ehpk packed at 27,256 bytes and submitted to Even Hub store dashboard.
 ---
 
-# Phase 106 partial completion — 106-05 deferred on hardware
+# Phase 106 partial completion — 106-05 deferred on hardware (RESOLVED 2026-05-05)
+
+> **Resolution note:** This file is preserved for historical context — the path described below
+> ("when G2 glasses arrive") is what actually played out, with one important deviation:
+> `@evenrealities/evenhub-simulator@0.6.2` became available between when this file was authored
+> (2026-04-20) and when hardware arrived (2026-05-05), giving us a clean 576×288 screenshot
+> capture path that the original "Escape hatches investigated" section ruled out.
+> See `HARDWARE-DIVERGENCE.md` (same directory) for the 6 simulator/hardware divergences
+> observed during the actual UAT session that closed this gate.
 
 ## What shipped (4/5 plans, commits on main)
 
