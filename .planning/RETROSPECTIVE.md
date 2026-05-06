@@ -147,6 +147,60 @@
 
 ---
 
+## Milestone: v3.7 — Source Pickers, Verify-Email UX & Closeout Cleanup
+
+**Shipped:** 2026-05-06 (started 2026-04-27 — 9 active days)
+**Phases:** 6 (115, 116, 116.1, 117, 118, 119) | **Plans:** 22
+
+### What Was Built
+
+- **Calendar source picker** (Phase 115): `PUT /v1/calendar/selections` with single-sourced array validation + per-user Drizzle `oauth_tokens.calendar_selections` jsonb write; PWA Calendars subsection inside the Google Account card with debounced 400ms save, optimistic toggle + rollback toast, and the four documented branches (loading / ok / needs_reauth-hidden / error-with-retry). Empty selection preserved as the all-calendars fallback contract. POLISH-01 ride-along: `whitespace-pre-line` Tailwind utility on ThoughtRow display-mode `<p>` so multi-line thought captures render with line breaks.
+- **Sports source picker** (Phase 116): Per-user sports preferences persisted to `app_settings` (jsonb, key='sports_selections') with bearer-gated GET/PUT `/v1/sports/selections` endpoints; 24h global in-memory cache for `/v1/sports/teams/:league` with per-league name normalization; brief-assembly threads selections via `getUserSportsSelections`, structurally drops `disabled` leagues via existing `status !== 'ok'` filter; PWA SettingsPage Sports section with per-league checkbox + indented team radio list.
+- **Sports route + PWA error-class differentiation** (Phase 116.1, INSERTED 2026-04-29): Typed `UpstreamError` class with structured `kind` enum, 10s `AbortController` timeout, 4-bucket BDL classification, sports routes catch `instanceof UpstreamError` → HTTP 502 + structured body; PWA `classifyFetchError` helper exported, SettingsPage renders distinct copy + live countdown per error bucket. Closes the local-env-gap symptom (BDL 401 → opaque PWA error) surfaced during Phase 116 HUMAN-UAT.
+- **Auth-email rate-limit UX hardening** (Phase 117): vigil-core route caps raised across 4 auth-email endpoints (per-IP `5 → 20`, resend-verification per-userId `3 → 5`); forgot-password split into `RATE_LIMIT_MAX_IP` (20) + `RATE_LIMIT_MAX_EMAIL` (5); 4 source-file drift detectors via `fs.readFileSync` regex; PWA `classifyFetchError` extended with 5th `rate-limited` bucket; D-08 unified UX (heading + body + live mm:ss countdown) wired into VerifyEmailPage, ResetPasswordPage, and SettingsPage resend.
+- **Production test-user cleanup** (Phase 118, OPS-01): Idempotent `cleanup-test-users.ts` (350 lines, 14-table single-tx with pre-flight email assertion gate + DryRunRollback custom error class). Live execution against Railway prod via `railway run --service Postgres + DATABASE_PUBLIC_URL` remap. 22 rows deleted across 14 tables; smoke confirmed seed user untouched. Two-artifact ops audit pattern (`118-RUN-LOG.txt` + `118-RUNBOOK.md`) locked.
+- **DMARC posture decision** (Phase 119, OPS-02): Auto-eval routine `trig_01RZLcj1jpxvDQAwnFmUG9d9` fired 2026-05-06 and returned DEFERRED on 0/3 conditions — 8-day rua silence (2026-04-29 → 2026-05-05) is a structural scale signal. Operator amendment (commit b33a55a) accepts `p=none` as steady-state DMARC posture and documents three explicit re-activation conditions (volume materializes / spoofing observed / compliance requirement). Cloudflare DNS untouched.
+- **Six v3.8 G2 plugin improvement seeds planted** (2026-05-05/06): SEED-005 through SEED-010 capturing UAT-evidenced gaps from v3.5 hardware UAT (swipe-out-of-list nav broken on hardware, glasses-menu launch unhandled, home body 210px overflow, device-status event spam) plus forward-looking ideas (local-storage state persistence, voice capture via SDK audioControl + audioEvent PCM stream — flagged as v3.9 milestone-anchor candidate).
+
+### What Worked
+
+- **Wholesale-PUT with optimistic toggle + lastSavedRef rollback** for picker UIs locked across Phase 115 calendar + Phase 116 sports — same pattern, two ships, near-zero rework. Server-confirmed value as source of truth + 400ms debounce + rollback toast on failure is the right shape for any toggle persistence.
+- **Single-source validation in service.setX(...) + route catches throw → 400** locked across Phases 115 + 116 + 117. Same rules apply to any future direct caller; tests exercise the service, not the route.
+- **Hardware UAT mid-milestone unblocked v3.5 close in parallel** (2026-05-05 G2 glasses arrived 8 days early; vigil.ehpk submitted to Even Hub; v3.5 closed 2026-05-06 alongside v3.7). Pre-staged runbook from v3.5 paid off — single-evening close from "glasses in hand" to "submitted."
+- **Operator amendment closure for structurally unsatisfiable execution gates** (Phase 119) preserves the routine + monitoring + re-arm path while releasing the milestone-close deadline. Beats forcing synthetic conditions or silently abandoning. New pattern, captured in PROJECT.md Key Decisions.
+- **Phase 116.1 inserted mid-milestone** (URGENT — gap closure for opaque "Couldn't load teams." surfaced during 116 HUMAN-UAT after local `BALLDONTLIE_API_KEY` env-gap exposed missing route try/catch). Insert workflow handled cleanly; phase landed in 1 day with 4 plans.
+- **Drift-detector tests via `fs.readFileSync` + regex** (Phase 117 AUTH-13) chosen over runtime-introspection — survives bundler/minifier transforms, source file is the single source of truth for policy review.
+
+### What Was Inefficient
+
+- **Phase 116 HUMAN-UAT carried over to v3.7 close as `partial`** — 6 pending scenarios; sports picker shipped to Railway prod 2026-04-29 and in daily use. Functional verification implicit but formal `/gsd-verify-work` ceremony not run. Same pattern with Phase 116.1 (2 pending scenarios). Both acknowledged in STATE.md Deferred Items at v3.7 close. Pattern: when a phase ships to prod and is in active daily use without regression reports, the "human UAT ceremony" is sometimes deferred indefinitely. Worth deciding upfront whether HUMAN-UAT.md is a ship-blocker or a monitoring-window before authoring the file.
+- **DMARC ramp gate as designed was structurally unsatisfiable at current product scale** — the 8-day rua silence wasn't a transient signal; it reflected vigilhub.io's pre-growth volume. ~3 days of waiting for the routine to fire produced exactly the answer that was implicit in the routine schedule itself. Lesson: when a gate is volume-dependent, do a back-of-envelope volume estimate during phase planning, not after the routine has already burned its first firing window.
+- **Phase 118 PIPESTATUS scoping bug** — bash `tee'd` pipeline silently dropped exit code; safe silent-re-run impossible post-cleanup. Inferred from TRANSACTION COMMITTED banner + all-zero AFTER SELECTs, but the inference path was nonzero overhead and required documenting an "Option A annotation" in the SUMMARY. Lesson: avoid bash + tee + ts-node pipelines for ops scripts where exit-code accuracy matters; structured logging from inside the script is more reliable.
+- **`reference_macbook_pro.md` memory drift flagged but not corrected** during v3.7 — STATE.md noted the drift since 2026-04-21; it carried through this milestone. Pattern: drift-flagged memory entries need an explicit fix queue, not just acknowledgment.
+
+### Patterns Established
+
+- **Operator amendment closure** for plans whose execution gate is structurally unsatisfiable at current product scale. Includes: operator-decision quoted block, state table (preserved vs released), three re-activation conditions, "what this does NOT do" section. Captures structured deferral instead of silent abandonment. (v3.7 Phase 119 — first use)
+- **Two-artifact ops audit pattern** (`{phase}-RUN-LOG.txt` machine-readable + `{phase}-RUNBOOK.md` human-readable). Locked across v3.7 Phase 118 + 119. Separates verbatim stdout (reproducibility) from checklist + before/after table + rollback notes (reviewability).
+- **Discriminated-union API helpers** for endpoints with structured non-error states (e.g. `selectedCalendarIds`). PWA helper returns tagged union; callers branch on `.status` instead of throw + try/catch ladder. (v3.7 Phase 115)
+- **D-08 unified 429 copy** (heading "Too many attempts" + body "Try again in {Xm Ys}.") locked verbatim across VerifyEmailPage + ResetPasswordPage + SettingsPage resend. Inline single-line variant for SettingsPage where heading hierarchy is structurally inappropriate.
+- **`countdownTimerRef` + useEffect cleanup-only pattern** for live mm:ss countdowns (Phase 117 mirrors Phase 116.1 SettingsPage WR-02). Per-component timer ref, cleared on unmount, no shared global timer state.
+
+### Key Lessons
+
+- **Volume-dependent gates need volume estimates upfront.** If your trigger is "≥7 days of rua reports" and you're at single-user scale, you're not waiting for the gate to pass — you're waiting for growth that hasn't happened. Estimate the volume floor during phase planning, not after the gate has fired with no input.
+- **Operator amendments are not abandonments.** When a plan's execution gate is structurally unsatisfiable, the right move is a structured deferral with re-activation conditions, not forcing synthetic conditions or silently abandoning. Preserves the runbook, monitoring, and re-arm path; releases the milestone-close deadline.
+- **Picker UI patterns generalize.** Calendar picker (Phase 115) and Sports picker (Phase 116) shipped near-identically because the optimistic-toggle + debounced-PUT + lastSavedRef-rollback pattern is the right shape for any toggle persistence. If you have a third picker coming (notebook source picker? feed source picker?), the third one will be even faster than the second.
+- **Mid-milestone hardware UAT can unblock prior milestones.** v3.7 wasn't supposed to close v3.5, but the G2 glasses arriving 8 days early during v3.7 work meant v3.5 closed alongside v3.7. Don't artificially serialize milestones if a parallel unblocker arrives.
+
+### Cost Observations
+
+- **9 active days for 22 plans across 6 phases** — slower than v3.4 (~24h for 4 phases / 15 plans) but appropriate for v3.7's mix of UI work (pickers + auth-email UX) + ops (test-user cleanup) + structural decisions (DMARC posture). The picker phases (115 + 116) carried the bulk of the velocity; Phase 119's amendment + summary pathway took ~30 min total once the routine returned DEFERRED.
+- **Phase 116.1 mid-milestone insert** (4 plans in 1 day) showed the insert workflow scales — the gap was identified during 116 HUMAN-UAT, scoped + planned + executed + closed inside the same calendar day with no scope creep.
+- **DMARC routine ROI** — `trig_01RZLcj1jpxvDQAwnFmUG9d9` ran the boring monitoring work (Gmail rua aggregate report scanning) so the operator didn't have to. Even though it returned DEFERRED, the structured evaluation + checkpoint file + auto-commit was worth orders of magnitude more than the 5 minutes it would have taken to manually scan Gmail. Pattern worth repeating for any "wait until conditions are right" milestone gate.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution
@@ -156,6 +210,7 @@
 | v3.2 | ~2 days | 8 | Shared utility pattern; cache-first hooks; lazy archive |
 | v3.4 | ~24h | 4 | Wave-0 TDD scaffolds; decision-ID grep guards; runbook-first deploy |
 | v3.5 | ~4 active days + 13d paused | 8 | Pre-staged hardware-UAT runbook; evenhub-simulator screenshot path; per-phase SECURITY.md selectivity |
+| v3.7 | ~9 active days | 6 | Operator-amendment closure pattern; two-artifact ops audit; picker UI pattern reuse across phases |
 
 ### Top Lessons (Verified Across Milestones)
 
@@ -165,3 +220,6 @@
 4. Wave-0 test scaffolds (fail-by-default via real imports) front-load the bug surface before production code is written
 5. Decision IDs become cheap regression tests when the invariant is grep-enforceable
 6. Normalize at all read sites, not just write sites — test fixtures must mirror production normalization exactly
+7. Operator amendments beat forced execution when a gate is structurally unsatisfiable at current scale (v3.7) — preserves the runbook + re-arm path
+8. Pre-staged runbooks for external-delivery gates (hardware, gates, third-party) (v3.5 + v3.7) — every minute pre-staged pays back 10× during execution
+9. Picker UI patterns generalize across phases (v3.7) — optimistic toggle + debounced PUT + lastSavedRef rollback is one shape that fits all toggle persistence

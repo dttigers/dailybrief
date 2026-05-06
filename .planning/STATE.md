@@ -4,13 +4,13 @@ milestone: v3.7
 milestone_name: Source Pickers, Verify-Email UX & Closeout Cleanup
 status: executing
 stopped_at: Completed 119-01-PLAN.md (runbook authored at 4d958dd)
-last_updated: "2026-05-01T15:26:36.470Z"
-last_activity: 2026-05-01
+last_updated: "2026-05-06T16:02:50.749Z"
+last_activity: 2026-05-06
 progress:
-  total_phases: 16
-  completed_phases: 11
-  total_plans: 55
-  completed_plans: 56
+  total_phases: 8
+  completed_phases: 6
+  total_plans: 22
+  completed_plans: 22
   percent: 100
 ---
 
@@ -29,7 +29,7 @@ Milestone: v3.7 (started 2026-04-27)
 Phase: 119 (dmarc-quarantine-ramp) — EXECUTING
 Plan: 2 of 2
 Status: Ready to execute
-Last activity: 2026-05-01
+Last activity: 2026-05-06
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -88,17 +88,30 @@ Items acknowledged and deferred at v3.5 milestone close on 2026-05-06:
 | verification | Phase 107.1 (107.1-VERIFICATION.md) | human_needed | Same as above — local dev environment phase, in-use since 2026-04-22. |
 | uat | Phase 107.1 (107.1-HUMAN-UAT.md) | partial | 1 pending scenario; phase shipped and in daily use. |
 | verification | Phase 107.2 (107.2-VERIFICATION.md) | human_needed | Tailscale cross-machine dev access, in-use since 2026-04-22. |
-| uat | Phase 116 (116-HUMAN-UAT.md) | partial | 6 pending scenarios — v3.7 work, NOT v3.5. Tracked for v3.7 close. |
-| verification | Phase 116 (116-VERIFICATION.md) | human_needed | v3.7 work, NOT v3.5. |
-| uat | Phase 116.1 (116.1-HUMAN-UAT.md) | partial | 2 pending scenarios — v3.7 work, NOT v3.5. |
-| verification | Phase 116.1 (116.1-VERIFICATION.md) | human_needed | v3.7 work, NOT v3.5. |
 | debug | knowledge-base | unknown | Knowledge file, not an active debug session. Tooling false-positive. |
 | quick_task | 260407-jem-fix-pdf-insights-section-cutoff-bug-prin | unknown | Generic dev backlog item dated 260407. |
 | quick_task | 260407-q7d-disable-misleading-folder-watching-ui-in | unknown | Generic dev backlog item dated 260407. |
 | seed | SEED-001-stores-admin-ui | dormant | Stores Admin UI — replace hardcoded Lin's Fresh Market store list. Dormant, not blocking any milestone. |
 | seed | SEED-002-photo-uploads | dormant | Photo uploads — needs scoping discussion. Dormant. |
-| seed | SEED-003-tighten-dmarc-to-quarantine | dormant | Active in v3.7 Phase 119 (in-flight). |
 | seed | SEED-004-verify-email-error-ux-friction | dormant | Out-of-scope of v3.7 explicitly per state earlier. |
+
+Items acknowledged and deferred at v3.7 milestone close on 2026-05-06:
+
+| Category | Item | Status | Note |
+|----------|------|--------|------|
+| uat | Phase 116 (116-HUMAN-UAT.md) | partial | 6 pending scenarios — sports picker shipped to Railway prod and in daily use since 2026-04-29. Functional verification implicit; formal /gsd-verify-work not run. |
+| verification | Phase 116 (116-VERIFICATION.md) | human_needed | Sports source picker live in production; no regressions reported. |
+| uat | Phase 116.1 (116.1-HUMAN-UAT.md) | partial | 2 pending scenarios — sports route + PWA error-class differentiation; gap-closure phase shipped post-116. |
+| verification | Phase 116.1 (116.1-VERIFICATION.md) | human_needed | Same as above. |
+| seed | SEED-003-tighten-dmarc-to-quarantine | dormant | Status unchanged at v3.7 close. Phase 119 closed via operator amendment 2026-05-06 — `p=none` accepted as steady-state DMARC posture; routine `trig_01RZLcj1jpxvDQAwnFmUG9d9` preserved for opportunistic re-firing. Three re-activation conditions documented in 119-RUNBOOK.md Section 6. Seed re-fires when volume materializes / spoofing observed / compliance requirement triggers. |
+| seed | SEED-003-checkpoint-2026-05-06 | dormant | Routine-authored evaluation record. Frozen evidence; no further action needed. |
+| seed | SEED-005-g2-swipe-out-of-list-broken-on-hardware | dormant | Planted 2026-05-05 from v3.5 hardware UAT; surfaces during v3.8 G2 polish milestone planning. |
+| seed | SEED-006-g2-glasses-menu-launch-source-handling | dormant | Planted 2026-05-05; small fast-follow for v3.8. |
+| seed | SEED-007-g2-home-body-overflow-210px | dormant | Planted 2026-05-05; cosmetic, v3.8 candidate. |
+| seed | SEED-008-g2-device-status-event-spam-debounce | dormant | Planted 2026-05-05; v3.8 candidate. |
+| seed | SEED-009-g2-local-storage-last-viewed-screen | dormant | Planted 2026-05-05; speculative, v3.8+ candidate. |
+| seed | SEED-010-g2-voice-capture-via-audio-pcm | dormant | Planted 2026-05-05; large scope, v3.9 milestone-anchor candidate. |
+| ops_followup | Rotate Railway Postgres password (Phase 118 Observation #4) | pending | `.planning/todos/pending/2026-05-01-rotate-railway-postgres-password.md` — defense-in-depth, not milestone-blocking. |
 
 ## Accumulated Context
 

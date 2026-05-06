@@ -1,5 +1,30 @@
 # Project Milestones: Vigil — Ambient AI Life Assistant
 
+## v3.7 Source Pickers, Verify-Email UX & Closeout Cleanup (Shipped: 2026-05-06)
+
+**Phases completed:** 8 phases, 22 plans, 28 tasks
+
+**Key accomplishments:**
+
+- New `PUT /v1/calendar/selections` endpoint with single-sourced array validation (shape, string elements, 1000-id cap) and per-user Drizzle `oauth_tokens.calendar_selections` write — empty array preserved as the all-calendars fallback contract.
+- Calendars subsection inside the Google Account card with mount-time GET /v1/calendar/list fetch, optimistic checkbox toggle with 400ms debounced PUT /v1/calendar/selections, last-known-good rollback + error toast on failure, and the four documented branches (loading / ok / needs_reauth-hidden / error-with-retry).
+- Appended `whitespace-pre-line` Tailwind utility to ThoughtRow's display-mode `<p>` className so multi-line thought captures (paste, voice transcripts) render with line breaks preserved in the row view, plus a regression test locking the className contract against future refactors.
+- Per-user sports picker selections persisted to app_settings (key='sports_selections') with bearer-gated GET/PUT /v1/sports/selections endpoints, single-source validation in a new sports-preferences-service, and 26 new tests covering happy path + 12 validation rules + D-24 preservation rule.
+- Added `fetchTeams(league)` to createSportsService with a 24-hour global in-memory cache and per-league BDL field normalization (MLB display_name vs others full_name), plus a new `GET /v1/sports/teams/:league` route returning `{ teams: [{ id: string, name: string }] }` alphabetically sorted — registered before the existing `/sports/:league` param route so Hono dispatches the literal `/teams/` segment correctly.
+- 1. [Rule 1 - Bug] Fixed double-read of getTeamId() in per-league fetchers
+- Sports source picker UI complete: per-league checkbox + indented team radio list rendered between Google Account card and Auto-generate ScheduleCard, with optimistic 400ms-debounced wholesale PUT + lastSavedSportsRef rollback + error toast on failure (matching Phase 115 calendar pattern), lazy team-list fetch on enable + mount-time prefetch for already-enabled leagues, and 9 new vitest specs that lock the contract end-to-end.
+- Typed `UpstreamError` class exported from sports-service.ts with 10s AbortController timeout, 4-kind BDL classification (auth/rate-limited/server-error/timeout), Retry-After parsing, and encodeURIComponent defense-in-depth at 4 BDL URL sites
+- Three sports routes wrapped with try/catch mapping UpstreamError to HTTP 502 + structured body `{error: "Upstream sports provider unavailable", retryAfter?: number}` + conditional Retry-After header, closing the local-env-gap symptom (BDL 401 → opaque PWA error)
+- classifyFetchError helper + 4-bucket error taxonomy (D-13/D-14) wired to SettingsPage's sports picker error block, with live countdown and disabled Retry button when upstream 502 includes retryAfter (D-15)
+- mapSports now renders per-league placeholders for status='error' (D-05), short-circuits to a single all-failed block when every non-disabled league errors (D-07), and fires a PostHog sports_league_fetch_failed event per failed league with extractErrorClass-parsed error_class (D-06)
+- Pattern is now locked across 2 pages — Plan 05 mirrors verbatim.
+- 1. [Rule 3 - Blocking] Existing AUTH-11-B2-RESEND-RATE-LIMITED test asserted the OLD copy verbatim
+- Idempotent two-step cleanup script (`vigil-core/scripts/cleanup-test-users.ts`) deleting test users id=3 + id=44 and all child rows across 14 user-scoped tables, with D-03 pre-flight email assertion gating a single-transaction --dry-run/--commit ROLLBACK/COMMIT gate.
+- Live execution of cleanup-test-users.ts against Railway prod (dry-run + human-issued --commit), 22 rows deleted across 14 tables, smoke-pass green for seed user, OPS-01 audit trail committed as 118-RUNBOOK.md + 118-RUN-LOG.txt.
+- 1. [Rule 1 — Tension between explanatory prose and absent-substring acceptance criteria]
+
+---
+
 ## v3.5 Observability, G2 Resubmit & Capture Repair (Shipped: 2026-05-05)
 
 **Phases completed:** 8 phases (103, 104, 105, 106, 107, 107.1, 107.2, 107.3), 33 plans
