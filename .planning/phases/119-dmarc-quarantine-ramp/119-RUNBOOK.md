@@ -166,14 +166,23 @@ This is where the auto-PR from `trig_01RZLcj1jpxvDQAwnFmUG9d9` appends evidence 
 
 ### DEFERRED branch
 
-> Auto-eval routine produced PARTIAL determination (some criteria met, others below threshold). Routine self-rescheduled to YYYY-MM-DD per its existing logic. No DNS edit performed.
+> Auto-eval routine fired 2026-05-06. Gate DEFERRED — 0 of 3 conditions confirmed met.
+> No DNS edit performed. Re-eval scheduled 2026-05-20 (+14 days, full DMARC cycle).
 
 ```text
-# Operator (or auto-PR) paste rescheduling decision here:
-# - Auto-eval fire date:
-# - Criteria met:
-# - Criteria below threshold:
-# - Self-reschedule date:
+# Auto-eval fire date: 2026-05-06
+# Criteria met: none confirmed
+# Criteria below threshold / unverifiable:
+#   C1 (≥7 consecutive rua reports): NOT MET — only 4 Google reports received
+#       (2026-04-24, -25, -26, -28); gap on 2026-04-27; 8-day silence 2026-04-29
+#       through 2026-05-05; XML content unreadable via Gmail MCP (attachment-only).
+#   C2 (≥3 days verify-email production traffic): CANNOT CONFIRM — no Resend
+#       dashboard access, Railway CLI unavailable; DMARC silence is strong negative
+#       signal; manual UAT (2026-04-26, ~3-4 emails) excluded per seed conditions.
+#   C3 (≥50 sends/day in most recent report): CANNOT CONFIRM — XML unreadable;
+#       very likely NOT MET given sparse report count and 8-day rua silence.
+# Self-reschedule date: 2026-05-20
+# Checkpoint: .planning/seeds/SEED-003-checkpoint-2026-05-06.md
 ```
 
 ---
