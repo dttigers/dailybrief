@@ -54,7 +54,7 @@ Progress: [░░░░░░░░░░] 0%
 | Milestone | Phases | Plans | Timeline |
 |-----------|--------|-------|----------|
 | v1.0–v3.4 | 1-102 | ~211 | ~18 days |
-| v3.5 | 103-107 (+107.1/107.2/107.3) | 33 | shipped 2026-05-05 — vigil.ehpk submitted to Even Hub (sha 71973e3); milestone closed at sha {MILESTONE_CLOSE_SHA} |
+| v3.5 | 103-107 (+107.1/107.2/107.3) | 33 | shipped 2026-05-05 — vigil.ehpk submitted to Even Hub (sha 71973e3); milestone closed 2026-05-06 at sha 2b19355 |
 | v3.6 | 108-114 | 27 | shipped 2026-04-26 |
 | v3.7 | 5 (115-119) | TBD | started 2026-04-27, roadmap 2026-04-27 |
 | Phase 115 P01 | 5min | 3 tasks | 5 files |
