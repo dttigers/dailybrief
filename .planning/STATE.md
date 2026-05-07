@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 120 context gathered
-last_updated: "2026-05-06T17:54:50.337Z"
-last_activity: 2026-05-06 -- Phase 120 execution started
+stopped_at: Plan 120-01 complete; vigil-watch repo bootstrapped on origin/main as 45bf950
+last_updated: "2026-05-07T19:42:45.607Z"
+last_activity: 2026-05-07 -- Plan 120-01 complete (vigil-watch repo created public+MIT, README skeleton + .gitignore secret hygiene committed to origin/main as 45bf950)
 progress:
   total_phases: 8
   completed_phases: 0
   total_plans: 3
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 33
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 120 — Day-1 JSONL schema verification + detection-strategy lock
+**Current focus:** Phase 120 — day-1-jsonl-schema-verification-detection-strategy-lock
 
 ## Current Position
 
-Phase: 120 (Day-1 JSONL schema verification + detection-strategy lock) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 120
-Last activity: 2026-05-06 -- Phase 120 execution started
+Phase: 120 (day-1-jsonl-schema-verification-detection-strategy-lock) — EXECUTING
+Plan: 2 of 3
+Status: Executing Phase 120 (Plan 120-01 complete; Plan 120-02 next)
+Last activity: 2026-05-07 -- Plan 120-01 complete (vigil-watch repo bootstrapped on origin/main as 45bf950)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [███░░░░░░░] 33%
 
 ## v3.8 Phase Table
 
@@ -89,6 +89,12 @@ Carried forward from v3.7 milestone close (2026-05-06):
 
 All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions logged in their respective `phases/<N>/<N>-CONTEXT.md` files (preserved in archive `.planning/milestones/v3.7-phases/` after v3.7 close).
 
+Recent (v3.8 in-flight):
+
+- [Phase 120 / Plan 01]: Verbatim section headers as a cross-plan contract — Plan 120.03's acceptance criteria reference exact strings (`# vigil-watch`, `## Day-1 JSONL Schema Verification`, `### Verdict`, etc.), so README structure was locked before content authoring begins
+- [Phase 120 / Plan 01]: Secret-hygiene `.gitignore` block committed BEFORE any verification log can be written — `/verification-log/` rule preempts T-120-01 (Plan 120.02 cannot accidentally land raw user JSONL on a public repo)
+- [Phase 120 / Plan 01]: LICENSE seeded by GitHub with display-name-only `Copyright (c) 2026 Jameson Morrill` accepted as-is per threat-register T-120-02 disposition (matches vigil-core posture; no PII risk)
+
 Recent (v3.7 closeout):
 
 - [Phase 119]: Operator-amendment closure pattern for plans whose execution gate is structurally unsatisfiable at current product scale — alternative to forcing synthetic conditions or silently abandoning
@@ -132,7 +138,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-06T16:56:15.653Z
-Stopped at: Phase 120 context gathered
-Resume file: .planning/phases/120-day-1-jsonl-schema-verification-detection-strategy-lock/120-CONTEXT.md
-Next action: /gsd-plan-phase 120
+Last session: 2026-05-07T19:36:33Z
+Stopped at: Plan 120-01 complete; vigil-watch repo bootstrapped on origin/main as 45bf950
+Resume file: .planning/phases/120-day-1-jsonl-schema-verification-detection-strategy-lock/120-02-PLAN.md
+Next action: /gsd-execute-phase 120 (resumes at Plan 120-02 — capture verification corpus)
