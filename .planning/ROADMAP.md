@@ -359,7 +359,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 - [x] 121-01-PLAN.md — Schema + 0018 migration + apply (BLOCKING) ✓ 2026-05-08
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 121-02-PLAN.md — Route implementation (POST + GET + index.ts wiring)
+- [x] 121-02-PLAN.md — Route implementation (POST + GET + index.ts wiring) ✓ 2026-05-08
 
 **Wave 3** *(parallel; both blocked on Wave 2 completion)*
 - [ ] 121-03-PLAN.md — Route-level tests (validation, idempotency, GET, drift detectors)
@@ -557,7 +557,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 118. Production test-user cleanup | v3.7 | 2/2 | Complete    | 2026-05-01 |
 | 119. DMARC quarantine ramp | v3.7 | 2/2 | Complete (deferred via amendment) | 2026-05-06 |
 | 120. Day-1 JSONL schema verification + detection-strategy lock | v3.8 | 1/3 | In progress | - |
-| 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 1/5 | In progress | - |
+| 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 2/5 | In progress | - |
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 0/TBD | Not started | - |
 | 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 0/TBD | Not started | - |
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 0/TBD | Not started | - |
