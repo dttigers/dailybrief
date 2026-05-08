@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 122 Plan 00 complete
-last_updated: "2026-05-08T21:45:00.526Z"
+stopped_at: Phase 122 Plan 02 complete
+last_updated: "2026-05-08T16:02:00.000Z"
 last_activity: 2026-05-08
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 18
-  completed_plans: 10
+  completed_plans: 12
   percent: 56
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 122 (vigil-watch-core-watcher-parser-emitter-config) — EXECUTING
-Plan: 3 of 10
+Plan: 4 of 10
 Status: Ready to execute
 Last activity: 2026-05-08
 
@@ -123,6 +123,9 @@ Recent (v3.7 closeout):
 - [Phase ?]: [Phase 122 / Plan 01]: D-01 known-vector pinned live — sha256(2072cbce-...|1024|needs_input|v1) → 39830cfa-218a-9bed-5804-49bd450dd210; XCTAssertEqual uncommented in HashIDTests
 - [Phase ?]: [Phase 122 / Plan 01]: VigilWatch.swift placeholder dropped in separate chore commit — Plan 00 stub superseded by EventTypes.swift + HashID.swift
 - [Phase ?]: [Phase 122 / Plan 01]: DriftDetectorTests uses XCTSkip (not XCTFail) when VIGIL_CORE_PATH absent — CI graceful skip, monorepo real fail on drift
+- [Phase 122 / Plan 02]: Phase 120 level-shift corrections honored verbatim — tool_use/tool_result are inner $.message.content[].type discriminators, NOT top-level $.type values
+- [Phase 122 / Plan 02]: is_error:true is the single-field discriminator for task_failed — no secondary type or subtype needed; toolResultErrors captures the tool_use_id
+- [Phase 122 / Plan 02]: nil on JSON parse failure (offset NOT advanced) vs nonSpec on known skip type (offset IS advanced) — two distinct return semantics for caller
 
 ### Pending Todos
 
@@ -159,7 +162,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T21:45:00.519Z
-Stopped at: Phase 122 Plan 00 complete
+Last session: 2026-05-08T16:02:00.000Z
+Stopped at: Phase 122 Plan 02 complete
 Resume file: None
-Next action: Execute Phase 122 Plan 01 (next plan in wave)
+Next action: Execute Phase 122 Plan 03 (next plan in wave)

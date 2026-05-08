@@ -393,7 +393,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 
 **Wave 1** (parallel; pure logic — testable in isolation)
 - [x] 122-01-PLAN.md — VigilEvent enum + VigilPayload + ParsedLine + D-01 hash + drift detector
-- [ ] 122-02-PLAN.md — JSONL parser (8-row mapping table + 7 non-spec line filtering)
+- [x] 122-02-PLAN.md — JSONL parser (8-row mapping table + 7 non-spec line filtering)
 - [ ] 122-03-PLAN.md — TOML parser + Config + first-run create + VIGIL_API_KEY env fallback
 - [ ] 122-04-PLAN.md — EmitterActor (URLSession retry/backoff + 100-event queue + 5s drain) + bearer-mask logging
 - [ ] 122-05-PLAN.md — MilestoneMatcher (per-(sessionId,pattern) dedupe + (?i) default + opt-out)
