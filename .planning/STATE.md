@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: completed
-stopped_at: Phase 120 complete — VERIFY-01 satisfied; vigil-watch README live at github.com/dttigers/vigil-watch (commit 5273534)
-last_updated: "2026-05-08T18:27:34.582Z"
+status: verifying
+stopped_at: Plan 120-01 complete; vigil-watch repo bootstrapped on origin/main as 45bf950
+last_updated: "2026-05-08T18:42:49.464Z"
 last_activity: 2026-05-08 -- Phase 120 marked complete
 progress:
   total_phases: 8
@@ -21,14 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 120 — day-1-jsonl-schema-verification-detection-strategy-lock
+**Current focus:** Phase 121 — agent-events-api-foundation-cross-user-isolation-lock
 
 ## Current Position
 
-Phase: 120 — COMPLETE
-Plan: 3 of 3 complete
-Status: Phase 120 complete; VERIFY-01 satisfied; ready for Phase 121
-Last activity: 2026-05-08 -- Phase 120 marked complete
+Phase: 121 — CONTEXT GATHERED (ready for plan-phase)
+Status: 13 decisions locked across 4 gray areas; AGENT-API-01 + AGENT-API-02 in scope
+Last activity: 2026-05-08 -- Phase 121 context gathered
 
 Progress: [███░░░░░░░] 33%
 
@@ -138,7 +137,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-07T19:36:33Z
+Last session: 2026-05-08T18:42:34.551Z
 Stopped at: Plan 120-01 complete; vigil-watch repo bootstrapped on origin/main as 45bf950
-Resume file: .planning/phases/120-day-1-jsonl-schema-verification-detection-strategy-lock/120-02-PLAN.md
+Resume file: None
 Next action: /gsd-execute-phase 120 (resumes at Plan 120-02 — capture verification corpus)
