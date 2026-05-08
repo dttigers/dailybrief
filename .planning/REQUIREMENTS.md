@@ -25,8 +25,8 @@
 
 ### Vigil Core agent-events API
 
-- [ ] **AGENT-API-01**: User can `POST /v1/agent-events` with bearer auth and have the event persisted to a new `agent_events` table scoped per `userId`. Cross-user isolation: a request from userA cannot read or write events for userB. Mirror SCHED-01 fan-out pattern.
-- [ ] **AGENT-API-02**: User can `GET /v1/agent-sessions` and receive the list of currently-tracked sessions plus their last known event/state, filtered to the caller's `userId`.
+- [x] **AGENT-API-01**: User can `POST /v1/agent-events` with bearer auth and have the event persisted to a new `agent_events` table scoped per `userId`. Cross-user isolation: a request from userA cannot read or write events for userB. Mirror SCHED-01 fan-out pattern.
+- [x] **AGENT-API-02**: User can `GET /v1/agent-sessions` and receive the list of currently-tracked sessions plus their last known event/state, filtered to the caller's `userId`.
 - [ ] **AGENT-API-03**: Vigil Core fans out new agent events as an `agent-event` type on the existing `/v1/agent-stream` WebSocket channel (no new connection needed from clients), filtered per `userId` of the subscribed connection.
 
 ### G2 Companion HUD (plugin v0.3.0)

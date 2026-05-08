@@ -557,7 +557,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 118. Production test-user cleanup | v3.7 | 2/2 | Complete    | 2026-05-01 |
 | 119. DMARC quarantine ramp | v3.7 | 2/2 | Complete (deferred via amendment) | 2026-05-06 |
 | 120. Day-1 JSONL schema verification + detection-strategy lock | v3.8 | 1/3 | In progress | - |
-| 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 5/5 | Complete | 2026-05-08 |
+| 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 5/5 | Complete    | 2026-05-08 |
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 0/TBD | Not started | - |
 | 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 0/TBD | Not started | - |
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 0/TBD | Not started | - |
@@ -583,7 +583,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 - UBIQ-05: LaunchAgent loads cleanly post-install; no TCC, keychain, or notarization regressions
 - UBIQ-06 (optional): remove the brctl fallback once UBIQ-01..05 are green
 
-**Plans:** 0 plans — promote with `/gsd-review-backlog` when ready to plan.
+**Plans:** 5/5 plans complete
 
 **Context:** Full empirical diagnosis, Phase 58 rationale, and all five fix options evaluated in `.planning/debug/icloud-photos-never-download.md` (committed in `4f71366`). Key nuance: CloudKit entitlements (`icloud-services`, `icloud-container-identifiers`) that Phase 58 correctly removed are a **different entitlement family** from ubiquity — Phase 58's "dead code, incompatible with Developer ID" rationale applies to CloudKit only, not to ubiquity.
 
