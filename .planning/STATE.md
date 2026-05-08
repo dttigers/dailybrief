@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 122 Plan 07 complete
-last_updated: "2026-05-08T22:27:15.535Z"
+stopped_at: Phase 122 Plan 08 complete
+last_updated: "2026-05-08T22:37:15.000Z"
 last_activity: 2026-05-08
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 18
-  completed_plans: 16
-  percent: 89
+  completed_plans: 17
+  percent: 94
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 122 (vigil-watch-core-watcher-parser-emitter-config) — EXECUTING
-Plan: 9 of 10
+Plan: 10 of 10
 Status: Ready to execute
 Last activity: 2026-05-08
 
-Progress: [█████████░] 86%
+Progress: [█████████░] 94%
 
 ## v3.8 Phase Table
 
@@ -63,6 +63,7 @@ Progress: [█████████░] 86%
 | Phase 122 P05 | 8min | 2 tasks | 2 files |
 | Phase 122 P06 | 3min | 2 tasks | 3 files |
 | Phase 122 P07 | 8min | 2 tasks | 2 files |
+| Phase 122 P08 | 8min | 3 tasks | 3 files |
 
 ## Deferred Items
 
@@ -148,6 +149,9 @@ Recent (v3.7 closeout):
 - [Phase 122 / Plan 06]: GC newest-record-drives-cutoff — session with one stale + one recent record is kept; session eviction only when ALL records are older than 24h
 - [Phase 122]: Two-method SessionState API: process(line:) fires task_failed immediately; evaluate(now:config:) fires timer-based events (needs_input, task_complete, heartbeat) via 1Hz tick loop
 - [Phase 122]: sessionHadError never resets within session (Pitfall 3): taskCompleteEmittedAt set even when suppressed by precedence to prevent re-evaluation on every 1Hz tick
+- [Phase 122 / Plan 08]: useInMemoryPartial guard: anchorOffset = currentOffset - partial.count underflows when currentOffset=0 and partial>0 (first tick, no lines yet); guard prevents UInt64 underflow; disk re-read at offset 0 covers the partial bytes
+- [Phase 122 / Plan 08]: FSEventBridge + WatcherActor separation: bridge owns C lifecycle (FSEventStreamRef, Unmanaged, DispatchQueue); actor owns read/parse/dispatch logic; no actor state in C callback
+- [Phase 122 / Plan 08]: Non-spec lines dispatched to lineHandler: Plan 09 needs all line types for SessionState.latestLineTimestamp update; caller gates on lineType
 
 ### Pending Todos
 
@@ -184,7 +188,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T22:27:15.528Z
-Stopped at: Phase 122 Plan 07 complete
+Last session: 2026-05-08T22:37:15.000Z
+Stopped at: Phase 122 Plan 08 complete
 Resume file: None
-Next action: Execute Phase 122 Plan 07 (SessionActor)
+Next action: Execute Phase 122 Plan 09 (main.swift — FSEventBridge wiring + SessionStateRegistry)

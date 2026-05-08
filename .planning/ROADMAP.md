@@ -401,7 +401,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 **Wave 2** *(parallel; blocked on Wave 1)*
 - [x] 122-06-PLAN.md — StateStore (offsets.json schema_version=2 + F_FULLFSYNC atomic save + 24h GC) ✓ 2026-05-08
 - [x] 122-07-PLAN.md — SessionState actor (5 detection rules + task_failed/task_complete precedence + needs_input debounce)
-- [ ] 122-08-PLAN.md — FSEventBridge + WatcherActor (tail-cursor reads + namespace enumeration)
+- [x] 122-08-PLAN.md — FSEventBridge + WatcherActor (tail-cursor reads + namespace enumeration) ✓ 2026-05-08
 
 **Wave 3** *(blocked on Wave 2)*
 - [ ] 122-09-PLAN.md — Daemon composition root + main.swift + DispatchSource SIGTERM handler + live integration smoke
