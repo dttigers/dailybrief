@@ -4,8 +4,8 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
 stopped_at: Plan 120-01 complete; vigil-watch repo bootstrapped on origin/main as 45bf950
-last_updated: "2026-05-07T19:42:45.607Z"
-last_activity: 2026-05-07 -- Plan 120-01 complete (vigil-watch repo created public+MIT, README skeleton + .gitignore secret hygiene committed to origin/main as 45bf950)
+last_updated: "2026-05-08T18:02:13.764Z"
+last_activity: 2026-05-08 -- Phase 120 execution started
 progress:
   total_phases: 8
   completed_phases: 0
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 120 (day-1-jsonl-schema-verification-detection-strategy-lock) — EXECUTING
-Plan: 2 of 3
-Status: Executing Phase 120 (Plan 120-01 complete; Plan 120-02 next)
-Last activity: 2026-05-07 -- Plan 120-01 complete (vigil-watch repo bootstrapped on origin/main as 45bf950)
+Plan: 1 of 3
+Status: Executing Phase 120
+Last activity: 2026-05-08 -- Phase 120 execution started
 
 Progress: [███░░░░░░░] 33%
 
