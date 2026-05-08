@@ -488,4 +488,228 @@ describe("cross-user isolation (AUTH-05)", () => {
       await d!.delete(aiCache).where(eq(aiCache.id, aRow.id));
     }
   });
+
+  // ── Phase 121 (AGENT-API-01 + AGENT-API-02) — agent_events isolation lock ─
+  // Three D-D2 invariants pinned here, mirroring the W-01/W-02 pattern from
+  // Phase 108. This file is the single audit-grep target every future phase
+  // uses to confirm "is this endpoint cross-user-safe?". Per-route tests
+  // live in agent-events.test.ts (Plan 03); these three are the structural
+  // lock that future regressions cannot silently pass.
+
+  it("POST /v1/agent-events: userA's POST cannot insert with userB's userId (D-D2.1)", async (t) => {
+    if (!DB_READY) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { db: d } = await import("../db/connection.js");
+    const { agentEvents } = await import("../db/schema.js");
+    const { eq, and } = await import("drizzle-orm");
+
+    const cid1 = `iso-A-cid-${Date.now()}`;
+    const cid2 = `iso-A-cid-clean-${Date.now()}`;
+
+    try {
+      // Step 1: hostile POST including body.userId = userB.id.
+      // Plan 02's KNOWN_FIELDS guard rejects body.userId as unknown_field → 400.
+      // This is the front-door defense.
+      const hostile = {
+        session_id: "iso-sess-A",
+        event: "needs_input",
+        message: "from userA with userB userId in body",
+        timestamp: new Date().toISOString(),
+        label: "iso-test",
+        host: "iso-host",
+        client_event_id: cid1,
+        userId: userB.id, // hostile field — must be rejected as unknown_field
+      };
+      const res1 = await post("/v1/agent-events", tokenA, hostile);
+      assert.equal(
+        res1.status,
+        400,
+        `LEAK: POST with body.userId did NOT 400 (status ${res1.status}). KNOWN_FIELDS guard regressed — body.userId may be silently dropped instead of rejected. If a future plan removes the strict() guard, the userId-from-bearer guarantee becomes the ONLY defense; verify nothing was inserted by checking DB below.`,
+      );
+      const body1 = (await res1.json()) as { error: string; message: string };
+      assert.equal(body1.error, "unknown_field");
+
+      // Confirm no row was persisted (KNOWN_FIELDS guard fired before DB).
+      const leaked = await d!
+        .select()
+        .from(agentEvents)
+        .where(
+          and(
+            eq(agentEvents.clientEventId, cid1),
+            eq(agentEvents.userId, userB.id),
+          ),
+        );
+      assert.equal(
+        leaked.length,
+        0,
+        `LEAK CRITICAL: hostile POST persisted a row with userId=userB.id (${userB.id}). The route is trusting body.userId — D-21 violation.`,
+      );
+
+      // Step 2: clean POST without the hostile field — verifies the route
+      // attributes the row to the bearer's userId (userA), not userB.
+      const clean = {
+        session_id: "iso-sess-A",
+        event: "needs_input",
+        message: "from userA, clean payload",
+        timestamp: new Date().toISOString(),
+        label: "iso-test",
+        host: "iso-host",
+        client_event_id: cid2,
+      };
+      const res2 = await post("/v1/agent-events", tokenA, clean);
+      assert.equal(res2.status, 201, "clean POST must succeed");
+      const body2 = (await res2.json()) as { userId: number; clientEventId: string };
+      assert.equal(
+        body2.userId,
+        userA.id,
+        `LEAK: response userId is ${body2.userId}, expected userA.id (${userA.id}). Route is leaking attribution.`,
+      );
+
+      // DB cross-check: the persisted row has user_id = userA.id.
+      const persisted = await d!
+        .select()
+        .from(agentEvents)
+        .where(eq(agentEvents.clientEventId, cid2));
+      assert.equal(persisted.length, 1, "exactly 1 row persisted for clean POST");
+      assert.equal(
+        persisted[0]!.userId,
+        userA.id,
+        `LEAK: persisted row has user_id=${persisted[0]!.userId}, expected userA.id (${userA.id})`,
+      );
+    } finally {
+      await d!.delete(agentEvents).where(eq(agentEvents.clientEventId, cid1));
+      await d!.delete(agentEvents).where(eq(agentEvents.clientEventId, cid2));
+    }
+  });
+
+  it("GET /v1/agent-sessions: userA's GET never returns userB's sessions (D-D2.2)", async (t) => {
+    if (!DB_READY) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { db: d } = await import("../db/connection.js");
+    const { agentEvents } = await import("../db/schema.js");
+    const { eq } = await import("drizzle-orm");
+
+    const aSession = `iso-A-session-${Date.now()}`;
+    const bSession = `iso-B-session-${Date.now()}`;
+    const aCid = `iso-A-get-cid-${Date.now()}`;
+    const bCid = `iso-B-get-cid-${Date.now()}`;
+
+    try {
+      // Seed one event for userA, one for userB — direct DB insert (bypasses
+      // the route entirely so the test pins GET-side filtering, not POST-side).
+      await d!.insert(agentEvents).values({
+        userId: userA.id,
+        sessionId: aSession,
+        event: "needs_input",
+        message: "userA event",
+        label: "iso-test",
+        host: "iso-host",
+        eventTimestamp: new Date(),
+        clientEventId: aCid,
+      });
+      await d!.insert(agentEvents).values({
+        userId: userB.id,
+        sessionId: bSession,
+        event: "task_complete",
+        message: "userB event",
+        label: "iso-test",
+        host: "iso-host",
+        eventTimestamp: new Date(),
+        clientEventId: bCid,
+      });
+
+      const res = await get("/v1/agent-sessions", tokenA);
+      assert.equal(res.status, 200);
+      const body = (await res.json()) as {
+        data: Array<{ sessionId: string; lastEvent: { message: string | null } }>;
+      };
+      const sessionIds = body.data.map((s) => s.sessionId);
+      assert.ok(
+        sessionIds.includes(aSession),
+        "userA must see own session in GET response",
+      );
+      assert.ok(
+        !sessionIds.includes(bSession),
+        `LEAK: GET /v1/agent-sessions surfaced userB's session "${bSession}" in userA's list — D-22 violation (route missing .where(eq(agentEvents.userId, c.get('userId'))) on the read path)`,
+      );
+      // Defense in depth: also assert the message field doesn't leak userB's content.
+      const messages = body.data.map((s) => s.lastEvent.message);
+      assert.ok(
+        !messages.includes("userB event"),
+        "LEAK: userB's message text appeared in userA's GET response",
+      );
+    } finally {
+      await d!.delete(agentEvents).where(eq(agentEvents.clientEventId, aCid));
+      await d!.delete(agentEvents).where(eq(agentEvents.clientEventId, bCid));
+    }
+  });
+
+  it("Dedupe scope: userA's client_event_id collision with userB's UUID is allowed (D-D2.3)", async (t) => {
+    if (!DB_READY) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { db: d } = await import("../db/connection.js");
+    const { agentEvents } = await import("../db/schema.js");
+    const { eq } = await import("drizzle-orm");
+
+    // Both users use the SAME client_event_id UUID.
+    // Composite (user_id, client_event_id) partial unique index permits this.
+    // Single-column unique would 200-dedupe userB's POST against userA's row.
+    const sharedCid = `iso-shared-cid-${Date.now()}`;
+
+    try {
+      const baseBody = {
+        session_id: "iso-shared-sess",
+        event: "needs_input",
+        message: "shared cid test",
+        timestamp: new Date().toISOString(),
+        label: "iso-test",
+        host: "iso-host",
+        client_event_id: sharedCid,
+      };
+
+      const resA = await post("/v1/agent-events", tokenA, baseBody);
+      assert.equal(
+        resA.status,
+        201,
+        `userA POST with shared cid must succeed with 201, got ${resA.status}`,
+      );
+      const rowA = (await resA.json()) as { id: number; userId: number; clientEventId: string };
+      assert.equal(rowA.userId, userA.id);
+
+      const resB = await post("/v1/agent-events", tokenB, baseBody);
+      assert.equal(
+        resB.status,
+        201,
+        `LEAK CRITICAL: userB POST with same client_event_id returned ${resB.status} (expected 201). The dedupe constraint is single-column instead of composite (user_id, client_event_id). userA and userB cannot both use UUID "${sharedCid}" — this is a cross-user contamination bug. Migration 0018's partial unique index has regressed.`,
+      );
+      const rowB = (await resB.json()) as { id: number; userId: number; clientEventId: string };
+      assert.equal(rowB.userId, userB.id);
+
+      // Cross-check: 2 distinct rows in DB with the shared cid, scoped by user.
+      const rows = await d!
+        .select()
+        .from(agentEvents)
+        .where(eq(agentEvents.clientEventId, sharedCid));
+      assert.equal(
+        rows.length,
+        2,
+        `LEAK CRITICAL: expected 2 rows with shared cid (one per user), found ${rows.length}. Dedupe scope is broken.`,
+      );
+      const userIds = rows.map((r) => r.userId).sort();
+      assert.deepEqual(
+        userIds,
+        [userA.id, userB.id].sort(),
+        "the 2 rows with shared cid must be one for userA and one for userB",
+      );
+      assert.notEqual(rowA.id, rowB.id, "the two rows must have distinct serial PKs");
+    } finally {
+      await d!.delete(agentEvents).where(eq(agentEvents.clientEventId, sharedCid));
+    }
+  });
 });
