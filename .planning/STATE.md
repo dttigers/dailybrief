@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 122 Plan 08 complete
-last_updated: "2026-05-08T22:37:15.000Z"
+stopped_at: Phase 122 Plan 09 checkpoint:human-verify (Tasks 9.1-9.5 complete)
+last_updated: "2026-05-08T22:46:40.000Z"
 last_activity: 2026-05-08
 progress:
   total_phases: 8
@@ -27,7 +27,7 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 Phase: 122 (vigil-watch-core-watcher-parser-emitter-config) — EXECUTING
 Plan: 10 of 10
-Status: Ready to execute
+Status: Paused at checkpoint:human-verify (Plan 09 Task 9.6)
 Last activity: 2026-05-08
 
 Progress: [█████████░] 94%
@@ -64,6 +64,7 @@ Progress: [█████████░] 94%
 | Phase 122 P06 | 3min | 2 tasks | 3 files |
 | Phase 122 P07 | 8min | 2 tasks | 2 files |
 | Phase 122 P08 | 8min | 3 tasks | 3 files |
+| Phase 122 P09 | 5min | 5 tasks (of 6; 9.6 pending) | 5 files |
 
 ## Deferred Items
 
@@ -152,6 +153,11 @@ Recent (v3.7 closeout):
 - [Phase 122 / Plan 08]: useInMemoryPartial guard: anchorOffset = currentOffset - partial.count underflows when currentOffset=0 and partial>0 (first tick, no lines yet); guard prevents UInt64 underflow; disk re-read at offset 0 covers the partial bytes
 - [Phase 122 / Plan 08]: FSEventBridge + WatcherActor separation: bridge owns C lifecycle (FSEventStreamRef, Unmanaged, DispatchQueue); actor owns read/parse/dispatch logic; no actor state in C callback
 - [Phase 122 / Plan 08]: Non-spec lines dispatched to lineHandler: Plan 09 needs all line types for SessionState.latestLineTimestamp update; caller gates on lineType
+- [Phase 122 / Plan 09]: resolvedHost captured at Daemon.init — EmitterActor.config is private; host constant for process lifetime avoids (await emitter).config anti-pattern
+- [Phase 122 / Plan 09]: lineHandler calls session.process() for ALL line types (not just .user/.assistant) to update latestLineTimestamp for silence detection; milestone scan gated on lineType == .assistant
+- [Phase 122 / Plan 09]: SIGTERM/SIGINT via DispatchSource.makeSignalSource — signal(SIG, SIG_IGN) first so GCD takes over; both signals drain with 5s deadline and exit(0)
+- [Phase 122 / Plan 09]: nonisolated(unsafe) DispatchSource globals — written once at startup (main thread before RunLoop.main.run()); reads only inside GCD handler closures (single-writer safe)
+- [Phase 122 / Plan 09]: XCTAssertEqual with await: capture actor value first — await in XCTest autoclosure not supported in Swift 6
 
 ### Pending Todos
 
@@ -188,7 +194,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T22:37:15.000Z
-Stopped at: Phase 122 Plan 08 complete
+Last session: 2026-05-08T22:46:40.000Z
+Stopped at: Phase 122 Plan 09 checkpoint:human-verify (Tasks 9.1-9.5 complete; 9.6 awaiting smoke test)
 Resume file: None
-Next action: Execute Phase 122 Plan 09 (main.swift — FSEventBridge wiring + SessionStateRegistry)
+Next action: User runs 6 smoke tests from 122-VALIDATION.md; types "approved" to continue; Plan 10 (if any) or Phase 123 follows
