@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
 stopped_at: Phase 122 Plan 00 complete
-last_updated: "2026-05-08T22:40:00.000Z"
-last_activity: 2026-05-08 -- Phase 122 Plan 00 executed (Swift Package scaffold + fixtures)
+last_updated: "2026-05-08T21:45:00.526Z"
+last_activity: 2026-05-08
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 18
-  completed_plans: 9
-  percent: 50
+  completed_plans: 10
+  percent: 56
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 122 (vigil-watch-core-watcher-parser-emitter-config) — EXECUTING
-Plan: 2 of 10
-Status: Executing Phase 122
-Last activity: 2026-05-08 -- Phase 122 Plan 00 complete (Swift Package scaffold + fixtures)
+Plan: 3 of 10
+Status: Ready to execute
+Last activity: 2026-05-08
 
 Progress: [████████░░] 75%
 
@@ -58,6 +58,7 @@ Progress: [████████░░] 75%
 | v3.6 | 108-114 | 27 | shipped 2026-04-26 |
 | v3.7 | 115-119 (+116.1) | 22 | shipped 2026-05-06 |
 | v3.8 | 120-125 | TBD | started 2026-05-06, roadmap 2026-05-06 |
+| Phase 122 P01 | 15min | 3 tasks | 4 files |
 
 ## Deferred Items
 
@@ -119,6 +120,9 @@ Recent (v3.7 closeout):
 - [Phase 117]: Drift-detector tests via fs.readFileSync + regex preferred over runtime-introspection for policy constants
 - [Phase 116]: Discriminated-union API response types over throw-on-non-200 for endpoints with structured non-error states
 - [Phase 116]: Optimistic toggle + lastSavedRef rollback contract pattern locked across calendar (115) and sports (116) pickers
+- [Phase ?]: [Phase 122 / Plan 01]: D-01 known-vector pinned live — sha256(2072cbce-...|1024|needs_input|v1) → 39830cfa-218a-9bed-5804-49bd450dd210; XCTAssertEqual uncommented in HashIDTests
+- [Phase ?]: [Phase 122 / Plan 01]: VigilWatch.swift placeholder dropped in separate chore commit — Plan 00 stub superseded by EventTypes.swift + HashID.swift
+- [Phase ?]: [Phase 122 / Plan 01]: DriftDetectorTests uses XCTSkip (not XCTFail) when VIGIL_CORE_PATH absent — CI graceful skip, monorepo real fail on drift
 
 ### Pending Todos
 
@@ -155,7 +159,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T22:40:00.000Z
+Last session: 2026-05-08T21:45:00.519Z
 Stopped at: Phase 122 Plan 00 complete
-Resume file: .planning/phases/122-vigil-watch-core-watcher-parser-emitter-config/122-00-SUMMARY.md
+Resume file: None
 Next action: Execute Phase 122 Plan 01 (next plan in wave)
