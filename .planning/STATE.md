@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: executing
-stopped_at: Plan 120-01 complete; vigil-watch repo bootstrapped on origin/main as 45bf950
-last_updated: "2026-05-08T18:02:13.764Z"
-last_activity: 2026-05-08 -- Phase 120 execution started
+status: completed
+stopped_at: Phase 120 complete — VERIFY-01 satisfied; vigil-watch README live at github.com/dttigers/vigil-watch (commit 5273534)
+last_updated: "2026-05-08T18:27:34.582Z"
+last_activity: 2026-05-08 -- Phase 120 marked complete
 progress:
   total_phases: 8
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 1
-  percent: 33
+  completed_plans: 3
+  percent: 100
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 ## Current Position
 
-Phase: 120 (day-1-jsonl-schema-verification-detection-strategy-lock) — EXECUTING
-Plan: 1 of 3
-Status: Executing Phase 120
-Last activity: 2026-05-08 -- Phase 120 execution started
+Phase: 120 — COMPLETE
+Plan: 3 of 3 complete
+Status: Phase 120 complete; VERIFY-01 satisfied; ready for Phase 121
+Last activity: 2026-05-08 -- Phase 120 marked complete
 
 Progress: [███░░░░░░░] 33%
 
