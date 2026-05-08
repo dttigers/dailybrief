@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Plan 121-04 complete; 3 D-D2 isolation lock blocks added to cross-user-isolation.test.ts, Plan 05 (smoke gate) is next
-last_updated: "2026-05-08T19:44:24Z"
-last_activity: 2026-05-08 -- Phase 121 Plan 04 complete (3 integration lock blocks in canonical cross-user-isolation.test.ts)
+stopped_at: Phase 121 complete (5/5 plans); phase verification gate passed — next is Phase 122 (vigil-watch core)
+last_updated: "2026-05-08T20:15:00Z"
+last_activity: 2026-05-08 -- Phase 121 Plan 05 complete (verification gate: tsc clean, 24 route tests + 15 isolation tests, live smoke 201/200/200)
 progress:
   total_phases: 8
   completed_phases: 1
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 ## Current Position
 
-Phase: 121 (agent-events-api-foundation-cross-user-isolation-lock) — EXECUTING
-Plan: 5 of 5
-Status: Executing Phase 121 (Plan 04 complete — 3 isolation lock blocks in canonical file)
-Last activity: 2026-05-08 -- Phase 121 Plan 04 complete
+Phase: 121 (agent-events-api-foundation-cross-user-isolation-lock) — COMPLETE
+Plan: 5 of 5 — ALL COMPLETE
+Status: Phase 121 complete (verification gate passed 2026-05-08); next phase: 122 (vigil-watch core)
+Last activity: 2026-05-08 -- Phase 121 Plan 05 complete (verification gate)
 
-Progress: [██████░░░░] 60%
+Progress: [████████░░] 75%
 
 ## v3.8 Phase Table
 
@@ -102,6 +102,8 @@ Recent (v3.8 in-flight):
 - [Phase 121 / Plan 04]: Block 3 shared client_event_id is the only test that can detect regression from composite partial unique to single-column unique index
 - [Phase 121 / Plan 02]: agentEvents$Route internal name + re-export as agentEvents — avoids collision with schema import, matches index.ts app.route() mount pattern
 - [Phase 121 / Plan 01]: Plans 02/03/04 should adopt manual typeof validation (not zod) — zod is not installed in vigil-core; Pattern Map discrepancy #2 confirms this
+- [Phase 121 / Plan 05]: Drizzle onConflictDoNothing with partial unique index requires WHERE predicate — PostgreSQL 42P10 without it; fix: add `where: sql\`col IS NOT NULL\`` matching partial index predicate
+- [Phase 121 / Plan 05]: TS 5.9 strict narrowing: assert.ok() on closure-assigned T|null variable → 'never'; fix: explicit cast `(x as T)` preserves semantics without runtime change
 - [Phase 120 / Plan 01]: Verbatim section headers as a cross-plan contract — Plan 120.03's acceptance criteria reference exact strings (`# vigil-watch`, `## Day-1 JSONL Schema Verification`, `### Verdict`, etc.), so README structure was locked before content authoring begins
 - [Phase 120 / Plan 01]: Secret-hygiene `.gitignore` block committed BEFORE any verification log can be written — `/verification-log/` rule preempts T-120-01 (Plan 120.02 cannot accidentally land raw user JSONL on a public repo)
 - [Phase 120 / Plan 01]: LICENSE seeded by GitHub with display-name-only `Copyright (c) 2026 Jameson Morrill` accepted as-is per threat-register T-120-02 disposition (matches vigil-core posture; no PII risk)
@@ -149,7 +151,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T19:44:24Z
-Stopped at: Plan 121-04 complete; 3 D-D2 isolation lock blocks added to cross-user-isolation.test.ts (71a051a)
+Last session: 2026-05-08T20:15:00Z
+Stopped at: Phase 121 complete (5/5 plans verified) — 2fbe16d, 8448ec7
 Resume file: None
-Next action: /gsd-execute-phase 121 (resumes at Plan 121-05 — smoke/integration gate)
+Next action: /gsd-execute-phase 122 (vigil-watch core: watcher + parser + emitter + config)
