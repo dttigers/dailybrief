@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: planning
-stopped_at: Phase 121 planned; 5 plans across 4 waves; ready for /gsd-execute-phase 121
-last_updated: "2026-05-08T19:18:06.574Z"
-last_activity: 2026-05-08 -- Phase 121 planned (5 plans, 4 waves)
+status: executing
+stopped_at: Plan 121-01 complete; agent_events table materialized in local Postgres, Plans 02/03/04 unblocked
+last_updated: "2026-05-08T19:26:30Z"
+last_activity: 2026-05-08 -- Phase 121 Plan 01 complete (schema push BLOCKING gate cleared)
 progress:
   total_phases: 8
   completed_phases: 1
-  total_plans: 3
-  completed_plans: 3
-  percent: 100
+  total_plans: 8
+  completed_plans: 4
+  percent: 50
 ---
 
 # Project State
@@ -25,9 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 ## Current Position
 
-Phase: 121 — PLANNED (ready to execute)
-Status: 5 plans across 4 waves; AGENT-API-01 + AGENT-API-02 covered; all 13 CONTEXT decisions traceable; threat models per plan; BLOCKING schema-push gate in Plan 01
-Last activity: 2026-05-08 -- Phase 121 planned (5 plans, 4 waves)
+Phase: 121 (agent-events-api-foundation-cross-user-isolation-lock) — EXECUTING
+Plan: 2 of 5
+Status: Executing Phase 121 (Plan 01 complete — schema push gate cleared)
+Last activity: 2026-05-08 -- Phase 121 Plan 01 complete
 
 Progress: [███░░░░░░░] 33%
 
@@ -90,6 +91,9 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 
 Recent (v3.8 in-flight):
 
+- [Phase 121 / Plan 01]: drizzle-kit auto-generated SQL replaced entirely — auto-diff included previously applied migrations (0016 + 0017) due to snapshot state; hand-crafted SQL per plan spec is the correct approach
+- [Phase 121 / Plan 01]: Partial unique index composite scope (user_id, client_event_id) is load-bearing for cross-user dedup isolation — single-column would silently cross-contaminate users (D-D2 block 3)
+- [Phase 121 / Plan 01]: Plans 02/03/04 should adopt manual typeof validation (not zod) — zod is not installed in vigil-core; Pattern Map discrepancy #2 confirms this
 - [Phase 120 / Plan 01]: Verbatim section headers as a cross-plan contract — Plan 120.03's acceptance criteria reference exact strings (`# vigil-watch`, `## Day-1 JSONL Schema Verification`, `### Verdict`, etc.), so README structure was locked before content authoring begins
 - [Phase 120 / Plan 01]: Secret-hygiene `.gitignore` block committed BEFORE any verification log can be written — `/verification-log/` rule preempts T-120-01 (Plan 120.02 cannot accidentally land raw user JSONL on a public repo)
 - [Phase 120 / Plan 01]: LICENSE seeded by GitHub with display-name-only `Copyright (c) 2026 Jameson Morrill` accepted as-is per threat-register T-120-02 disposition (matches vigil-core posture; no PII risk)
