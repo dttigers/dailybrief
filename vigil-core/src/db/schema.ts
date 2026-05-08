@@ -370,3 +370,50 @@ export const passwordResetTokens = pgTable(
     index("idx_prt_expires_at").on(table.expiresAt),
   ],
 );
+
+// ── agent_events table (Phase 121 — AGENT-API-01) ────────────────────────
+// Receives Claude Code session events from the future vigil-watch daemon
+// (Phase 122) via POST /v1/agent-events. Per-user scoped (D-22), append-only,
+// idempotent via partial unique index on (user_id, client_event_id) WHERE
+// client_event_id IS NOT NULL — composite scope is load-bearing per D-D2
+// block 3 (single-column would cross-contaminate users).
+//
+// Two-timestamp design (D-A1):
+//   - event_timestamp: source of truth from daemon payload (ordering key)
+//   - received_at:    DB insert time (clock-skew + retry-latency forensics)
+//
+// CHECK constraint on `event` is enforced at SQL level only — drizzle-orm@0.45.2
+// has no first-class column-level CHECK helper for pgTable. The 0018 migration
+// carries the strict semantic. Same pattern as passwordResetTokens.type.
+//
+// Partial unique index on (user_id, client_event_id) WHERE client_event_id IS
+// NOT NULL is also enforced at SQL level only — drizzle-orm@0.45.2 has no
+// partial-unique-index helper. The 0018 migration carries it.
+export const agentEvents = pgTable(
+  "agent_events",
+  {
+    id: serial("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    sessionId: text("session_id").notNull(),
+    event: text("event").notNull(), // CHECK ('needs_input','task_complete','task_failed','milestone','heartbeat') — SQL-level only
+    message: text("message"), // nullable per spec (events without freeform message)
+    label: text("label").notNull(),
+    host: text("host").notNull(),
+    exitCode: integer("exit_code"), // nullable — only present on task_complete/task_failed
+    eventTimestamp: timestamp("event_timestamp", { withTimezone: true }).notNull(), // D-A1 source of truth
+    receivedAt: timestamp("received_at", { withTimezone: true }).defaultNow().notNull(), // D-A1 DB insert time
+    clientEventId: text("client_event_id"), // nullable; partial unique with userId enforced in 0018 migration (D-A4 + D-C1)
+  },
+  (table) => [
+    // D-A3 idx 1: composite for "latest event per session per user" GET — supports DISTINCT ON / window query
+    index("idx_agent_events_user_session_ts").on(
+      table.userId,
+      table.sessionId,
+      table.eventTimestamp,
+    ),
+    // D-A3 idx 2: per-user listing + write-side scoping safety (symmetry with rest of schema)
+    index("idx_agent_events_user_id").on(table.userId),
+  ],
+);
