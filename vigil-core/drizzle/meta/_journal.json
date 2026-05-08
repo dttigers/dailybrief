@@ -127,6 +127,13 @@
       "when": 1777440000000,
       "tag": "0017_users_email_verified_at",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1778268258461,
+      "tag": "0018_add_agent_events",
+      "breakpoints": true
     }
   ]
 }
