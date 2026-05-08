@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Plan 121-02 complete; POST /v1/agent-events + GET /v1/agent-sessions routes wired into index.ts, Plans 03/04 unblocked
-last_updated: "2026-05-08T19:32:00Z"
-last_activity: 2026-05-08 -- Phase 121 Plan 02 complete (Hono routes + index.ts wiring)
+stopped_at: Plan 121-03 complete; 24-test pure-unit route suite with drift detectors committed, Plan 04 (cross-user isolation integration) is next
+last_updated: "2026-05-08T19:37:30Z"
+last_activity: 2026-05-08 -- Phase 121 Plan 03 complete (route test suite + 2 drift detectors, all 24 tests passing)
 progress:
   total_phases: 8
   completed_phases: 1
   total_plans: 8
-  completed_plans: 5
-  percent: 60
+  completed_plans: 6
+  percent: 62
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 121 (agent-events-api-foundation-cross-user-isolation-lock) — EXECUTING
-Plan: 3 of 5
-Status: Executing Phase 121 (Plan 02 complete — routes wired)
-Last activity: 2026-05-08 -- Phase 121 Plan 02 complete
+Plan: 4 of 5
+Status: Executing Phase 121 (Plan 03 complete — route tests + drift detectors passing)
+Last activity: 2026-05-08 -- Phase 121 Plan 03 complete
 
-Progress: [████░░░░░░] 40%
+Progress: [█████░░░░░] 50%
 
 ## v3.8 Phase Table
 
@@ -95,6 +95,8 @@ Recent (v3.8 in-flight):
 - [Phase 121 / Plan 01]: Partial unique index composite scope (user_id, client_event_id) is load-bearing for cross-user dedup isolation — single-column would silently cross-contaminate users (D-D2 block 3)
 - [Phase 121 / Plan 02]: DISTINCT ON via db.execute(sql...) raw query — drizzle-orm@0.45.2 has no first-class DISTINCT ON helper; CTE query composes with composite index from Plan 01
 - [Phase 121 / Plan 02]: { error, message } two-field error shape adopted — new Phase 121 convention; agent-events.ts is the canonical reference going forward
+- [Phase 121 / Plan 03]: T12 mass-assignment test asserts both 400 status AND captured===null — both conditions required to fully lock the defense (status alone wouldn't verify dep was never called)
+- [Phase 121 / Plan 03]: Drift-detector pair (DRIFT/T1 + DRIFT/T2) locks 5 event values in source TS AND migration SQL — one test per file; DRIFT/T2 also locks the partial unique index predicate (D-D2 block 3)
 - [Phase 121 / Plan 02]: agentEvents$Route internal name + re-export as agentEvents — avoids collision with schema import, matches index.ts app.route() mount pattern
 - [Phase 121 / Plan 01]: Plans 02/03/04 should adopt manual typeof validation (not zod) — zod is not installed in vigil-core; Pattern Map discrepancy #2 confirms this
 - [Phase 120 / Plan 01]: Verbatim section headers as a cross-plan contract — Plan 120.03's acceptance criteria reference exact strings (`# vigil-watch`, `## Day-1 JSONL Schema Verification`, `### Verdict`, etc.), so README structure was locked before content authoring begins
@@ -144,7 +146,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T19:32:00Z
-Stopped at: Plan 121-02 complete; POST /v1/agent-events + GET /v1/agent-sessions wired into index.ts
+Last session: 2026-05-08T19:37:30Z
+Stopped at: Plan 121-03 complete; 24-test pure-unit suite + 2 drift detectors committed (5e31598)
 Resume file: None
-Next action: /gsd-execute-phase 121 (resumes at Plan 121-03 — route unit tests)
+Next action: /gsd-execute-phase 121 (resumes at Plan 121-04 — cross-user isolation lock)
