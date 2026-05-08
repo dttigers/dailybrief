@@ -129,6 +129,26 @@ T-122-06 (Information disclosure via fixture JSONL): Fixtures sourced verbatim f
 - All 10 Wave 1 plans (122-01 through 122-09) can now begin — each adds `.swift` files to `Sources/VigilWatch/` or `Tests/VigilWatchTests/` without touching `Package.swift` (except Plan 09 which wires `main.swift`)
 - Fixture files are in place for Wave 1 ParserTests (Plans 02-03) to reference via `Bundle.module`
 
+## Self-Check: PASSED
+
+| Item | Status |
+|------|--------|
+| Package.swift exists | FOUND |
+| VigilWatch.swift placeholder | FOUND |
+| main.swift stub | FOUND |
+| PackageScaffoldTests.swift | FOUND |
+| needs_input_assistant_tool_use.jsonl | FOUND |
+| non_spec_lines.jsonl (7 lines) | FOUND |
+| 122-00-SUMMARY.md | FOUND |
+| vigil-watch commit a2e54e1 | FOUND |
+| vigil-watch commit 9a789cc | FOUND |
+| `platforms: [.macOS(.v14)]` in Package.swift | 1 match |
+| `.executable(name: "vigil-watch"` | 1 match |
+| `.library(name: "VigilWatch"` | 1 match |
+| `resources: [.copy("Fixtures")]` | 1 match |
+| `swift build` exits 0 | PASS |
+| `swift test` exits 0 | PASS |
+
 ---
 *Phase: 122-vigil-watch-core-watcher-parser-emitter-config*
 *Completed: 2026-05-08*
