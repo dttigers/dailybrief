@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 122 Plan 06 complete
-last_updated: "2026-05-08T22:18:00.000Z"
+stopped_at: Phase 122 Plan 07 complete
+last_updated: "2026-05-08T22:27:15.535Z"
 last_activity: 2026-05-08
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 18
   completed_plans: 16
-  percent: 67
+  percent: 89
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 122 (vigil-watch-core-watcher-parser-emitter-config) — EXECUTING
-Plan: 8 of 10
+Plan: 9 of 10
 Status: Ready to execute
 Last activity: 2026-05-08
 
@@ -62,6 +62,7 @@ Progress: [█████████░] 86%
 | Phase 122 P04 | 4min | 3 tasks | 3 files |
 | Phase 122 P05 | 8min | 2 tasks | 2 files |
 | Phase 122 P06 | 3min | 2 tasks | 3 files |
+| Phase 122 P07 | 8min | 2 tasks | 2 files |
 
 ## Deferred Items
 
@@ -145,6 +146,8 @@ Recent (v3.7 closeout):
 - [Phase 122 / Plan 06]: F_FULLFSYNC error intentionally ignored — durability hardener not correctness gate; atomic rename guarantees consistency regardless
 - [Phase 122 / Plan 06]: removeItem before moveItem — FileManager.moveItem raises NSError if target exists; pre-remove replicates rename(2) semantics
 - [Phase 122 / Plan 06]: GC newest-record-drives-cutoff — session with one stale + one recent record is kept; session eviction only when ALL records are older than 24h
+- [Phase 122]: Two-method SessionState API: process(line:) fires task_failed immediately; evaluate(now:config:) fires timer-based events (needs_input, task_complete, heartbeat) via 1Hz tick loop
+- [Phase 122]: sessionHadError never resets within session (Pitfall 3): taskCompleteEmittedAt set even when suppressed by precedence to prevent re-evaluation on every 1Hz tick
 
 ### Pending Todos
 
@@ -181,7 +184,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T22:17:00.000Z
-Stopped at: Phase 122 Plan 06 complete
+Last session: 2026-05-08T22:27:15.528Z
+Stopped at: Phase 122 Plan 07 complete
 Resume file: None
 Next action: Execute Phase 122 Plan 07 (SessionActor)

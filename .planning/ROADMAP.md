@@ -400,7 +400,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 
 **Wave 2** *(parallel; blocked on Wave 1)*
 - [x] 122-06-PLAN.md — StateStore (offsets.json schema_version=2 + F_FULLFSYNC atomic save + 24h GC) ✓ 2026-05-08
-- [ ] 122-07-PLAN.md — SessionState actor (5 detection rules + task_failed/task_complete precedence + needs_input debounce)
+- [x] 122-07-PLAN.md — SessionState actor (5 detection rules + task_failed/task_complete precedence + needs_input debounce)
 - [ ] 122-08-PLAN.md — FSEventBridge + WatcherActor (tail-cursor reads + namespace enumeration)
 
 **Wave 3** *(blocked on Wave 2)*
@@ -585,7 +585,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 119. DMARC quarantine ramp | v3.7 | 2/2 | Complete (deferred via amendment) | 2026-05-06 |
 | 120. Day-1 JSONL schema verification + detection-strategy lock | v3.8 | 1/3 | In progress | - |
 | 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 5/5 | Complete    | 2026-05-08 |
-| 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 3/10 | In Progress|  |
+| 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 8/10 | In Progress|  |
 | 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 0/TBD | Not started | - |
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 0/TBD | Not started | - |
 | 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 0/TBD | Not started | - |
@@ -610,7 +610,7 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 - UBIQ-05: LaunchAgent loads cleanly post-install; no TCC, keychain, or notarization regressions
 - UBIQ-06 (optional): remove the brctl fallback once UBIQ-01..05 are green
 
-**Plans:** 2/10 plans executed
+**Plans:** 8/10 plans executed
 
 **Context:** Full empirical diagnosis, Phase 58 rationale, and all five fix options evaluated in `.planning/debug/icloud-photos-never-download.md` (committed in `4f71366`). Key nuance: CloudKit entitlements (`icloud-services`, `icloud-container-identifiers`) that Phase 58 correctly removed are a **different entitlement family** from ubiquity — Phase 58's "dead code, incompatible with Developer ID" rationale applies to CloudKit only, not to ubiquity.
 
