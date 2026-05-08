@@ -82,8 +82,8 @@ Filled by `gsd-roadmapper` on 2026-05-06 after roadmap creation. 20/20 v3.8 requ
 | REQ-ID | Phase | Plan(s) |
 |--------|-------|---------|
 | VERIFY-01 | Phase 120 | TBD |
-| AGENT-API-01 | Phase 121 | TBD |
-| AGENT-API-02 | Phase 121 | TBD |
+| AGENT-API-01 | Phase 121 | 121-01, 121-02, 121-03, 121-04, 121-05 |
+| AGENT-API-02 | Phase 121 | 121-02, 121-03, 121-04, 121-05 |
 | AGENT-WATCH-01 | Phase 122 | TBD |
 | AGENT-WATCH-02 | Phase 122 | TBD |
 | AGENT-WATCH-03 | Phase 122 | TBD |
