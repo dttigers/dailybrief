@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
-stopped_at: Phase 121 complete (5/5 plans verified) — 2fbe16d, 8448ec7
-last_updated: "2026-05-08T20:16:43.182Z"
+stopped_at: Phase 122 context gathered
+last_updated: "2026-05-08T20:31:59.954Z"
 last_activity: 2026-05-08
 progress:
   total_phases: 8
@@ -151,7 +151,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T20:15:00Z
-Stopped at: Phase 121 complete (5/5 plans verified) — 2fbe16d, 8448ec7
-Resume file: None
+Last session: 2026-05-08T20:31:59.947Z
+Stopped at: Phase 122 context gathered
+Resume file: .planning/phases/122-vigil-watch-core-watcher-parser-emitter-config/122-CONTEXT.md
 Next action: /gsd-execute-phase 122 (vigil-watch core: watcher + parser + emitter + config)
