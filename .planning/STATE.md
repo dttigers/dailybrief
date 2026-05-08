@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 122 Plan 05 complete
-last_updated: "2026-05-08T22:17:00.000Z"
+stopped_at: Phase 122 Plan 06 complete
+last_updated: "2026-05-08T22:18:00.000Z"
 last_activity: 2026-05-08
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 18
-  completed_plans: 15
-  percent: 64
+  completed_plans: 16
+  percent: 67
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 122 (vigil-watch-core-watcher-parser-emitter-config) — EXECUTING
-Plan: 7 of 10
+Plan: 8 of 10
 Status: Ready to execute
 Last activity: 2026-05-08
 
-Progress: [█████████░] 84%
+Progress: [█████████░] 86%
 
 ## v3.8 Phase Table
 
@@ -61,6 +61,7 @@ Progress: [█████████░] 84%
 | Phase 122 P01 | 15min | 3 tasks | 4 files |
 | Phase 122 P04 | 4min | 3 tasks | 3 files |
 | Phase 122 P05 | 8min | 2 tasks | 2 files |
+| Phase 122 P06 | 3min | 2 tasks | 3 files |
 
 ## Deferred Items
 
@@ -140,6 +141,10 @@ Recent (v3.7 closeout):
 - [Phase 122 / Plan 05]: (?-prefix opt-out check via hasPrefix("(?") — preserves (?-i), (?s), (?m) and any future inline flag without parsing flag group syntax
 - [Phase 122 / Plan 05]: scanForFirstTimeMatches returns [Compiled] not [Bool] — caller gets raw pattern for recordEmission and message field in one pass; no second lookup needed
 - [Phase 122 / Plan 05]: T-122-03 closed by construction — bad patterns produce logWarn and are skipped; daemon continues with remaining valid patterns
+- [Phase 122 / Plan 06]: MilestoneRecord.CodingKeys added (bug fix) — auto-synthesis produced camelCase; D-09 requires snake_case (first_match_offset, emitted_at)
+- [Phase 122 / Plan 06]: F_FULLFSYNC error intentionally ignored — durability hardener not correctness gate; atomic rename guarantees consistency regardless
+- [Phase 122 / Plan 06]: removeItem before moveItem — FileManager.moveItem raises NSError if target exists; pre-remove replicates rename(2) semantics
+- [Phase 122 / Plan 06]: GC newest-record-drives-cutoff — session with one stale + one recent record is kept; session eviction only when ALL records are older than 24h
 
 ### Pending Todos
 
@@ -177,6 +182,6 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 ## Session Continuity
 
 Last session: 2026-05-08T22:17:00.000Z
-Stopped at: Phase 122 Plan 05 complete
+Stopped at: Phase 122 Plan 06 complete
 Resume file: None
-Next action: Execute Phase 122 Plan 06 (StateStore — offsets.json schema_version=2)
+Next action: Execute Phase 122 Plan 07 (SessionActor)
