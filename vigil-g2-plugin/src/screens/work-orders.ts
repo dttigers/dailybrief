@@ -49,7 +49,7 @@ export function buildWorkOrdersScreen(
     paddingLength: 8,
     containerID: ContainerId.WORK_ORDERS_FOOTER,
     containerName: 'wo-footer',
-    content: 'tap task for details   () double-tap to exit',
+    content: '() double-tap to exit',
     isEventCapture: 0,
   })
 
