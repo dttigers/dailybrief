@@ -394,7 +394,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 **Wave 1** (parallel; pure logic — testable in isolation)
 - [x] 122-01-PLAN.md — VigilEvent enum + VigilPayload + ParsedLine + D-01 hash + drift detector
 - [x] 122-02-PLAN.md — JSONL parser (8-row mapping table + 7 non-spec line filtering)
-- [ ] 122-03-PLAN.md — TOML parser + Config + first-run create + VIGIL_API_KEY env fallback
+- [x] 122-03-PLAN.md — TOML parser + Config + first-run create + VIGIL_API_KEY env fallback
 - [ ] 122-04-PLAN.md — EmitterActor (URLSession retry/backoff + 100-event queue + 5s drain) + bearer-mask logging
 - [ ] 122-05-PLAN.md — MilestoneMatcher (per-(sessionId,pattern) dedupe + (?i) default + opt-out)
 
@@ -585,7 +585,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 119. DMARC quarantine ramp | v3.7 | 2/2 | Complete (deferred via amendment) | 2026-05-06 |
 | 120. Day-1 JSONL schema verification + detection-strategy lock | v3.8 | 1/3 | In progress | - |
 | 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 5/5 | Complete    | 2026-05-08 |
-| 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 2/10 | In Progress|  |
+| 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 3/10 | In Progress|  |
 | 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 0/TBD | Not started | - |
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 0/TBD | Not started | - |
 | 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 0/TBD | Not started | - |

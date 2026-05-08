@@ -20,7 +20,7 @@
 - [x] **AGENT-WATCH-03**: Daemon POSTs events to `${api_url}/v1/agent-events` with bearer auth, retry/backoff, in-memory queue (max 100) for offline buffering, and 5-second drain on `SIGTERM`.
 - [ ] **AGENT-WATCH-04**: User can `vigil-watch install` to write `~/Library/LaunchAgents/com.morrillholdings.vigil.watch.plist` and `launchctl bootstrap` it (RunAtLoad + KeepAlive); `vigil-watch uninstall` cleanly removes the plist and unloads the agent.
 - [ ] **AGENT-WATCH-05**: User can run `vigil-watch run --verbose` (foreground), `vigil-watch tail <session-id>` (parsed events without posting), `vigil-watch test` (synthetic event to verify Core connectivity), and `vigil-watch status` (daemon state, queue depth, last event timestamp) for debugging.
-- [ ] **AGENT-WATCH-06**: Daemon reads `~/.config/vigil/watch.toml` on startup with defaults created on first run (api_url, api_key falling back to `VIGIL_API_KEY`, heartbeat_seconds, needs_input_debounce_seconds, milestone_patterns, projects_dir override, host_label).
+- [x] **AGENT-WATCH-06**: Daemon reads `~/.config/vigil/watch.toml` on startup with defaults created on first run (api_url, api_key falling back to `VIGIL_API_KEY`, heartbeat_seconds, needs_input_debounce_seconds, milestone_patterns, projects_dir override, host_label).
 - [ ] **AGENT-WATCH-07**: Daemon runs unattended for 24 consecutive hours on the user's local Mac without crashing and stays under 30MB resident memory.
 
 ### Vigil Core agent-events API
