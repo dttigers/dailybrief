@@ -1,6 +1,6 @@
 // TypeScript types for Vigil — Drizzle schema inference + legacy SQLite types
 
-import { thoughts, thoughtLinks, briefs, projects, workOrderStatuses } from "./schema.js";
+import { thoughts, thoughtLinks, briefs, projects, workOrderStatuses, agentEvents } from "./schema.js";
 
 // ── Drizzle-inferred types (for PostgreSQL routes, Plans 37-02+) ────────────
 
@@ -19,6 +19,10 @@ export type NewProject = typeof projects.$inferInsert;
 export type DrizzleWorkOrderStatus = typeof workOrderStatuses.$inferSelect;
 export type NewWorkOrderStatus = typeof workOrderStatuses.$inferInsert;
 export type WorkOrderStatusValue = "open" | "inProgress" | "done";
+
+// Phase 121 — AGENT-API-01: agent_events inferred types (D-Discretion: no hand-written DTOs)
+export type DrizzleAgentEvent = typeof agentEvents.$inferSelect;
+export type NewAgentEvent = typeof agentEvents.$inferInsert;
 
 // ── Validation unions (used for runtime checks) ────────────────────────────
 
