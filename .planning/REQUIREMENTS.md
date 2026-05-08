@@ -84,10 +84,10 @@ Filled by `gsd-roadmapper` on 2026-05-06 after roadmap creation. 20/20 v3.8 requ
 | VERIFY-01 | Phase 120 | TBD |
 | AGENT-API-01 | Phase 121 | 121-01, 121-02, 121-03, 121-04, 121-05 |
 | AGENT-API-02 | Phase 121 | 121-02, 121-03, 121-04, 121-05 |
-| AGENT-WATCH-01 | Phase 122 | TBD |
-| AGENT-WATCH-02 | Phase 122 | TBD |
-| AGENT-WATCH-03 | Phase 122 | TBD |
-| AGENT-WATCH-06 | Phase 122 | TBD |
+| AGENT-WATCH-01 | Phase 122 | 122-00, 122-08, 122-09 |
+| AGENT-WATCH-02 | Phase 122 | 122-00, 122-01, 122-02, 122-05, 122-06, 122-07, 122-08, 122-09 |
+| AGENT-WATCH-03 | Phase 122 | 122-00, 122-01, 122-04, 122-09 |
+| AGENT-WATCH-06 | Phase 122 | 122-00, 122-03, 122-09 |
 | AGENT-WATCH-04 | Phase 123 | TBD |
 | AGENT-WATCH-05 | Phase 123 | TBD |
 | AGENT-WATCH-07 | Phase 123 | TBD |

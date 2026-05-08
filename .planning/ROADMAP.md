@@ -386,7 +386,34 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
   3. User can kill `vigil-watch` mid-session, restart it, and the daemon resumes parsing from `~/Library/Application Support/vigil-watch/offsets.json` instead of replaying the entire JSONL history — verified by zero duplicate event rows in `agent_events` after the restart.
   4. User can disconnect the network for 90 seconds while Claude Code emits 5–10 events, reconnect, and within 5 seconds observe all queued events flushed to Vigil Core in order; queue caps at 100 events with oldest dropped on overflow; on `SIGTERM` the daemon drains within 5 seconds and exits cleanly.
   5. User can edit `~/.config/vigil/watch.toml` to change `api_url`, `heartbeat_seconds`, `needs_input_debounce_seconds`, `milestone_patterns`, `projects_dir`, or `host_label`, restart the daemon, and observe the new values take effect; on first run the file is created with documented defaults if missing; `api_key` falls back to `VIGIL_API_KEY` env var when blank.
-**Plans**: TBD
+**Plans**: 10 plans
+
+**Wave 0** (scaffold — blocks everything)
+- [ ] 122-00-PLAN.md — Package.swift + source/test layout + Phase 120 fixture copy
+
+**Wave 1** (parallel; pure logic — testable in isolation)
+- [ ] 122-01-PLAN.md — VigilEvent enum + VigilPayload + ParsedLine + D-01 hash + drift detector
+- [ ] 122-02-PLAN.md — JSONL parser (8-row mapping table + 7 non-spec line filtering)
+- [ ] 122-03-PLAN.md — TOML parser + Config + first-run create + VIGIL_API_KEY env fallback
+- [ ] 122-04-PLAN.md — EmitterActor (URLSession retry/backoff + 100-event queue + 5s drain) + bearer-mask logging
+- [ ] 122-05-PLAN.md — MilestoneMatcher (per-(sessionId,pattern) dedupe + (?i) default + opt-out)
+
+**Wave 2** *(parallel; blocked on Wave 1)*
+- [ ] 122-06-PLAN.md — StateStore (offsets.json schema_version=2 + F_FULLFSYNC atomic save + 24h GC)
+- [ ] 122-07-PLAN.md — SessionState actor (5 detection rules + task_failed/task_complete precedence + needs_input debounce)
+- [ ] 122-08-PLAN.md — FSEventBridge + WatcherActor (tail-cursor reads + namespace enumeration)
+
+**Wave 3** *(blocked on Wave 2)*
+- [ ] 122-09-PLAN.md — Daemon composition root + main.swift + DispatchSource SIGTERM handler + live integration smoke
+
+**Cross-cutting constraints** (truths that appear in 2+ plans):
+- 5 VigilEvent rawValues byte-identical to vigil-core VALID_EVENTS (Plans 01, 09 — drift detector pins this)
+- D-01 deterministic client_event_id hash (Plans 01, 07 — hash function + payload assembly)
+- 100-event queue cap with oldest-dropped overflow (Plans 04, 09 — emitter + drain)
+- offsets.json schema_version=2 with milestones_emitted dict (Plans 05, 06, 09 — matcher hydration roundtrip)
+- task_failed wins over task_complete when sessionHadError (Plan 07 — precedence rule)
+- Bearer token NEVER logged (Plans 04, 09 — maskBearer + EmitterActor logging paths)
+
 **UI hint**: no
 
 ### Phase 123: vigil-watch shell — launchd integration + CLI surface + 24h soak
