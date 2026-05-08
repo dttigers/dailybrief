@@ -318,7 +318,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 
 ### Phases
 
-- [ ] **Phase 120: Day-1 JSONL schema verification + detection-strategy lock** — Confirm the assumed Claude Code JSONL schema against a live VS Code session before any production-mapping code is written; select fallback path if needed.
+- [x] **Phase 120: Day-1 JSONL schema verification + detection-strategy lock** — Confirm the assumed Claude Code JSONL schema against a live VS Code session before any production-mapping code is written; select fallback path if needed.
 - [x] **Phase 121: Agent-events API foundation + cross-user isolation lock** — `POST /v1/agent-events` and `GET /v1/agent-sessions` persist events scoped per-userId, with a W-01/W-02-style cross-user isolation test pinning the structural guarantee before any vigil-watch posts real data.
 - [ ] **Phase 122: vigil-watch core (watcher + parser + emitter + config)** — Swift daemon observes `~/.claude/projects/` via FSEvents, parses JSONL with persisted byte offsets, emits 5 Vigil event types per detection rules, posts to Vigil Core with retry/backoff and offline queue, and reads `~/.config/vigil/watch.toml` on startup.
 - [ ] **Phase 123: vigil-watch shell — launchd + CLI surface + 24h soak** — `vigil-watch install/uninstall/run/tail/test/status` subcommands cover dev + ops needs; launchd plist round-trips cleanly; daemon survives 24 unattended hours under 30MB RSS.
@@ -389,7 +389,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 **Plans**: 10 plans
 
 **Wave 0** (scaffold — blocks everything)
-- [ ] 122-00-PLAN.md — Package.swift + source/test layout + Phase 120 fixture copy
+- [x] 122-00-PLAN.md — Package.swift + source/test layout + Phase 120 fixture copy
 
 **Wave 1** (parallel; pure logic — testable in isolation)
 - [ ] 122-01-PLAN.md — VigilEvent enum + VigilPayload + ParsedLine + D-01 hash + drift detector

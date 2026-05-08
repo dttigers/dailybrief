@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 122 context gathered
-last_updated: "2026-05-08T21:25:51.535Z"
-last_activity: 2026-05-08 -- Phase 122 planning complete
+stopped_at: Phase 122 Plan 00 complete
+last_updated: "2026-05-08T22:40:00.000Z"
+last_activity: 2026-05-08 -- Phase 122 Plan 00 executed (Swift Package scaffold + fixtures)
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 18
-  completed_plans: 8
-  percent: 44
+  completed_plans: 9
+  percent: 50
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 121 — agent-events-api-foundation-cross-user-isolation-lock
+**Current focus:** Phase 122 — vigil-watch-core-watcher-parser-emitter-config
 
 ## Current Position
 
-Phase: 122
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-08 -- Phase 122 planning complete
+Phase: 122 (vigil-watch-core-watcher-parser-emitter-config) — EXECUTING
+Plan: 2 of 10
+Status: Executing Phase 122
+Last activity: 2026-05-08 -- Phase 122 Plan 00 complete (Swift Package scaffold + fixtures)
 
 Progress: [████████░░] 75%
 
@@ -91,6 +91,10 @@ All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions
 
 Recent (v3.8 in-flight):
 
+- [Phase 122 / Plan 00]: Sources/VigilWatch/VigilWatch.swift placeholder enum required — SPM build fails if a target directory contains only non-Swift files
+- [Phase 122 / Plan 00]: non_spec_lines.jsonl built from head -1 of 7 non-spec-type source excerpts; exactly 7 lines representing all known skip-type JSONL line types
+- [Phase 122 / Plan 00]: Zero external dependencies in Package.swift confirmed; swift-argument-parser deferred to Plan 09/Phase 123 per CONTEXT.md
+
 - [Phase 121 / Plan 01]: drizzle-kit auto-generated SQL replaced entirely — auto-diff included previously applied migrations (0016 + 0017) due to snapshot state; hand-crafted SQL per plan spec is the correct approach
 - [Phase 121 / Plan 01]: Partial unique index composite scope (user_id, client_event_id) is load-bearing for cross-user dedup isolation — single-column would silently cross-contaminate users (D-D2 block 3)
 - [Phase 121 / Plan 02]: DISTINCT ON via db.execute(sql...) raw query — drizzle-orm@0.45.2 has no first-class DISTINCT ON helper; CTE query composes with composite index from Plan 01
@@ -151,7 +155,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T20:31:59.947Z
-Stopped at: Phase 122 context gathered
-Resume file: .planning/phases/122-vigil-watch-core-watcher-parser-emitter-config/122-CONTEXT.md
-Next action: /gsd-execute-phase 122 (vigil-watch core: watcher + parser + emitter + config)
+Last session: 2026-05-08T22:40:00.000Z
+Stopped at: Phase 122 Plan 00 complete
+Resume file: .planning/phases/122-vigil-watch-core-watcher-parser-emitter-config/122-00-SUMMARY.md
+Next action: Execute Phase 122 Plan 01 (next plan in wave)
