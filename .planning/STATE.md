@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 122 Plan 03 complete
-last_updated: "2026-05-08T21:57:00.000Z"
+stopped_at: Phase 122 Plan 04 complete
+last_updated: "2026-05-08T22:05:00.000Z"
 last_activity: 2026-05-08
 progress:
   total_phases: 8
   completed_phases: 2
   total_plans: 18
-  completed_plans: 13
-  percent: 61
+  completed_plans: 14
+  percent: 64
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 122 (vigil-watch-core-watcher-parser-emitter-config) — EXECUTING
-Plan: 5 of 10
+Plan: 6 of 10
 Status: Ready to execute
 Last activity: 2026-05-08
 
-Progress: [█████████░] 80%
+Progress: [█████████░] 84%
 
 ## v3.8 Phase Table
 
@@ -59,6 +59,7 @@ Progress: [█████████░] 80%
 | v3.7 | 115-119 (+116.1) | 22 | shipped 2026-05-06 |
 | v3.8 | 120-125 | TBD | started 2026-05-06, roadmap 2026-05-06 |
 | Phase 122 P01 | 15min | 3 tasks | 4 files |
+| Phase 122 P04 | 4min | 3 tasks | 3 files |
 
 ## Deferred Items
 
@@ -129,6 +130,11 @@ Recent (v3.7 closeout):
 - [Phase 122 / Plan 03]: isArrayClosed() depth-tracking required — simple contains("]") breaks on regex character classes like [✓✔] inside quoted TOML array elements
 - [Phase 122 / Plan 03]: defaultTOMLBody uses \\\\b in Swift source (→ \\b in file → \b after TOMLParser.unquote) — backslash round-trip verified by testFirstRunCreatesDefaultsAtTempPath
 - [Phase 122 / Plan 03]: ConfigLoader.load(path:env:) injectable parameters — test isolation without ~/.config/ pollution or real VIGIL_API_KEY leaking into tests
+- [Phase 122 / Plan 04]: HTTPClient protocol + DefaultHTTPClient adapter — testable URLSession abstraction; StubHTTPClient in tests returns scripted responses without any network I/O
+- [Phase 122 / Plan 04]: sleepFn injected as (Duration) async throws -> Void — tests pass { _ in } to eliminate Task.sleep latency; all 15 EmitterTests run instantaneously
+- [Phase 122 / Plan 04]: NDJSON double-emit — post_status=0 on enqueue, re-emit with actual HTTP status after postOnce(); tail consumers track event lifecycle end-to-end
+- [Phase 122 / Plan 04]: Requeue at BACK on 6-attempt exhaustion — other events get a turn; prevents one stuck event from blocking queue (per CONTEXT.md "fresh attempt sweep")
+- [Phase 122 / Plan 04]: T-122-01 closed by construction — maskBearer() applied to all stderr paths; apiKey only flows to Authorization header in postOnce(), never to log functions
 
 ### Pending Todos
 
@@ -165,7 +171,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T21:57:00.000Z
-Stopped at: Phase 122 Plan 03 complete
+Last session: 2026-05-08T22:05:00.000Z
+Stopped at: Phase 122 Plan 04 complete
 Resume file: None
-Next action: Execute Phase 122 Plan 04 (next plan in wave)
+Next action: Execute Phase 122 Plan 05 (MilestoneMatcher — next in Wave 1)
