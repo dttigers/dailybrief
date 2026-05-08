@@ -124,15 +124,16 @@ test("AGENT-API-01/T1: POST happy path returns 201 with all fields preserved", a
   assert.equal(json.sessionId, "sess-A");
   assert.equal(json.clientEventId, "uuid-A");
   assert.ok(captured, "dbInsertOrGet must have been called");
+  const cap = captured as NewAgentEvent;
   assert.equal(
-    captured!.userId,
+    cap.userId,
     42,
     "captured userId must come from c.get('userId'), not body",
   );
-  assert.equal(captured!.sessionId, "sess-A");
-  assert.equal(captured!.label, "test-label");
-  assert.equal(captured!.host, "test-host");
-  assert.equal(captured!.clientEventId, "uuid-A");
+  assert.equal(cap.sessionId, "sess-A");
+  assert.equal(cap.label, "test-label");
+  assert.equal(cap.host, "test-host");
+  assert.equal(cap.clientEventId, "uuid-A");
 });
 
 test("AGENT-API-01/T2: POST without client_event_id returns 400 invalid_payload (D-C3)", async () => {
@@ -350,8 +351,9 @@ test("AGENT-API-02/T2: GET with ?since=<ISO> passes parsed Date to dep", async (
   );
   const res = await getSessions(app, "?since=2026-01-01T00:00:00Z");
   assert.equal(res.status, 200);
-  assert.ok(capturedSince instanceof Date);
-  assert.equal(capturedSince!.toISOString(), "2026-01-01T00:00:00.000Z");
+  const cs = capturedSince as Date | null;
+  assert.ok(cs instanceof Date);
+  assert.equal(cs.toISOString(), "2026-01-01T00:00:00.000Z");
 });
 
 test("AGENT-API-02/T3: GET with malformed since returns 400 invalid_query", async () => {

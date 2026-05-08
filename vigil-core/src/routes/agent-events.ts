@@ -288,11 +288,15 @@ export const agentEvents$Route = createAgentEventsRoute({
   dbInsertOrGet: async (row) => {
     if (!db) throw new Error("Database not available");
 
+    // The partial unique index is (user_id, client_event_id) WHERE client_event_id IS NOT NULL.
+    // Postgres requires the WHERE predicate to be included in the ON CONFLICT target for
+    // partial indexes — without it, PG error 42P10 "no unique constraint matching" is thrown.
     const inserted = await db
       .insert(agentEvents)
       .values(row)
       .onConflictDoNothing({
         target: [agentEvents.userId, agentEvents.clientEventId],
+        where: sql`${agentEvents.clientEventId} IS NOT NULL`,
       })
       .returning();
 
