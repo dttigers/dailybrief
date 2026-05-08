@@ -353,7 +353,27 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
   2. User can `GET /v1/agent-sessions` with a bearer token and receive a list of currently-tracked sessions filtered to the caller's userId, each with last known event/state; userA's sessions never appear in userB's response.
   3. A cross-user isolation test (mirroring `cross-user-isolation.test.ts` from Phase 108) asserts that a request authenticated as userA cannot read or write events for userB — locking the per-userId guarantee structurally so the future vigil-watch daemon cannot accidentally cross-contaminate even if the payload includes a userId field.
   4. User can replay the spec's example payload (`session_id`, `event`, `message`, `timestamp`, `label`, `host`, `exit_code`) against the live endpoint on local dev and the row materializes with all fields preserved verbatim and timestamp parsed as ISO-8601.
-**Plans**: TBD
+**Plans**: 5 plans
+
+**Wave 1**
+- [ ] 121-01-PLAN.md — Schema + 0018 migration + apply (BLOCKING)
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 121-02-PLAN.md — Route implementation (POST + GET + index.ts wiring)
+
+**Wave 3** *(parallel; both blocked on Wave 2 completion)*
+- [ ] 121-03-PLAN.md — Route-level tests (validation, idempotency, GET, drift detectors)
+- [ ] 121-04-PLAN.md — Cross-user isolation lock (3 it() blocks per D-D2)
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 121-05-PLAN.md — Verification (build + tests + live smoke + traceability)
+
+**Cross-cutting constraints** (truths that appear in 2+ plans):
+- Per-userId scoping: route trusts `c.get('userId')`, never `req.body.userId` (Plans 02, 03, 04 — pinned by D-D2 block 1)
+- Composite uniqueness `(user_id, client_event_id) WHERE NOT NULL`, never single-column (Plans 01, 02, 03, 04 — pinned by D-D2 block 3)
+- Migration directory is `vigil-core/drizzle/`, NOT `vigil-core/src/db/migrations/` (Plans 01, 05 — pattern-mapper correction #1)
+- Manual `typeof` validation pattern, NOT zod (Plans 02, 03 — pattern-mapper correction #2)
+
 **UI hint**: no
 
 ### Phase 122: vigil-watch core — watcher + parser + emitter + config
@@ -537,7 +557,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 118. Production test-user cleanup | v3.7 | 2/2 | Complete    | 2026-05-01 |
 | 119. DMARC quarantine ramp | v3.7 | 2/2 | Complete (deferred via amendment) | 2026-05-06 |
 | 120. Day-1 JSONL schema verification + detection-strategy lock | v3.8 | 1/3 | In progress | - |
-| 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 0/TBD | Not started | - |
+| 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 0/5 | Not started | - |
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 0/TBD | Not started | - |
 | 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 0/TBD | Not started | - |
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 0/TBD | Not started | - |

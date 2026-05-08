@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: verifying
-stopped_at: Plan 120-01 complete; vigil-watch repo bootstrapped on origin/main as 45bf950
-last_updated: "2026-05-08T18:42:49.464Z"
-last_activity: 2026-05-08 -- Phase 120 marked complete
+status: planning
+stopped_at: Phase 121 planned; 5 plans across 4 waves; ready for /gsd-execute-phase 121
+last_updated: "2026-05-08T19:18:06.574Z"
+last_activity: 2026-05-08 -- Phase 121 planned (5 plans, 4 waves)
 progress:
   total_phases: 8
   completed_phases: 1
@@ -25,9 +25,9 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 ## Current Position
 
-Phase: 121 — CONTEXT GATHERED (ready for plan-phase)
-Status: 13 decisions locked across 4 gray areas; AGENT-API-01 + AGENT-API-02 in scope
-Last activity: 2026-05-08 -- Phase 121 context gathered
+Phase: 121 — PLANNED (ready to execute)
+Status: 5 plans across 4 waves; AGENT-API-01 + AGENT-API-02 covered; all 13 CONTEXT decisions traceable; threat models per plan; BLOCKING schema-push gate in Plan 01
+Last activity: 2026-05-08 -- Phase 121 planned (5 plans, 4 waves)
 
 Progress: [███░░░░░░░] 33%
 
