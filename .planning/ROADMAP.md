@@ -363,7 +363,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 
 **Wave 3** *(parallel; both blocked on Wave 2 completion)*
 - [x] 121-03-PLAN.md — Route-level tests (validation, idempotency, GET, drift detectors) ✓ 2026-05-08
-- [ ] 121-04-PLAN.md — Cross-user isolation lock (3 it() blocks per D-D2)
+- [x] 121-04-PLAN.md — Cross-user isolation lock (3 it() blocks per D-D2) ✓ 2026-05-08
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 121-05-PLAN.md — Verification (build + tests + live smoke + traceability)

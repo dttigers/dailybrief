@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Plan 121-03 complete; 24-test pure-unit route suite with drift detectors committed, Plan 04 (cross-user isolation integration) is next
-last_updated: "2026-05-08T19:37:30Z"
-last_activity: 2026-05-08 -- Phase 121 Plan 03 complete (route test suite + 2 drift detectors, all 24 tests passing)
+stopped_at: Plan 121-04 complete; 3 D-D2 isolation lock blocks added to cross-user-isolation.test.ts, Plan 05 (smoke gate) is next
+last_updated: "2026-05-08T19:44:24Z"
+last_activity: 2026-05-08 -- Phase 121 Plan 04 complete (3 integration lock blocks in canonical cross-user-isolation.test.ts)
 progress:
   total_phases: 8
   completed_phases: 1
   total_plans: 8
-  completed_plans: 6
-  percent: 62
+  completed_plans: 7
+  percent: 75
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 121 (agent-events-api-foundation-cross-user-isolation-lock) — EXECUTING
-Plan: 4 of 5
-Status: Executing Phase 121 (Plan 03 complete — route tests + drift detectors passing)
-Last activity: 2026-05-08 -- Phase 121 Plan 03 complete
+Plan: 5 of 5
+Status: Executing Phase 121 (Plan 04 complete — 3 isolation lock blocks in canonical file)
+Last activity: 2026-05-08 -- Phase 121 Plan 04 complete
 
-Progress: [█████░░░░░] 50%
+Progress: [██████░░░░] 60%
 
 ## v3.8 Phase Table
 
@@ -97,6 +97,9 @@ Recent (v3.8 in-flight):
 - [Phase 121 / Plan 02]: { error, message } two-field error shape adopted — new Phase 121 convention; agent-events.ts is the canonical reference going forward
 - [Phase 121 / Plan 03]: T12 mass-assignment test asserts both 400 status AND captured===null — both conditions required to fully lock the defense (status alone wouldn't verify dep was never called)
 - [Phase 121 / Plan 03]: Drift-detector pair (DRIFT/T1 + DRIFT/T2) locks 5 event values in source TS AND migration SQL — one test per file; DRIFT/T2 also locks the partial unique index predicate (D-D2 block 3)
+- [Phase 121 / Plan 04]: Block 1 asserts both 400 status (KNOWN_FIELDS guard) AND DB cross-check (no userB row) — two-layer regression detection; if guard drops but route-level fix holds, only first assertion fails
+- [Phase 121 / Plan 04]: Block 2 uses direct DB insert for userB's seed — pins GET-side filtering independently of POST-side guards (cross-contamination of correctness proofs avoided)
+- [Phase 121 / Plan 04]: Block 3 shared client_event_id is the only test that can detect regression from composite partial unique to single-column unique index
 - [Phase 121 / Plan 02]: agentEvents$Route internal name + re-export as agentEvents — avoids collision with schema import, matches index.ts app.route() mount pattern
 - [Phase 121 / Plan 01]: Plans 02/03/04 should adopt manual typeof validation (not zod) — zod is not installed in vigil-core; Pattern Map discrepancy #2 confirms this
 - [Phase 120 / Plan 01]: Verbatim section headers as a cross-plan contract — Plan 120.03's acceptance criteria reference exact strings (`# vigil-watch`, `## Day-1 JSONL Schema Verification`, `### Verdict`, etc.), so README structure was locked before content authoring begins
@@ -146,7 +149,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T19:37:30Z
-Stopped at: Plan 121-03 complete; 24-test pure-unit suite + 2 drift detectors committed (5e31598)
+Last session: 2026-05-08T19:44:24Z
+Stopped at: Plan 121-04 complete; 3 D-D2 isolation lock blocks added to cross-user-isolation.test.ts (71a051a)
 Resume file: None
-Next action: /gsd-execute-phase 121 (resumes at Plan 121-04 — cross-user isolation lock)
+Next action: /gsd-execute-phase 121 (resumes at Plan 121-05 — smoke/integration gate)
