@@ -40,6 +40,7 @@ import { me } from "./routes/me.js";
 import { authMe } from "./routes/auth-me.js"; // Phase 113 (AUTH-11 D-27) — distinct from /v1/me
 import { verifyEmail } from "./routes/verify-email.js";          // Phase 113 (AUTH-11) — unauthenticated; mount BEFORE bearerAuth dispatcher
 import { resendVerification } from "./routes/resend-verification.js"; // Phase 113 (AUTH-11) — bearerAuth required; mount AFTER dispatcher
+import { agentEvents } from "./routes/agent-events.js"; // Phase 121 (AGENT-API-01, AGENT-API-02) — bearerAuth required; mount AFTER dispatcher
 import { captureException, shutdownPosthog } from "./analytics/posthog.js";
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
@@ -198,6 +199,15 @@ app.route("/v1", authMe); // Phase 113 (AUTH-11 D-27) — GET /v1/auth/me, beare
 // (user must be logged in; rate limit keyed by JWT-derived userId). Mounted
 // AFTER the dispatcher so it inherits the bearerAuth gate automatically.
 app.route("/v1", resendVerification);
+
+// Phase 121 (AGENT-API-01 + AGENT-API-02): agent-events is a NEW protected
+// router. Mount AFTER the bearerAuth dispatcher at line 135 AND AFTER the
+// metricsMiddleware at line 157. The handler does `c.get("userId") as number`
+// and the dispatcher guarantees that's non-null. Do NOT move this above
+// line 135 — would create a silent auth bypass (cross-user data write
+// becomes possible). Plan 04's cross-user-isolation lock pins the structural
+// guarantee; if this comment is wrong, the lock test fails.
+app.route("/v1", agentEvents);
 
 // D-13 — single chokepoint for unhandled errors. Must be AFTER all app.route()
 // calls so Hono's handler-chain ordering routes thrown errors here (Pitfall 4).
