@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: ready_to_plan
-stopped_at: Phase 122 Plan 09 checkpoint:human-verify (Tasks 9.1-9.5 complete)
-last_updated: "2026-05-08T22:46:40.000Z"
-last_activity: 2026-05-08
+status: planning
+stopped_at: Phase 123 context gathered
+last_updated: "2026-05-09T16:52:45.782Z"
+last_activity: 2026-05-09
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 18
-  completed_plans: 17
-  percent: 38
+  completed_plans: 18
+  percent: 100
 ---
 
 # Project State
@@ -194,7 +194,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-08T22:46:40.000Z
-Stopped at: Phase 122 Plan 09 checkpoint:human-verify (Tasks 9.1-9.5 complete; 9.6 awaiting smoke test)
-Resume file: None
+Last session: 2026-05-09T16:52:45.749Z
+Stopped at: Phase 123 context gathered
+Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-CONTEXT.md
 Next action: User runs 6 smoke tests from 122-VALIDATION.md; types "approved" to continue; Plan 10 (if any) or Phase 123 follows
