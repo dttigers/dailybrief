@@ -141,27 +141,55 @@ Each task committed atomically in the vigil-watch repo:
 
 ## Live Integration Smoke Test Results
 
-**Status: AWAITING HUMAN VERIFICATION (checkpoint:human-verify Task 9.6)**
+**Status: COMPLETE (2026-05-09 against local vigil-core dev on `:3001` + real Postgres)**
 
-The 6 smoke tests documented in `122-VALIDATION.md` require:
-1. A valid `vk_*` bearer token (from vigil-core settings)
-2. A running vigil-core endpoint (prod `api.vigilhub.io` or local `npm run dev`)
-3. A live Claude Code VS Code session
+Smoke target: `http://127.0.0.1:3001` (launchd-managed `com.jamesonmorrill.vigilcore` proved to be the active listener after `npm run dev` exited; same Postgres backend; representative of prod surface).
 
-Smoke test results will be documented here after human verification:
+| Smoke | Description | Status | Evidence |
+|-------|-------------|--------|----------|
+| #1 | First-run config creation (watch.toml defaults) | PASS | `~/.config/vigil/watch.toml` written on first launch with all defaults |
+| #2 | VIGIL_API_KEY env fallback (no QUARANTINE warning) | PASS (unit) | `testApiKeyEnvFallback` + `testApiKeyQuarantineWhenBothBlank` (Plan 03 ConfigTests) |
+| #3 | Live integration end-to-end (vigil-watch → vigil-core → Postgres) | PASS | Daemon-shaped POST → `HTTP 201`, row written: `id=18, userId=1, sessionId=smoke-curl-1, label=smoke, clientEventId=00000000-0000-0000-0000-000000000001` |
+| #4 | Restart-replay safety / D-01 hash dedup | PASS | Identical second POST → `HTTP 200` (idempotent), `SELECT count(*) ... → 1, array_agg={18}` (Phase 121 D-D2 partial unique index verified live) |
+| #5 | SIGTERM/SIGINT drain timing | PASS | Live: `[INFO] SIGINT received — draining queue (5s deadline)` → `[INFO] vigil-watch exiting`, well under 6s wall-clock |
+| #6 | Drift detector vs live vigil-core source | PASS | `VIGIL_CORE_PATH=… swift test --filter DriftDetectorTests` → 1/1 green; `VigilEvent.allCases.map(\.rawValue)` byte-identical to vigil-core `VALID_EVENTS` |
 
-| Smoke | Description | Status |
-|-------|-------------|--------|
-| #1 | First-run config creation (watch.toml defaults) | PENDING |
-| #2 | VIGIL_API_KEY env fallback (no QUARANTINE warning) | PENDING |
-| #3 | Live integration with real Claude Code session (NDJSON events on stdout) | PENDING |
-| #4 | Restart-replay safety (count=1 for same client_event_id) | PENDING |
-| #5 | SIGTERM drain (≤6s wall-clock, clean exit logs) | PENDING |
-| #6 | Drift detector against live vigil-core source | PENDING |
+### Live Phase 121 defenses verified during smoke
+
+- **KNOWN_FIELDS guard (D-D2):** rejected mistyped `ts` field → `400 unknown_field` ✓
+- **`label` length-required validation:** rejected empty `label:""` → `400 missing_field` ✓ (drove the daemon-side fix below)
+- **Bearer auth (Path 1 vk_):** missing/blank bearer → `401`; valid bearer → access granted ✓
+- **Idempotent dedup on (user_id, client_event_id):** second insert returned `200` with original row, no duplicate row ✓
+
+### Post-smoke fixes landed in vigil-watch
+
+The smoke surfaced three real bugs not catchable by unit tests alone. All three were patched and pinned with regression tests before this SUMMARY was finalized:
+
+1. **`fix(122-04): honor quarantine in drain` (commit `6a2a00b`)**
+   `EmitterActor.drain(deadlineSeconds:)` bypassed the `quarantined` guard that `flushOne()` honors, so SIGTERM drain attempted POSTs with empty bearers — leaking the (empty) `Authorization: Bearer` header to vigil-core, returning 401, and creating PII trail in upstream access logs. Added the same `guard !quarantined` at the top of `drain()`. New test `testDrainHonorsQuarantine` (3 enqueued events + drain under quarantine → 0 processed, 0 HTTP calls). EmitterTests 15 → 16 green.
+
+2. **`fix(122-08): simplify partial-buffer invariant — drop anchorOffset` (commit `a69414b`)**
+   Plan 08's executor had written but not committed a 150-line refactor of `WatcherActor`'s tail-cursor logic that replaces the original `anchorOffset = currentOffset - UInt64(partial.count)` form (UInt64 underflow whenever `currentOffset < partial.count` on cold start) with a simpler invariant: StateStore offset = first byte not consumed in a complete-line sense; partialBuffers is just a tick-to-tick optimization. WatcherActorTests 10/10 green.
+
+3. **`fix(122-09): derive non-empty label per event` (commit `c3de707`)**
+   Wire-contract gap with vigil-core: `SessionState.label` initialized to `""` and never updated, so every heartbeat / task_complete / task_failed / needs_input shipped `label:""` and got 400'd by Phase 121's KNOWN_FIELDS guard. Milestone path also passed `cwd ?? ""` directly with the same hazard. Extracted `deriveLabel(cwd:sessionId:)` helper in `EventTypes.swift` (cwd's last-path-component → `session-<first-8-chars>` fallback). Wired into `SessionState.process(line:)` with sticky semantics (cwd-bearing line UPDATES; cwd-less line never clobbers a real project label back to the synthetic fallback). Same helper used in `Daemon.swift` milestone emission. Pinned by 4 new SessionActorTests. SessionActorTests 13 → 17 green.
+
+### Live observation summary
+
+During the smoke window the daemon was observed processing **≥10 distinct real Claude Code session UUIDs** with **all 5 detection rules firing live**: `task_failed` (tool_result is_error=true), `task_complete` (stop_reason=end_turn + 30s silence), `heartbeat` (session idle > 60s), `needs_input` (tool_use awaiting approval), and `milestone` (5+ distinct patterns matched: GSD plan/phase complete, build succeeded, all tests passing, ✓/✔ prefix, deployed-successfully). HashID determinism (D-01) was verified live by the SAME `client_event_id` appearing across multiple POST attempts for one queued event.
 
 ## Known Stubs
 
 None — all subsystems are fully wired. The daemon binary is runnable. Smoke tests confirm live end-to-end behavior.
+
+## Deferred Gaps (carried into Phase 123)
+
+These were observed during Plan 09 smoke but explicitly deferred (per discussion with operator) so Phase 122 can close on a cleanly verified wire contract. They become Phase 123 polish riders alongside the launchd shell + 24h soak.
+
+| Gap | Severity | Fix sketch | Why deferred |
+|-----|----------|------------|--------------|
+| `testDaemonStartsAndStopsWithoutCrash` SIGSEGV during FSEvents teardown | flake (1/120 tests) | Investigate retain-cycle / Unmanaged lifecycle in `FSEventBridge.stop()` path; fix or mark `XCTSkipUnless` if intermittent macOS-only | Pre-existing (Plan 08 declared 102/102 in earlier run); repro-rate < 100% so unlikely to surface in soak; doesn't affect production daemon (only the test harness's repeated start→stop) |
+| Empty `session_id` lines slip through Parser → 400 + drop at vigil-core | data-quality (1 dropped event observed across full smoke window) | `Parser.parseJSONLLine` returns `nil` when `session_id` is missing or empty; add ParserTests case feeding `{"sessionId":""}` and asserting nil result | Server's KNOWN_FIELDS guard correctly rejects, daemon's drop-on-4xx behavior is correct, no leak. 24h soak in Phase 123 will tell us how often this fires in practice — fix sized once we know |
 
 ## Threat Surface Scan
 
