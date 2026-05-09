@@ -906,25 +906,25 @@ echo "PHASE 123 SOAK GATE: PASSED"
 
 **A8 finding:** macOS 15.7 ships `/usr/bin/jq` 1.7.1 by default. The `vigil-watch install` jq-warning logic should check both `/usr/bin/jq`, `/usr/local/bin/jq`, AND `/opt/homebrew/bin/jq` — any present satisfies the dependency. **Update D-07 implementation:** the warning should be skipped on macOS 15+ where jq is system-shipped. Consider downgrading the warning to "info: jq found at <path>".
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Where exactly does `vigil-watch install` find the release binary to copy?**
    - What we know: D-01 says "copies `.build/release/vigil-watch` to `~/.local/bin/vigil-watch`"; the operator must have run `swift build -c release` first.
    - What's unclear: when invoked from `~/.local/bin/vigil-watch` itself (already-installed binary, running upgrade), does it copy from `${Bundle.main.bundlePath}` or from a hardcoded `${PWD}/.build/release/vigil-watch`?
-   - Recommendation: Install assumes invocation from the vigil-watch repo root — i.e., looks at `${currentDirectoryPath}/.build/release/vigil-watch`. If absent, error with clear hint to `cd ~/Desktop/Local AI/vigil-watch && swift build -c release && swift run vigil-watch install`. Document this in `--help`. Self-upgrade flow (running install from already-installed binary) is out of scope; operator runs install from repo.
+   - RESOLVED: Install assumes invocation from the vigil-watch repo root — i.e., looks at `${currentDirectoryPath}/.build/release/vigil-watch`. If absent, error with clear hint to `cd ~/Desktop/Local AI/vigil-watch && swift build -c release && swift run vigil-watch install`. Document this in `--help`. Self-upgrade flow (running install from already-installed binary) is out of scope; operator runs install from repo.
 
 2. **Do we ALSO uninstall the sampler if the daemon was never installed?**
    - What we know: D-08 says install/uninstall are lockstep. Uninstall must tolerate "neither plist exists" (idempotent).
-   - Recommendation: Uninstall iterates over both labels' bootouts (tolerating exit 3) and both plist removals (tolerating ENOENT). Returns 0 unconditionally unless an unexpected error type surfaces.
+   - RESOLVED: Uninstall iterates over both labels' bootouts (tolerating exit 3) and both plist removals (tolerating ENOENT). Returns 0 unconditionally unless an unexpected error type surfaces.
 
 3. **Should `runtime-state.json` schema include `host` and `api_url`?**
    - What we know: D-04 schema has 8 fields; not host/api_url.
    - Argument for adding: Status output that shows "I'm posting to https://api.vigilhub.io with host=Jamesons-iMac" would catch a misconfig at-a-glance.
-   - Recommendation: Add `host` and `api_url` to schema_version=1 from the start (cheap; helpful for status). The decision was discretionary; this is a planner-time call, not a research-time one.
+   - RESOLVED: Add `host` and `api_url` to schema_version=1 from the start (cheap; helpful for status). The decision was discretionary; this is a planner-time call, not a research-time one.
 
 4. **What does `tail` do if no events match `<session-id>` for ≥N seconds?**
    - What we know: `tail -f | jq` will keep streaming silently until a match.
-   - Recommendation: silent stream is correct UX (matches `tail -f` mental model). Document in --help: "Hangs until a matching event arrives. Ctrl-C to exit."
+   - RESOLVED: silent stream is correct UX (matches `tail -f` mental model). Document in --help: "Hangs until a matching event arrives. Ctrl-C to exit."
 
 ## Environment Availability
 
