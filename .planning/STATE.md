@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 123 context gathered
-last_updated: "2026-05-09T17:55:50.564Z"
-last_activity: 2026-05-09 -- Phase 123 planning complete
+stopped_at: Phase 123 Plan 01 complete
+last_updated: "2026-05-09T18:36:27Z"
+last_activity: 2026-05-09 -- Phase 123 Plan 01 complete (CLI scaffold + swift-argument-parser)
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 23
-  completed_plans: 18
-  percent: 78
+  completed_plans: 19
+  percent: 83
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 122 — vigil-watch-core-watcher-parser-emitter-config
+**Current focus:** Phase 123 — vigil-watch-shell-launchd-integration-cli-surface-24h-soak
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
-Status: Ready to execute
-Last activity: 2026-05-09 -- Phase 123 planning complete
+Phase: 123 (vigil-watch-shell-launchd-integration-cli-surface-24h-soak) — EXECUTING
+Plan: 2 of 5 (Plan 01 complete; Plan 02 next — Wave 1 also includes Plan 02 in parallel)
+Status: Executing Phase 123
+Last activity: 2026-05-09 -- Phase 123 Plan 01 complete (CLI scaffold + swift-argument-parser)
 
-Progress: [█████████░] 94%
+Progress: [████████▌░] 83%
 
 ## v3.8 Phase Table
 
@@ -65,6 +65,7 @@ Progress: [█████████░] 94%
 | Phase 122 P07 | 8min | 2 tasks | 2 files |
 | Phase 122 P08 | 8min | 3 tasks | 3 files |
 | Phase 122 P09 | 5min | 5 tasks (of 6; 9.6 pending) | 5 files |
+| Phase 123 P01 | 5min | 2 tasks | 10 files (8 created, 1 modified, 1 deleted) |
 
 ## Deferred Items
 
@@ -159,6 +160,12 @@ Recent (v3.7 closeout):
 - [Phase 122 / Plan 09]: nonisolated(unsafe) DispatchSource globals — written once at startup (main thread before RunLoop.main.run()); reads only inside GCD handler closures (single-writer safe)
 - [Phase 122 / Plan 09]: XCTAssertEqual with await: capture actor value first — await in XCTest autoclosure not supported in Swift 6
 
+- [Phase 123 / Plan 01]: main.swift → VigilWatchCLI.swift forced rename for `@main` compatibility — Swift compiler rule disallows `@main` in files literally named main.swift (top-level-code rule). Filename change is mechanical; structural pattern (`@main` AsyncParsableCommand parent + 6 subcommands + defaultSubcommand: Run.self) preserved verbatim
+- [Phase 123 / Plan 01]: swift-argument-parser pinned `from: "1.6.0"` (SemVer minor flex), drift detector locks the source-pin string ("1.6.0") not the resolved version (1.7.1) — future SPM resolves of new minor releases don't break the test
+- [Phase 123 / Plan 01]: Stub failure shape standardized — FileHandle.standardError.write + throw ExitCode.failure across all 6 subcommands; stderr message references the downstream plan that owns each body (Run/Tail/Test → 123-03; Install/Uninstall/Status → 123-04). Loud-fail in dev > silent no-op
+- [Phase 123 / Plan 01]: AsyncParsableCommand vs ParsableCommand split per subcommand — Run/Test/Install/Uninstall need async (Task/await), Tail/Status are synchronous; per RESEARCH.md §"Pattern 1"
+- [Phase 123 / Plan 01]: Pre-existing failing test (StateStoreTests.testRecordMilestoneRoundTrip) tracked in deferred-items.md — out-of-scope for Plan 01 (StateStore is Phase 122 milestone-record persistence, unrelated to swift-argument-parser/main.swift work). Baseline 110 passing → after P01 111 passing (+1 PackageTests); failing test count unchanged at 1
+
 ### Pending Todos
 
 Captured for v3.8 execution (already in REQUIREMENTS.md):
@@ -194,7 +201,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-09T16:52:45.749Z
-Stopped at: Phase 123 context gathered
-Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-CONTEXT.md
-Next action: User runs 6 smoke tests from 122-VALIDATION.md; types "approved" to continue; Plan 10 (if any) or Phase 123 follows
+Last session: 2026-05-09T18:36:27Z
+Stopped at: Phase 123 Plan 01 complete (CLI scaffold + swift-argument-parser dep)
+Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-01-SUMMARY.md
+Next action: Execute Phase 123 Plan 02 (RuntimeStateWriter actor + EmitterActor.currentSnapshot + Daemon 1Hz tick wiring) — Wave 1 plan, runs independently of Plan 01. Plans 03 and 04 (Wave 2) depend on BOTH Plan 01 and Plan 02 completing.
