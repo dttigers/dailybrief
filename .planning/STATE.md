@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 123 Plan 01 complete
-last_updated: "2026-05-09T18:36:27Z"
-last_activity: 2026-05-09 -- Phase 123 Plan 01 complete (CLI scaffold + swift-argument-parser)
+stopped_at: Phase 123 Plan 02 complete
+last_updated: "2026-05-09T18:47:17Z"
+last_activity: 2026-05-09 -- Phase 123 Plan 02 complete (RuntimeStateWriter actor + EmitterActor.currentSnapshot + Daemon 1Hz wiring)
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 23
-  completed_plans: 19
-  percent: 83
+  completed_plans: 20
+  percent: 87
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 123 (vigil-watch-shell-launchd-integration-cli-surface-24h-soak) — EXECUTING
-Plan: 2 of 5 (Plan 01 complete; Plan 02 next — Wave 1 also includes Plan 02 in parallel)
+Plan: 3 of 5 (Wave 1 complete: Plans 01 + 02 done; Wave 2 next: Plans 03 + 04 unblocked, can run in parallel)
 Status: Executing Phase 123
-Last activity: 2026-05-09 -- Phase 123 Plan 01 complete (CLI scaffold + swift-argument-parser)
+Last activity: 2026-05-09 -- Phase 123 Plan 02 complete (RuntimeStateWriter actor + EmitterActor.currentSnapshot + Daemon 1Hz wiring)
 
-Progress: [████████▌░] 83%
+Progress: [████████▋░] 87%
 
 ## v3.8 Phase Table
 
@@ -66,6 +66,7 @@ Progress: [████████▌░] 83%
 | Phase 122 P08 | 8min | 3 tasks | 3 files |
 | Phase 122 P09 | 5min | 5 tasks (of 6; 9.6 pending) | 5 files |
 | Phase 123 P01 | 5min | 2 tasks | 10 files (8 created, 1 modified, 1 deleted) |
+| Phase 123 P02 | 5min | 3 tasks (2 TDD + 1 auto) | 5 files (2 created, 3 modified) |
 
 ## Deferred Items
 
@@ -166,6 +167,14 @@ Recent (v3.7 closeout):
 - [Phase 123 / Plan 01]: AsyncParsableCommand vs ParsableCommand split per subcommand — Run/Test/Install/Uninstall need async (Task/await), Tail/Status are synchronous; per RESEARCH.md §"Pattern 1"
 - [Phase 123 / Plan 01]: Pre-existing failing test (StateStoreTests.testRecordMilestoneRoundTrip) tracked in deferred-items.md — out-of-scope for Plan 01 (StateStore is Phase 122 milestone-record persistence, unrelated to swift-argument-parser/main.swift work). Baseline 110 passing → after P01 111 passing (+1 PackageTests); failing test count unchanged at 1
 
+- [Phase 123 / Plan 02]: RuntimeStateWriter.write(_:) is `throws` not `async throws` — actor isolation already serializes calls; the body itself awaits nothing. Mirrors Phase 122 StateStore.atomicSave() shape. Callers `await` because of the actor boundary, not internal async work
+- [Phase 123 / Plan 02]: lastEnqueuedEvent updated at the TOP of EmitterActor.enqueue(_:) BEFORE the FIFO overflow drop — even an event dropped on overflow still updates the snapshot. 'Last activity' signal > 'last event that survived'
+- [Phase 123 / Plan 02]: Daemon's pid/startedAt are immutable `let`s captured ONCE at init; closure-captured into evaluationTask via local `let pidRef = self.pid` aliases. Mirrors the Phase 122 Plan 09 'resolvedHost capture-at-init' pattern (CONTEXT D-05 explicitly references that pattern)
+- [Phase 123 / Plan 02]: RuntimeStateWriter creates its own parent dir on first write — defensive for tmpdir test paths; production no-op since StateStore.loadOrCreate already creates `~/Library/Application Support/vigil-watch/`. Removes init-order coupling
+- [Phase 123 / Plan 02]: Daemon's 1Hz tick write uses `try? await writerRef.write(state)` (not `try`) — IO failure must not crash the daemon; daemon liveness > snapshot freshness
+- [Phase 123 / Plan 02]: testJSONFieldNamesAreSnakeCase pins all 8 D-04 keys via raw-string substring match against the rendered file (NOT decoded) — drift-detector that catches any future CodingKeys rename here at swift test time, before the cross-process Status reader contract breaks at runtime
+- [Phase 123 / Plan 02]: Pre-existing StateStoreTests.testRecordMilestoneRoundTrip failure carried verbatim from Plan 01 baseline — 116 passing of 117, delta from P01 = +5 (4 RuntimeStateWriterTests + 1 testCurrentSnapshotShape). Out-of-scope per Plan 02; tracked in deferred-items.md
+
 ### Pending Todos
 
 Captured for v3.8 execution (already in REQUIREMENTS.md):
@@ -201,7 +210,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-09T18:36:27Z
-Stopped at: Phase 123 Plan 01 complete (CLI scaffold + swift-argument-parser dep)
-Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-01-SUMMARY.md
-Next action: Execute Phase 123 Plan 02 (RuntimeStateWriter actor + EmitterActor.currentSnapshot + Daemon 1Hz tick wiring) — Wave 1 plan, runs independently of Plan 01. Plans 03 and 04 (Wave 2) depend on BOTH Plan 01 and Plan 02 completing.
+Last session: 2026-05-09T18:47:17Z
+Stopped at: Phase 123 Plan 02 complete (RuntimeStateWriter + EmitterActor.currentSnapshot + Daemon 1Hz wiring) — Wave 1 fully complete
+Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-02-SUMMARY.md
+Next action: Execute Wave 2 — Plans 03 (Run/Tail/Test bodies) and 04 (Install/Uninstall/Status + plist templates) can now run in parallel; both depend on Wave 1 (Plans 01 + 02) which is done. Plan 05 (24h soak gate) is Wave 3 and depends on Wave 2.

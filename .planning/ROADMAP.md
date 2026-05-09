@@ -429,7 +429,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 
 **Wave 1** (parallel — foundation; both run independently)
 - [x] 123-01-PLAN.md — SPM dep + parent CLI dispatch shell + 6 subcommand stubs
-- [ ] 123-02-PLAN.md — RuntimeStateWriter actor + EmitterActor.currentSnapshot() + Daemon 1Hz tick wiring
+- [x] 123-02-PLAN.md — RuntimeStateWriter actor + EmitterActor.currentSnapshot() + Daemon 1Hz tick wiring
 
 **Wave 2** *(parallel; both blocked on Wave 1)*
 - [ ] 123-03-PLAN.md — Run + Tail + Test subcommand bodies (Phase 122 main.swift body lift; jq pipeline; synthetic POST)
@@ -605,7 +605,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 120. Day-1 JSONL schema verification + detection-strategy lock | v3.8 | 1/3 | In progress | - |
 | 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 5/5 | Complete    | 2026-05-08 |
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 10/10 | Complete    | 2026-05-09 |
-| 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 1/5 | In progress | - |
+| 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 2/5 | In progress | - |
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 0/TBD | Not started | - |
 | 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 0/TBD | Not started | - |
 
