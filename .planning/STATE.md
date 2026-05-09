@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: executing
-stopped_at: Phase 123 Plan 05 autonomous portion complete; 24h operator soak DEFERRED
-last_updated: "2026-05-09T20:01:00Z"
+status: verifying
+stopped_at: Phase 124 context gathered
+last_updated: "2026-05-09T21:39:58.738Z"
 last_activity: 2026-05-09 -- Phase 123 Plan 05 autonomous portion complete (scripts/soak-check.sh + 5 SoakCheckTests + 5 CSV fixtures + 123-VERIFICATION.md skeleton + operator-todo); 24h soak gate operator-pending per D-10
 progress:
   total_phases: 8
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 23
   completed_plans: 23
   percent: 100
@@ -243,7 +243,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-09T20:01:00Z
-Stopped at: Phase 123 Plan 05 autonomous portion complete (scripts/soak-check.sh + 5 SoakCheckTests + 5 CSV fixtures + 123-VERIFICATION.md skeleton + operator-todo) — Waves 1+2+3 autonomous complete; 24h operator soak DEFERRED per D-10
-Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-05-SUMMARY.md
+Last session: 2026-05-09T21:39:58.729Z
+Stopped at: Phase 124 context gathered
+Resume file: .planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-CONTEXT.md
 Next action: Operator-driven 24h soak gate (BLOCKING for Phase 123 closeout). Runbook: `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`. Build release → `vigil-watch install` → live ≥24h with normal Claude Code use → `bash scripts/soak-check.sh` → paste summary verbatim into 123-VERIFICATION.md → flip soak-row Status to PASSED → move todo to done/. After Phase 123 closes, Phase 124 (G2 Companion HUD + WebSocket fan-out) unblocks.
