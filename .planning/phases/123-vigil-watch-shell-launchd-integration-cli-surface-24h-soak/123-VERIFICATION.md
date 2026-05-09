@@ -52,6 +52,20 @@ human_verification:
 
 ---
 
+### Regression discovered + fixed during operator setup (2026-05-09T20:55Z–21:05Z)
+
+| ID | Plan | What broke | Symptom | Fix | Commit |
+|----|------|-----------|---------|-----|--------|
+| R-123-01 | 123-03 / `Run.swift` | `RunLoop.main.run()` was lifted verbatim from Phase 122 `main.swift` into `func run() async throws`. `AsyncParsableCommand` executes the body on the cooperative pool, NOT the main thread. `RunLoop.main.run()` from a non-main-thread Task is effectively a no-op (returns immediately because there's nothing to dispatch on this thread). The async Task completed, the process exited clean (exit code 0), launchd's KeepAlive respawned it, repeat. `runs = 109` with empty `watch.err` was the giveaway. | `vigil-watch run --verbose` printed lifecycle logs through "vigil-watch running — Ctrl-C to exit" and **immediately exited code 0**. Daemon under launchd cycled `state = spawn scheduled` indefinitely; sampler CSV stopped appending after first ~35 minutes. | Replaced `RunLoop.main.run()` with `await withCheckedContinuation { (_: CheckedContinuation<Void, Never>) in }` — suspends the Task forever; FSEvents + DispatchSource signal handlers run on independent GCD queues; SIGTERM/SIGINT handler still calls `exit(0)` externally. Verified live: foreground `vigil-watch run --verbose` now stays alive past 5s, launchd shows `state = running` with a real `pid =`, `vigil-watch status` returns RUNNING. | `2bfb164` |
+
+**Why the autonomous test suite missed this:** RunSubcommandTests instantiates `Run` and calls `.parse([...])` to verify ArgumentParser plumbing. It never invokes `Run().run()` to actually execute the body — that would block forever. So the regression is invisible to in-process unit tests; it only surfaces when the binary runs as a real OS process under launchd (or in foreground for ≥10s, longer than `minimum runtime`).
+
+**Coverage gap to close in a follow-up phase:** add a subprocess-style integration test: spawn `.build/release/vigil-watch run` as a `Process()`, sleep 5 seconds, assert `Process.isRunning == true`, then `terminate()`. This catches any future regression where the daemon body returns prematurely.
+
+**Soak window restart:** the original soak start at 14:17 PDT is invalidated (daemon ran ~35 min then thrashed for ~6 hrs). New start: ~14:05 PDT 2026-05-09 (when launchd re-confirmed `state = running` post-fix). Soak gate runs at or after ~14:05 PDT 2026-05-10.
+
+---
+
 ### Required Artifacts
 
 | Artifact | Expected | Status | Details |
