@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 123 Plan 02 complete
-last_updated: "2026-05-09T18:47:17Z"
-last_activity: 2026-05-09 -- Phase 123 Plan 02 complete (RuntimeStateWriter actor + EmitterActor.currentSnapshot + Daemon 1Hz wiring)
+stopped_at: Phase 123 Plan 03 complete
+last_updated: "2026-05-09T19:34:39Z"
+last_activity: 2026-05-09 -- Phase 123 Plan 03 complete (Run/Tail/Test subcommand bodies + 15 unit tests)
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 23
-  completed_plans: 20
-  percent: 87
+  completed_plans: 21
+  percent: 91
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 123 (vigil-watch-shell-launchd-integration-cli-surface-24h-soak) — EXECUTING
-Plan: 3 of 5 (Wave 1 complete: Plans 01 + 02 done; Wave 2 next: Plans 03 + 04 unblocked, can run in parallel)
+Plan: 4 of 5 (Wave 1 complete; Wave 2 partially complete: Plan 03 done, Plan 04 unblocked; Plan 05 still blocked on Plan 04)
 Status: Executing Phase 123
-Last activity: 2026-05-09 -- Phase 123 Plan 02 complete (RuntimeStateWriter actor + EmitterActor.currentSnapshot + Daemon 1Hz wiring)
+Last activity: 2026-05-09 -- Phase 123 Plan 03 complete (Run/Tail/Test subcommand bodies + 15 unit tests)
 
-Progress: [████████▋░] 87%
+Progress: [█████████░] 91%
 
 ## v3.8 Phase Table
 
@@ -67,6 +67,7 @@ Progress: [████████▋░] 87%
 | Phase 122 P09 | 5min | 5 tasks (of 6; 9.6 pending) | 5 files |
 | Phase 123 P01 | 5min | 2 tasks | 10 files (8 created, 1 modified, 1 deleted) |
 | Phase 123 P02 | 5min | 3 tasks (2 TDD + 1 auto) | 5 files (2 created, 3 modified) |
+| Phase 123 P03 | 41min | 3 tasks (auto) | 7 files (3 created, 4 modified) |
 
 ## Deferred Items
 
@@ -175,6 +176,15 @@ Recent (v3.7 closeout):
 - [Phase 123 / Plan 02]: testJSONFieldNamesAreSnakeCase pins all 8 D-04 keys via raw-string substring match against the rendered file (NOT decoded) — drift-detector that catches any future CodingKeys rename here at swift test time, before the cross-process Status reader contract breaks at runtime
 - [Phase 123 / Plan 02]: Pre-existing StateStoreTests.testRecordMilestoneRoundTrip failure carried verbatim from Plan 01 baseline — 116 passing of 117, delta from P01 = +5 (4 RuntimeStateWriterTests + 1 testCurrentSnapshotShape). Out-of-scope per Plan 02; tracked in deferred-items.md
 
+- [Phase 123 / Plan 03]: Run.swift's stderr-suppression behavior is verified via SOURCE-CONTENT drift detector (`fs.readFile` + substring asserts on the dup2 dance bytes), NOT in-process dup2 capture — XCTest's runner uses fd 2 internally to print result lines; mid-test dup2 manipulation deadlocks the runner's output buffer. Mirrors PackageTests / DriftDetectorTests pattern; catches semantic inversion (`verbose` vs `!verbose`) at test time
+- [Phase 123 / Plan 03]: `Darwin.exit(130)` qualified call required inside DispatchSource SIGINT handler in Tail.swift — bare `exit(130)` resolves to `Tail.exit` (ParsableCommand static method), compile error. Plan-spec acceptance grep `contains "exit(130)"` still passes since `Darwin.exit(130)` is a substring superset
+- [Phase 123 / Plan 03]: Test subcommand uses `nonisolated(unsafe) static var injectedClient: HTTPClient?` injection seam — ParsableCommand requires Codable conformance; stored properties get serialized; static seam paired with `tearDown { Test.injectedClient = nil }` prevents inter-test bleed
+- [Phase 123 / Plan 03]: `@Flag(name: .customLong("verbose"))` written WITHOUT `help:` argument so the literal substring `@Flag(name: .customLong("verbose"))` (closing both parens adjacent) survives plan-spec grep verification — help text moved to a doc-comment on the property
+- [Phase 123 / Plan 03]: Tail.swift uses pure-function `filterNDJSON(input:sessionId:)` mirror of jq's `select(.session_id == $sid)` predicate so unit tests pin filter behavior without spawning `tail -f` (never-exits, would deadlock test runner). Process pipeline + SIGINT/exit(130) wiring pinned by plan-level grep verification + integration smoke
+- [Phase 123 / Plan 03]: Package.swift VigilWatchTests now depends on BOTH "VigilWatch" library AND "vigil-watch" executable target so tests can `@testable import vigil_watch` (executable module name uses underscore) — SPM supports @testable for executable targets in modern toolchains
+- [Phase 123 / Plan 03]: `WatchConfig.testFixture(apiKey:apiURL:)` extension lifts `WatchConfig.defaults`-then-mutate idiom from EmitterTests.makeConfig — never hand-roll WatchConfig init literal in tests; canonical Phase 122 init is opinionated about the 9 fields' defaults
+- [Phase 123 / Plan 03]: 5 deviations all Rule 3 (Blocking), all reconciling Swift 5.10 compile-time rules with plan's grep-verification literal expectations + SPM's target dependency model — 0 architectural changes, 0 scope creep, all preserved plan intent verbatim
+
 ### Pending Todos
 
 Captured for v3.8 execution (already in REQUIREMENTS.md):
@@ -210,7 +220,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-09T18:47:17Z
-Stopped at: Phase 123 Plan 02 complete (RuntimeStateWriter + EmitterActor.currentSnapshot + Daemon 1Hz wiring) — Wave 1 fully complete
-Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-02-SUMMARY.md
-Next action: Execute Wave 2 — Plans 03 (Run/Tail/Test bodies) and 04 (Install/Uninstall/Status + plist templates) can now run in parallel; both depend on Wave 1 (Plans 01 + 02) which is done. Plan 05 (24h soak gate) is Wave 3 and depends on Wave 2.
+Last session: 2026-05-09T19:34:39Z
+Stopped at: Phase 123 Plan 03 complete (Run/Tail/Test subcommand bodies + 15 unit tests) — Wave 2 partially complete
+Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-03-SUMMARY.md
+Next action: Execute Wave 2 Plan 04 (Install/Uninstall/Status + plist templates) — unblocked since Wave 1 done; can also run in parallel with Plan 03 if Plan 03 was executed concurrently. Plan 05 (24h soak gate) is Wave 3 and still blocked on Plan 04.
