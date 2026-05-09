@@ -8,6 +8,16 @@ files:
   - .planning/phases/118-production-test-user-cleanup/118-RUN-LOG.txt (anti-leak grep clean)
 ---
 
+## Recurrence + re-rotation (2026-05-09)
+
+Same trap, second time. During Phase 123 operator setup (24h soak install on iMac), `railway variables` was used to surface `DATABASE_PUBLIC_URL` for a one-shot `generate-key.ts` invocation against prod Postgres. Output table-wrapped at column width and printed the plaintext password into chat context (line `║ postgres:OxXcNTcBBaYDzvYmzoZGoqEkUNRoTRun@p ║`). User rotated the password via Railway dashboard immediately after detection. Vigil-core auto-redeployed and stayed green. No service interruption.
+
+**Pattern locked:** `railway variables` (with or without `--kv`) prints secrets in cleartext at full TTY width. Even when the goal is just one URL, the table-wrap can split the value across visible lines but the underlying string is intact in stdout. Grep'ing the output (e.g. `| grep DATABASE_PUBLIC_URL`) doesn't help if the wrapped continuation line is also filter-matched. **Saved to memory** to prevent third occurrence.
+
+**Files updated this rotation:**
+- `feedback_railway_variables_leak.md` — never dump full `railway variables`; use Dashboard or `railway variables get <KEY>`
+- `STATE.md` — Deferred Items table corrected (file was already in completed/, table stale)
+
 ## Resolution (2026-05-02)
 
 Rotated successfully but the path deviated significantly from what this todo documented. Updated `project_railway_deploy.md` memory so this is not re-learned. Summary:
