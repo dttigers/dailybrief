@@ -84,7 +84,7 @@ Carried forward from v3.7 milestone close (2026-05-06):
 | seed | SEED-008-g2-device-status-event-spam-debounce | active in v3.8 | Folded into v3.8 Phase 125 as G2-POLISH-08 |
 | seed | SEED-009-g2-local-storage-last-viewed-screen | dormant | → v3.9 candidate |
 | seed | SEED-010-g2-voice-capture-via-audio-pcm | dormant | → v3.9 milestone-anchor candidate |
-| ops_followup | Rotate Railway Postgres password | pending | `.planning/todos/pending/2026-05-01-rotate-railway-postgres-password.md` — defense-in-depth |
+| ops_followup | Rotate Railway Postgres password | resolved | Rotated 2x (2026-05-02 + 2026-05-09 after recurrence); see `.planning/todos/completed/2026-05-01-rotate-railway-postgres-password.md` |
 | operator_action | Phase 123 — 24h soak run + 123-VERIFICATION.md back-fill | pending | `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md` — blocking for Phase 123 closeout + Phase 124 launch; D-10 wallclock requirement (cannot auto-run) |
 | uat | Phase 116 / 116.1 (HUMAN-UAT.md) | partial | Sports picker shipped to prod and in daily use since 2026-04-29 |
 | verification | Phase 116 / 116.1 (VERIFICATION.md) | human_needed | Functional verification implicit via prod usage |
