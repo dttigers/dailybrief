@@ -15,7 +15,7 @@
 
 ### vigil-watch daemon (Swift, macOS)
 
-- [ ] **AGENT-WATCH-01**: User can run `vigil-watch daemon` and the process observes `~/.claude/projects/` recursively via `FSEventStream`, debouncing rapid-fire writes per file.
+- [x] **AGENT-WATCH-01**: User can run `vigil-watch daemon` and the process observes `~/.claude/projects/` recursively via `FSEventStream`, debouncing rapid-fire writes per file.
 - [x] **AGENT-WATCH-02**: Daemon parses each new JSONL line, emits the 5 Vigil event types per detection rules (`needs_input` debounced 30s/session, `task_failed` deduped per session, `milestone` once per pattern per session, `heartbeat` after ≥60s silence, `task_complete`/`task_failed` precedence rule), and persists per-file byte offsets to `~/Library/Application Support/vigil-watch/offsets.json` so daemon restarts don't replay history.
 - [x] **AGENT-WATCH-03**: Daemon POSTs events to `${api_url}/v1/agent-events` with bearer auth, retry/backoff, in-memory queue (max 100) for offline buffering, and 5-second drain on `SIGTERM`.
 - [ ] **AGENT-WATCH-04**: User can `vigil-watch install` to write `~/Library/LaunchAgents/com.morrillholdings.vigil.watch.plist` and `launchctl bootstrap` it (RunAtLoad + KeepAlive); `vigil-watch uninstall` cleanly removes the plist and unloads the agent.
