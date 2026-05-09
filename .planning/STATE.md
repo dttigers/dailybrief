@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: verifying
+status: executing
 stopped_at: Phase 124 UI-SPEC approved
-last_updated: "2026-05-09T22:11:10.375Z"
-last_activity: 2026-05-09 -- Phase 123 Plan 05 autonomous portion complete (scripts/soak-check.sh + 5 SoakCheckTests + 5 CSV fixtures + 123-VERIFICATION.md skeleton + operator-todo); 24h soak gate operator-pending per D-10
+last_updated: "2026-05-09T23:12:29.413Z"
+last_activity: 2026-05-09 -- Phase 124 planning complete
 progress:
   total_phases: 8
   completed_phases: 4
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 Phase: 123 (vigil-watch-shell-launchd-integration-cli-surface-24h-soak) — AWAITING OPERATOR SOAK
 Plan: 5 of 5 — autonomous portion complete; 24h operator-driven soak DEFERRED to `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`
-Status: Phase 123 cannot close until operator runs the 24h soak gate and back-fills 123-VERIFICATION.md
-Last activity: 2026-05-09 -- Phase 123 Plan 05 autonomous portion complete (scripts/soak-check.sh + 5 SoakCheckTests + 5 CSV fixtures + 123-VERIFICATION.md skeleton + operator-todo); 24h soak gate operator-pending per D-10
+Status: Ready to execute
+Last activity: 2026-05-09 -- Phase 124 planning complete
 
 Progress: [██████████] 100% autonomous (operator gate pending for Phase 123 closeout)
 

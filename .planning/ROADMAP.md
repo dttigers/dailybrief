@@ -457,7 +457,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
   3. Two G2 client instances authenticated as different users (single-user UI today, but verified structurally) subscribed to `/v1/agent-stream` each receive only their own `agent-event` payloads — userA's events never surface to userB's HUD even when both clients are connected simultaneously.
   4. The G2 plugin distinguishes `glassesMenu` vs `appMenu` launch sources via `onLaunchSource` registration, so opening the plugin from the Even Hub glasses menu lands on a different default screen (or behaves contextually) versus opening from the iOS app menu.
   5. The Home body view fits within the 210px container on real G2 hardware — no overflow, no auto-scroll inconsistency between captures of the same content; verified against the v3.5 hardware UAT regression observed in `HARDWARE-DIVERGENCE.md`.
-**Plans**: TBD
+**Plans**: 9 plans
 **UI hint**: yes
 
 ### Phase 125: Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo

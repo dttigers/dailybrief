@@ -1,0 +1,592 @@
+---
+phase: 124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish
+plan: 08
+type: execute
+wave: 4
+depends_on: [01, 06, 07]
+files_modified:
+  - vigil-g2-plugin/src/main.ts
+  - vigil-g2-plugin/src/__tests__/main.test.ts
+autonomous: true
+requirements: [G2-POLISH-06, AGENT-HUD-01, AGENT-API-03]
+tags: [phase-124, plugin, main, launch-source, sse-wiring]
+
+must_haves:
+  truths:
+    - "main.ts registers bridge.onLaunchSource at MODULE SCOPE (top-level), BEFORE waitForEvenAppBridge() resolves (D-07)"
+    - "init() awaits Promise.all([waitForEvenAppBridge(), Promise.race([launchSourcePromise, timeout(500ms→'appMenu')])]) (D-07)"
+    - "Initial screen logic: glassesMenu + active-session → COMPANION; glassesMenu + no-active → HOME; appMenu → HOME; timeout fallback → HOME (D-06)"
+    - "hasActiveSession filter: 5min staleness AND lastEvent.event NOT IN ('task_complete', 'task_failed') (D-06 locked)"
+    - "SSE client connects AFTER first paint (createStartUpPageContainer) — non-blocking landing"
+    - "SSE onEvent → companion.applyAgentEvent + screen rebuild if currentScreen === COMPANION"
+    - "SSE onStateChange → companion.setSseConnected + rebuild if currentScreen === COMPANION"
+  artifacts:
+    - path: "vigil-g2-plugin/src/main.ts"
+      provides: "Module-scope launchSourcePromise registration + init() initial-screen gate + SSE client wiring"
+      contains: "onLaunchSource"
+    - path: "vigil-g2-plugin/src/__tests__/main.test.ts"
+      provides: "Drift detectors + landing-screen helper unit tests"
+      contains: "node:test"
+  key_links:
+    - from: "vigil-g2-plugin/src/main.ts (module scope)"
+      to: "@evenrealities/even_hub_sdk EvenAppBridge.getInstance().onLaunchSource"
+      via: "Promise<LaunchSource> registered at parse time"
+      pattern: "bridgeInstance\\.onLaunchSource"
+    - from: "vigil-g2-plugin/src/main.ts init()"
+      to: "Promise.race timeout fallback"
+      via: "500ms race against launchSourcePromise"
+      pattern: "Promise\\.race"
+    - from: "vigil-g2-plugin/src/main.ts SSE wiring"
+      to: "vigil-g2-plugin/src/screens/companion.ts applyAgentEvent / setSseConnected"
+      via: "sse-client onEvent + onStateChange callbacks"
+      pattern: "applyAgentEvent"
+---
+
+<objective>
+Wire the plugin entry point to:
+1. Register `bridge.onLaunchSource` at MODULE SCOPE before `waitForEvenAppBridge()` resolves, capturing the launch source into a `Promise<LaunchSource>` (D-07 — verified RESEARCH §"Pattern 4": SDK pushes launch source ONCE after WebView load completes, so module-scope registration is required to avoid race).
+2. Implement the landing-screen gate per D-06: on `glassesMenu`, fetch agent sessions and land on Companion when `≥1 active session` (5min + non-terminal definition). Else land on Home. `appMenu` always lands on Home. Timeout fallback (500ms) defaults to `'appMenu'` → Home.
+3. Connect the SSE client AFTER first paint (avoids blocking the initial render). Plumb `onEvent` to `companion.applyAgentEvent` + screen rebuild; plumb `onStateChange` to `companion.setSseConnected` + rebuild.
+
+This is the LAST autonomous plan before the Wave 3 E2E checkpoint (Plan 09).
+
+Purpose:
+- G2-POLISH-06: glassesMenu vs appMenu distinguishable; lands on Companion when AI work is running.
+- AGENT-API-03: client-side end of the SSE pipeline (Plan 06 shim) is wired into the plugin lifecycle.
+- AGENT-HUD-01: live updates flow from server to Companion screen rebuilds.
+
+Output:
+- `vigil-g2-plugin/src/main.ts` (MODIFIED) — module-scope onLaunchSource + init() rewrite + SSE wiring + helper exports for tests
+- `vigil-g2-plugin/src/__tests__/main.test.ts` (NEW) — drift detector + landing-screen helper unit tests
+</objective>
+
+<execution_context>
+@$HOME/.claude/get-shit-done/workflows/execute-plan.md
+@$HOME/.claude/get-shit-done/templates/summary.md
+</execution_context>
+
+<context>
+@.planning/PROJECT.md
+@.planning/STATE.md
+@.planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-CONTEXT.md
+@.planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-RESEARCH.md
+@.planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-PATTERNS.md
+@.planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-UI-SPEC.md
+@.planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-04-SUMMARY.md
+@.planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-06-SUMMARY.md
+@.planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-07-SUMMARY.md
+@vigil-g2-plugin/src/main.ts
+@vigil-g2-plugin/src/api.ts
+@vigil-g2-plugin/src/navigation.ts
+@vigil-g2-plugin/src/screens/companion.ts
+@vigil-g2-plugin/src/lib/sse-client.ts
+
+<interfaces>
+<!-- Module-scope launchSourcePromise (D-07 + RESEARCH §"Pattern 4") -->
+import {
+  EvenAppBridge,
+  waitForEvenAppBridge,
+  OsEventTypeList,
+  type LaunchSource,
+} from '@evenrealities/even_hub_sdk';
+
+const bridgeInstance = EvenAppBridge.getInstance();
+const launchSourcePromise: Promise<LaunchSource> = new Promise((resolve) => {
+  bridgeInstance.onLaunchSource((source) => resolve(source));
+});
+
+<!-- init() rewrite -->
+async function init(): Promise<void> {
+  const [bridge, source] = await Promise.all([
+    waitForEvenAppBridge(),
+    Promise.race<LaunchSource>([
+      launchSourcePromise,
+      new Promise<LaunchSource>((r) => setTimeout(() => r('appMenu'), 500)),
+    ]),
+  ]);
+
+  const initialScreen = await pickInitialScreen(source);
+  const container = await buildScreen(initialScreen);
+  await bridge.createStartUpPageContainer(container);
+
+  // ... existing handlers (refresh timer, onEvenHubEvent, etc.)
+
+  // SSE connect AFTER first paint
+  sseClient.connect();
+}
+
+<!-- pickInitialScreen helper (testable, exported) -->
+export async function pickInitialScreen(source: LaunchSource): Promise<ScreenName> {
+  if (source !== 'glassesMenu') return Screen.HOME;
+  const sessions = await fetchAgentSessions();
+  return hasActiveSession(sessions) ? Screen.COMPANION : Screen.HOME;
+}
+
+<!-- hasActiveSession (D-06 locked: 5min + non-terminal) -->
+export function hasActiveSession(sessions: AgentSessionRow[], now: number = Date.now()): boolean {
+  const cutoff = now - 5 * 60 * 1000;
+  return sessions.some((s) => {
+    const ts = new Date(s.lastEvent.eventTimestamp).getTime();
+    return ts > cutoff && !['task_complete', 'task_failed'].includes(s.lastEvent.event);
+  });
+}
+
+<!-- SSE wiring -->
+const sseClient = createSseClient({
+  url: `${BASE_URL}/agent-stream`,
+  apiKey: API_KEY,
+  onEvent: (id, data) => {
+    try {
+      const row = JSON.parse(data);
+      const result = applyAgentEvent(row);
+      if (currentScreen === Screen.COMPANION) {
+        void rebuildCurrentScreen(bridge);
+      }
+      if (result.toastMs) {
+        setTimeout(() => {
+          if (currentScreen === Screen.COMPANION) void rebuildCurrentScreen(bridge);
+        }, result.toastMs);
+      }
+    } catch {
+      // bad JSON — drop silently; never log payload (could contain message text)
+    }
+  },
+  onStateChange: (connected) => {
+    setSseConnected(connected);
+    if (currentScreen === Screen.COMPANION) void rebuildCurrentScreen(bridge);
+  },
+});
+</interfaces>
+</context>
+
+<tasks>
+
+<task type="auto" tdd="true">
+  <name>Task 1: Refactor main.ts — module-scope onLaunchSource + init() initial-screen gate + SSE client wiring</name>
+  <files>
+    vigil-g2-plugin/src/main.ts
+  </files>
+  <read_first>
+    - vigil-g2-plugin/src/main.ts (FULL file — current init() shape lines 31-87, NAV_EVENTS set, refresh timer, onEvenHubEvent listener)
+    - vigil-g2-plugin/src/api.ts (Plan 07 output — fetchAgentSessions export + BASE_URL/API_KEY)
+    - vigil-g2-plugin/src/navigation.ts (Plan 07 output — Screen const, buildScreen, refreshCurrentScreen or whatever the rebuild helper is named)
+    - vigil-g2-plugin/src/screens/companion.ts (Plan 07 output — applyAgentEvent, setSseConnected, hydrateActiveSessions exports)
+    - vigil-g2-plugin/src/lib/sse-client.ts (Plan 06 output — createSseClient signature)
+    - .planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-RESEARCH.md §"Pattern 4" (lines 552-597)
+    - .planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-PATTERNS.md §"main.ts (MODIFIED)"
+  </read_first>
+  <behavior>
+    - Module scope: bridge instance acquired and onLaunchSource registered; launchSourcePromise resolves on first SDK push.
+    - init(): Promise.all of [waitForEvenAppBridge, Promise.race([launchSourcePromise, timeout(500ms → 'appMenu')])] — NO awaiting before the race.
+    - hasActiveSession (exported helper) filters per D-06: ts > now-5min AND event NOT IN terminal-set.
+    - pickInitialScreen (exported helper) returns Screen.COMPANION when glassesMenu + ≥1 active; else Screen.HOME.
+    - createStartUpPageContainer is called with the chosen screen's container BEFORE sseClient.connect() — first paint never blocks on SSE.
+    - SSE onEvent: parse JSON, call applyAgentEvent, rebuild if currentScreen === COMPANION; if toast → schedule rebuild after result.toastMs.
+    - SSE onStateChange: setSseConnected(connected); rebuild if Companion is active.
+    - No bearer key or API_KEY logged (security gate).
+  </behavior>
+  <action>
+    Use Edit tool on `vigil-g2-plugin/src/main.ts`. The exact edits depend on the current main.ts shape (which the executor reads first). Sketch:
+
+    1. **Imports** (add to existing import block):
+    ```typescript
+    import {
+      EvenAppBridge,
+      waitForEvenAppBridge,
+      OsEventTypeList,
+      type LaunchSource,
+    } from '@evenrealities/even_hub_sdk';
+    import type { ScreenName } from './navigation.ts';
+    import type { AgentSessionRow } from './types.ts';
+    import { Screen } from './navigation.ts';  // adjust if buildScreen is also imported here
+    import { fetchAgentSessions, BASE_URL, API_KEY } from './api.ts'; // verify BASE_URL/API_KEY exports — may need to expose them or reference via api.ts directly
+    import { createSseClient } from './lib/sse-client.ts';
+    import {
+      applyAgentEvent,
+      setSseConnected,
+      hydrateActiveSessions,
+    } from './screens/companion.ts';
+    ```
+
+    Note: api.ts may keep BASE_URL and API_KEY private. If so, expose them via `export` (single-line edit to api.ts). Confirm during read.
+
+    2. **Module scope, BEFORE init()** (insert after imports, before `async function init()`):
+    ```typescript
+    // ── Phase 124 D-07: module-scope onLaunchSource registration ─────────
+    // SDK pushes launchSource ONCE after WebView load completes (verified
+    // SDK comment "页面就绪后由 SDK 推送一次，reload 不会再次触发"). Module-scope
+    // registration captures the push regardless of when init() runs —
+    // registering inside init() races the push and the value can be missed.
+    const bridgeInstance = EvenAppBridge.getInstance();
+    const launchSourcePromise: Promise<LaunchSource> = new Promise((resolve) => {
+      bridgeInstance.onLaunchSource((source) => resolve(source));
+    });
+
+    // ── Helpers (exported for testability) ───────────────────────────────
+
+    /**
+     * D-06 active-session filter: ≥1 row with eventTimestamp within 5min AND
+     * event NOT IN terminal-set ('task_complete', 'task_failed').
+     */
+    export function hasActiveSession(
+      sessions: AgentSessionRow[],
+      now: number = Date.now(),
+    ): boolean {
+      const cutoff = now - 5 * 60 * 1000;
+      const TERMINAL = new Set(['task_complete', 'task_failed']);
+      return sessions.some((s) => {
+        const ts = new Date(s.lastEvent.eventTimestamp).getTime();
+        if (Number.isNaN(ts) || ts <= cutoff) return false;
+        return !TERMINAL.has(s.lastEvent.event);
+      });
+    }
+
+    /**
+     * Pick the initial screen for first paint based on launch source + active
+     * session check. Per D-06.
+     */
+    export async function pickInitialScreen(source: LaunchSource): Promise<ScreenName> {
+      if (source !== 'glassesMenu') return Screen.HOME;
+      const sessions = await fetchAgentSessions();
+      hydrateActiveSessions(sessions);
+      return hasActiveSession(sessions) ? Screen.COMPANION : Screen.HOME;
+    }
+    ```
+
+    3. **Modify init()**:
+    Replace the existing `const bridge = await waitForEvenAppBridge()` line with the Promise.all + Promise.race shape:
+    ```typescript
+    async function init(): Promise<void> {
+      // D-07: race the launchSourcePromise against a 500ms timeout fallback to
+      // 'appMenu'. waitForEvenAppBridge resolves once the SDK is ready; the
+      // race captures the launch source if the SDK pushed it before the
+      // timeout, else falls back gracefully.
+      const [bridge, source] = await Promise.all([
+        waitForEvenAppBridge(),
+        Promise.race<LaunchSource>([
+          launchSourcePromise,
+          new Promise<LaunchSource>((r) => setTimeout(() => r('appMenu'), 500)),
+        ]),
+      ]);
+
+      const initialScreen = await pickInitialScreen(source);
+      // buildScreen is the existing helper from navigation.ts — verify the name
+      const container = await buildScreen(initialScreen);
+      await bridge.createStartUpPageContainer(container);
+
+      // ... preserve existing refresh timer setup, onEvenHubEvent listener,
+      // and any other init body that already exists. Do NOT remove them.
+
+      // SSE connect AFTER first paint — non-blocking landing.
+      sseClient.connect();
+    }
+    ```
+
+    4. **SSE client setup** (after the helper functions, before init()):
+    ```typescript
+    // ── Phase 124 SSE client (Plan 06 shim) ─────────────────────────────
+    // Bearer in Authorization header (api.ts authHeaders pattern); never URL.
+    // onEvent: drives Companion screen rebuilds; onStateChange: drives offline
+    // indicator.
+    const sseClient = createSseClient({
+      url: `${BASE_URL}/agent-stream`,
+      apiKey: API_KEY,
+      onEvent: (id, data) => {
+        try {
+          const row = JSON.parse(data);
+          const result = applyAgentEvent(row);
+          // Rebuild only if Companion is the current screen (avoid spurious
+          // glasses-side renders during other screens).
+          // currentScreen + bridge come from existing main.ts state.
+          if (typeof bridge !== 'undefined' && getCurrentScreen() === Screen.COMPANION) {
+            void rebuildCurrentScreen(bridge);
+            if (result.toastMs && result.toastMs > 0) {
+              setTimeout(() => {
+                if (getCurrentScreen() === Screen.COMPANION) {
+                  void rebuildCurrentScreen(bridge);
+                }
+              }, result.toastMs);
+            }
+          }
+        } catch {
+          // Bad JSON or unexpected shape — drop silently. NEVER log the
+          // payload (may contain user task content).
+        }
+      },
+      onStateChange: (connected) => {
+        setSseConnected(connected);
+        if (typeof bridge !== 'undefined' && getCurrentScreen() === Screen.COMPANION) {
+          void rebuildCurrentScreen(bridge);
+        }
+      },
+    });
+    ```
+
+    Notes:
+    - `getCurrentScreen()` and `rebuildCurrentScreen()` may need to be added to / exported from navigation.ts. If navigation.ts already has them under different names, use those. If not, add minimal exports as a small ride-along edit to navigation.ts.
+    - `bridge` reference: the SSE callback closures need access to the bridge. Two valid approaches:
+      (a) Hoist `bridge` to module scope (assigned during init).
+      (b) Use a getter exported from navigation.ts.
+    - Keep the SSE setup OUTSIDE init() so it's a module singleton; it doesn't connect until `sseClient.connect()` inside init().
+
+    5. **Verify TypeScript compiles**:
+    ```
+    cd vigil-g2-plugin && npx tsc --noEmit
+    ```
+
+    Zero errors.
+
+    SECURITY: Final scan — `grep -E '(console\.(log|warn|error|info)).*(Authorization|Bearer|vk_|API_KEY|apiKey|VITE_API_KEY)' vigil-g2-plugin/src/main.ts` must return zero matches. The catch block in onEvent must NOT log `data` or `id`.
+  </action>
+  <verify>
+    <automated>cd vigil-g2-plugin && npx tsc --noEmit 2>&1 | grep -E "src/main\.ts" | head -10 ; echo "---"</automated>
+  </verify>
+  <acceptance_criteria>
+    - `vigil-g2-plugin/src/main.ts` contains `bridgeInstance.onLaunchSource(` (grep exits 0; module-scope registration)
+    - `vigil-g2-plugin/src/main.ts` contains `launchSourcePromise` declared at module scope (verifiable: the declaration is OUTSIDE any function — grep `^const launchSourcePromise` exits 0)
+    - `vigil-g2-plugin/src/main.ts` contains `Promise.race` (grep exits 0)
+    - `vigil-g2-plugin/src/main.ts` contains `setTimeout(() => r('appMenu'), 500)` (grep exits 0; 500ms timeout fallback)
+    - `vigil-g2-plugin/src/main.ts` contains `export function hasActiveSession` (grep exits 0)
+    - `vigil-g2-plugin/src/main.ts` contains `export async function pickInitialScreen` (grep exits 0)
+    - `vigil-g2-plugin/src/main.ts` contains `5 * 60 * 1000` (grep exits 0; D-06 5-min cutoff)
+    - `vigil-g2-plugin/src/main.ts` contains `'task_complete', 'task_failed'` AS A SET FOR TERMINAL FILTER (grep `task_complete.*task_failed` exits 0; D-06 terminal-set)
+    - `vigil-g2-plugin/src/main.ts` contains `createSseClient(` (grep exits 0; SSE wiring)
+    - `vigil-g2-plugin/src/main.ts` contains `applyAgentEvent` AND `setSseConnected` (2 greps; companion.ts plumbing)
+    - `vigil-g2-plugin/src/main.ts` contains `sseClient.connect()` (grep exits 0; explicit connect)
+    - `vigil-g2-plugin/src/main.ts` does NOT contain console.* references to bearer/API_KEY: `grep -E '(console\.(log|warn|error|info)).*(Authorization|Bearer|vk_|API_KEY|apiKey|VITE_API_KEY)' vigil-g2-plugin/src/main.ts` exits non-zero
+    - `cd vigil-g2-plugin && npx tsc --noEmit` produces zero errors involving main.ts
+  </acceptance_criteria>
+  <done>
+    Module-scope launch-source registration, 500ms timeout race, D-06 active-session filter, SSE client wired to Companion lifecycle. First paint is non-blocking on SSE. Bearer never logged.
+  </done>
+</task>
+
+<task type="auto" tdd="true">
+  <name>Task 2: Drift detector + helper unit tests for hasActiveSession + pickInitialScreen</name>
+  <files>
+    vigil-g2-plugin/src/__tests__/main.test.ts
+  </files>
+  <read_first>
+    - vigil-g2-plugin/src/main.ts (Task 1 output — confirm exported helpers + module-scope shape)
+    - .planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-RESEARCH.md §"Validation Architecture" rows for G2-POLISH-06
+  </read_first>
+  <behavior>
+    Drift tests (source-content):
+    - main.ts contains `bridgeInstance.onLaunchSource(` at module scope (line position before any function declaration that would be `init`).
+    - main.ts contains the `5 * 60 * 1000` constant for the 5-min cutoff.
+    - main.ts contains the terminal-event set ['task_complete', 'task_failed'].
+    - main.ts contains a 500ms Promise.race fallback.
+    - main.ts contains `sseClient.connect()` AFTER `bridge.createStartUpPageContainer(` (ordering check via line numbers from a single pass through the file).
+
+    Helper unit tests:
+    - hasActiveSession returns true for a session with lastEvent.event === 'heartbeat' AND eventTimestamp = now-2min.
+    - hasActiveSession returns false for the same session aged 6 minutes (outside 5min cutoff).
+    - hasActiveSession returns false for a session with lastEvent.event === 'task_complete' even if recent (terminal filter).
+    - hasActiveSession returns false for a session with lastEvent.event === 'task_failed' even if recent.
+    - hasActiveSession returns true if ANY session in the list matches (some semantic).
+    - pickInitialScreen('appMenu') returns Screen.HOME regardless of session state.
+    - pickInitialScreen('glassesMenu') returns Screen.COMPANION when fetchAgentSessions is mocked to return ≥1 active session — but mocking fetchAgentSessions in main.ts requires either:
+      (a) injecting a fetch dep through a helper rewrite, OR
+      (b) testing via the smaller hasActiveSession helper only and trusting the integration.
+    - We choose (b) — pickInitialScreen is integration-tested in Wave 3 via the live SSE pipeline; for Wave 2 we lock the structural behavior via drift tests + hasActiveSession unit tests.
+  </behavior>
+  <action>
+    Create `vigil-g2-plugin/src/__tests__/main.test.ts` (use Write tool):
+
+    ```typescript
+    // Phase 124 Plan 08 — main.ts drift detector + hasActiveSession unit tests.
+
+    import { test } from "node:test";
+    import assert from "node:assert/strict";
+    import { readFileSync } from "node:fs";
+    import { fileURLToPath } from "node:url";
+    import { dirname, resolve } from "node:path";
+
+    const __dirname = dirname(fileURLToPath(import.meta.url));
+    const MAIN_SRC = resolve(__dirname, "../main.ts");
+    const src = readFileSync(MAIN_SRC, "utf-8");
+    const noComments = src.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+
+    // ── Drift detectors ─────────────────────────────────────────────────
+
+    test("D-07 drift: bridge.onLaunchSource is registered at MODULE SCOPE (top-level, before init)", () => {
+      // The registration call must appear OUTSIDE any function declaration.
+      // Heuristic: the line containing `onLaunchSource(` must come BEFORE
+      // the first `function init` declaration.
+      const onLaunchIdx = noComments.indexOf("onLaunchSource(");
+      const initIdx = noComments.search(/(?:async\s+)?function\s+init\s*\(/);
+      assert.ok(onLaunchIdx > 0, "onLaunchSource registration found in main.ts");
+      assert.ok(initIdx > 0, "init() declaration found");
+      assert.ok(
+        onLaunchIdx < initIdx,
+        `onLaunchSource registration MUST precede function init() (D-07 module-scope)`,
+      );
+    });
+
+    test("D-07 drift: 500ms timeout fallback to 'appMenu'", () => {
+      assert.match(
+        noComments,
+        /setTimeout\s*\(\s*\(\s*\)\s*=>\s*r\(['"]appMenu['"]\)\s*,\s*500\s*\)/,
+        "500ms timeout that resolves to 'appMenu' present",
+      );
+    });
+
+    test("D-06 drift: 5-minute cutoff constant + terminal-event set", () => {
+      assert.match(noComments, /5\s*\*\s*60\s*\*\s*1000/, "5-min cutoff");
+      assert.match(
+        noComments,
+        /['"]task_complete['"]\s*,\s*['"]task_failed['"]/,
+        "terminal-event filter set",
+      );
+    });
+
+    test("Ordering: sseClient.connect() AFTER bridge.createStartUpPageContainer(", () => {
+      const createIdx = noComments.indexOf("createStartUpPageContainer(");
+      const connectIdx = noComments.indexOf("sseClient.connect(");
+      assert.ok(createIdx > 0 && connectIdx > 0, "both calls present");
+      assert.ok(
+        connectIdx > createIdx,
+        "SSE connects AFTER first paint to keep landing non-blocking",
+      );
+    });
+
+    // ── Helper unit tests ───────────────────────────────────────────────
+
+    const { hasActiveSession } = await import("../main.ts");
+    type AnyRow = {
+      sessionId: string;
+      label: string;
+      host: string;
+      lastEvent: { event: string; message: string | null; eventTimestamp: string };
+      eventCount: number;
+    };
+
+    function fakeRow(over: Partial<AnyRow> & { event?: string; ageMs?: number } = {}): AnyRow {
+      const ageMs = over.ageMs ?? 0;
+      return {
+        sessionId: "sid",
+        label: "lbl",
+        host: "host",
+        lastEvent: {
+          event: over.event ?? "heartbeat",
+          message: null,
+          eventTimestamp: new Date(Date.now() - ageMs).toISOString(),
+        },
+        eventCount: 1,
+        ...over,
+      };
+    }
+
+    test("hasActiveSession: heartbeat 2min ago → true", () => {
+      const result = hasActiveSession([fakeRow({ ageMs: 2 * 60 * 1000, event: "heartbeat" })] as never);
+      assert.equal(result, true);
+    });
+
+    test("hasActiveSession: heartbeat 6min ago → false (outside 5-min cutoff)", () => {
+      const result = hasActiveSession([fakeRow({ ageMs: 6 * 60 * 1000, event: "heartbeat" })] as never);
+      assert.equal(result, false);
+    });
+
+    test("hasActiveSession: task_complete 1min ago → false (terminal filter)", () => {
+      const result = hasActiveSession([fakeRow({ ageMs: 60 * 1000, event: "task_complete" })] as never);
+      assert.equal(result, false);
+    });
+
+    test("hasActiveSession: task_failed 30sec ago → false (terminal filter)", () => {
+      const result = hasActiveSession([fakeRow({ ageMs: 30 * 1000, event: "task_failed" })] as never);
+      assert.equal(result, false);
+    });
+
+    test("hasActiveSession: needs_input 1min ago → true", () => {
+      const result = hasActiveSession([fakeRow({ ageMs: 60 * 1000, event: "needs_input" })] as never);
+      assert.equal(result, true);
+    });
+
+    test("hasActiveSession: empty list → false", () => {
+      assert.equal(hasActiveSession([] as never), false);
+    });
+
+    test("hasActiveSession: any-active wins (1 active + 1 terminal → true)", () => {
+      const result = hasActiveSession([
+        fakeRow({ sessionId: "old", event: "task_complete", ageMs: 60 * 1000 }),
+        fakeRow({ sessionId: "new", event: "heartbeat", ageMs: 60 * 1000 }),
+      ] as never);
+      assert.equal(result, true);
+    });
+
+    test("hasActiveSession: now-injection — past now still respects the 5-min cutoff", () => {
+      const futureNow = Date.now() + 60 * 60 * 1000; // 1h in the future
+      const result = hasActiveSession(
+        [fakeRow({ ageMs: 0, event: "heartbeat" })] as never,
+        futureNow,
+      );
+      // The timestamp is "now" but cutoff is 1h+5min ago, so this entry is
+      // 1h old relative to futureNow → outside the cutoff
+      assert.equal(result, false, "5-min cutoff is relative to passed-in now");
+    });
+    ```
+
+    Note: the dynamic `await import("../main.ts")` may execute the module's top-level code (including `bridgeInstance = EvenAppBridge.getInstance()` and `sseClient = createSseClient(...)`). If those calls throw under node:test (because EvenAppBridge expects a WebView environment), the test file MUST mock or stub the SDK. Check during execution:
+    - If `EvenAppBridge.getInstance()` throws under node, wrap the module-scope acquisition in a try/catch OR import the helpers via a separate `helpers.ts` file that doesn't trigger SDK side effects.
+    - Simplest fix: extract `hasActiveSession` (and optionally `pickInitialScreen`) into a separate file `vigil-g2-plugin/src/lib/launch-source-helpers.ts` that has no SDK imports, and re-export from main.ts. The unit test imports from the helpers file directly. This avoids running module-scope SDK code under node.
+
+    If extraction is required, do it in this task: create `vigil-g2-plugin/src/lib/launch-source-helpers.ts` with the helpers + types, re-export from main.ts, and adjust the test import accordingly. Update acceptance criteria: source content of helpers.ts contains the cutoff + terminal set; main.ts re-exports `hasActiveSession` and `pickInitialScreen`.
+  </action>
+  <verify>
+    <automated>cd vigil-g2-plugin && npx tsx --test src/__tests__/main.test.ts 2>&1 | tail -30</automated>
+  </verify>
+  <acceptance_criteria>
+    - File exists: `test -f vigil-g2-plugin/src/__tests__/main.test.ts`
+    - Contains 4 drift detector tests (greps: `module scope` AND `500ms timeout` AND `5-minute cutoff` AND `Ordering: sseClient.connect`)
+    - Contains 8 hasActiveSession unit tests (the 8 named tests in the action block)
+    - `cd vigil-g2-plugin && npx tsx --test src/__tests__/main.test.ts` exits 0 with all tests passing
+    - If module-scope import side-effects required extracting helpers to launch-source-helpers.ts: `vigil-g2-plugin/src/lib/launch-source-helpers.ts` exists AND main.ts contains `from './lib/launch-source-helpers.ts'` import.
+  </acceptance_criteria>
+  <done>
+    Drift detectors lock D-07 module-scope registration, 500ms timeout, D-06 cutoff, ordering. Helper unit tests pin the active-session filter behavior. If SDK-side-effect issue requires extraction, helpers live in a clean lib file.
+  </done>
+</task>
+
+</tasks>
+
+<threat_model>
+## Trust Boundaries
+
+| Boundary | Description |
+|----------|-------------|
+| Even Hub iOS app → WebView | Plugin runs inside Even Hub's WKWebView; trust SDK to provide accurate `LaunchSource`. |
+| WebView → vigil-core | Bearer in Authorization header (Plan 06 shim). |
+| SSE onEvent → companion.applyAgentEvent | Server-side userId-scoped; plugin trusts server's per-user delivery. |
+
+## STRIDE Threat Register
+
+| Threat ID | Category | Component | Disposition | Mitigation Plan |
+|-----------|----------|-----------|-------------|-----------------|
+| T-124-08-01 | Tampering | Future ride-along moves onLaunchSource registration into init() (race re-introduced) | mitigate | main.test.ts drift detector trips when registration shifts below `function init`. SDK comment cited inline in main.ts. |
+| T-124-08-02 | Denial of Service | SSE client blocks first paint | mitigate | Drift detector pins ordering: sseClient.connect() AFTER bridge.createStartUpPageContainer(). |
+| T-124-08-03 | Information Disclosure | SSE event payload logged on JSON.parse failure | mitigate | catch block does NOT log `data` (which may contain message text). Drift-detector grep confirms no console.* references to common payload variable names if needed. |
+| T-124-08-04 | Tampering | hasActiveSession terminal-event set drifts (e.g., adds 'milestone' silently) | mitigate | main.test.ts pins exactly `['task_complete', 'task_failed']` via regex. Phase 122 D-01 5-event enum is the canonical source. |
+| T-124-08-05 | Denial of Service | 500ms timeout missing → init() hangs forever waiting for SDK push | mitigate | Drift detector pins setTimeout 500 with 'appMenu' fallback. RESEARCH §"Pattern 4" + UI-SPEC §"onLaunchSource Contract". |
+| T-124-08-06 | Information Disclosure | Bearer in fetch URL via accidental query-string addition | mitigate | sse-client.ts (Plan 06) tests already lock bearer-in-header-only. main.ts builds the URL via `${BASE_URL}/agent-stream` — same pattern as fetchAgentSessions / fetchSummary; bearer is authHeaders only. |
+</threat_model>
+
+<verification>
+- `cd vigil-g2-plugin && npx tsc --noEmit` — zero errors
+- `cd vigil-g2-plugin && npm test` — full plugin suite green (smoke + home + sse-client + companion + navigation + main)
+- All grep-based acceptance criteria pass
+- Manual smoke (optional pre-Wave-3): `cd vigil-g2-plugin && npm run dev` and navigate to Companion screen — confirm 3-line HUD renders with empty state copy.
+</verification>
+
+<success_criteria>
+- G2-POLISH-06 fully implemented: glassesMenu vs appMenu distinguished; lands on Companion when active session exists.
+- AGENT-API-03 client-end wired: SSE shim consumes /v1/agent-stream and routes events to Companion screen.
+- AGENT-HUD-01 live: events arriving from server update the HUD in real time.
+- D-07 module-scope onLaunchSource registration locked structurally.
+- D-06 active-session filter (5min + non-terminal) locked by 7 unit tests.
+- Drift detectors prevent future ride-alongs from breaking the launch-source contract.
+- First paint is non-blocking on SSE (sseClient.connect() runs AFTER createStartUpPageContainer).
+</success_criteria>
+
+<output>
+After completion, create `.planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-08-SUMMARY.md`.
+</output>

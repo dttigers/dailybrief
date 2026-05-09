@@ -91,11 +91,11 @@ Filled by `gsd-roadmapper` on 2026-05-06 after roadmap creation. 20/20 v3.8 requ
 | AGENT-WATCH-04 | Phase 123 | 123-01, 123-02, 123-04 |
 | AGENT-WATCH-05 | Phase 123 | 123-01, 123-02, 123-03, 123-04 |
 | AGENT-WATCH-07 | Phase 123 | 123-04, 123-05 |
-| AGENT-API-03 | Phase 124 | TBD |
-| AGENT-HUD-01 | Phase 124 | TBD |
-| AGENT-HUD-02 | Phase 124 | TBD |
-| G2-POLISH-06 | Phase 124 | TBD |
-| G2-POLISH-07 | Phase 124 | TBD |
+| AGENT-API-03 | Phase 124 | 124-02, 124-03, 124-06, 124-08, 124-09 |
+| AGENT-HUD-01 | Phase 124 | 124-01, 124-06, 124-07, 124-08, 124-09 |
+| AGENT-HUD-02 | Phase 124 | 124-01, 124-05, 124-07, 124-09 |
+| G2-POLISH-06 | Phase 124 | 124-01, 124-08, 124-09 |
+| G2-POLISH-07 | Phase 124 | 124-01, 124-04, 124-09 |
 | AGENT-HUD-03 | Phase 125 | TBD |
 | G2-POLISH-05 | Phase 125 | TBD |
 | G2-POLISH-08 | Phase 125 | TBD |
