@@ -425,7 +425,26 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
   2. User can run each of the 5 non-install CLI subcommands and observe the documented behavior: `vigil-watch run --verbose` runs in foreground with stdout logging; `vigil-watch tail <session-id>` prints parsed events for one session without posting to Core; `vigil-watch test` posts a synthetic event and prints the Core round-trip result; `vigil-watch status` reports daemon state, queue depth, and last event timestamp.
   3. After `vigil-watch install` + a Mac reboot, the daemon comes back up automatically, reconnects to Vigil Core, and resumes parsing live JSONL files — verified by a synthetic `vigil-watch test` succeeding within 30 seconds of login.
   4. User can leave the daemon running unattended for 24 consecutive hours (real Claude Code sessions interleaved with idle periods) and at the end observe: process still alive (no crash), `ps -o rss=` reports < 30,000 KB resident memory, no orphaned stale offsets in `offsets.json`, and Vigil Core agent-events table contains the expected event mix with no gaps.
-**Plans**: TBD
+**Plans**: 5 plans
+
+**Wave 1** (parallel — foundation; both run independently)
+- [ ] 123-01-PLAN.md — SPM dep + parent CLI dispatch shell + 6 subcommand stubs
+- [ ] 123-02-PLAN.md — RuntimeStateWriter actor + EmitterActor.currentSnapshot() + Daemon 1Hz tick wiring
+
+**Wave 2** *(parallel; both blocked on Wave 1)*
+- [ ] 123-03-PLAN.md — Run + Tail + Test subcommand bodies (Phase 122 main.swift body lift; jq pipeline; synthetic POST)
+- [ ] 123-04-PLAN.md — Install + Uninstall + Status + plist templates (T-123-01/02/03 mitigations)
+
+**Wave 3** *(blocked on Wave 2)*
+- [ ] 123-05-PLAN.md — scripts/soak-check.sh + 5 SoakCheckTests + 123-VERIFICATION.md skeleton + 24h operator-driven soak gate
+
+**Cross-cutting constraints** (truths that appear in 2+ plans):
+- D-04 runtime-state.json snake_case schema (Plans 02, 04 — writer + reader byte-identical contract)
+- swift-argument-parser dependency (Plans 01, 03, 04 — parent dispatcher + subcommand bodies)
+- launchd `<true/>` self-closing booleans (Plan 04 — Pitfall 2 drift detector pinned)
+- `etimes` (NOT `etime`) in sampler CSV (Plans 04, 05 — Pitfall 4 drift detector)
+- mode 0600 on plist files (Plan 04 — T-123-01 mitigation)
+
 **UI hint**: no
 
 ### Phase 124: G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish
@@ -586,7 +605,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 120. Day-1 JSONL schema verification + detection-strategy lock | v3.8 | 1/3 | In progress | - |
 | 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 5/5 | Complete    | 2026-05-08 |
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 10/10 | Complete    | 2026-05-09 |
-| 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 0/TBD | Not started | - |
+| 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 0/5 | Planned | - |
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 0/TBD | Not started | - |
 | 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 0/TBD | Not started | - |
 
