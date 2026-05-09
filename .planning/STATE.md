@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 123 Plan 03 complete
-last_updated: "2026-05-09T19:34:39Z"
-last_activity: 2026-05-09 -- Phase 123 Plan 03 complete (Run/Tail/Test subcommand bodies + 15 unit tests)
+stopped_at: Phase 123 Plan 04 complete
+last_updated: "2026-05-09T19:48:00Z"
+last_activity: 2026-05-09 -- Phase 123 Plan 04 complete (Install/Uninstall/Status + Plists.swift templates + 17 new tests; T-123-01/02/03 mitigations all live)
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 23
-  completed_plans: 21
-  percent: 91
+  completed_plans: 22
+  percent: 96
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 123 (vigil-watch-shell-launchd-integration-cli-surface-24h-soak) — EXECUTING
-Plan: 4 of 5 (Wave 1 complete; Wave 2 partially complete: Plan 03 done, Plan 04 unblocked; Plan 05 still blocked on Plan 04)
+Plan: 5 of 5 (Waves 1+2 complete; Plan 05 unblocked — Wave 3, soak gate)
 Status: Executing Phase 123
-Last activity: 2026-05-09 -- Phase 123 Plan 03 complete (Run/Tail/Test subcommand bodies + 15 unit tests)
+Last activity: 2026-05-09 -- Phase 123 Plan 04 complete (Install/Uninstall/Status + Plists.swift templates + 17 new tests; T-123-01/02/03 mitigations all live)
 
-Progress: [█████████░] 91%
+Progress: [█████████▓] 96%
 
 ## v3.8 Phase Table
 
@@ -68,6 +68,7 @@ Progress: [█████████░] 91%
 | Phase 123 P01 | 5min | 2 tasks | 10 files (8 created, 1 modified, 1 deleted) |
 | Phase 123 P02 | 5min | 3 tasks (2 TDD + 1 auto) | 5 files (2 created, 3 modified) |
 | Phase 123 P03 | 41min | 3 tasks (auto) | 7 files (3 created, 4 modified) |
+| Phase 123 P04 | 12min | 3 tasks (auto) | 6 files (3 created, 3 modified) |
 
 ## Deferred Items
 
@@ -185,6 +186,18 @@ Recent (v3.7 closeout):
 - [Phase 123 / Plan 03]: `WatchConfig.testFixture(apiKey:apiURL:)` extension lifts `WatchConfig.defaults`-then-mutate idiom from EmitterTests.makeConfig — never hand-roll WatchConfig init literal in tests; canonical Phase 122 init is opinionated about the 9 fields' defaults
 - [Phase 123 / Plan 03]: 5 deviations all Rule 3 (Blocking), all reconciling Swift 5.10 compile-time rules with plan's grep-verification literal expectations + SPM's target dependency model — 0 architectural changes, 0 scope creep, all preserved plan intent verbatim
 
+- [Phase 123 / Plan 04]: Plists.swift owns BOTH templates (daemon + sampler) plus shared subprocess/escape helpers — single file to grep for plist contents and runProcess primitive; mirrors Phase 122 Config.swift co-location idiom
+- [Phase 123 / Plan 04]: Self-closing `<true/>` (NOT `<true></true>`) is load-bearing — plutil accepts both, launchd's stricter parser rejects the long form (Pitfall 2). testNoNonSelfClosingBooleans pinned at swift test time so future template edits can't silently regress
+- [Phase 123 / Plan 04]: KeepAlive=`<true/>` boolean (NOT `<dict><SuccessfulExit>false></dict>` like DailyBriefMonitor analog) per ROADMAP SC #1 — testKeepAliveIsBooleanTrueNotDict pinned; Plan 05's PID-uniqueness assertion will detect drift across the 24h soak window
+- [Phase 123 / Plan 04]: Sampler `etimes=` not `etime=` (Pitfall 4: integer seconds beats dd-hh:mm:ss for awk parsers past 24h). Drift detector strips `etimes=` first then asserts bare `etime=` is absent — substring trap avoidance pattern
+- [Phase 123 / Plan 04]: T-123-01 closed via FileManager.setAttributes([.posixPermissions: 0o600]) immediately after String.write() — native, atomic with the write, no fork/exec roundtrip vs shelling out to chmod
+- [Phase 123 / Plan 04]: T-123-03 xmlEscape called even though vk_ keys are alphanumeric — defense in depth so a future bearer format with `&`/`<` won't silently produce malformed plist XML rejected opaquely by bootstrap
+- [Phase 123 / Plan 04]: Install runs plutil -lint on each rendered plist BEFORE launchctl bootstrap — catches template-substitution typos with a clear plutil error vs the opaque bootstrap exit 5 dropping the actual reason
+- [Phase 123 / Plan 04]: Uninstall is best-effort idempotent — non-zero non-3 launchctl bootout exit codes log a warning and continue (instead of throwing) so a partial-state machine can still be cleaned up
+- [Phase 123 / Plan 04]: Status three-state distinction (RUNNING / NOT RUNNING / NOT INSTALLED) via distinct exit codes 0/2/1 — operator scripts can branch on each state without parsing stdout
+- [Phase 123 / Plan 04]: Status uses path-injection seam pattern (`StatusPaths` struct + `nonisolated(unsafe) static var injectedPaths`) lifted from Phase 122 EmitterActor.injectedClient — ParsableCommand's Codable conformance forbids stored properties, so static var + tearDown reset
+- [Phase 123 / Plan 04]: 2 deviations both verification-string / correctness preservation (binSrc literal-substring reflow + sampler `>>` literal not XML-escaped) — 0 architectural changes, 0 scope creep, all plan-level grep verifications pass
+
 ### Pending Todos
 
 Captured for v3.8 execution (already in REQUIREMENTS.md):
@@ -220,7 +233,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-09T19:34:39Z
-Stopped at: Phase 123 Plan 03 complete (Run/Tail/Test subcommand bodies + 15 unit tests) — Wave 2 partially complete
-Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-03-SUMMARY.md
-Next action: Execute Wave 2 Plan 04 (Install/Uninstall/Status + plist templates) — unblocked since Wave 1 done; can also run in parallel with Plan 03 if Plan 03 was executed concurrently. Plan 05 (24h soak gate) is Wave 3 and still blocked on Plan 04.
+Last session: 2026-05-09T19:48:00Z
+Stopped at: Phase 123 Plan 04 complete (Install/Uninstall/Status + Plists.swift templates + 17 new tests; T-123-01/02/03 mitigations all live) — Waves 1+2 complete
+Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-04-SUMMARY.md
+Next action: Operator gate (one-time install + smoke per Plan 04 `<output>` block: `swift run vigil-watch install` + launchctl print state-running checks + `vigil-watch status` RUNNING + 5min sampler tick + `vigil-watch test` 2xx). After gate passes, execute Wave 3 Plan 05 (24h soak gate — scripts/soak-check.sh + 5 SoakCheckTests + 24h operator-driven verification).

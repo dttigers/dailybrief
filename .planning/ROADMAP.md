@@ -433,7 +433,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 
 **Wave 2** *(parallel; both blocked on Wave 1)*
 - [x] 123-03-PLAN.md — Run + Tail + Test subcommand bodies (Phase 122 main.swift body lift; jq pipeline; synthetic POST)
-- [ ] 123-04-PLAN.md — Install + Uninstall + Status + plist templates (T-123-01/02/03 mitigations)
+- [x] 123-04-PLAN.md — Install + Uninstall + Status + plist templates (T-123-01/02/03 mitigations)
 
 **Wave 3** *(blocked on Wave 2)*
 - [ ] 123-05-PLAN.md — scripts/soak-check.sh + 5 SoakCheckTests + 123-VERIFICATION.md skeleton + 24h operator-driven soak gate
