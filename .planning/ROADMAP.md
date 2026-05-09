@@ -436,7 +436,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 - [x] 123-04-PLAN.md — Install + Uninstall + Status + plist templates (T-123-01/02/03 mitigations)
 
 **Wave 3** *(blocked on Wave 2)*
-- [ ] 123-05-PLAN.md — scripts/soak-check.sh + 5 SoakCheckTests + 123-VERIFICATION.md skeleton + 24h operator-driven soak gate
+- [x] 123-05-PLAN.md — scripts/soak-check.sh + 5 SoakCheckTests + 123-VERIFICATION.md skeleton (autonomous portion); 24h operator-driven soak gate DEFERRED to `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md` per D-10 (cannot auto-run; phase closeout gated on operator paste of soak-check.sh summary into 123-VERIFICATION.md)
 
 **Cross-cutting constraints** (truths that appear in 2+ plans):
 - D-04 runtime-state.json snake_case schema (Plans 02, 04 — writer + reader byte-identical contract)
@@ -605,7 +605,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 120. Day-1 JSONL schema verification + detection-strategy lock | v3.8 | 1/3 | In progress | - |
 | 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 5/5 | Complete    | 2026-05-08 |
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 10/10 | Complete    | 2026-05-09 |
-| 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 3/5 | In progress | - |
+| 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 5/5 autonomous (operator soak pending) | Awaiting operator soak | - |
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 0/TBD | Not started | - |
 | 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 0/TBD | Not started | - |
 

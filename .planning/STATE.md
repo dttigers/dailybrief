@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 123 Plan 04 complete
-last_updated: "2026-05-09T19:48:00Z"
-last_activity: 2026-05-09 -- Phase 123 Plan 04 complete (Install/Uninstall/Status + Plists.swift templates + 17 new tests; T-123-01/02/03 mitigations all live)
+stopped_at: Phase 123 Plan 05 autonomous portion complete; 24h operator soak DEFERRED
+last_updated: "2026-05-09T20:01:00Z"
+last_activity: 2026-05-09 -- Phase 123 Plan 05 autonomous portion complete (scripts/soak-check.sh + 5 SoakCheckTests + 5 CSV fixtures + 123-VERIFICATION.md skeleton + operator-todo); 24h soak gate operator-pending per D-10
 progress:
   total_phases: 8
   completed_phases: 3
   total_plans: 23
-  completed_plans: 22
-  percent: 96
+  completed_plans: 23
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 ## Current Position
 
-Phase: 123 (vigil-watch-shell-launchd-integration-cli-surface-24h-soak) — EXECUTING
-Plan: 5 of 5 (Waves 1+2 complete; Plan 05 unblocked — Wave 3, soak gate)
-Status: Executing Phase 123
-Last activity: 2026-05-09 -- Phase 123 Plan 04 complete (Install/Uninstall/Status + Plists.swift templates + 17 new tests; T-123-01/02/03 mitigations all live)
+Phase: 123 (vigil-watch-shell-launchd-integration-cli-surface-24h-soak) — AWAITING OPERATOR SOAK
+Plan: 5 of 5 — autonomous portion complete; 24h operator-driven soak DEFERRED to `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`
+Status: Phase 123 cannot close until operator runs the 24h soak gate and back-fills 123-VERIFICATION.md
+Last activity: 2026-05-09 -- Phase 123 Plan 05 autonomous portion complete (scripts/soak-check.sh + 5 SoakCheckTests + 5 CSV fixtures + 123-VERIFICATION.md skeleton + operator-todo); 24h soak gate operator-pending per D-10
 
-Progress: [█████████▓] 96%
+Progress: [██████████] 100% autonomous (operator gate pending for Phase 123 closeout)
 
 ## v3.8 Phase Table
 
@@ -69,6 +69,7 @@ Progress: [█████████▓] 96%
 | Phase 123 P02 | 5min | 3 tasks (2 TDD + 1 auto) | 5 files (2 created, 3 modified) |
 | Phase 123 P03 | 41min | 3 tasks (auto) | 7 files (3 created, 4 modified) |
 | Phase 123 P04 | 12min | 3 tasks (auto) | 6 files (3 created, 3 modified) |
+| Phase 123 P05 | 8min  | 3 auto + 1 deferred (operator) | 9 files (1 script, 1 test, 5 CSV fixtures, 1 VERIFICATION skeleton, 1 operator-todo) |
 
 ## Deferred Items
 
@@ -84,6 +85,7 @@ Carried forward from v3.7 milestone close (2026-05-06):
 | seed | SEED-009-g2-local-storage-last-viewed-screen | dormant | → v3.9 candidate |
 | seed | SEED-010-g2-voice-capture-via-audio-pcm | dormant | → v3.9 milestone-anchor candidate |
 | ops_followup | Rotate Railway Postgres password | pending | `.planning/todos/pending/2026-05-01-rotate-railway-postgres-password.md` — defense-in-depth |
+| operator_action | Phase 123 — 24h soak run + 123-VERIFICATION.md back-fill | pending | `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md` — blocking for Phase 123 closeout + Phase 124 launch; D-10 wallclock requirement (cannot auto-run) |
 | uat | Phase 116 / 116.1 (HUMAN-UAT.md) | partial | Sports picker shipped to prod and in daily use since 2026-04-29 |
 | verification | Phase 116 / 116.1 (VERIFICATION.md) | human_needed | Functional verification implicit via prod usage |
 
@@ -198,6 +200,14 @@ Recent (v3.7 closeout):
 - [Phase 123 / Plan 04]: Status uses path-injection seam pattern (`StatusPaths` struct + `nonisolated(unsafe) static var injectedPaths`) lifted from Phase 122 EmitterActor.injectedClient — ParsableCommand's Codable conformance forbids stored properties, so static var + tearDown reset
 - [Phase 123 / Plan 04]: 2 deviations both verification-string / correctness preservation (binSrc literal-substring reflow + sampler `>>` literal not XML-escaped) — 0 architectural changes, 0 scope creep, all plan-level grep verifications pass
 
+- [Phase 123 / Plan 05]: Wallclock-bound checkpoint deferral pattern — when `autonomous: false` is set because the final task requires real wallclock time (24h is a hard physical constraint), executor lands all autonomous prerequisites + writes a `.planning/todos/pending/` operator-action with the verbatim runbook + back-fill steps. Distinct from `mode: yolo / skip_checkpoints: true` which only auto-skips confirmation gates
+- [Phase 123 / Plan 05]: soak-check.sh refines RESEARCH §"soak-check.sh skeleton" line 822 — `LAST_TS=$(awk '$2 != "" {ts=$1} END {print ts}')` picks last NON-EMPTY-pid row's timestamp, robust to trailing crash-rows; same gate semantics as the original `awk 'END {print $1}'` but more correct calculation
+- [Phase 123 / Plan 05]: `--no-core-check` flag is the unit-test mode: production path always demands VIGIL_API_KEY for the curl readback (fail-fast if missing), unit-test path skips network entirely (sandbox-friendly, no key leak into XCTest harness)
+- [Phase 123 / Plan 05]: SoakCheckTests resolves fixtures via Bundle.module FIRST, falls back to repo-root filesystem path on lookup failure — defensive against SPM resource-bundling drift; mirror of scriptPath() pattern
+- [Phase 123 / Plan 05]: Process-based bash testing safe in XCTest because soak-check.sh is short-lived (no `tail -f`-style never-exits). Runner deadlock risk is the live tail commands handled via filterNDJSON pure-function in Plan 03; soak-check.sh runs to completion in <100ms per fixture
+- [Phase 123 / Plan 05]: VERIFICATION.md groups by requirement (AGENT-WATCH-04/05/07) not plan number — when downstream phases close their gates the table reads naturally; cross-cutting items (Phase 122 carry-forward SIGSEGV detection, empty session_id drop rate) get answered structurally by the soak's PID-uniqueness assertion
+- [Phase 123 / Plan 05]: 0 deviations during autonomous portion. All 3 autonomous tasks landed first-try; SoakCheckTests passed 5/5 on first run; full suite 154/155 (carry-forward unchanged)
+
 ### Pending Todos
 
 Captured for v3.8 execution (already in REQUIREMENTS.md):
@@ -233,7 +243,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-09T19:48:00Z
-Stopped at: Phase 123 Plan 04 complete (Install/Uninstall/Status + Plists.swift templates + 17 new tests; T-123-01/02/03 mitigations all live) — Waves 1+2 complete
-Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-04-SUMMARY.md
-Next action: Operator gate (one-time install + smoke per Plan 04 `<output>` block: `swift run vigil-watch install` + launchctl print state-running checks + `vigil-watch status` RUNNING + 5min sampler tick + `vigil-watch test` 2xx). After gate passes, execute Wave 3 Plan 05 (24h soak gate — scripts/soak-check.sh + 5 SoakCheckTests + 24h operator-driven verification).
+Last session: 2026-05-09T20:01:00Z
+Stopped at: Phase 123 Plan 05 autonomous portion complete (scripts/soak-check.sh + 5 SoakCheckTests + 5 CSV fixtures + 123-VERIFICATION.md skeleton + operator-todo) — Waves 1+2+3 autonomous complete; 24h operator soak DEFERRED per D-10
+Resume file: .planning/phases/123-vigil-watch-shell-launchd-integration-cli-surface-24h-soak/123-05-SUMMARY.md
+Next action: Operator-driven 24h soak gate (BLOCKING for Phase 123 closeout). Runbook: `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`. Build release → `vigil-watch install` → live ≥24h with normal Claude Code use → `bash scripts/soak-check.sh` → paste summary verbatim into 123-VERIFICATION.md → flip soak-row Status to PASSED → move todo to done/. After Phase 123 closes, Phase 124 (G2 Companion HUD + WebSocket fan-out) unblocks.
