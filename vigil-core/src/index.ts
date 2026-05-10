@@ -42,6 +42,7 @@ import { verifyEmail } from "./routes/verify-email.js";          // Phase 113 (A
 import { resendVerification } from "./routes/resend-verification.js"; // Phase 113 (AUTH-11) — bearerAuth required; mount AFTER dispatcher
 import { agentEvents } from "./routes/agent-events.js"; // Phase 121 (AGENT-API-01, AGENT-API-02) — bearerAuth required; mount AFTER dispatcher
 import { agentStream } from "./routes/agent-stream.js"; // Phase 124 (AGENT-API-03) — bearerAuth required; mount AFTER dispatcher
+import { quietMode } from "./routes/quiet-mode.js"; // Phase 125 (AGENT-HUD-03 / D-01) — auth required; mount AFTER dispatcher
 import { captureException, shutdownPosthog } from "./analytics/posthog.js";
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
@@ -220,6 +221,13 @@ app.route("/v1", agentEvents);
 // bypass (cross-user fan-out becomes possible). Mirror agent-events
 // mount comment.
 app.route("/v1", agentStream);
+
+// Phase 125 (AGENT-HUD-03 / D-01 / D-05): GET/PUT /v1/quiet-mode for HUD
+// DND filter state. SAME mount-order constraint as agentEvents/agentStream
+// above — MUST be after the bearerAuth dispatcher (T-125-02 silent-auth-
+// bypass mitigation). userId is read from c.get("userId"), never from body
+// (T-125-01 cross-user-isolation mitigation).
+app.route("/v1", quietMode);
 
 // D-13 — single chokepoint for unhandled errors. Must be AFTER all app.route()
 // calls so Hono's handler-chain ordering routes thrown errors here (Pitfall 4).
