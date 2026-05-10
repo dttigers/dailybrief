@@ -89,10 +89,28 @@ const corsOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",").map((o) => o.trim())
   : null;
 
+// Phase 125 (AGENT-HUD-03 hardware-debug 2026-05-10): the Even App WebView
+// serves Vigil plugin assets from `http://127.0.0.1:<random-port>`, so the
+// plugin's Origin header is a random-port loopback URL. Allow loopback
+// origins explicitly — they can only originate from the user's own iOS
+// device's Even App and are not exposed to the public internet. Without
+// this, the plugin's SSE GET to /v1/agent-stream was failing CORS
+// preflight (TypeError: Load failed → `!` glyph stuck on). REST GETs
+// happened to succeed (different WebView CORS path / cache), so the bug
+// only manifested on streaming.
+const LOOPBACK_ORIGIN_RE = /^https?:\/\/(127\.0\.0\.1|localhost)(?::\d+)?$/i;
+const resolveOrigin = (origin: string | undefined): string | null => {
+  if (!origin) return null;
+  if (LOOPBACK_ORIGIN_RE.test(origin)) return origin;
+  if (corsOrigins?.includes(origin)) return origin;
+  if (corsOrigins === null) return origin; // dev fallback (wildcard)
+  return null;
+};
+
 app.use(
   "*",
   cors({
-    origin: corsOrigins ?? "*",
+    origin: (origin) => resolveOrigin(origin),
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     // Phase 124 D-02: Last-Event-ID is required by the SSE shim on reconnect
     // for missed-event replay. Without it in allowHeaders, the browser CORS
