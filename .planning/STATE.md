@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
 stopped_at: Phase 125 Plan 01 complete (Wave-0 RED placeholders) — ready to execute Plans 02-07 (Wave 1+ implementations)
-last_updated: "2026-05-10T17:15:08.003Z"
+last_updated: "2026-05-10T18:01:42.916Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 43
-  completed_plans: 34
-  percent: 79
+  completed_plans: 35
+  percent: 81
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 9 of 9 — COMPLETE (Plan 09 VERIFICATION.md backfilled with 2026-05-10 li
 Status: Phase complete — ready for verification
 Last activity: 2026-05-10
 
-Progress: [████████░░] 79%
+Progress: [████████░░] 81%
 
 ## v3.8 Phase Table
 
@@ -81,6 +81,7 @@ Progress: [████████░░] 79%
 | Phase 124 P09 | 4min | 1 tasks | 2 files |
 | Phase 125 P01 | 22min | 2 tasks | 7 files |
 | Phase 125 P04 | 6m | 1 tasks | 2 files |
+| Phase 125 P03 | 44 min | 2 tasks | 4 files |
 
 ## Deferred Items
 
@@ -265,6 +266,8 @@ Recent (v3.7 closeout):
 - [Phase 125]: Wave-0 EXTEND-only invariant verified via git diff --numstat — 4/4 files show N additions, 0 deletions; T-125-W0-01 (Tampering of existing tests) closed by construction
 - [Phase 125]: Skip tests in EXTENDED files reused existing top-of-file test/assert imports — no duplicate import lines added; tsx accepts duplicates but plan interface explicitly called this out as cleaner
 - [Phase 125]: Plan 125-04 D-12: helper-only ship — createDedupedDeviceStatusListener at vigil-g2-plugin/src/lib/deduped-device-status.ts; main.ts intentionally untouched (no live bridge.onDeviceStatusChanged subscription this phase)
+- [Phase 125]: Suppression queue (userId, sessionId, eventType) with last-of-each-kind via Map.set overwrite; flush sorts by eventTimestamp ASC — Phase 125 Plan 03 — Pitfall 4 (chronological replay) + T-125-03 cap; cross-user isolation per T-125-01
+- [Phase 125]: Bus emitter Map cleanup gate now joint (EVENT_NAME + QUIET_NAME); off() and offQuiet() both apply the gate — Phase 125 Plan 03 — prevents T-125-W3-01: orphan QUIET listener after off() while onQuiet still registered
 
 ### Pending Todos
 
@@ -301,7 +304,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T17:14:11.784Z
+Last session: 2026-05-10T18:01:42.907Z
 Stopped at: Phase 125 Plan 01 complete (Wave-0 RED placeholders) — ready to execute Plans 02-07 (Wave 1+ implementations)
 Resume file: 
 
