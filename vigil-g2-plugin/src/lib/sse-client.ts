@@ -89,13 +89,18 @@ export function createSseClient(opts: SseClientOptions): {
   const fetchFn = opts.fetchFn ?? globalThis.fetch.bind(globalThis)
   const sleep = opts.sleepFn ?? defaultSleep
 
-  // Phase 125 hardware-debug: fire-and-forget lifecycle log to the
-  // unauthenticated /v1/dev/sse-log ring buffer on vigil-core so we can
-  // see SSE failure modes from outside the WebView. NEVER include
-  // Authorization / apiKey. Uses globalThis.fetch directly so it doesn't
-  // collide with test-time fetchFn injection. Remove after SSE bug
-  // resolved.
-  const DEBUG_LOG_URL = opts.url.replace(/\/agent-stream$/, "/dev/sse-log")
+  // Phase 125 hardware-debug: fire-and-forget lifecycle GET to the
+  // unauthenticated /v1/dev/sse-log/emit ring buffer on vigil-core so
+  // we can see SSE failure modes from outside the WebView. GET-based to
+  // avoid CORS preflight issues with the plugin's WebView origin (POST
+  // with JSON content-type triggers preflight that silently failed in
+  // the v0.3.3 attempt). NEVER include Authorization / apiKey. Uses
+  // globalThis.fetch directly so it doesn't collide with test-time
+  // fetchFn injection. Remove after SSE bug resolved.
+  const DEBUG_EMIT_URL = opts.url.replace(
+    /\/agent-stream$/,
+    "/dev/sse-log/emit",
+  )
   const debugFetch =
     !opts.fetchFn && typeof globalThis.fetch === "function"
       ? globalThis.fetch.bind(globalThis)
@@ -103,18 +108,16 @@ export function createSseClient(opts: SseClientOptions): {
   function debugLog(kind: string, detail?: Record<string, unknown>): void {
     if (!debugFetch) return // test mode — no instrumentation
     try {
-      const payload = {
+      const params = new URLSearchParams({
         kind,
         ts: new Date().toISOString(),
         ua: typeof navigator !== "undefined" ? navigator.userAgent : "n/a",
-        hasAuth: !!opts.apiKey,
-        ...(detail ?? {}),
+        hasAuth: String(!!opts.apiKey),
+      })
+      for (const [k, v] of Object.entries(detail ?? {})) {
+        params.set(k, String(v))
       }
-      void debugFetch(DEBUG_LOG_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }).catch(() => {
+      void debugFetch(`${DEBUG_EMIT_URL}?${params.toString()}`).catch(() => {
         /* fire-and-forget */
       })
     } catch {

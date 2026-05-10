@@ -154,6 +154,7 @@ app.use("/v1/*", async (c, next) => {
   if (c.req.path === "/v1/auth/reset-password") return next();  // Plan 03 ADDED
   if (c.req.path === "/v1/auth/verify-email") return next();    // Phase 113 (AUTH-11 D-12) — token IS the auth
   if (c.req.path === "/v1/dev/sse-log") return next();          // Phase 125 hardware-debug — unauth ring-buffer log
+  if (c.req.path === "/v1/dev/sse-log/emit") return next();     // Phase 125 hardware-debug — GET-based emit (no preflight)
   return bearerAuth(c, next);
 });
 

@@ -31,6 +31,19 @@ devSseLog.post("/dev/sse-log", async (c) => {
   }
 });
 
+// GET-based fallback for WebView contexts where POST triggers CORS
+// preflight that silently fails. Plugin encodes the lifecycle event in
+// query string. Same ring buffer.
+devSseLog.get("/dev/sse-log/emit", (c) => {
+  const entry: Record<string, string> = {};
+  for (const [k, v] of new URL(c.req.url).searchParams) {
+    entry[k] = v;
+  }
+  ring.push({ ts: new Date().toISOString(), entry });
+  if (ring.length > MAX_ENTRIES) ring.shift();
+  return c.json({ ok: true, count: ring.length });
+});
+
 devSseLog.get("/dev/sse-log", (c) => {
   return c.json({ count: ring.length, entries: ring });
 });
