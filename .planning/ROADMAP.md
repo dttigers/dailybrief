@@ -472,7 +472,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
   5. User can start a real Claude Code session in VS Code, walk away from the keyboard, receive a `needs_input` tap on the temple, single-tap to acknowledge, and have the entire flow recorded as a single video clip under 60 seconds — usable verbatim as portfolio material.
 **Plans**: 11 plans
 Plans:
-- [ ] 125-01-PLAN.md — Wave 0 RED test scaffolds (8 W0 files: 3 NEW + 4 EXTENDED + VERIFIED.md refresh deferred to Plan 08)
+- [x] 125-01-PLAN.md — Wave 0 RED test scaffolds (8 W0 files: 3 NEW + 4 EXTENDED + VERIFIED.md refresh deferred to Plan 08)
 - [ ] 125-02-PLAN.md — vigil-core users.quiet_mode + quiet_mode_since drizzle migration + schema delta
 - [ ] 125-03-PLAN.md — quiet-mode-suppression lib + agent-events-bus emitQuiet/onQuiet/offQuiet extension
 - [ ] 125-04-PLAN.md — createDedupedDeviceStatusListener helper (G2-POLISH-08, no live consumer)
@@ -619,7 +619,7 @@ Plans:
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 10/10 | Complete    | 2026-05-09 |
 | 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 5/5 autonomous (operator soak pending) | Awaiting operator soak | - |
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 9/9 autonomous (operator E2E + D-14 PNG pending) | Awaiting operator E2E | - |
-| 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 0/11 | Not started | - |
+| 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 1/11 | In Progress|  |
 
 ## Backlog
 

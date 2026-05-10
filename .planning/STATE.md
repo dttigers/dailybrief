@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: Phase 124 closed. Phase 125 ready (Quiet mode + DND filter, SEED-005/008, single-tap/long-press if SDK adds events per SEED-011). Run `/gsd-discuss-phase 125`.
-stopped_at: Phase 125 plans verified (11 plans, 5 waves) — ready to execute
-last_updated: "2026-05-10T16:37:08.130Z"
+status: verifying
+stopped_at: Phase 125 Plan 01 complete (Wave-0 RED placeholders) — ready to execute Plans 02-07 (Wave 1+ implementations)
+last_updated: "2026-05-10T17:09:18.049Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 43
-  completed_plans: 32
-  percent: 74
+  completed_plans: 33
+  percent: 77
 ---
 
 # Project State
@@ -27,10 +27,10 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — APPROVED-WITH-DEFERRALS (all 9 plans + 4 follow-up commits + 2 operator E2E sessions complete)
 Plan: 9 of 9 — COMPLETE (Plan 09 VERIFICATION.md backfilled with 2026-05-10 live-E2E results; status `approved-with-deferrals` set)
-Status: Phase 124 closed. Phase 125 ready (Quiet mode + DND filter, SEED-005/008, single-tap/long-press if SDK adds events per SEED-011). Run `/gsd-discuss-phase 125`.
+Status: Phase complete — ready for verification
 Last activity: 2026-05-10
 
-Progress: [██████████] 100%
+Progress: [████████░░] 77%
 
 ## v3.8 Phase Table
 
@@ -79,6 +79,7 @@ Progress: [██████████] 100%
 | Phase Phase 124 P07 P07 | 7min | 3 tasks tasks | 6 files files |
 | Phase 124 P08 | 6min | 2 tasks | 4 files |
 | Phase 124 P09 | 4min | 1 tasks | 2 files |
+| Phase 125 P01 | 22min | 2 tasks | 7 files |
 
 ## Deferred Items
 
@@ -259,6 +260,9 @@ Recent (v3.7 closeout):
 - [Phase 124 / Plan 09]: Phase 123 24h soak is a PARALLEL operator track for Plan 09 verification, not a sequential blocker. vigil-watch must be INSTALLED + running for swift run vigil-watch test E2E vehicle, but Phase 124 does NOT block on Phase 123's 24h gate completing. Both phases close on independent operator evidence; 124-VERIFICATION.md frontmatter prerequisites: codifies this distinction
 - [Phase 124 / Plan 09]: Plan 09 §G2-POLISH-07 cross-references Plan 04's existing D-14 PNG-equality operator todo as the canonical record. Combine evenhub-simulator captures into ONE operator session, paste cmp output into BOTH 124-04-SUMMARY and 124-VERIFICATION §G2-POLISH-07. Avoids duplicate operator runs; canonical record stays in Plan 04's todo (more atomic gate)
 - [Phase 124 / Plan 09]: 8-row operator decision tree codified at end of 124-VERIFICATION.md routes each section-fail-case to specific STATE.md/ROADMAP.md/blocker actions (PASS / approved-with-deferrals / blocked routing). Removes 'now what' ambiguity for the operator on failure; mirror of Phase 123 Plan 05's failure-path branch tree
+- [Phase 125]: Wave-0 RED placeholder pattern uses { skip: 'TODO(125-XX): ...' } not { todo: ... } — node:test prints explicit 'Skipped: ...' lines for skip-with-reason placeholders, satisfying D-04 readability
+- [Phase 125]: Wave-0 EXTEND-only invariant verified via git diff --numstat — 4/4 files show N additions, 0 deletions; T-125-W0-01 (Tampering of existing tests) closed by construction
+- [Phase 125]: Skip tests in EXTENDED files reused existing top-of-file test/assert imports — no duplicate import lines added; tsx accepts duplicates but plan interface explicitly called this out as cleaner
 
 ### Pending Todos
 
@@ -295,9 +299,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T16:37:08.096Z
-Stopped at: Phase 125 plans verified (11 plans, 5 waves) — ready to execute
+Last session: 2026-05-10T17:09:18.036Z
+Stopped at: Phase 125 Plan 01 complete (Wave-0 RED placeholders) — ready to execute Plans 02-07 (Wave 1+ implementations)
 Resume file: 
-.planning/phases/125-quiet-mode-remaining-polish-riders-plugin-v0-3-0-ship-portfo/
+
   (1) Phase 124 Plan 04 — D-14 byte-identical PNG comparison (`.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`)
   (2) Phase 123 — 24h vigil-watch soak (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`)
