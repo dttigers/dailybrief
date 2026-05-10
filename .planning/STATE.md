@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 124 UI-SPEC approved
-last_updated: "2026-05-10T00:31:00.626Z"
+stopped_at: Phase 124 Plan 02 complete (bus + 6 unit tests; 6/6 green; tsc clean)
+last_updated: "2026-05-10T00:39:35.490Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 32
-  completed_plans: 24
-  percent: 75
+  completed_plans: 25
+  percent: 78
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — EXECUTING
-Plan: 2 of 9
+Plan: 3 of 9
 Status: Ready to execute
 Last activity: 2026-05-10
 
-Progress: [████████░░] 75%
+Progress: [████████░░] 78%
 
 ## v3.8 Phase Table
 
@@ -71,6 +71,7 @@ Progress: [████████░░] 75%
 | Phase 123 P04 | 12min | 3 tasks (auto) | 6 files (3 created, 3 modified) |
 | Phase 123 P05 | 8min  | 3 auto + 1 deferred (operator) | 9 files (1 script, 1 test, 5 CSV fixtures, 1 VERIFICATION skeleton, 1 operator-todo) |
 | Phase 124 P01 | 1min | 1 task tasks | 5 files files |
+| Phase 124 P02 | 4min | 2 tasks tasks | 2 files files |
 
 ## Deferred Items
 
@@ -211,6 +212,10 @@ Recent (v3.7 closeout):
 - [Phase ?]: [Phase 124 / Plan 01]: tsx version pinned to ^4.19.0 in vigil-g2-plugin -- exact verbatim copy of vigil-core devDep entry; zero monorepo version drift; threat model T-124-01-01 disposition (accept) conditioned on this version-match invariant
 - [Phase ?]: [Phase 124 / Plan 01]: Plugin test layout locked -- src/__tests__/ for entry-point, src/lib/__tests__/ for transport/runtime, src/screens/__tests__/ for screen components; .gitkeep placeholders carry one-line plan-cross-references
 - [Phase ?]: [Phase 124 / Plan 01]: tsconfig.json untouched -- existing include glob already matches src/**/*.test.ts under verbatimModuleSyntax + erasableSyntaxOnly strictness
+- [Phase ?]: [Phase 124 / Plan 02]: Literal setMaxListeners(50) inlined at call site — acceptance grep pins the cap as a drift detector at the structurally-relevant line; comment above names the constant for readability
+- [Phase ?]: [Phase 124 / Plan 02]: Listener parameter type DrizzleAgentEvent (not never from plan-spec verbatim) — tsc --noEmit strict rejects (_row: never) listeners as contravariantly incompatible with bus.on/off accepted type; type-honest fix, no runtime semantics change
+- [Phase ?]: [Phase 124 / Plan 02]: vigil-core/src/lib/ directory established (first file under it) for primitives that aren't routes/services/middleware/db/ai/analytics/utils. First occupant: Map<userId, EventEmitter> bus
+- [Phase ?]: [Phase 124 / Plan 02]: AgentEventBus class + bus singleton dual export — class shape required by acceptance grep; singleton is what consumers import; both coexist with zero runtime cost for future test isolation needs
 
 ### Pending Todos
 
@@ -247,7 +252,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T00:30:45.508Z
-Stopped at: Phase 124 UI-SPEC approved
+Last session: 2026-05-10T00:39:35.481Z
+Stopped at: Phase 124 Plan 02 complete (bus + 6 unit tests; 6/6 green; tsc clean)
 Resume file: None
 Next action: Operator-driven 24h soak gate (BLOCKING for Phase 123 closeout). Runbook: `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`. Build release → `vigil-watch install` → live ≥24h with normal Claude Code use → `bash scripts/soak-check.sh` → paste summary verbatim into 123-VERIFICATION.md → flip soak-row Status to PASSED → move todo to done/. After Phase 123 closes, Phase 124 (G2 Companion HUD + WebSocket fan-out) unblocks.
