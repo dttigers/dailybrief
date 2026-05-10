@@ -322,7 +322,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 - [x] **Phase 121: Agent-events API foundation + cross-user isolation lock** — `POST /v1/agent-events` and `GET /v1/agent-sessions` persist events scoped per-userId, with a W-01/W-02-style cross-user isolation test pinning the structural guarantee before any vigil-watch posts real data.
 - [x] **Phase 122: vigil-watch core (watcher + parser + emitter + config)** — Swift daemon observes `~/.claude/projects/` via FSEvents, parses JSONL with persisted byte offsets, emits 5 Vigil event types per detection rules, posts to Vigil Core with retry/backoff and offline queue, and reads `~/.config/vigil/watch.toml` on startup. (completed 2026-05-09)
 - [ ] **Phase 123: vigil-watch shell — launchd + CLI surface + 24h soak** — `vigil-watch install/uninstall/run/tail/test/status` subcommands cover dev + ops needs; launchd plist round-trips cleanly; daemon survives 24 unattended hours under 30MB RSS.
-- [ ] **Phase 124: G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish** — New 3-line HUD screen with tap interactions subscribes to `/v1/agent-stream` for real-time events fanned out from `POST /v1/agent-events`; folds in G2-POLISH-06 (launch-source registration, naturally co-located with HUD entry-point wiring) and G2-POLISH-07 (home body 210px overflow, naturally co-located with HUD layout work).
+- [ ] **Phase 124: G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish** — New 3-line HUD screen with tap interactions subscribes to `/v1/agent-stream` for real-time events fanned out from `POST /v1/agent-events`; folds in G2-POLISH-06 (launch-source registration, naturally co-located with HUD entry-point wiring) and G2-POLISH-07 (home body 210px overflow, naturally co-located with HUD layout work). All 9 plans autonomous-complete 2026-05-10; awaiting operator E2E verification + D-14 PNG-equality (`.planning/todos/pending/2026-05-10-phase-124-09-e2e-verification-operator-run.md` + `.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`).
 - [ ] **Phase 125: Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo** — Focus/DND honored on HUD, swipe-out-of-list nav fixed, device-status spam debounced, `vigil.ehpk` v0.3.0 packed and resubmitted to Even Hub developer portal, full demo flow recorded under 60s for portfolio.
 
 ## Phase Details
@@ -606,7 +606,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 5/5 | Complete    | 2026-05-08 |
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 10/10 | Complete    | 2026-05-09 |
 | 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 5/5 autonomous (operator soak pending) | Awaiting operator soak | - |
-| 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 8/9 | In Progress|  |
+| 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 9/9 autonomous (operator E2E + D-14 PNG pending) | Awaiting operator E2E | - |
 | 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 0/TBD | Not started | - |
 
 ## Backlog

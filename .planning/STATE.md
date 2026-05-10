@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: "Phase 124 Plan 06 COMPLETE — SSE shim landed (D-04 + D-11): bearer in Authorization header, BACKOFF_MS=[1000,2000,4000,8000,16000,30000], Last-Event-ID resume from localStorage, AbortController disconnect, event:ping silent drop, QuotaExceededError survival; 13 unit tests + 19/19 plugin suite green; commits a6d1846 + a3dff3c"
-last_updated: "2026-05-10T02:23:01.891Z"
+stopped_at: "Phase 124 Plan 09 PARTIAL — autonomous skeleton + operator runbook landed; commit 7e0c68f. 8/9 plans complete + Plan 09 partial (Task 1 auto-done, Task 2 deferred to operator). Phase 124 closes when operator fills 124-VERIFICATION.md per .planning/todos/pending/2026-05-10-phase-124-09-e2e-verification-operator-run.md. Concurrent operator todos: (1) Phase 123 24h soak (parallel, not blocking); (2) Plan 04 D-14 PNG (canonical for §G2-POLISH-07)"
+last_updated: "2026-05-10T02:33:15.605Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
-  completed_phases: 4
+  completed_phases: 5
   total_plans: 32
-  completed_plans: 31
-  percent: 97
+  completed_plans: 32
+  percent: 100
 ---
 
 # Project State
@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 ## Current Position
 
-Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — EXECUTING
-Plan: 8 of 9 — COMPLETE (ROADMAP SC #2 narrowed to D-08 reality; SEED-011 deferred-item lands)
-Status: Ready to execute
+Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — EXECUTING (autonomous-complete; awaiting operator E2E)
+Plan: 9 of 9 — PARTIAL (Task 1 124-VERIFICATION.md skeleton committed at 7e0c68f; Task 2 E2E verification deferred to operator per `.planning/todos/pending/2026-05-10-phase-124-09-e2e-verification-operator-run.md` — mirrors Phase 123 Plan 05 wallclock-deferral pattern)
+Status: Awaiting operator E2E (3 concurrent operator todos; see Deferred Items)
 Last activity: 2026-05-10
 
-Progress: [██████████] 97%
+Progress: [██████████] 100%
 
 ## v3.8 Phase Table
 
@@ -78,6 +78,7 @@ Progress: [██████████] 97%
 | Phase 124 P06 | 26min | 2 tasks | 3 files |
 | Phase Phase 124 P07 P07 | 7min | 3 tasks tasks | 6 files files |
 | Phase 124 P08 | 6min | 2 tasks | 4 files |
+| Phase 124 P09 | 4min | 1 tasks | 2 files |
 
 ## Deferred Items
 
@@ -94,8 +95,9 @@ Carried forward from v3.7 milestone close (2026-05-06):
 | seed | SEED-010-g2-voice-capture-via-audio-pcm | dormant | → v3.9 milestone-anchor candidate |
 | ops_followup | Rotate Railway Postgres password | resolved | Rotated 2x (2026-05-02 + 2026-05-09 after recurrence); see `.planning/todos/completed/2026-05-01-rotate-railway-postgres-password.md` |
 | operator_action | Phase 123 — 24h soak run + 123-VERIFICATION.md back-fill | pending | `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md` — blocking for Phase 123 closeout + Phase 124 launch; D-10 wallclock requirement (cannot auto-run) |
-| operator_action | Phase 124 Plan 04 — D-14 byte-identical PNG comparison | pending | `.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md` — blocks Plan 04 closure; `evenhub-simulator` is GUI-only (no headless capture in `--help`); structural fix already shipped via Tasks 1+2 (commits cf4984e, 3a67c41), drift detector locks 4-line invariant |
+| operator_action | Phase 124 Plan 04 — D-14 byte-identical PNG comparison | pending | `.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md` — blocks Plan 04 closure; `evenhub-simulator` is GUI-only (no headless capture in `--help`); structural fix already shipped via Tasks 1+2 (commits cf4984e, 3a67c41), drift detector locks 4-line invariant. Plan 09 §G2-POLISH-07 cross-references this todo as canonical record — combine into one operator session |
 | operator_action | Phase 124 Plan 04 — G2-POLISH-07 hardware retest on real glasses | pending | Per D-14 carve-out — sim-equality is the gate, hardware retest is deferred-confirmation; ride-along to Phase 125 if hardware diverges from sim per `feedback_g2_tap_expand_broken` pattern |
+| operator_action | Phase 124 Plan 09 — E2E verification (vigil-watch → vigil-core SSE → plugin sim) + 124-VERIFICATION.md back-fill | pending | `.planning/todos/pending/2026-05-10-phase-124-09-e2e-verification-operator-run.md` — blocks Phase 124 closeout + Phase 125 launch. Requires 3 concurrent processes + visual UI verification + 2 bearer keys for cross-user isolation live test. Skeleton landed at commit 7e0c68f; structural gates already locked by Plans 02/03/06/07/08 unit tests. Phase 123 24h soak is parallel (vigil-watch must be installed + running, but NOT 24h-runtime-tested). Plan 04 PNG todo combines into same operator session per §G2-POLISH-07 |
 | uat | Phase 116 / 116.1 (HUMAN-UAT.md) | partial | Sports picker shipped to prod and in daily use since 2026-04-29 |
 | verification | Phase 116 / 116.1 (VERIFICATION.md) | human_needed | Functional verification implicit via prod usage |
 
@@ -253,6 +255,10 @@ Recent (v3.7 closeout):
 - [Phase ?]: [Phase 124 / Plan 08]: 500ms timeout literal preserved verbatim (not extracted to LAUNCH_SOURCE_TIMEOUT_MS named const) — Task 2 drift detector regex requires literal 500 at the structurally-meaningful site; same Phase 123 Plan 04 idiom (single-use → keep literal, multi-use → name). Reverted during self-verification before commit
 - [Phase ?]: [Phase 124 / Plan 08]: bridge hoisted to module scope (let bridge: ... | null = null) — SSE callback closures capture lazily; bridge assigned in init() before sseClient.connect() so callbacks fire post-bridge-init; defensive null-check + getCurrentScreen()===Screen.COMPANION guard prevents pre-init() callback fan-out
 - [Phase ?]: [Phase 124 / Plan 08]: init() hydrates Companion cache BEFORE pickInitialScreen — without hydrate, pickInitialScreen routes correctly but rendered Companion shows empty-state copy (activeSessions still []); hydrate side-effect intentionally NOT inside helper to keep helpers SDK-free
+- [Phase 124 / Plan 09]: Wallclock/physical-host checkpoint deferral pattern repeated verbatim from Phase 123 Plan 05 — autonomous Task 1 lands the structural artifact (124-VERIFICATION.md skeleton with all REQ-ID anchors + decision tree); operator Task 2 deferred via .planning/todos/pending/2026-05-10-phase-124-09-e2e-verification-operator-run.md runbook. Mode yolo / skip_checkpoints does NOT bypass real-world physical-host actions per memory feedback_wallclock_checkpoint_exempt
+- [Phase 124 / Plan 09]: Phase 123 24h soak is a PARALLEL operator track for Plan 09 verification, not a sequential blocker. vigil-watch must be INSTALLED + running for swift run vigil-watch test E2E vehicle, but Phase 124 does NOT block on Phase 123's 24h gate completing. Both phases close on independent operator evidence; 124-VERIFICATION.md frontmatter prerequisites: codifies this distinction
+- [Phase 124 / Plan 09]: Plan 09 §G2-POLISH-07 cross-references Plan 04's existing D-14 PNG-equality operator todo as the canonical record. Combine evenhub-simulator captures into ONE operator session, paste cmp output into BOTH 124-04-SUMMARY and 124-VERIFICATION §G2-POLISH-07. Avoids duplicate operator runs; canonical record stays in Plan 04's todo (more atomic gate)
+- [Phase 124 / Plan 09]: 8-row operator decision tree codified at end of 124-VERIFICATION.md routes each section-fail-case to specific STATE.md/ROADMAP.md/blocker actions (PASS / approved-with-deferrals / blocked routing). Removes 'now what' ambiguity for the operator on failure; mirror of Phase 123 Plan 05's failure-path branch tree
 
 ### Pending Todos
 
@@ -289,9 +295,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T02:22:47.225Z
-Stopped at: Phase 124 Plan 06 COMPLETE — SSE shim landed (D-04 + D-11): bearer in Authorization header, BACKOFF_MS=[1000,2000,4000,8000,16000,30000], Last-Event-ID resume from localStorage, AbortController disconnect, event:ping silent drop, QuotaExceededError survival; 13 unit tests + 19/19 plugin suite green; commits a6d1846 + a3dff3c
-Resume file: None
+Last session: 2026-05-10T02:33:15.523Z
+Stopped at: Phase 124 Plan 09 PARTIAL — autonomous skeleton + operator runbook landed; commit 7e0c68f. 8/9 plans complete + Plan 09 partial (Task 1 auto-done, Task 2 deferred to operator). Phase 124 closes when operator fills 124-VERIFICATION.md per .planning/todos/pending/2026-05-10-phase-124-09-e2e-verification-operator-run.md. Concurrent operator todos: (1) Phase 123 24h soak (parallel, not blocking); (2) Plan 04 D-14 PNG (canonical for §G2-POLISH-07)
+Resume file: 
 Next action: Advance to Plan 06 (or run Plans 06-09 in parallel per yolo+plan-level parallelization config). Two carry-over operator-action items still pending in parallel — neither blocks Plan 06+:
   (1) Phase 124 Plan 04 — D-14 byte-identical PNG comparison (`.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`)
   (2) Phase 123 — 24h vigil-watch soak (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`)
