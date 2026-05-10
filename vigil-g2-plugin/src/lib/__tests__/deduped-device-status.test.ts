@@ -1,36 +1,45 @@
-// Phase 125 Wave 0 — RED placeholder for G2-POLISH-08 helper.
+// Phase 125 Plan 04 — GREEN tests for G2-POLISH-08 dedupe helper.
 //
-// Pinned by Plan 04 (vigil-g2-plugin/src/lib/deduped-device-status.ts).
-// Pattern reference: 125-RESEARCH.md §Example D (lines 758-828) + D-12.
-// Plan 04 turns each test green by replacing { skip: PLAN_04 } with the
-// asserted behavior body.
+// Replaces Plan 01 RED placeholders. Pinned by 125-RESEARCH.md §Example D
+// (lines 758-828) + D-12 (helper-only ship; no live consumer this phase).
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { createDedupedDeviceStatusListener } from '../deduped-device-status.ts'
+import { DeviceConnectType } from '@evenrealities/even_hub_sdk'
+import type { DeviceStatus } from '@evenrealities/even_hub_sdk'
 
-const PLAN_04 = 'TODO(125-04): pending implementation — vigil-g2-plugin/src/lib/deduped-device-status.ts'
+function makeStatus(connectType: DeviceConnectType): DeviceStatus {
+  return { sn: 'TEST', connectType } as DeviceStatus
+}
 
-test('createDedupedDeviceStatusListener — 5×"none" fires once', { skip: PLAN_04 }, () => {
-  // TODO(125-04): import { createDedupedDeviceStatusListener };
-  // const calls = []
-  // const listener = createDedupedDeviceStatusListener(s => calls.push(s.connectType))
-  // for (let i = 0; i < 5; i++) listener({ connectType: 'none', ...others })
-  // assert.deepEqual(calls, ['none'])  // first call fires; consecutive same dedup'd
-  assert.fail('placeholder')
+test('createDedupedDeviceStatusListener — 5×"none" fires once', () => {
+  const calls: DeviceConnectType[] = []
+  const listener = createDedupedDeviceStatusListener((s) => calls.push(s.connectType))
+  for (let i = 0; i < 5; i++) listener(makeStatus(DeviceConnectType.None))
+  assert.deepEqual(calls, [DeviceConnectType.None])
 })
 
-test('createDedupedDeviceStatusListener — change fires; consecutive same is deduped', { skip: PLAN_04 }, () => {
-  // TODO(125-04): per D-12 spec example:
-  //   listener({connectType: 'none', ...})
-  //   listener({connectType: 'none', ...})
-  //   listener({connectType: 'none', ...})
-  //   listener({connectType: 'connected', ...})
-  // expect: calls === ['none', 'connected']
-  assert.fail('placeholder')
+test('createDedupedDeviceStatusListener — change fires; consecutive same is deduped', () => {
+  const calls: DeviceConnectType[] = []
+  const listener = createDedupedDeviceStatusListener((s) => calls.push(s.connectType))
+  listener(makeStatus(DeviceConnectType.None))
+  listener(makeStatus(DeviceConnectType.None))
+  listener(makeStatus(DeviceConnectType.Connecting))
+  listener(makeStatus(DeviceConnectType.Connected))
+  listener(makeStatus(DeviceConnectType.Connected))
+  listener(makeStatus(DeviceConnectType.Disconnected))
+  assert.deepEqual(calls, [
+    DeviceConnectType.None,
+    DeviceConnectType.Connecting,
+    DeviceConnectType.Connected,
+    DeviceConnectType.Disconnected,
+  ])
 })
 
-test('createDedupedDeviceStatusListener — first call always fires (lastSeen starts null)', { skip: PLAN_04 }, () => {
-  // TODO(125-04): brand-new listener; first call with any connectType MUST fire
-  // (lastSeen ref starts at null/undefined, so first comparison always changes).
-  assert.fail('placeholder')
+test('createDedupedDeviceStatusListener — first call always fires (lastSeen starts null)', () => {
+  const calls: DeviceConnectType[] = []
+  const listener = createDedupedDeviceStatusListener((s) => calls.push(s.connectType))
+  listener(makeStatus(DeviceConnectType.Connected))
+  assert.deepEqual(calls, [DeviceConnectType.Connected])
 })
