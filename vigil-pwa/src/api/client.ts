@@ -986,3 +986,39 @@ export async function classifyFetchError(input: Response | Error | unknown): Pro
   // 500, 503, 504, any other 5xx, and unexpected non-ok responses → server bucket.
   return { kind: 'server' }
 }
+
+// ── Phase 125 (AGENT-HUD-03 / D-05): Quiet-mode toggle for G2 Plugin HUD DND filter. ───────────────
+
+/**
+ * Server contract for GET /v1/quiet-mode (Plan 05).
+ * `enabled` reflects the user's current quiet-mode boolean; `since` is the
+ * ISO timestamp of the last toggle ON (null when quiet mode has never been
+ * enabled). Survives Railway restart per D-05.
+ */
+export interface QuietModeResult {
+  enabled: boolean
+  since: string | null
+}
+
+/**
+ * Fetches the user's quiet-mode state. Bearer-gated; vigilFetch attaches the JWT.
+ * Server route lives at `vigil-core/src/routes/quiet-mode.ts` (Plan 05).
+ */
+export async function getQuietMode(): Promise<QuietModeResult> {
+  const res = await vigilFetch('/v1/quiet-mode')
+  if (!res.ok) throw new Error(`Failed to fetch quiet mode: ${res.status}`)
+  return (await res.json()) as QuietModeResult
+}
+
+/**
+ * Persists the user's quiet-mode toggle. On `enabled=false` the server flushes
+ * its in-memory suppression queue and re-emits held agent_events in
+ * chronological order (Plan 05 D-04).
+ */
+export async function setQuietMode(enabled: boolean): Promise<void> {
+  const res = await vigilFetch('/v1/quiet-mode', {
+    method: 'PUT',
+    body: JSON.stringify({ enabled }),
+  })
+  if (!res.ok) throw new Error(`Failed to save quiet mode: ${res.status}`)
+}
