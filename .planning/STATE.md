@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
-stopped_at: Completed 125-05-PLAN.md
-last_updated: "2026-05-10T19:23:52.766Z"
+stopped_at: Completed 125-11-PLAN.md (skeleton-only; operator wallclock pending for AGENT-DEMO-01)
+last_updated: "2026-05-10T19:28:41.282Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 43
-  completed_plans: 41
-  percent: 95
+  completed_plans: 42
+  percent: 98
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 9 of 9 — COMPLETE (Plan 09 VERIFICATION.md backfilled with 2026-05-10 li
 Status: Phase complete — ready for verification
 Last activity: 2026-05-10
 
-Progress: [██████████] 95%
+Progress: [██████████] 98%
 
 ## v3.8 Phase Table
 
@@ -88,6 +88,7 @@ Progress: [██████████] 95%
 | Phase 125 P08 | 5min | 3 tasks | 9 files |
 | Phase 125 P07 | 5 min 18 sec | 2 tasks | 3 files |
 | Phase 125 P09 | 0:02 | 1 tasks | 2 files |
+| Phase 125 P11 | 66 | 1 tasks | 1 files |
 
 ## Deferred Items
 
@@ -290,6 +291,7 @@ Recent (v3.7 closeout):
 - [Phase 125]: Plan 125-07: PWA Quiet-mode toggle uses native input checkbox with accent-teal-600 (mirrors CAL-01/SPORTS-01); NOT a custom switch component per UI-SPEC §Quiet-Mode Toggle Row lock
 - [Phase 125]: Plan 125-07: G2 Plugin section placed AFTER Sports closing and BEFORE Auto-generate ScheduleCard, preserving UI-SPEC data-source-type ordering and passing both awk ordering checks
 - [Phase 125]: Plan 125-07: tests use existing fetchImpl route-stub pattern (mirrors SPORTS-01 makeSportsFetchImpl), not vi.mock api-client module mocks — entire SettingsPage.test.tsx uses fetchImpl exclusively
+- [Phase ?]: Phase 125 Plan 11: Skeleton-only delivery — manifest scaffolded by executor; physical 60s recording + iCloud save + manifest backfill + AGENT-DEMO-01 mark-complete are operator wallclock per memory feedback_wallclock_checkpoint_exempt
 
 ### Pending Todos
 
@@ -326,9 +328,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T19:23:35.231Z
-Stopped at: Completed 125-05-PLAN.md
+Last session: 2026-05-10T19:28:32.693Z
+Stopped at: Completed 125-11-PLAN.md (skeleton-only; operator wallclock pending for AGENT-DEMO-01)
 Resume file: 
 
-  None
+  
   (2) Phase 123 — 24h vigil-watch soak (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`)

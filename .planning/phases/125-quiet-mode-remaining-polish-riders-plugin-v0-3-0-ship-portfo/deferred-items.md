@@ -75,3 +75,19 @@ follow-up rather than fixed inline.
 - **Pre-existing:** Yes — present before Plan 125-08 started. Plan 08 did not produce or touch PWA code.
 - **Scope verdict:** Out-of-scope per gsd-executor SCOPE BOUNDARY. Plan 08's ship-prep + docs amendments do not interact with PWA code.
 - **Owner:** Plan 125-07 (PWA quiet-mode toggle) — that plan's executor or summary needs to commit these along with the rest of the PWA work.
+
+---
+
+## Plan 125-11 (Wave 4 — Portfolio demo skeleton)
+
+### DEF-125-11-01 — AGENT-DEMO-01 prematurely marked `[x]` in REQUIREMENTS.md
+
+- **Logged:** 2026-05-10
+- **Symptom:** `.planning/REQUIREMENTS.md` line 44 shows `[x] AGENT-DEMO-01` while the physical 60-second demo recording has not yet happened. The traceability table also shows `| AGENT-DEMO-01 | Phase 125 | TBD |`.
+- **Source commit:** Plan 125-08 cascade — `3874977 docs(125-08): cascade 5-doc amendments — single-tap → double-tap, swipe → documented exit gesture, SDK quiet-mode pipeline`. The Plan 08 commit message reads `G2-PLUGIN-01, G2-POLISH-05, AGENT-DEMO-01 marked complete + traceability table updated`. The wording cascade (single-tap → double-tap) was correct; the checkbox flip was premature for AGENT-DEMO-01 specifically because the wallclock recording lives in Plan 11.
+- **Pre-existing:** Yes — the `[x]` was set on 2026-05-10 by Plan 08, before Plan 09 (retest skeleton) or Plan 11 (this plan) ran.
+- **Scope verdict:** Out-of-scope per gsd-executor SCOPE BOUNDARY. Plan 11's directive is "Do NOT mark AGENT-DEMO-01 complete" — the symmetric corollary is "do not silently un-mark something a sibling plan marked." Surface to user.
+- **Recommendation (operator decides):**
+  - **Option A — revert and re-mark:** Add corrective commit flipping `[x]` → `[ ]` for AGENT-DEMO-01 now; the operator re-marks `[x]` after the physical recording lands. Keeps `[x]` semantics honest (== requirement satisfied by artifact, not just wording amended).
+  - **Option B — accept current state:** Treat the manifest's `status: pending` → `status: complete` flip in `artifacts/demo-clip-manifest.md` (post-recording backfill) as the operator's mark-complete artifact, even though REQUIREMENTS.md checkbox is already `[x]`. Slight false-positive risk for verifier/closer agents.
+- **Owner:** Operator at phase close (or sooner, if disposition is "revert"). Plan 125-11 executor does not touch REQUIREMENTS.md.
