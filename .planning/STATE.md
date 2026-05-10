@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 124 Plan 02 complete (bus + 6 unit tests; 6/6 green; tsc clean)
-last_updated: "2026-05-10T00:39:35.490Z"
+stopped_at: Phase 124 Plan 03 complete (SSE route + bus.emit hook + Block 4; 7+33+6 tests green; tsc clean)
+last_updated: "2026-05-10T00:58:08.163Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 32
-  completed_plans: 25
-  percent: 78
+  completed_plans: 26
+  percent: 81
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — EXECUTING
-Plan: 3 of 9
+Plan: 4 of 9
 Status: Ready to execute
 Last activity: 2026-05-10
 
-Progress: [████████░░] 78%
+Progress: [████████░░] 81%
 
 ## v3.8 Phase Table
 
@@ -72,6 +72,7 @@ Progress: [████████░░] 78%
 | Phase 123 P05 | 8min  | 3 auto + 1 deferred (operator) | 9 files (1 script, 1 test, 5 CSV fixtures, 1 VERIFICATION skeleton, 1 operator-todo) |
 | Phase 124 P01 | 1min | 1 task tasks | 5 files files |
 | Phase 124 P02 | 4min | 2 tasks tasks | 2 files files |
+| Phase 124 P03 | 12min | 2 tasks (auto+TDD) | 6 files (2 created, 4 modified) |
 
 ## Deferred Items
 
@@ -216,6 +217,12 @@ Recent (v3.7 closeout):
 - [Phase ?]: [Phase 124 / Plan 02]: Listener parameter type DrizzleAgentEvent (not never from plan-spec verbatim) — tsc --noEmit strict rejects (_row: never) listeners as contravariantly incompatible with bus.on/off accepted type; type-honest fix, no runtime semantics change
 - [Phase ?]: [Phase 124 / Plan 02]: vigil-core/src/lib/ directory established (first file under it) for primitives that aren't routes/services/middleware/db/ai/analytics/utils. First occupant: Map<userId, EventEmitter> bus
 - [Phase ?]: [Phase 124 / Plan 02]: AgentEventBus class + bus singleton dual export — class shape required by acceptance grep; singleton is what consumers import; both coexist with zero runtime cost for future test isolation needs
+- [Phase 124 / Plan 03]: keepalive.unref() defense-in-depth — 25s setInterval primary cleanup is stream.onAbort+clearInterval, but .unref() ensures Node process exit cannot block on a stuck timer (test-runner / clean shutdown). Discovered when 7/7 tests passed in 1.4s but file process took 2 min to exit; .unref() cut total file exit to <1.5s
+- [Phase 124 / Plan 03]: streamSSE hold-open via `await new Promise(r => stream.onAbort(r))` — without this, the streamSSE callback resolves and Hono closes the ReadableStream, listener fires forever into closed stream (RESEARCH Pitfall 1). Listener MUST be defined INSIDE the callback closure so cleanup hook references same closure (Pitfall 3)
+- [Phase 124 / Plan 03]: Block 4 cross-user isolation uses real bus singleton via `await import` + app.fetch with userA/userB JWT bearers — fakeBus pattern from agent-stream.test.ts structurally insufficient for the lock; only end-to-end through the same singleton the production route reads catches Map<userId, EventEmitter> regressions
+- [Phase 124 / Plan 03]: Block 4 explicit readerA.cancel() + readerB.cancel() + 50ms drain in finally{} — load-bearing because two parallel streamSSE handlers each have own hold-open Promise; without cancel, file timeout would mask success. 50ms drain lets onAbort handlers fire + bus.off cleanup complete before next test reads listener counts
+- [Phase 124 / Plan 03]: AgentEventsDeps `bus?: { emit(...): void }` optional dep pattern — pre-Phase-124 tests pass without modification; production singleton wires real `defaultBus`; optional chaining `deps.bus?.emit(...)` is no-op when bus undefined. Pattern locked for any future DI factory extension where existing tests must not break
+- [Phase 124 / Plan 03]: Defensive Last-Event-ID parse — `Number.isFinite(parsed) && parsed >= 0 && parsed < INT32_MAX`, fall back to null on negative/garbage/overflow (NOT 'every row'). T3 + T4 tests pin this; T2 + T7 tests pin the happy-path replay query (gt id, gt event_timestamp, eq user_id, orderBy id ASC) and 24h cutoff bound
 
 ### Pending Todos
 
@@ -252,7 +259,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T00:39:35.481Z
-Stopped at: Phase 124 Plan 02 complete (bus + 6 unit tests; 6/6 green; tsc clean)
+Last session: 2026-05-10T00:58:08.154Z
+Stopped at: Phase 124 Plan 03 complete (SSE route + bus.emit hook + Block 4; 7+33+6 tests green; tsc clean)
 Resume file: None
-Next action: Operator-driven 24h soak gate (BLOCKING for Phase 123 closeout). Runbook: `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`. Build release → `vigil-watch install` → live ≥24h with normal Claude Code use → `bash scripts/soak-check.sh` → paste summary verbatim into 123-VERIFICATION.md → flip soak-row Status to PASSED → move todo to done/. After Phase 123 closes, Phase 124 (G2 Companion HUD + WebSocket fan-out) unblocks.
+Next action: Phase 124 Plan 04 (next plan in execution order). vigil-core SSE endpoint (`GET /v1/agent-stream`) is now live, fan-out wired (`POST /v1/agent-events` emits on isNew=true), Last-Event-ID resume bounded to 24h, cross-user isolation locked by Block 4 + 7 unit tests. Plugin-side SSE shim consumer + Companion screen + carousel insert + onLaunchSource wiring + home-overflow trim all unblocked. Operator-driven 24h soak gate for Phase 123 closeout still pending (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`) but does NOT block Phase 124 plugin-side work.
