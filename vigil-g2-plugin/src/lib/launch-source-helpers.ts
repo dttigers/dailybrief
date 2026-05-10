@@ -23,7 +23,20 @@
 
 import type { LaunchSource } from '@evenrealities/even_hub_sdk'
 import type { AgentSessionRow } from '../types.ts'
-import { Screen, type ScreenName } from '../navigation.ts'
+// Screen names imported as TYPES only — the runtime `Screen` const object
+// from navigation.ts pulls in api.ts which depends on `import.meta.env`
+// (Vite-only). `node:test` runs without Vite, so the runtime cascade
+// crashes. Type-only imports are erased at compile time → no runtime
+// dependency on navigation.ts → helpers stay pure for unit tests.
+//
+// String literals below are kept in sync with navigation.ts Screen const
+// values: Screen.HOME === 'home', Screen.COMPANION === 'companion'.
+// Plan 07's W-6 drift detector + Plan 08's drift detector lock these
+// values in their respective source files.
+import type { ScreenName } from '../navigation.ts'
+
+const HOME: ScreenName = 'home'
+const COMPANION: ScreenName = 'companion'
 
 /**
  * D-06 active-session filter: ≥1 row with eventTimestamp within 5min AND
@@ -62,7 +75,7 @@ export async function pickInitialScreen(
   source: LaunchSource,
   fetchSessions: () => Promise<AgentSessionRow[]>,
 ): Promise<ScreenName> {
-  if (source !== 'glassesMenu') return Screen.HOME
+  if (source !== 'glassesMenu') return HOME
   const sessions = await fetchSessions()
-  return hasActiveSession(sessions) ? Screen.COMPANION : Screen.HOME
+  return hasActiveSession(sessions) ? COMPANION : HOME
 }
