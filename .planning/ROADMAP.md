@@ -606,7 +606,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
 | 121. Agent-events API foundation + cross-user isolation lock | v3.8 | 5/5 | Complete    | 2026-05-08 |
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 10/10 | Complete    | 2026-05-09 |
 | 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 5/5 autonomous (operator soak pending) | Awaiting operator soak | - |
-| 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 0/TBD | Not started | - |
+| 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 1/9 | In Progress|  |
 | 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 0/TBD | Not started | - |
 
 ## Backlog

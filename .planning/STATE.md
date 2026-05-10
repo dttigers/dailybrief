@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
 stopped_at: Phase 124 UI-SPEC approved
-last_updated: "2026-05-09T23:12:29.413Z"
-last_activity: 2026-05-09 -- Phase 124 planning complete
+last_updated: "2026-05-10T00:31:00.626Z"
+last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 4
-  total_plans: 23
-  completed_plans: 23
-  percent: 100
+  total_plans: 32
+  completed_plans: 24
+  percent: 75
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 123 — vigil-watch-shell-launchd-integration-cli-surface-24h-soak
+**Current focus:** Phase 124 — g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish
 
 ## Current Position
 
-Phase: 123 (vigil-watch-shell-launchd-integration-cli-surface-24h-soak) — AWAITING OPERATOR SOAK
-Plan: 5 of 5 — autonomous portion complete; 24h operator-driven soak DEFERRED to `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`
+Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — EXECUTING
+Plan: 2 of 9
 Status: Ready to execute
-Last activity: 2026-05-09 -- Phase 124 planning complete
+Last activity: 2026-05-10
 
-Progress: [██████████] 100% autonomous (operator gate pending for Phase 123 closeout)
+Progress: [████████░░] 75%
 
 ## v3.8 Phase Table
 
@@ -70,6 +70,7 @@ Progress: [██████████] 100% autonomous (operator gate pendin
 | Phase 123 P03 | 41min | 3 tasks (auto) | 7 files (3 created, 4 modified) |
 | Phase 123 P04 | 12min | 3 tasks (auto) | 6 files (3 created, 3 modified) |
 | Phase 123 P05 | 8min  | 3 auto + 1 deferred (operator) | 9 files (1 script, 1 test, 5 CSV fixtures, 1 VERIFICATION skeleton, 1 operator-todo) |
+| Phase 124 P01 | 1min | 1 task tasks | 5 files files |
 
 ## Deferred Items
 
@@ -207,6 +208,9 @@ Recent (v3.7 closeout):
 - [Phase 123 / Plan 05]: Process-based bash testing safe in XCTest because soak-check.sh is short-lived (no `tail -f`-style never-exits). Runner deadlock risk is the live tail commands handled via filterNDJSON pure-function in Plan 03; soak-check.sh runs to completion in <100ms per fixture
 - [Phase 123 / Plan 05]: VERIFICATION.md groups by requirement (AGENT-WATCH-04/05/07) not plan number — when downstream phases close their gates the table reads naturally; cross-cutting items (Phase 122 carry-forward SIGSEGV detection, empty session_id drop rate) get answered structurally by the soak's PID-uniqueness assertion
 - [Phase 123 / Plan 05]: 0 deviations during autonomous portion. All 3 autonomous tasks landed first-try; SoakCheckTests passed 5/5 on first run; full suite 154/155 (carry-forward unchanged)
+- [Phase ?]: [Phase 124 / Plan 01]: tsx version pinned to ^4.19.0 in vigil-g2-plugin -- exact verbatim copy of vigil-core devDep entry; zero monorepo version drift; threat model T-124-01-01 disposition (accept) conditioned on this version-match invariant
+- [Phase ?]: [Phase 124 / Plan 01]: Plugin test layout locked -- src/__tests__/ for entry-point, src/lib/__tests__/ for transport/runtime, src/screens/__tests__/ for screen components; .gitkeep placeholders carry one-line plan-cross-references
+- [Phase ?]: [Phase 124 / Plan 01]: tsconfig.json untouched -- existing include glob already matches src/**/*.test.ts under verbatimModuleSyntax + erasableSyntaxOnly strictness
 
 ### Pending Todos
 
@@ -243,7 +247,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-09T22:11:10.367Z
+Last session: 2026-05-10T00:30:45.508Z
 Stopped at: Phase 124 UI-SPEC approved
-Resume file: .planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-UI-SPEC.md
+Resume file: None
 Next action: Operator-driven 24h soak gate (BLOCKING for Phase 123 closeout). Runbook: `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`. Build release → `vigil-watch install` → live ≥24h with normal Claude Code use → `bash scripts/soak-check.sh` → paste summary verbatim into 123-VERIFICATION.md → flip soak-row Status to PASSED → move todo to done/. After Phase 123 closes, Phase 124 (G2 Companion HUD + WebSocket fan-out) unblocks.
