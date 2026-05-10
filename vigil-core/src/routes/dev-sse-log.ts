@@ -39,6 +39,12 @@ devSseLog.get("/dev/sse-log/emit", (c) => {
   for (const [k, v] of new URL(c.req.url).searchParams) {
     entry[k] = v;
   }
+  // Echo back inbound Origin so we can see what the WebView sends —
+  // critical for diagnosing the SSE CORS rejection.
+  const origin = c.req.header("Origin") ?? "(no Origin header)";
+  const referer = c.req.header("Referer") ?? "(no Referer)";
+  entry._origin = origin;
+  entry._referer = referer;
   ring.push({ ts: new Date().toISOString(), entry });
   if (ring.length > MAX_ENTRIES) ring.shift();
   return c.json({ ok: true, count: ring.length });
