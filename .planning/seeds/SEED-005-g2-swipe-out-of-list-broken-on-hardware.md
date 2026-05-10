@@ -77,3 +77,13 @@ clause). v3.5 closed clean on 2026-05-06 with this debt acknowledged.
 
 Highest-value pick of the four UAT-evidenced G2 polish items because it's
 the one regression that actively blocks daily use of the work-orders screen.
+
+## 2026-05-10 SDK source-dive spike (Phase 125 / D-06)
+
+Spike result: NOT FOUND. The Even Hub SDK v0.0.9 (@evenrealities/even_hub_sdk@0.0.9) exposes no list-container bubble flag. ListContainerProperty.isEventCapture is a SINGLE-OWNER routing flag (one container handles events at a time), NOT a bubble flag. Type defs at dist/index.d.ts:280-355 confirm. README isEventCapture semantics (lines 161, 399, 877) confirm.
+
+Resolution: REQUIREMENTS.md G2-POLISH-05 wording amended from "swipe" to "documented exit gesture (DOUBLE_CLICK → home) with on-screen hint". Plugin's existing "() double-tap to exit" footer text (vigil-g2-plugin/src/screens/work-orders.ts:53) is the user-facing affordance.
+
+Re-activation triggers: A future SDK release exposes a bubble flag (bubbleEvents / propagateEvents / equivalent) on ListContainerProperty. At that point: set the flag on wo-list (work-orders.ts:87-98), wire SCROLL_TOP / SCROLL_BOTTOM in handleNavEvent, hardware retest, revert REQUIREMENTS.md amendment.
+
+Spike artifact: `.planning/phases/125-quiet-mode-remaining-polish-riders-plugin-v0-3-0-ship-portfo/125-RESEARCH.md` §"SEED-005 SDK Source-Dive Spike (Pre-Resolved)" lines 934-991 (full method, findings, grep evidence).

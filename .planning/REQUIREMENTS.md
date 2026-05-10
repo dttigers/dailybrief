@@ -41,11 +41,11 @@
 
 ### Demo + portfolio
 
-- [ ] **AGENT-DEMO-01**: Full demo flow (start a Claude Code session in VS Code, walk away from keyboard, receive a `needs_input` tap on the temple, single-tap to acknowledge) is recordable in under 60 seconds for portfolio use.
+- [ ] **AGENT-DEMO-01**: Full demo flow (start a Claude Code session in VS Code, walk away from keyboard, receive a `needs_input` tap on the temple, double-tap to acknowledge) is recordable in under 60 seconds for portfolio use.
 
 ### G2 polish riders (from v3.5 hardware UAT)
 
-- [ ] **G2-POLISH-05**: Swipe-out-of-list navigation works on real G2 hardware; list-container SCROLL events propagate correctly so the user can exit a list view via swipe (not only via DOUBLE_CLICK → home). Resolves SEED-005, hardware regression first observed in Phase 45 hardware UAT.
+- [ ] **G2-POLISH-05**: List screens have a documented exit gesture (DOUBLE_CLICK → home) with on-screen hint; SDK SCROLL bubble limit acknowledged in SEED-005 follow-up. Resolves SEED-005, hardware regression first observed in Phase 45 hardware UAT.
 - [x] **G2-POLISH-06**: Glasses-menu launch source is distinguishable from app-menu launch source via `onLaunchSource` registration (so the plugin can differentiate `glassesMenu` vs `appMenu` entry points). Resolves SEED-006.
 - [ ] **G2-POLISH-07**: Home body content fits within the 210px container without overflow or auto-scroll inconsistency between captures. Resolves SEED-007.
 - [x] **G2-POLISH-08**: Device-status events with `connectType: "none"` are debounced or deduped so the event stream does not spam during transient connection states. Resolves SEED-008.

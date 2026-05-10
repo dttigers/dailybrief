@@ -469,7 +469,7 @@ Full milestone scope archived to [milestones/v3.5-ROADMAP.md](milestones/v3.5-RO
   2. On real G2 hardware, the user can enter any list view (work orders, reminders, etc.) and exit via swipe — the list-container `SCROLL` event propagates correctly so the user is no longer trapped requiring `DOUBLE_CLICK → home` to escape (resolves the v3.5 hardware UAT regression).
   3. With the glasses transitioning between connected and disconnected states, the device-status event stream no longer floods the plugin with `connectType: "none"` events — debouncing or deduping keeps the stream useful instead of spammy during transient connection states.
   4. User can build `vigil.ehpk` at version 0.3.0 (Companion HUD + 4 polish riders folded in), pass SDK validation including `containerName ≤ 16 chars`, and submit the package to the Even Hub developer portal store dashboard; submission is acknowledged in the dashboard.
-  5. User can start a real Claude Code session in VS Code, walk away from the keyboard, receive a `needs_input` tap on the temple, single-tap to acknowledge, and have the entire flow recorded as a single video clip under 60 seconds — usable verbatim as portfolio material.
+  5. User can start a real Claude Code session in VS Code, walk away from the keyboard, receive a `needs_input` tap on the temple, double-tap to acknowledge, and have the entire flow recorded as a single video clip under 60 seconds — usable verbatim as portfolio material.
 **Plans**: 11 plans
 Plans:
 - [x] 125-01-PLAN.md — Wave 0 RED test scaffolds (8 W0 files: 3 NEW + 4 EXTENDED + VERIFIED.md refresh deferred to Plan 08)
