@@ -472,3 +472,55 @@ test("DRIFT/T2: 0018_add_agent_events.sql CHECK constraint declares the 5 values
     "0018_add_agent_events.sql partial unique index must scope on (user_id, client_event_id) WHERE client_event_id IS NOT NULL (D-D2 block 3 lock)",
   );
 });
+
+// ── Phase 124 (AGENT-API-03 / D-03) — bus.emit gating ──────────────────────
+// POST handler must call deps.bus.emit(userId, row) ONLY when isNew=true.
+// Phase 121 dedupe means the same client payload may POST twice (network
+// retry); emitting both times would publish duplicates to subscribers.
+
+test("Phase 124: POST with isNew=true triggers bus.emit", async () => {
+  const emitted: Array<{ userId: number; row: DrizzleAgentEvent }> = [];
+  const fakeBus = {
+    emit: (uid: number, row: DrizzleAgentEvent) => emitted.push({ userId: uid, row }),
+  };
+  const app = makeApp(
+    makeDeps({
+      dbInsertOrGet: async (row) => ({
+        row: makeRow(row.userId, {
+          sessionId: row.sessionId,
+          clientEventId: row.clientEventId ?? null,
+        }),
+        isNew: true,
+      }),
+      bus: fakeBus,
+    }),
+    7,
+  );
+  const res = await postEvent(app, validBody({ client_event_id: "uuid-emit-1" }));
+  assert.equal(res.status, 201, "fresh insert returns 201");
+  assert.equal(emitted.length, 1, "isNew=true → bus.emit fired exactly once");
+  assert.equal(emitted[0]!.userId, 7, "emit userId comes from c.get('userId')");
+});
+
+test("Phase 124: POST with isNew=false does NOT trigger bus.emit (dedupe)", async () => {
+  const emitted: number[] = [];
+  const fakeBus = {
+    emit: (uid: number, _row: DrizzleAgentEvent) => emitted.push(uid),
+  };
+  const app = makeApp(
+    makeDeps({
+      dbInsertOrGet: async (row) => ({
+        row: makeRow(row.userId, {
+          sessionId: row.sessionId,
+          clientEventId: row.clientEventId ?? null,
+        }),
+        isNew: false,
+      }),
+      bus: fakeBus,
+    }),
+    7,
+  );
+  const res = await postEvent(app, validBody({ client_event_id: "uuid-emit-2" }));
+  assert.equal(res.status, 200, "dedupe hit returns 200");
+  assert.equal(emitted.length, 0, "isNew=false → bus.emit suppressed");
+});

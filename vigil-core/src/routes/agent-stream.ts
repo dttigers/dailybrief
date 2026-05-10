@@ -95,10 +95,13 @@ export function createAgentStreamRoute(deps: AgentStreamDeps): Hono {
       deps.bus.on(userId, listener);
 
       // Phase 3: 25s keepalive — Hono streamSSE does NOT auto-emit pings.
+      // .unref() so a stuck keepalive timer never blocks Node process exit
+      // (defense-in-depth — onAbort below is the primary cleanup path).
       const keepalive = setInterval(() => {
         if (stream.aborted || stream.closed) return;
         void stream.writeSSE({ event: "ping", data: "" });
       }, KEEPALIVE_INTERVAL_MS);
+      keepalive.unref();
 
       // Phase 4: Cleanup. Both bus.off and clearInterval reference the
       // closure-captured listener + keepalive — pairs always match.

@@ -648,6 +648,142 @@ describe("cross-user isolation (AUTH-05)", () => {
     }
   });
 
+  // ── Phase 124 (AGENT-API-03) — Block 4: SSE cross-user isolation ──────────
+  // userA's GET /v1/agent-stream MUST NOT receive events emitted via the bus
+  // for userB. End-to-end via app.fetch (so bearerAuth → c.set('userId') →
+  // c.get('userId') is exercised), with the real bus singleton from
+  // ../lib/agent-events-bus.js (the same instance the production route uses).
+  // The fakeBus pattern from agent-stream.test.ts is NOT sufficient for this
+  // lock — block 4 is the structural integration test.
+  it("Block 4: SSE userA never receives userB bus emissions (AGENT-API-03)", async (t) => {
+    if (!DB_READY) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { bus } = await import("../lib/agent-events-bus.js");
+
+    // Open two SSE connections via app.fetch — userA and userB bearers.
+    // Important: Hono streamSSE returns the Response immediately with a
+    // streaming body; the actual handler runs async. We need to give the
+    // listener a moment to attach via bus.on(userId, listener) before we
+    // emit, and we MUST cancel both readers in finally{} so the handler's
+    // hold-open Promise resolves and the test runner can exit cleanly.
+    const resA = await app.fetch(
+      new Request("http://x/v1/agent-stream", {
+        headers: {
+          Authorization: `Bearer ${tokenA}`,
+          Accept: "text/event-stream",
+        },
+      }),
+    );
+    const resB = await app.fetch(
+      new Request("http://x/v1/agent-stream", {
+        headers: {
+          Authorization: `Bearer ${tokenB}`,
+          Accept: "text/event-stream",
+        },
+      }),
+    );
+    assert.equal(resA.status, 200, "userA stream opens with 200");
+    assert.equal(resB.status, 200, "userB stream opens with 200");
+
+    const readerA = resA.body!.getReader();
+    const readerB = resB.body!.getReader();
+    const decoder = new TextDecoder();
+
+    // Helper: read up to N "agent-event" frames OR until timeout, then return
+    // collected ids (skips ping frames). Does NOT cancel — caller does that.
+    async function collectAgentEventIds(
+      reader: ReadableStreamDefaultReader<Uint8Array>,
+      maxN: number,
+      timeoutMs: number,
+    ): Promise<string[]> {
+      const ids: string[] = [];
+      let buf = "";
+      const deadline = Date.now() + timeoutMs;
+      while (ids.length < maxN && Date.now() < deadline) {
+        const remaining = Math.max(0, deadline - Date.now());
+        const result = await Promise.race([
+          reader.read(),
+          new Promise<{ done: true; value: undefined }>((r) =>
+            setTimeout(() => r({ done: true, value: undefined }), remaining),
+          ),
+        ]);
+        if (result.done) break;
+        buf += decoder.decode(result.value, { stream: true });
+        let idx;
+        while ((idx = buf.indexOf("\n\n")) >= 0) {
+          const frame = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          let event: string | undefined;
+          let id: string | undefined;
+          for (const line of frame.split("\n")) {
+            if (line.startsWith("event:")) event = line.slice(6).trim();
+            else if (line.startsWith("id:")) id = line.slice(3).trim();
+          }
+          if (event === "agent-event" && id) ids.push(id);
+          if (ids.length >= maxN) break;
+        }
+      }
+      return ids;
+    }
+
+    try {
+      // Allow listeners to attach (the streamSSE callback runs async; bus.on
+      // happens after the Response is returned).
+      await new Promise((r) => setTimeout(r, 50));
+
+      // Emit ONLY for userB — this is the structural cross-user isolation test.
+      // The bus MUST keep userA and userB on different EventEmitter instances
+      // so userA's listener never fires. If a regression collapses the
+      // Map<userId, EventEmitter> to a global emitter, userA collects ≥1 frame
+      // and this test fails with the LEAK message below.
+      bus.emit(userB.id, {
+        id: 999_001,
+        userId: userB.id,
+        sessionId: "iso-block4-sess",
+        event: "needs_input",
+        message: "userB-only emit",
+        label: "iso-block4",
+        host: "iso-block4-host",
+        exitCode: null,
+        eventTimestamp: new Date(),
+        receivedAt: new Date(),
+        clientEventId: `iso-block4-cid-${Date.now()}`,
+      });
+
+      // userA must collect ZERO agent-event frames within 200ms;
+      // userB must collect EXACTLY ONE.
+      const idsA = await collectAgentEventIds(readerA, 1, 200);
+      const idsB = await collectAgentEventIds(readerB, 1, 200);
+
+      assert.equal(
+        idsA.length,
+        0,
+        `LEAK CRITICAL: userA's SSE stream received ${idsA.length} agent-event frame(s) when bus was emitted for userB. Map<userId, EventEmitter> isolation regressed — Phase 124 D-03 invariant + Phase 121 D-D2 cross-user isolation violation.`,
+      );
+      assert.equal(idsB.length, 1, "userB must have received exactly one frame");
+      assert.equal(idsB[0], "999001", "userB frame id matches the emitted row.id");
+    } finally {
+      // CRITICAL cleanup — without these, the streamSSE handlers' hold-open
+      // Promises never resolve and the test runner stays alive past the
+      // file timeout.
+      try {
+        await readerA.cancel();
+      } catch {
+        /* ignore */
+      }
+      try {
+        await readerB.cancel();
+      } catch {
+        /* ignore */
+      }
+      // Allow the onAbort handlers to fire so bus.off cleanup runs before
+      // the next test reads the singleton's listener count.
+      await new Promise((r) => setTimeout(r, 50));
+    }
+  });
+
   it("Dedupe scope: userA's client_event_id collision with userB's UUID is allowed (D-D2.3)", async (t) => {
     if (!DB_READY) {
       t.skip("DATABASE_URL required");
