@@ -26,6 +26,9 @@ import { EventEmitter } from "node:events";
 import type { DrizzleAgentEvent } from "../db/types.js";
 
 const EVENT_NAME = "event" as const;
+// Phase 125 (AGENT-HUD-03 / D-02): per-userId quiet_mode_changed fan-out.
+// Same per-userId emitter Map as EVENT_NAME, second event channel.
+const QUIET_NAME = "quiet" as const;
 // MAX_LISTENERS_PER_USER = 50 — RESEARCH §node:events: default 10 too tight for
 // reconnect storms. Literal `50` is inlined into setMaxListeners(50) below so
 // the acceptance-criteria drift detector (grep "setMaxListeners(50)") in the
@@ -65,7 +68,47 @@ export class AgentEventBus {
     emitter.off(EVENT_NAME, listener);
     // Delete Map entry when no listeners remain — bounds memory across
     // many users. RESEARCH Pitfall 3.
-    if (emitter.listenerCount(EVENT_NAME) === 0) {
+    // Phase 125: cleanup gate now joint across EVENT_NAME + QUIET_NAME so
+    // an outstanding onQuiet listener prevents emitter Map deletion (and
+    // vice versa). Without this gate, off() would orphan a still-registered
+    // QUIET listener on a deleted-then-resurrected emitter (T-125-W3-01).
+    if (
+      emitter.listenerCount(EVENT_NAME) === 0 &&
+      emitter.listenerCount(QUIET_NAME) === 0
+    ) {
+      emitters.delete(userId);
+    }
+  }
+
+  // Phase 125 (AGENT-HUD-03 / D-02): per-userId quiet_mode_changed fan-out.
+  emitQuiet(userId: number, payload: { enabled: boolean; since: string | null }): void {
+    // Mirror emit() — do NOT create an emitter on emitQuiet alone. Listeners
+    // create emitters via onQuiet().
+    const emitter = emitters.get(userId);
+    if (!emitter) return;
+    emitter.emit(QUIET_NAME, payload);
+  }
+
+  onQuiet(
+    userId: number,
+    listener: (p: { enabled: boolean; since: string | null }) => void,
+  ): void {
+    getOrCreate(userId).on(QUIET_NAME, listener);
+  }
+
+  offQuiet(
+    userId: number,
+    listener: (p: { enabled: boolean; since: string | null }) => void,
+  ): void {
+    const emitter = emitters.get(userId);
+    if (!emitter) return;
+    emitter.off(QUIET_NAME, listener);
+    // Delete Map entry only when BOTH event types have zero listeners.
+    // Phase 124 cleanup gate is now joint across EVENT_NAME + QUIET_NAME.
+    if (
+      emitter.listenerCount(EVENT_NAME) === 0 &&
+      emitter.listenerCount(QUIET_NAME) === 0
+    ) {
       emitters.delete(userId);
     }
   }

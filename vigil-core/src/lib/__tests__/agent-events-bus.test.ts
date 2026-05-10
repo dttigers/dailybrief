@@ -113,29 +113,85 @@ test("setMaxListeners(50) prevents warning under 11+ listeners on same userId", 
 // extending AgentEventBus with emitQuiet / onQuiet / offQuiet.
 // (`test` and `assert` already imported above — no re-import needed.)
 
-const PLAN_03_BUS = "TODO(125-03): pending implementation — bus.emitQuiet/onQuiet/offQuiet";
+type QuietPayload = { enabled: boolean; since: string | null };
 
-test("bus.emitQuiet(userId, payload) fires onQuiet listeners for that userId only (T-125-01)", { skip: PLAN_03_BUS }, () => {
-  // TODO(125-03): bus.onQuiet(101, listener); bus.emitQuiet(101, {enabled:true, since:'…'});
-  // assert listener invoked exactly once with the payload.
-  assert.fail("placeholder");
+test("bus.emitQuiet(userId, payload) fires onQuiet listeners for that userId only (T-125-01)", () => {
+  const seen: QuietPayload[] = [];
+  const listener = (p: QuietPayload) => { seen.push(p); };
+  bus.onQuiet(8001, listener);
+  try {
+    const payload: QuietPayload = { enabled: true, since: "2026-05-10T12:00:00Z" };
+    bus.emitQuiet(8001, payload);
+    assert.equal(seen.length, 1, "onQuiet listener invoked exactly once");
+    assert.deepEqual(seen[0], payload, "listener received the exact payload");
+  } finally {
+    bus.offQuiet(8001, listener);
+  }
 });
 
-test("bus.emitQuiet(userId) does NOT fire onQuiet listeners for other userIds (cross-user isolation)", { skip: PLAN_03_BUS }, () => {
-  // TODO(125-03): bus.onQuiet(101, listenerA); bus.onQuiet(102, listenerB);
-  // bus.emitQuiet(101, payload); assert listenerA fired AND listenerB did NOT.
-  assert.fail("placeholder");
+test("bus.emitQuiet(userId) does NOT fire onQuiet listeners for other userIds (cross-user isolation)", () => {
+  const seenA: QuietPayload[] = [];
+  const seenB: QuietPayload[] = [];
+  const listenerA = (p: QuietPayload) => { seenA.push(p); };
+  const listenerB = (p: QuietPayload) => { seenB.push(p); };
+  bus.onQuiet(8101, listenerA);
+  bus.onQuiet(8102, listenerB);
+  try {
+    bus.emitQuiet(8101, { enabled: true, since: null });
+    assert.equal(seenA.length, 1, "userA listener fired for userA emit");
+    assert.equal(seenB.length, 0, "userB listener did NOT fire for userA emit (T-125-01)");
+  } finally {
+    bus.offQuiet(8101, listenerA);
+    bus.offQuiet(8102, listenerB);
+  }
 });
 
-test("bus.offQuiet removes the listener; subsequent emitQuiet does not fire", { skip: PLAN_03_BUS }, () => {
-  // TODO(125-03): bus.onQuiet(101, l); bus.offQuiet(101, l); bus.emitQuiet(101, payload);
-  // assert listener never called.
-  assert.fail("placeholder");
+test("bus.offQuiet removes the listener; subsequent emitQuiet does not fire", () => {
+  const seen: QuietPayload[] = [];
+  const listener = (p: QuietPayload) => { seen.push(p); };
+  bus.onQuiet(8201, listener);
+  bus.offQuiet(8201, listener);
+  bus.emitQuiet(8201, { enabled: false, since: null });
+  assert.equal(seen.length, 0, "listener never fired after offQuiet");
 });
 
-test("emitter Map entry is deleted when both EVENT_NAME and QUIET_NAME listenerCount=0", { skip: PLAN_03_BUS }, () => {
-  // TODO(125-03): bus.on(101, eventL); bus.onQuiet(101, quietL);
-  // bus.off(101, eventL); assert _size() >= 1 (still has quietL);
-  // bus.offQuiet(101, quietL); assert _size() === 0 (Map entry deleted).
-  assert.fail("placeholder");
+test("emitter Map entry is deleted when both EVENT_NAME and QUIET_NAME listenerCount=0", () => {
+  const eventL = (_row: Row) => {};
+  const quietL = (_p: QuietPayload) => {};
+  const baselineSize = bus._size();
+  bus.on(8301, eventL);
+  bus.onQuiet(8301, quietL);
+  assert.equal(
+    bus._size(),
+    baselineSize + 1,
+    "single emitter created for both listener types",
+  );
+
+  bus.off(8301, eventL);
+  assert.equal(
+    bus._size(),
+    baselineSize + 1,
+    "Map entry STILL present — quietL is still registered (cleanup gate joint)",
+  );
+
+  bus.offQuiet(8301, quietL);
+  assert.equal(
+    bus._size(),
+    baselineSize,
+    "Map entry deleted only after BOTH listeners removed (T-125-W3-01 regression guard)",
+  );
+});
+
+test("offQuiet without prior onQuiet is safe no-op (no emitter exists)", () => {
+  const listener = (_p: QuietPayload) => {};
+  // Should not throw and should leave Map size unchanged.
+  const before = bus._size();
+  bus.offQuiet(9999, listener);
+  assert.equal(bus._size(), before, "offQuiet on non-existent emitter is no-op");
+});
+
+test("emitQuiet without subscribers is no-op (does not create emitter)", () => {
+  const before = bus._size();
+  bus.emitQuiet(9998, { enabled: true, since: null });
+  assert.equal(bus._size(), before, "emitQuiet does not allocate emitter without subscribers");
 });
