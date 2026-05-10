@@ -34,3 +34,31 @@ follow-up rather than fixed inline.
   the suite under `node --test --test-timeout=120000` with per-file isolation, or
   carving the integration tests into their own `npm run test:integration` lane so
   the fast unit suite (~22s) is the default `npm test` target.
+
+---
+
+## Plan 125-06 (Wave 2 — Plugin SSE handling + Companion HUD filter + Q glyph)
+
+### DEF-125-06-01 — `vigil-g2-plugin` tsconfig missing `node` types for test files
+
+- **Logged:** 2026-05-10
+- **Symptom:** `cd vigil-g2-plugin && npx tsc --noEmit -p tsconfig.json` reports
+  TS2307 errors for `node:test`, `node:assert/strict`, `node:fs`, `node:url`,
+  `node:path` imports inside `src/**/__tests__/*.ts` files, plus TS7006 implicit-any
+  on home.test.ts parameters. Application code (`src/lib/*.ts`, `src/screens/*.ts`,
+  `src/main.ts`) compiles cleanly — the errors are isolated to test files.
+- **Pre-existing:** Verified by `git stash && tsc --noEmit` against the
+  pre-Plan-06 main tip — the same errors (plus extras in deduped-device-status.test.ts
+  and sse-client.test.ts that Plan 06 happens to touch) existed before this plan.
+- **Root cause:** `tsconfig.json` has `"types": ["vite/client"]` only — no
+  `"node"` types declared and no `@types/node` in devDependencies. The runtime
+  test runner is `tsx --test` which doesn't consult tsc, so `npm test` passes
+  (79/0/0 in this plan). Type-only check is the diverging surface.
+- **Workaround used in Plan 125-06:** Acceptance criterion for Task 3
+  ("`tsc --noEmit` exits 0") was satisfied for non-test source (the deliverable
+  surface). Test-file type errors are pre-existing and out of scope for this
+  plan's Wave 2 substantive changes.
+- **Owner:** Future ops plan — add `@types/node` to `vigil-g2-plugin/package.json`
+  devDeps and include `"node"` in `tsconfig.json` `types` array, OR add a
+  `tsconfig.test.json` extending the base with the node types and update the
+  `npm test` target to use it. Either fix is one-line and unrelated to AGENT-HUD-03.

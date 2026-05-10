@@ -33,6 +33,7 @@ import {
   buildCompanionScreen,
   applyAgentEvent,
   setSseConnected,
+  setQuietMode,
   hydrateActiveSessions,
 } from './screens/companion.ts'
 import {
@@ -132,6 +133,27 @@ const sseClient = createSseClient({
     setSseConnected(connected)
     if (bridge && getCurrentScreen() === Screen.COMPANION) {
       void rebuildCurrentScreen(bridge)
+    }
+  },
+  // Phase 125 (AGENT-HUD-03 / D-02 / UI-SPEC §"Header rebuild on
+  // quiet_mode_changed"): when the server emits quiet_mode_changed (either
+  // as the synthetic D-03 state-bootstrap frame on connect OR as a live
+  // PWA-toggle frame), parse the {enabled, since} payload and propagate
+  // the boolean to companion's module-level quietMode ref. If the user is
+  // currently viewing Companion, rebuild so the Q glyph appears/disappears
+  // within ~100ms. Malformed JSON: log and ignore — DO NOT crash plugin.
+  onQuietMode: (data) => {
+    try {
+      const parsed = JSON.parse(data) as { enabled: boolean; since: string | null }
+      setQuietMode(parsed.enabled)
+      if (bridge && getCurrentScreen() === Screen.COMPANION) {
+        void rebuildCurrentScreen(bridge)
+      }
+    } catch (err) {
+      // Per CONTEXT threat T-125-W6-02 — malformed payload must NOT crash
+      // the plugin. setQuietMode is not called on bad payload, preserving
+      // last-known good state.
+      console.error('[main] malformed quiet_mode_changed payload', err)
     }
   },
 })
