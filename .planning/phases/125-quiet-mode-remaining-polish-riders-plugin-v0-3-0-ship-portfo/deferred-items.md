@@ -62,3 +62,16 @@ follow-up rather than fixed inline.
   devDeps and include `"node"` in `tsconfig.json` `types` array, OR add a
   `tsconfig.test.json` extending the base with the node types and update the
   `npm test` target to use it. Either fix is one-line and unrelated to AGENT-HUD-03.
+- **Resolved (Plan 125-08):** Took a third path — added `"exclude": ["src/**/*.test.ts", "src/**/__tests__/**"]` to `tsconfig.json`. Tests are runtime artifacts via `tsx --test`, not part of the shipped Vite build. `tsc` (no-emit) now type-checks production source only; pack succeeds. Tests still run via `npm test` (79/0/0). This was a Plan 08 ship-prep blocker (build step in `npm run package:ehpk` was failing on test-file TS2307), so the fix is in-scope here.
+
+---
+
+## Plan 125-08 (Wave 3 — ship-prep + docs amendments + pack)
+
+### DEF-125-08-01 — PWA quiet-mode toggle changes uncommitted from Plan 125-07 work
+
+- **Logged:** 2026-05-10
+- **Symptom:** `git status` at Plan 125-08 start showed `vigil-pwa/src/api/client.ts` and `vigil-pwa/src/pages/SettingsPage.test.tsx` modified with Phase 125 AGENT-HUD-03 / D-05 quiet-mode client + tests (`getQuietMode` / `setQuietMode` exports, "G2 Plugin Quiet-mode toggle (AGENT-HUD-03)" describe block). Diffs are clearly Plan 125-07 PWA Wave-2 implementation work-in-progress.
+- **Pre-existing:** Yes — present before Plan 125-08 started. Plan 08 did not produce or touch PWA code.
+- **Scope verdict:** Out-of-scope per gsd-executor SCOPE BOUNDARY. Plan 08's ship-prep + docs amendments do not interact with PWA code.
+- **Owner:** Plan 125-07 (PWA quiet-mode toggle) — that plan's executor or summary needs to commit these along with the rest of the PWA work.
