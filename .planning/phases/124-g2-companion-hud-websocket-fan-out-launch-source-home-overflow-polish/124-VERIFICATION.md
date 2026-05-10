@@ -1,11 +1,19 @@
 ---
 phase: 124
 slug: g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish
-status: pending
+status: in-progress
 runs:
-  - operator: TBD
-    date: TBD
-    result: pending
+  - operator: jamesonmorrill
+    date: 2026-05-09
+    result: partial-pass
+    coverage: AGENT-API-03.1, AGENT-HUD-01 (5-event state-line + persistent-banner overlay), AGENT-HUD-02 (branches 1 + 2)
+    pending: AGENT-API-03.2 (Last-Event-ID resume cycle), AGENT-API-03.3 (cross-user isolation live), AGENT-HUD-02 branch 3 (jump-Home), G2-POLISH-06 (glassesMenu launch), G2-POLISH-07 (PNG equality — Plan 04 todo), reconnect storm
+    findings:
+      - "CORS allow-headers gap blocked SSE reconnect (Last-Event-ID not allow-listed) — fixed in 4b278b8"
+      - "Home footer hint outdated (↓ work orders → ↓ companion) — fixed in 4b278b8"
+      - "Persistent banner overlay missing on hydrate/cycle (only set by live SSE) — fixed in a977129"
+      - "Stale + task_complete sessions in cycle list — fixed in a977129"
+      - "currentSession identity not preserved across hydrate reorder — fixed in d6d3832"
 human_verification:
   - test: "AGENT-API-03 — single-user end-to-end smoke (vigil-watch test → vigil-core SSE → plugin sim Companion within 2s)"
     expected: "Within ≤2s of `swift run vigil-watch test`, the plugin sim Companion screen state line shows `running` with the synthetic heartbeat session label/message; sse-client logs a `data:` frame with the matching `id:`"
@@ -41,6 +49,28 @@ prerequisites:
 > Filled by operator after Wave 0-4 lands (all autonomous plans 01-08 are GREEN; this is the final operator gate before Phase 124 closes and Phase 125 unblocks).
 >
 > Each REQ-ID has a verification script + result field. Failure cases must be reproduced + investigated before retry. Paste verbatim outputs (cmp results, sim screenshots, sse frame logs as appropriate) under each section's **Result** line.
+
+## Live E2E session log
+
+**2026-05-09 — jamesonmorrill (Jamesons-iMac, Intel x86_64, macOS Darwin 24.6.0):**
+
+Live stack stood up: vigil-core dev (`localhost:3001`, local Postgres `vigil_dev`, fresh bearer `vk_5a78c…` for userId 1) + vigil-g2-plugin Vite dev (`localhost:5173`, `.env.local` override pointing at localhost) + evenhub-simulator (Tauri WKWebView, `--automation-port 9898`).
+
+**Findings discovered live + addressed during this session (5 commits stacked on Phase 124 base):**
+
+| # | Finding | Fix commit |
+|---|---------|------------|
+| 1 | `Last-Event-ID` not in vigil-core CORS `allowHeaders` — preflight blocked SSE reconnect; plugin stuck offline (`!`) after first disconnect | `4b278b8` |
+| 2 | Home footer hardcoded `↓ work orders` — wrong since Plan 07 inserted Companion at slot 1 of SCREEN_ORDER | `4b278b8` |
+| 3 | Persistent banner overlay missing on hydrate/cycle for sessions whose `lastEvent` was `needs_input`/`task_failed` (banner only set by live SSE applyAgentEvent, never re-derived from cache) | `a977129` |
+| 4 | Stale + `task_complete` sessions appeared in cycle list (D-06 active filter only applied to landing-screen routing, not to Companion's cycle list) | `a977129` |
+| 5 | currentSession identity not preserved across hydrate reorder (server returns by `lastEvent.eventTimestamp DESC` — old code stored numeric index, so live-SSE-set bannerState pointed at the wrong session post-hydrate and got cleared) | `d6d3832` |
+
+**Test counts after follow-ups:** vigil-core 39/39 pass (unchanged). vigil-g2-plugin 65/65 pass (was 54 — added 11 new tests covering all 5 findings).
+
+**Sections covered live this session:** AGENT-API-03.1 (single-user smoke ≤2s ✅), AGENT-API-03.2 (Last-Event-ID resume — partial; CORS unblock verified, full stop/start cycle pending), AGENT-HUD-01 (3-line HUD layout + persistent-banner overlay state-machine for `needs_input` + `task_failed` ✅; toast-banner state-machine for `task_complete` + `milestone` ⚠ structural-only), AGENT-HUD-02 (branches 1 + 2 ✅; branch 3 inferred not screenshotted).
+
+**Sections still pending operator coverage:** AGENT-API-03.2 (full vigil-core stop/start replay cycle), AGENT-API-03.3 (cross-user isolation under live network — needs second bearer + second sim), AGENT-HUD-02 branch 3 (jump-Home from single-active-session, no-banner state — re-run for screenshot), G2-POLISH-06 (sim has no glassesMenu launch toggle — needs real G2 + iOS Even Hub app OR temporary main.ts dev-mode override), G2-POLISH-07 (PNG equality — Plan 04 D-14 todo carries the canonical record), reconnect storm (5 stop/start cycles — listener-leak structural is locked by Plan 02 unit test, live confirmation pending).
 
 ---
 
@@ -127,7 +157,15 @@ Confirm vigil-core is on a build that includes Plans 02 + 03 (bus + SSE route). 
 
 4. **Expected:** The plugin's Companion screen shows the synthetic heartbeat session within 2 seconds (state line: `running`).
 
-**Result:** [pending] — operator records actual time-to-display + screen content here.
+**Result (2026-05-09 jamesonmorrill — PARTIAL PASS):** Verified the SSE pipeline end-to-end via direct curl POST to `/v1/agent-events` (bearer for `jamesonmorrill1@gmail.com`, local vigil-core) instead of `swift run vigil-watch test`:
+
+- **Server side:** `POST /v1/agent-events` with `event:"needs_input"` → row inserted (id incrementing) → `bus.emit(userId, row)` → SSE subscriber receives `event: agent-event\ndata: <json>\nid: <pk>\n\n` frame within ~50ms (curl `--max-time 6` showed both POST 201 + SSE frame delivered).
+- **Client side:** evenhub-simulator (Tauri WKWebView) loaded plugin Vite dev server (`http://localhost:5173/`) pointed at local `vigil-core` (`http://localhost:3001/v1` via `.env.local` override). After CORS fix `4b278b8` lifted the Last-Event-ID preflight block, sse-client.ts shim established a long-lived ESTABLISHED connection (verified via `lsof -iTCP:3001 -sTCP:ESTABLISHED`) and onEvent/applyAgentEvent updated the Companion HUD live within ~1s of the POST.
+- **Visual evidence:** sim screenshot showed `[NEEDS INPUT]` overlay on line 1 + label on line 2 + truncated message on line 3 (`BANNER LIVE — Phase 124 SSE pipe…`) + footer flipped to `() ack banner`. `!` offline indicator cleared on connect.
+
+**`swift run vigil-watch test` not exercised** — Phase 123 24h soak gate is OPERATOR-PENDING; vigil-watch was not installed during this run. The synthetic curl path covers the same vigil-core code paths that `vigil-watch test` would hit (POST /v1/agent-events with the 5-event enum and required fields), so this section is functionally covered. Re-run §AGENT-API-03.1 with vigil-watch when Phase 123 closeout lands to fully honor the documented runbook.
+
+Latency under 2s SLO: PASS. Cross-reference: live session, ~1s observed.
 
 ### Section AGENT-API-03.2 — Last-Event-ID resume
 
@@ -144,9 +182,11 @@ Confirm vigil-core is on a build that includes Plans 02 + 03 (bus + SSE route). 
    ```
 5. **Expected:** Plugin sim removes `!`, replays missed events via `Last-Event-ID` header, HUD updates with the latest state.
 
-**Result:** [pending]
+**Result (2026-05-09 jamesonmorrill — PARTIAL):** The CORS preflight blocking `Last-Event-ID` was discovered live on this run (the WebView console showed `Failed to load resource: Request header field Last-Event-ID is not allowed by Access-Control-Allow-Headers` — see commit `4b278b8`). Post-fix, `OPTIONS /v1/agent-stream` with `Access-Control-Request-Headers: authorization,last-event-id,accept` returns `204` with `access-control-allow-headers: Content-Type,Authorization,Last-Event-ID` (verified via curl). Plugin's `sse-client.ts` localStorage `vigil:lastEventId` persisted across the sim restart and was sent on reconnect (verified via Vite reload + ESTABLISHED conn + console clean of CORS errors).
 
-Cross-reference: `vigil-core/src/routes/__tests__/agent-stream.test.ts` T2/T7 pin the happy-path replay query (gt id, gt event_timestamp, eq user_id, orderBy id ASC, 24h cutoff bound). Wave 5 confirms under live HTTP + plugin SSE shim's `Last-Event-ID` header from localStorage.
+**Vigil-core stop/start cycle NOT explicitly run** in this session. The CORS preflight + ESTABLISHED reconnect after sim restart cover the headline regression risk (Last-Event-ID block), but the full "stop core → events queue → start core → replay" cycle still needs an operator pass. Re-run on next operator session.
+
+Cross-reference: `vigil-core/src/routes/__tests__/agent-stream.test.ts` T2/T7 pin the happy-path replay query (gt id, gt event_timestamp, eq user_id, orderBy id ASC, 24h cutoff bound). 4b278b8 commit message documents the CORS gap + fix.
 
 ### Section AGENT-API-03.3 — Cross-user isolation (live)
 
@@ -191,9 +231,21 @@ Cross-reference: `vigil-core/src/integration/cross-user-isolation.test.ts` Block
 7. Trigger a `heartbeat` event:
    - **Expected:** No banner. Line 2 shows `running` if it wasn't already.
 
-**Result:** [pending]
+**Result (2026-05-09 jamesonmorrill — PASS, with live observation finding):**
 
-Cross-reference: Plan 07 `vigil-g2-plugin/src/screens/__tests__/companion.test.ts` table-driven tests pin static composition + banner state machine for all 5 event types. Wave 5 confirms under live SSE event timing.
+| Event | Banner | State line | Live verified? |
+|-------|--------|------------|----------------|
+| `needs_input` | `[NEEDS INPUT]` (persistent, until ack) | `waiting for input` | ✅ — sim screenshot 1/3 + 2/3 from cycle test |
+| `task_failed` | `[TASK FAILED]` (persistent, until ack) | `failed` | ✅ — sim screenshot |
+| `heartbeat` | none | `running` | ✅ — sim screenshot |
+| `task_complete` | `[DONE]` (3s toast) | `done` | ⚠ structural (unit tests pin behavior; not live-tested in this session because cycle-list filter excludes task_complete from REST hydrate path. Live SSE applyAgentEvent toast path is covered by Plan 07 unit test "task_complete is a 3s toast — toastMs=3000; auto-clears via expiresAt") |
+| `milestone` | `[MILESTONE]` (3s toast) | `running` | ⚠ structural (same reason — toasts only set by live SSE, covered by Plan 07 unit test) |
+
+Layout invariants verified live: 30-char label truncation + `…`, 32-char message truncation + `…`, header rightSide flips between HH:MM clock and N/M when ≥2 sessions, footer is context-aware (`() double-tap` ↔ `() ack banner`).
+
+**Live finding addressed during this run:** Banner overlay was missing on hydrate/cycle for sessions whose `lastEvent.event` was `needs_input` or `task_failed` — bannerState was set ONLY by live applyAgentEvent, never re-derived from cache. Plan-checker W-4 flagged adjacent behavior. Fix landed in `a977129` (recomputePersistentBannerForCurrent + ackedBannerKeys) + `d6d3832` (identity preservation across hydrate reorder). Live re-test confirmed `[NEEDS INPUT]` and `[TASK FAILED]` overlays correctly appear after navigating to Companion when most-recent event is banner-eligible.
+
+Cross-reference: Plan 07 `vigil-g2-plugin/src/screens/__tests__/companion.test.ts` (now 23 cases, was 14) table-driven tests pin static composition + banner state machine for all 5 event types + identity-preservation regression tests added in d6d3832.
 
 ---
 
@@ -206,9 +258,17 @@ Cross-reference: Plan 07 `vigil-g2-plugin/src/screens/__tests__/companion.test.t
 3. With 1 session + no banner:
    - DOUBLE_CLICK → navigates to HOME (carousel slot 0).
 
-**Result:** [pending]
+**Result (2026-05-09 jamesonmorrill — PARTIAL PASS):**
+
+| Branch | Verified? | Evidence |
+|--------|-----------|----------|
+| 1. Banner present → ack-banner | ✅ | Sim screenshots: `1/3 [NEEDS INPUT]…  () ack banner` → DOUBLE_CLICK → `1/3 asking session / waiting for input / awaiting decision  () double-tap`. ackedBannerKeys recorded the (sessionId, eventTimestamp) key — cycling away and back did NOT re-show the banner. Same flow re-verified for `[TASK FAILED]` → `failed session / failed / build error`. |
+| 2. ≥2 sessions, no banner → cycle-session | ✅ | Sim screenshots showed N/M increment `1/3 → 2/3 → 3/3` cleanly across cycles. Identity preserved across hydrate reorder (per `d6d3832` fix). Combined with Branch 1: cycling onto a banner-eligible session re-derives the banner overlay from cache (per `a977129` recompute). |
+| 3. 1 session, no banner → jump-Home | ⚠ inferred not screenshotted | Cycle wraps via `(currentSessionIndex + 1) % activeSessions.length` so cycling repeatedly returns to a state where the only target after acks is the heartbeat session. The next double-tap from there hits `await navigateTo(Screen.HOME, bridge)` (navigation.ts line 195). Plan 07 navigation drift tests pin this branch structurally. Did not capture the screenshot of the navigation transition during this session. |
 
 Note: Single-tap (`CLICK_EVENT`) and long-press (`LONG_PRESS_EVENT`) are **NOT** plumbed in v3.8; deferred to SEED-011 (`.planning/seeds/SEED-011-g2-single-tap-long-press-tap-events.md`). Do not attempt to test them — `eventType` returns undefined on real G2 hardware per Phase 45 retro / `feedback_g2_tap_expand_broken`.
+
+**Companion footer fix verified (`4b278b8`):** Home screen footer now reads `↓ companion   () double-tap to exit` (was `↓ work orders` — incorrect since Plan 07 inserted COMPANION at slot 1 of SCREEN_ORDER). Sim screenshot of Home confirms.
 
 ---
 
@@ -221,11 +281,11 @@ Note: Single-tap (`CLICK_EVENT`) and long-press (`LONG_PRESS_EVENT`) are **NOT**
 3. Simulate `glassesMenu` launch **WITH an active session** (run `swift run vigil-watch test` immediately before launching):
    - **Expected:** Lands on COMPANION.
 
-**Result:** [pending]
+**Result (2026-05-09 jamesonmorrill — PENDING):** evenhub-simulator (CLI: `evenhub-simulator [targetUrl]`) does NOT expose a launch-source toggle in `--help` or in `~/Library/Application Support/evenhub/simulator.yaml` (only `glow`, `bounce`, `aid` are configurable). The simulator defaults to `appMenu` source — observed via plugin landing on Home regardless of active-session state. Cannot exercise the `glassesMenu` path through this sim alone.
 
-Cross-reference: Plan 08 `vigil-g2-plugin/src/__tests__/main.test.ts` pins module-scope `onLaunchSource` registration + 500ms `Promise.race` timeout + `hasActiveSession` D-06 5-min/non-terminal filter. Wave 5 confirms first-paint render under sim launch-source delivery.
+**Recommended path forward:** Either (a) test on real G2 glasses + iOS Even Hub app glasses-menu launch (deferred-item per `feedback_g2_tap_expand_broken` pattern); OR (b) temporarily monkey-patch `main.ts` in dev mode to force `source = 'glassesMenu'` and verify the active-session filter + landing decision (structural sim test). Plan 08's `main.test.ts` already pins `hasActiveSession` D-06 5-min/non-terminal filter + module-scope `onLaunchSource` registration + 500ms `Promise.race` timeout under unit tests, so the structural correctness is locked.
 
-Hardware retest with real G2 glasses: deferred-item if not on hand. Sim-level verification is the structural gate.
+Cross-reference: Plan 08 `vigil-g2-plugin/src/__tests__/main.test.ts` pins module-scope `onLaunchSource` registration + 500ms `Promise.race` timeout + `hasActiveSession` D-06 5-min/non-terminal filter. Hardware retest with real G2 glasses: deferred-item per `feedback_g2_tap_expand_broken`. Sim-level verification is the structural gate.
 
 ---
 
@@ -287,19 +347,21 @@ Cross-reference: `vigil-core/src/lib/__tests__/agent-events-bus.test.ts` "100 re
 
 ## Sign-off
 
-- [ ] §AGENT-API-03.1 (single-user smoke ≤2s): result captured above
-- [ ] §AGENT-API-03.2 (Last-Event-ID resume): result captured above
-- [ ] §AGENT-API-03.3 (cross-user isolation live): result captured above
-- [ ] §AGENT-HUD-01 (3-line HUD + 5-event banner state machine): result captured above
-- [ ] §AGENT-HUD-02 (DOUBLE_CLICK context-sensitive: ack / cycle / home): result captured above
-- [ ] §G2-POLISH-06 (launch source: appMenu→Home / glassesMenu+inactive→Home / glassesMenu+active→Companion): result captured above
-- [ ] §G2-POLISH-07 (home body PNG match — cross-references Plan 04 D-14 todo): result captured above
-- [ ] Reconnect storm: no listener leak / event amplification observed
+- [x] §AGENT-API-03.1 (single-user smoke ≤2s): live POST → SSE → plugin Companion ~1s observed (2026-05-09)
+- [~] §AGENT-API-03.2 (Last-Event-ID resume): partial — CORS unblock verified live; full vigil-core stop/start replay cycle pending
+- [ ] §AGENT-API-03.3 (cross-user isolation live): pending — needs second bearer + second sim
+- [x] §AGENT-HUD-01 (3-line HUD + 5-event banner state machine): persistent-banner overlay + state-line + truncation + N/M + offline glyph all verified live (2026-05-09); toast banners structurally locked by Plan 07 unit tests
+- [~] §AGENT-HUD-02 (DOUBLE_CLICK context-sensitive: ack / cycle / home): branches 1 + 2 verified live; branch 3 inferred — re-run for screenshot
+- [ ] §G2-POLISH-06 (launch source: appMenu→Home / glassesMenu+inactive→Home / glassesMenu+active→Companion): blocked by sim — no glassesMenu toggle. Hardware retest OR dev-mode override needed
+- [ ] §G2-POLISH-07 (home body PNG match — cross-references Plan 04 D-14 todo): pending — canonical record in `.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`
+- [ ] Reconnect storm: pending — Plan 02 unit test pins listener-leak invariant structurally; live confirmation pending
 - [ ] Hardware retest noted as deferred-item if not run
 
-**Operator:** TBD
-**Date:** TBD
-**Phase 124 closure:** pending
+(Legend: `[x]` PASS · `[~]` PARTIAL · `[ ]` PENDING)
+
+**Operator:** jamesonmorrill (partial run)
+**Date:** 2026-05-09
+**Phase 124 closure:** in-progress (5 of 9 sign-off items addressed; 4 pending operator coverage)
 
 ---
 
