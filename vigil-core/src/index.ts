@@ -41,6 +41,7 @@ import { authMe } from "./routes/auth-me.js"; // Phase 113 (AUTH-11 D-27) — di
 import { verifyEmail } from "./routes/verify-email.js";          // Phase 113 (AUTH-11) — unauthenticated; mount BEFORE bearerAuth dispatcher
 import { resendVerification } from "./routes/resend-verification.js"; // Phase 113 (AUTH-11) — bearerAuth required; mount AFTER dispatcher
 import { agentEvents } from "./routes/agent-events.js"; // Phase 121 (AGENT-API-01, AGENT-API-02) — bearerAuth required; mount AFTER dispatcher
+import { agentStream } from "./routes/agent-stream.js"; // Phase 124 (AGENT-API-03) — bearerAuth required; mount AFTER dispatcher
 import { captureException, shutdownPosthog } from "./analytics/posthog.js";
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
@@ -208,6 +209,14 @@ app.route("/v1", resendVerification);
 // becomes possible). Plan 04's cross-user-isolation lock pins the structural
 // guarantee; if this comment is wrong, the lock test fails.
 app.route("/v1", agentEvents);
+
+// Phase 124 (AGENT-API-03): per-userId SSE fan-out for agent_events.
+// SAME mount-order constraint as agentEvents above — MUST be after the
+// bearerAuth dispatcher at line 135 AND after the metricsMiddleware at
+// line 158. Do NOT move above line 135 — would create a silent auth
+// bypass (cross-user fan-out becomes possible). Mirror agent-events
+// mount comment.
+app.route("/v1", agentStream);
 
 // D-13 — single chokepoint for unhandled errors. Must be AFTER all app.route()
 // calls so Hono's handler-chain ordering routes thrown errors here (Pitfall 4).

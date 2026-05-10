@@ -3,6 +3,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { db } from "../db/connection.js";
 import { agentEvents } from "../db/schema.js";
 import type { DrizzleAgentEvent, NewAgentEvent } from "../db/types.js";
+import { bus as defaultBus } from "../lib/agent-events-bus.js";
 
 // ── Phase 121 — AGENT-API-01 + AGENT-API-02 — load-bearing invariants ───────
 // 1. user_id resolved from c.get("userId") set by bearerAuth dispatcher
@@ -59,6 +60,12 @@ export interface AgentEventsDeps {
     sinceIso: Date,
     limit: number,
   ) => Promise<AgentSessionRow[]>;
+  // Phase 124 (AGENT-API-03 / D-03): per-userId fan-out hook. Optional so
+  // existing tests under agent-events.test.ts that pre-date Phase 124 still
+  // wire without modification. Production singleton wires the real bus below.
+  bus?: {
+    emit(userId: number, row: DrizzleAgentEvent): void;
+  };
 }
 
 export interface AgentSessionRow {
@@ -235,6 +242,13 @@ export function createAgentEventsRoute(deps: AgentEventsDeps): Hono {
     };
 
     const { row, isNew } = await deps.dbInsertOrGet(newRow);
+    // Phase 124 (AGENT-API-03 / D-03): fan out to per-userId SSE subscribers.
+    // MUST be gated on isNew — Phase 121 dedupe means the same client payload
+    // may POST twice (network retry); emitting both times would publish
+    // duplicates to subscribers (CONTEXT D-03 + RESEARCH Anti-Patterns).
+    if (isNew) {
+      deps.bus?.emit(userId, row);
+    }
     // D-C2: 201 on fresh insert, 200 on idempotent dup (same body shape)
     return c.json(row, isNew ? 201 : 200);
   });
@@ -281,6 +295,12 @@ export const agentEvents$Route = createAgentEventsRoute({
   get dbAvailable() {
     return !!db;
   },
+
+  // Phase 124 (AGENT-API-03 / D-03): wire real bus singleton from
+  // ../lib/agent-events-bus.js so POST → bus.emit → SSE subscribers fan-out
+  // works end-to-end. Existing tests pass deps without `bus` and the optional
+  // chaining `deps.bus?.emit(...)` makes the hook a no-op there.
+  bus: defaultBus,
 
   // D-C1 + D-C2 + D-D2 block 3: dedupe via composite (user_id, client_event_id)
   // partial unique index. .onConflictDoNothing returns no row on conflict;
