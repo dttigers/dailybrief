@@ -1,13 +1,17 @@
 ---
 id: SEED-010
-status: dormant
+status: ripe
 planted: 2026-05-05
 planted_during: v3.7 milestone (post Phase 119-01, awaiting DMARC auto-eval gate 2026-05-06)
+ripened: 2026-05-10
+ripened_during: v3.8 verifying / pre-v3.9 ideation
 trigger_when: v3.8 OR v3.9 milestone planning AND user wants new G2 product surface (not just polish) — likely milestone-anchor candidate, NOT a fast-follow
 scope: Large
 ---
 
 # SEED-010: Voice capture from G2 glasses via SDK audioControl + audioEvent PCM stream
+
+> **2026-05-10 — Trigger fired.** Operator is ideating v3.9 scope while v3.8 sits in `verifying` (Even Hub review + Phase 123 soak pending). Both trigger clauses met: (a) v3.9 milestone planning under way, (b) operator explicitly wants a new G2 product surface — "add voice capture to vigil g2 plugin" raised during /gsd-capture session. Status flipped to `ripe`; should surface as a milestone-anchor candidate when /gsd-new-milestone runs for v3.9. Recommend a 1-2 day spike (per Notes below) before committing the milestone scope.
 
 ## Why This Matters
 
