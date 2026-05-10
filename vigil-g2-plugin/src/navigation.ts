@@ -10,11 +10,12 @@ import { rebuildHomeScreen } from './screens/home.ts'
 import { buildWorkOrdersScreen, getLastFetchedTasks } from './screens/work-orders.ts'
 import { buildAffirmationScreen } from './screens/affirmation.ts'
 import { buildTaskDetailScreen } from './screens/task-detail.ts'
-import { fetchSummary, fetchBrief, fetchAffirmation } from './api.ts'
+import { fetchSummary, fetchBrief, fetchAffirmation, fetchAgentSessions } from './api.ts'
 
 // Screen identifiers — const object pattern (erasableSyntaxOnly)
 export const Screen = {
   HOME: 'home',
+  COMPANION: 'companion',     // NEW — Phase 124 D-05
   WORK_ORDERS: 'work-orders',
   AFFIRMATION: 'affirmation',
   TASK_DETAIL: 'task-detail',
@@ -24,6 +25,7 @@ export type ScreenName = (typeof Screen)[keyof typeof Screen]
 // Circular navigation order
 const SCREEN_ORDER: readonly ScreenName[] = [
   Screen.HOME,
+  Screen.COMPANION,    // NEW slot 1 — Phase 124 D-05
   Screen.WORK_ORDERS,
   Screen.AFFIRMATION,
 ]
@@ -50,6 +52,18 @@ async function buildScreen(screen: ScreenName): Promise<RebuildPageContainer> {
       // screen below still uses fetchAffirmation() (do not remove the import).
       const summary = await fetchSummary()
       return rebuildHomeScreen(summary)
+    }
+    case Screen.COMPANION: {
+      // Phase 124 D-05 / AGENT-HUD-01 — hydrate from GET /v1/agent-sessions;
+      // SSE shim provides live updates (wired in Plan 08 main.ts). Dynamic
+      // import keeps companion.ts side-effect-free at module load until first
+      // navigation to the Companion screen.
+      const sessions = await fetchAgentSessions()
+      const { rebuildCompanionScreen, hydrateActiveSessions } = await import(
+        './screens/companion.ts'
+      )
+      hydrateActiveSessions(sessions)
+      return rebuildCompanionScreen()
     }
     case Screen.WORK_ORDERS: {
       const brief = await fetchBrief()
@@ -83,6 +97,34 @@ export async function refreshCurrentScreen(
   bridge: EvenAppBridge,
 ): Promise<void> {
   await navigateTo(currentScreen, bridge)
+}
+
+/**
+ * Phase 124 W-6 — read-only accessor for the current screen identity.
+ * Plan 08's SSE event handler needs this to decide whether an incoming
+ * agent_event should trigger a Companion rebuild (only when the user is
+ * actually viewing the Companion screen — otherwise the event silently
+ * updates the in-memory cache via applyAgentEvent and the user sees the
+ * fresh state on next swipe-to-Companion).
+ */
+export function getCurrentScreen(): ScreenName {
+  return currentScreen
+}
+
+/**
+ * Phase 124 W-6 — rebuild whatever screen is currently active without
+ * changing the screen identity. Used by Plan 08's SSE wiring to repaint
+ * the Companion HUD when a new agent_event arrives. Identical to
+ * refreshCurrentScreen for now (kept as a separate export so future
+ * SSE-only rebuild logic — e.g., skipping the API fetch and using only
+ * the in-memory companion cache — can diverge without churning the
+ * refreshCurrentScreen call sites in handleNavEvent).
+ */
+export async function rebuildCurrentScreen(
+  bridge: EvenAppBridge,
+): Promise<void> {
+  const container = await buildScreen(currentScreen)
+  await bridge.rebuildPageContainer(container)
 }
 
 /** Navigate to task detail sub-screen by list item index */
@@ -126,6 +168,31 @@ export async function handleNavEvent(
     eventType === OsEventTypeList.DOUBLE_CLICK_EVENT
   ) {
     void bridge.shutDownPageContainer(1)
+    return
+  }
+
+  // Phase 124 D-08 — context-sensitive DOUBLE_CLICK on Companion screen.
+  // ONLY DOUBLE_CLICK_EVENT is plumbed reliably on G2 (CLICK_EVENT is
+  // sim-only per Phase 45 retro; long-press is absent from OsEventTypeList
+  // in @evenrealities/even_hub_sdk@0.0.9 — see SEED-011).
+  // Priority: banner-ack → cycle-session → jump-Home.
+  if (
+    currentScreen === Screen.COMPANION &&
+    eventType === OsEventTypeList.DOUBLE_CLICK_EVENT
+  ) {
+    const { hasActiveBanner, ackBanner, getActiveSessions, cycleSession } =
+      await import('./screens/companion.ts')
+    if (hasActiveBanner()) {
+      ackBanner()
+      await refreshCurrentScreen(bridge)
+      return
+    }
+    if (getActiveSessions().length >= 2) {
+      cycleSession()
+      await refreshCurrentScreen(bridge)
+      return
+    }
+    await navigateTo(Screen.HOME, bridge)
     return
   }
 

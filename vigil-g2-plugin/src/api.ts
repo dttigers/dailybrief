@@ -1,6 +1,11 @@
 // Vigil Core API client — typed fetch wrapper for G2 plugin
 
-import type { VigilSummary, VigilBrief, VigilAffirmation } from './types.ts'
+import type {
+  VigilSummary,
+  VigilBrief,
+  VigilAffirmation,
+  AgentSessionRow,
+} from './types.ts'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/v1'
 const API_KEY = import.meta.env.VITE_API_KEY || ''
@@ -154,5 +159,31 @@ export async function fetchAffirmation(): Promise<VigilAffirmation> {
   } catch (err) {
     console.error('[vigil-g2] fetchAffirmation failed:', err)
     return FALLBACK_AFFIRMATION
+  }
+}
+
+/**
+ * GET /v1/agent-sessions — Phase 124 (AGENT-HUD-01 / D-06 / D-10).
+ *
+ * Hydrates the Companion screen + glassesMenu landing-source check with the
+ * caller's active + recent agent_events sessions (sliding 24h window per
+ * Phase 121 D-B1). Returns [] on error (matches fetchSummary fallback
+ * posture — display always renders, even on transient API failure).
+ *
+ * NOTE: never log the bearer or API_KEY in this helper; authHeaders()
+ * already gates Authorization-header injection on a non-empty API_KEY.
+ */
+export async function fetchAgentSessions(): Promise<AgentSessionRow[]> {
+  try {
+    const res = await fetch(`${BASE_URL}/agent-sessions`, {
+      headers: authHeaders(),
+    })
+    if (!res.ok) return []
+    const json = await res.json()
+    // GET /v1/agent-sessions returns { data: AgentSessionRow[] } — verified
+    // at vigil-core/src/routes/agent-events.ts:64-74 (Phase 121 Plan 02).
+    return Array.isArray(json?.data) ? (json.data as AgentSessionRow[]) : []
+  } catch {
+    return []
   }
 }

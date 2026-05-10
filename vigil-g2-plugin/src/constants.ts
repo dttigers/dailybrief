@@ -5,7 +5,10 @@ export const DISPLAY_HEIGHT = 288
 export const CHARS_PER_LINE = 32
 export const DIVIDER = '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'
 
-/** Container IDs for screen layouts (max 12 total across all screens) */
+/** Container IDs for screen layouts. SDK constraint is `containerTotalNum: 1~12`
+ *  PER PAGE (per CreateStartUpPageContainer / RebuildPageContainer call), NOT
+ *  global across screens. Verified against
+ *  @evenrealities/even_hub_sdk index.d.ts:638-643 in Phase 124 research. */
 export const ContainerId = {
   HOME_HEADER: 1,
   HOME_BODY: 2,
@@ -19,4 +22,7 @@ export const ContainerId = {
   TASK_DETAIL_HEADER: 10,
   TASK_DETAIL_BODY: 11,
   TASK_DETAIL_FOOTER: 12,
+  COMPANION_HEADER: 13,    // Phase 124 D-05
+  COMPANION_BODY: 14,
+  COMPANION_FOOTER: 15,
 } as const
