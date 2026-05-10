@@ -333,7 +333,7 @@ message → max 32 chars + '…'
     - `vigil-g2-plugin/src/navigation.ts` contains `case Screen.COMPANION` (grep exits 0)
     - `vigil-g2-plugin/src/navigation.ts` contains `currentScreen === Screen.COMPANION` (grep exits 0)
     - `vigil-g2-plugin/src/navigation.ts` does NOT contain `LONG_PRESS_EVENT` (grep returns nothing — drift detector for D-08)
-    - `vigil-g2-plugin/src/navigation.ts` does NOT contain a non-comment `CLICK_EVENT` reference for Companion: `grep -E '(?<!DOUBLE_)CLICK_EVENT' vigil-g2-plugin/src/navigation.ts` returns nothing (or only DOUBLE_CLICK_EVENT matches)
+    - `vigil-g2-plugin/src/navigation.ts` does NOT contain a non-comment bare `CLICK_EVENT` reference for Companion. BSD-grep-portable check — strips `//` line comments, then flags any `CLICK_EVENT` not part of `DOUBLE_CLICK_EVENT`. Must produce empty output: `grep -v '^[[:space:]]*//' vigil-g2-plugin/src/navigation.ts | awk '/CLICK_EVENT/ && !/DOUBLE_CLICK_EVENT/'`. (Drift test in Task 3 also covers this invariant via comment-stripped regex.)
     - `vigil-g2-plugin/src/api.ts` contains `export async function fetchAgentSessions` (grep exits 0)
     - `vigil-g2-plugin/src/api.ts` contains `${BASE_URL}/agent-sessions` (grep exits 0)
     - `cd vigil-g2-plugin && npx tsc --noEmit` produces zero errors involving constants.ts, navigation.ts, api.ts

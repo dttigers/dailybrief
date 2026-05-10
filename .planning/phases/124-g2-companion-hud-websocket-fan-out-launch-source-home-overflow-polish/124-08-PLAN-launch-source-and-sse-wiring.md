@@ -6,6 +6,7 @@ wave: 4
 depends_on: [01, 06, 07]
 files_modified:
   - vigil-g2-plugin/src/main.ts
+  - vigil-g2-plugin/src/navigation.ts  # add `export function getCurrentScreen()` + `export function rebuildCurrentScreen(bridge)` (or rename if Plan 07 introduced equivalent helpers under different names — see Step 4)
   - vigil-g2-plugin/src/__tests__/main.test.ts
 autonomous: true
 requirements: [G2-POLISH-06, AGENT-HUD-01, AGENT-API-03]
@@ -323,7 +324,19 @@ const sseClient = createSseClient({
     ```
 
     Notes:
-    - `getCurrentScreen()` and `rebuildCurrentScreen()` may need to be added to / exported from navigation.ts. If navigation.ts already has them under different names, use those. If not, add minimal exports as a small ride-along edit to navigation.ts.
+    - `getCurrentScreen()` and `rebuildCurrentScreen()` are NOT exported by Plan 07's navigation.ts edits. This plan MUST add them as part of the same task (small ride-along edit to navigation.ts is in `files_modified`):
+      ```ts
+      // navigation.ts — add at module scope, exported:
+      export function getCurrentScreen(): Screen { return currentScreen; }
+      export async function rebuildCurrentScreen(bridge: AppBridge): Promise<void> {
+        // delegate to the existing per-screen rebuild dispatch (the same code path
+        // handleNavEvent uses when SCROLL_TOP/SCROLL_BOTTOM lands you on a screen).
+        // If Plan 07 named that helper differently (e.g., `renderScreen` or
+        // `rebuildScreen(currentScreen, bridge)`), use that name verbatim and
+        // collapse this wrapper.
+      }
+      ```
+      Verify by grep: `grep -E "^export function (getCurrentScreen|rebuildCurrentScreen)" vigil-g2-plugin/src/navigation.ts` returns 2 lines. If Plan 07 already exports equivalents under different names, use those and skip this edit.
     - `bridge` reference: the SSE callback closures need access to the bridge. Two valid approaches:
       (a) Hoist `bridge` to module scope (assigned during init).
       (b) Use a getter exported from navigation.ts.

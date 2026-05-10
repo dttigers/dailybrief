@@ -194,7 +194,7 @@ const { bus } = await import("../agent-events-bus.js");
     - Use Edit/Write only — never `cat << EOF`.
   </action>
   <verify>
-    <automated>cd vigil-core && npx tsc --noEmit src/lib/agent-events-bus.ts 2>&1 | tee /tmp/124-02-tsc.log; grep -E "error" /tmp/124-02-tsc.log; test ! -s /tmp/124-02-tsc.log || true</automated>
+    <automated>cd vigil-core && npx tsc --noEmit 2>&1 | tee /tmp/124-02-tsc.log; ! grep -E "src/lib/agent-events-bus\.ts.*error" /tmp/124-02-tsc.log</automated>
   </verify>
   <acceptance_criteria>
     - File exists: `test -f vigil-core/src/lib/agent-events-bus.ts`
