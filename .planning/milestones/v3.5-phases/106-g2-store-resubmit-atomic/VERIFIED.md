@@ -5,7 +5,7 @@
 > `vigil.ehpk` unless the `Verified:` line below is a real ISO 8601 timestamp within
 > the last 24 hours AND all three checkboxes are ticked.
 
-Verified: 2026-05-06T00:23:30Z
+Verified: 2026-05-10T12:41:16-06:00
 
 ## Gate Checkboxes
 

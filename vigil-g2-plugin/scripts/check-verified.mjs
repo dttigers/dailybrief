@@ -13,7 +13,8 @@ const VERIFIED_PATH = resolve(
   '..',
   '..',
   '.planning',
-  'phases',
+  'milestones',
+  'v3.5-phases',
   '106-g2-store-resubmit-atomic',
   'VERIFIED.md',
 )
