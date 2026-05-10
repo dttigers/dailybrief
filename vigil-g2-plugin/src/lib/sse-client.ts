@@ -35,6 +35,12 @@ export interface SseClientOptions {
   url: string
   apiKey: string
   onEvent: EventCallback
+  // Phase 125 (AGENT-HUD-03 / D-02): quiet_mode_changed SSE event dispatch.
+  // Server emits this BOTH as a synthetic state-bootstrap frame on every
+  // connect (D-03) AND as a live frame on every PWA toggle. Both paths
+  // call this callback with the raw JSON `data` string ({enabled, since}).
+  // Optional — Phase 124 callers (no quiet-mode awareness) still compile.
+  onQuietMode?: (data: string) => void
   onStateChange?: StateCallback
   // Injection seams for unit tests
   storage?: Pick<Storage, "getItem" | "setItem">
@@ -130,6 +136,13 @@ export function createSseClient(opts: SseClientOptions): {
               if (parsed.event === "agent-event" && parsed.id) {
                 safeWriteStorage(storage, STORAGE_KEY, parsed.id)
                 opts.onEvent(parsed.id, parsed.data)
+              } else if (parsed.event === "quiet_mode_changed") {
+                // Phase 125 (AGENT-HUD-03 / D-02): plugin-side dispatch for
+                // the new SSE event type. Server emits this BOTH as a
+                // synthetic state-bootstrap frame on every connect (D-03)
+                // AND as a live frame on every PWA toggle. Plugin treats
+                // both identically — setQuietMode is idempotent.
+                opts.onQuietMode?.(parsed.data)
               }
             }
           }

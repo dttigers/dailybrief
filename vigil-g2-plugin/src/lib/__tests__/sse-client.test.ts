@@ -366,31 +366,121 @@ test("successful connect resets backoffIndex (next disconnect waits 1000 again)"
 });
 
 // ── Phase 125 Wave 0 (AGENT-HUD-03 / D-02) ──────────────────────────
-// quiet_mode_changed event-type dispatch in the SSE shim. Plan 06 turns
-// these green by replacing { skip: PLAN_06_SSE } with asserted bodies,
-// after adding `else if (parsed.event === 'quiet_mode_changed')` branch
-// + `onQuietMode?: (data: string) => void` to SseClientOptions
-// (per RESEARCH §Pattern 4 lines 446-479).
+// quiet_mode_changed event-type dispatch in the SSE shim. Plan 06 GREEN —
+// `else if (parsed.event === 'quiet_mode_changed')` branch + `onQuietMode?:
+// (data: string) => void` on SseClientOptions (per RESEARCH §Pattern 4
+// lines 446-479).
 // (`test` and `assert` already imported above — no re-import needed.)
 
-const PLAN_06_SSE = "TODO(125-06): pending implementation — sse-client.ts quiet_mode_changed dispatch"
+test("parsed.event === 'quiet_mode_changed' invokes opts.onQuietMode with parsed.data string", async () => {
+  // Plan 125-06 Task 1 behavior 1 (DISPATCH): a scripted SSE frame with
+  // event=quiet_mode_changed must invoke opts.onQuietMode exactly once
+  // with the raw `data` string (not parsed JSON).
+  const dataPayload = '{"enabled":true,"since":"2026-05-10T12:00:00Z"}';
+  let calls = 0;
+  const captured: string[] = [];
+  let fetchCalls = 0;
+  const fetchFn: typeof fetch = async (_url, init) => {
+    fetchCalls++;
+    if (fetchCalls === 1) {
+      return makeStreamResponse([
+        `event: quiet_mode_changed\ndata: ${dataPayload}\n\n`,
+      ]);
+    }
+    return makeNeverResolvingResponse(init?.signal ?? null);
+  };
+  const client = createSseClient({
+    url: "http://x/v1/agent-stream",
+    apiKey: "vk_X",
+    onEvent: () => {},
+    onQuietMode: (data) => {
+      calls++;
+      captured.push(data);
+    },
+    storage: fakeStorage(),
+    fetchFn,
+    sleepFn: (_ms) => new Promise<void>((r) => setTimeout(r, 0)),
+  });
+  client.connect();
+  await new Promise((r) => setTimeout(r, 50));
+  client.disconnect();
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(calls, 1, "onQuietMode invoked exactly once");
+  assert.equal(captured[0], dataPayload, "raw JSON-string data forwarded verbatim");
+});
 
-test("parsed.event === 'quiet_mode_changed' invokes opts.onQuietMode with parsed.data string", { skip: PLAN_06_SSE }, async () => {
-  // TODO(125-06): mock fetch returning a stream with
-  //   "event: quiet_mode_changed\ndata: {\"enabled\":true,\"since\":\"2026-05-10T...\"}\n\n"
-  // assert opts.onQuietMode invoked with the JSON-string data argument.
-  assert.fail('placeholder')
-})
+test("opts.onQuietMode is optional — missing callback does not throw on quiet_mode_changed frame", async () => {
+  // Plan 125-06 Task 1 behavior 2 (OPTIONAL): a client constructed without
+  // onQuietMode must NOT throw when a quiet_mode_changed frame arrives,
+  // and the loop must continue processing subsequent agent-event frames.
+  let fetchCalls = 0;
+  const fetchFn: typeof fetch = async (_url, init) => {
+    fetchCalls++;
+    if (fetchCalls === 1) {
+      return makeStreamResponse([
+        'event: quiet_mode_changed\ndata: {"enabled":true,"since":null}\n\n',
+        'event: agent-event\nid: 7\ndata: post-quiet\n\n',
+      ]);
+    }
+    return makeNeverResolvingResponse(init?.signal ?? null);
+  };
+  const events: Array<{ id: string; data: string }> = [];
+  // Deliberately omit onQuietMode from the opts object.
+  const client = createSseClient({
+    url: "http://x/v1/agent-stream",
+    apiKey: "vk_X",
+    onEvent: (id, data) => events.push({ id, data }),
+    storage: fakeStorage(),
+    fetchFn,
+    sleepFn: (_ms) => new Promise<void>((r) => setTimeout(r, 0)),
+  });
+  client.connect();
+  await new Promise((r) => setTimeout(r, 50));
+  client.disconnect();
+  await new Promise((r) => setTimeout(r, 10));
+  // No throw means the test reaches here; assert the trailing agent-event
+  // was still delivered (loop didn't crash on the prior quiet_mode_changed).
+  assert.equal(events.length, 1, "agent-event after quiet_mode_changed still delivered");
+  assert.equal(events[0]!.id, "7");
+  assert.equal(events[0]!.data, "post-quiet");
+});
 
-test("opts.onQuietMode is optional — missing callback does not throw on quiet_mode_changed frame", { skip: PLAN_06_SSE }, async () => {
-  // TODO(125-06): construct client WITHOUT onQuietMode; emit quiet_mode_changed frame;
-  // assert no throw, loop continues, subsequent agent-event frames still fire onEvent.
-  assert.fail('placeholder')
-})
-
-test("agent-event dispatch path UNCHANGED — quiet_mode_changed branch does not steal agent-event frames", { skip: PLAN_06_SSE }, async () => {
-  // TODO(125-06): emit interleaved agent-event + quiet_mode_changed frames;
-  // assert opts.onEvent fires for each agent-event AND opts.onQuietMode fires for each
-  // quiet_mode_changed; neither path is starved.
-  assert.fail('placeholder')
-})
+test("agent-event dispatch path UNCHANGED — quiet_mode_changed branch does not steal agent-event frames", async () => {
+  // Plan 125-06 Task 1 behavior 3 (NO-STEAL): interleaved agent-event and
+  // quiet_mode_changed frames must each fire their respective callback
+  // exactly once — neither path starves the other.
+  let fetchCalls = 0;
+  const fetchFn: typeof fetch = async (_url, init) => {
+    fetchCalls++;
+    if (fetchCalls === 1) {
+      return makeStreamResponse([
+        'event: agent-event\nid: 1\ndata: hb-a\n\n',
+        'event: quiet_mode_changed\ndata: {"enabled":true,"since":"t1"}\n\n',
+        'event: agent-event\nid: 2\ndata: hb-b\n\n',
+        'event: quiet_mode_changed\ndata: {"enabled":false,"since":null}\n\n',
+      ]);
+    }
+    return makeNeverResolvingResponse(init?.signal ?? null);
+  };
+  const events: Array<{ id: string; data: string }> = [];
+  const quiet: string[] = [];
+  const client = createSseClient({
+    url: "http://x/v1/agent-stream",
+    apiKey: "vk_X",
+    onEvent: (id, data) => events.push({ id, data }),
+    onQuietMode: (data) => quiet.push(data),
+    storage: fakeStorage(),
+    fetchFn,
+    sleepFn: (_ms) => new Promise<void>((r) => setTimeout(r, 0)),
+  });
+  client.connect();
+  await new Promise((r) => setTimeout(r, 60));
+  client.disconnect();
+  await new Promise((r) => setTimeout(r, 10));
+  assert.equal(events.length, 2, "both agent-event frames dispatched");
+  assert.equal(events[0]!.id, "1");
+  assert.equal(events[1]!.id, "2");
+  assert.equal(quiet.length, 2, "both quiet_mode_changed frames dispatched");
+  assert.equal(quiet[0], '{"enabled":true,"since":"t1"}');
+  assert.equal(quiet[1], '{"enabled":false,"since":null}');
+});
