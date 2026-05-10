@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
 stopped_at: "Phase 124 Plan 06 COMPLETE — SSE shim landed (D-04 + D-11): bearer in Authorization header, BACKOFF_MS=[1000,2000,4000,8000,16000,30000], Last-Event-ID resume from localStorage, AbortController disconnect, event:ping silent drop, QuotaExceededError survival; 13 unit tests + 19/19 plugin suite green; commits a6d1846 + a3dff3c"
-last_updated: "2026-05-10T01:56:08.637Z"
+last_updated: "2026-05-10T02:09:48.728Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 32
-  completed_plans: 29
-  percent: 91
+  completed_plans: 30
+  percent: 94
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — EXECUTING
-Plan: 6 of 9 — COMPLETE (ROADMAP SC #2 narrowed to D-08 reality; SEED-011 deferred-item lands)
+Plan: 7 of 9 — COMPLETE (ROADMAP SC #2 narrowed to D-08 reality; SEED-011 deferred-item lands)
 Status: Ready to execute
 Last activity: 2026-05-10
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 94%
 
 ## v3.8 Phase Table
 
@@ -76,6 +76,7 @@ Progress: [█████████░] 91%
 | Phase 124 P04 | 4min | 2 auto + 1 deferred (operator) | 5 files (2 created, 3 modified) |
 | Phase 124 P05 | 2min | 2 tasks | 2 files |
 | Phase 124 P06 | 26min | 2 tasks | 3 files |
+| Phase Phase 124 P07 P07 | 7min | 3 tasks tasks | 6 files files |
 
 ## Deferred Items
 
@@ -241,6 +242,11 @@ Recent (v3.7 closeout):
 - [Phase ?]: [Phase 124 / Plan 06]: Test sleepFn injection contract — always schedule setTimeout(0) inside the Promise executor, never resolve synchronously. Pure-microtask sleepFn causes microtask starvation against the test's polling loop's setTimeout(5), making isolated tests pass but the same test in the full suite hang. Pattern: (ms) => new Promise<void>((r) => { ...; setTimeout(r, 0); })
 - [Phase ?]: [Phase 124 / Plan 06]: backoffIndex reset to 0 on successful 200 OK BEFORE entering the reader.read() loop — even a 1-byte response that immediately EOFs resets the backoff schedule. Behavior matches CONTEXT D-11 'on successful reconnect, ⚠ clears' — offline indicator clears as soon as we get a 200 OK, not after we receive a frame. Test 13 pins this: failure→failure→empty-stream success→next failure uses BACKOFF_MS[0]=1000
 - [Phase ?]: [Phase 124 / Plan 06]: safeWriteStorage(storage, key, value) wraps setItem in try/catch with empty body — RESEARCH Pitfall 4. QuotaExceededError survival is structurally required because WebView localStorage quota is shared with all of vigil-g2-plugin's runtime state. Test 10 pins: setItem throws → onEvent still fires → loop continues. Replay still works on next reconnect via the next event we receive
+- [Phase ?]: [Phase 124 / Plan 07]: W-6 fix shipped getCurrentScreen() + rebuildCurrentScreen(bridge) exports from navigation.ts so Plan 08's SSE event handler can repaint the Companion HUD on incoming agent_events without changing screen identity — separate from refreshCurrentScreen so future SSE-only repaint logic can diverge cleanly
+- [Phase ?]: [Phase 124 / Plan 07]: Dynamic import (await import('./screens/companion.ts')) in both buildScreen + handleNavEvent — keeps companion.ts side-effect-free at module load. Pre-Plan 07 screens use static imports; Companion is the new addition and deferring matches the don't-pay-for-what-you-don't-use pattern
+- [Phase ?]: [Phase 124 / Plan 07]: Drift-detector test anchor changed from indexOf('Screen.COMPANION') to indexOf('currentScreen === Screen.COMPANION') — the literal handleNavEvent if-guard is structurally distinct from the SCREEN_ORDER literal AND buildScreen case. Original anchor found line 28 (SCREEN_ORDER), 1000-char window didn't reach line-180 DOUBLE_CLICK branch (Rule 1)
+- [Phase ?]: [Phase 124 / Plan 07]: Banner state machine returns { toastMs: number | null } explicitly — caller (Plan 08 SSE handler) decides whether to setTimeout(rebuild, toastMs). Decoupling timer scheduling from companion.ts lets tests use injected nowFn () => number for deterministic expiresAt-based hasActiveBanner() checks, never fighting real setTimeout
+- [Phase ?]: [Phase 124 / Plan 07]: LONG_PRESS_EVENT removed from explanatory comment in navigation.ts — Task 1 acceptance grep is non-comment-stripping, so the literal token in SEED-011 cross-reference falsely tripped drift gate. Replaced with 'long-press' plain English; Task 3 drift test strips comments anyway (Rule 1)
 
 ### Pending Todos
 
@@ -277,9 +283,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T01:55:54.622Z
+Last session: 2026-05-10T02:09:04.814Z
 Stopped at: Phase 124 Plan 06 COMPLETE — SSE shim landed (D-04 + D-11): bearer in Authorization header, BACKOFF_MS=[1000,2000,4000,8000,16000,30000], Last-Event-ID resume from localStorage, AbortController disconnect, event:ping silent drop, QuotaExceededError survival; 13 unit tests + 19/19 plugin suite green; commits a6d1846 + a3dff3c
-Resume file: .planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-06-SUMMARY.md
+Resume file: None
 Next action: Advance to Plan 06 (or run Plans 06-09 in parallel per yolo+plan-level parallelization config). Two carry-over operator-action items still pending in parallel — neither blocks Plan 06+:
   (1) Phase 124 Plan 04 — D-14 byte-identical PNG comparison (`.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`)
   (2) Phase 123 — 24h vigil-watch soak (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`)
