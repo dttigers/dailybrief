@@ -123,17 +123,41 @@ function recomputePersistentBannerForCurrent(): void {
 // ── State accessors / mutators (consumed by navigation.ts D-08 branch) ─
 
 export function hydrateActiveSessions(sessions: AgentSessionRow[]): void {
+  // Capture identity (sessionId) before replacing the cache so we can
+  // preserve "which session the user was viewing" across hydrate. The
+  // server returns rows ordered by lastEvent.eventTimestamp DESC — that
+  // order rarely matches the live-SSE-set currentSessionIndex, so a naive
+  // index-only restore would silently jump the user to a different
+  // session (and recompute would set the wrong banner). Capture before
+  // filter so even sessions filtered out can be detected as "no longer
+  // in cache" and fall back to 0.
+  const previousSessionId =
+    activeSessions[currentSessionIndex]?.sessionId
+
   // Phase 124 follow-up — cycle-list filter (was previously absent — every
   // row from /v1/agent-sessions appeared in the cycle, including hours-old
   // task_complete sessions). Looser than landing-routing's isSessionActive:
   // stale 5min cutoff + hide only task_complete; task_failed STAYS in cycle
   // so its persistent banner can show and the user can ack (D-08).
   activeSessions = sessions.filter((s) => isSessionVisibleInCycle(s, nowFn()))
-  // Clamp index — keeps currentSessionIndex valid when sessions list shrinks.
+
+  // Restore index by sessionId match. Falls back to 0 (most-recent per the
+  // server's eventTimestamp-DESC ordering) if the previous session was
+  // filtered out or there was no previous session.
+  if (previousSessionId !== undefined) {
+    const newIdx = activeSessions.findIndex(
+      (s) => s.sessionId === previousSessionId,
+    )
+    currentSessionIndex = newIdx >= 0 ? newIdx : 0
+  } else {
+    currentSessionIndex = 0
+  }
+  // Defensive clamp (should be unreachable after the above).
   if (currentSessionIndex >= activeSessions.length) {
     currentSessionIndex =
       activeSessions.length === 0 ? 0 : activeSessions.length - 1
   }
+
   // Phase 124 follow-up — recompute persistent banner from cache so
   // hydrating a cache that contains an unacked needs_input/task_failed
   // session shows the banner overlay (was: banner only fired on live SSE).

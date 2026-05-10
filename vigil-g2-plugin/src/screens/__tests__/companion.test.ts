@@ -529,6 +529,169 @@ test("Finding 1: NEW event (different eventTimestamp) on acked session re-trigge
   );
 });
 
+test("Finding 1: hydrate preserves currentSession identity across server reorder", () => {
+  // Live SSE delivered s1 → s2 → s3, leaving currentSessionIndex pointing
+  // at s3 in cache [s1, s2, s3]. Then user navigates to Companion, which
+  // calls fetchAgentSessions() — server returns by eventTimestamp DESC
+  // with insertion-order tiebreaker, giving cache [s2, s3, s1] (or any
+  // order where s3 is NOT at index 2). Without identity preservation,
+  // currentSessionIndex=2 would now point at s1 (heartbeat) and recompute
+  // would clear the s3 task_failed banner. Bug surfaced via sim E2E.
+  _resetState();
+  // Simulate the live-SSE end state via direct hydrate + applyAgentEvent.
+  // _setNow → fix the wall clock so the test sessions don't fall outside
+  // the 5min cycle-visibility window during the test run.
+  _setNow(() => new Date("2026-05-10T03:00:30.000Z").getTime());
+  hydrateActiveSessions([
+    fakeSession({
+      sessionId: "s1",
+      label: "s1-label",
+      lastEvent: {
+        event: "heartbeat",
+        message: null,
+        eventTimestamp: "2026-05-10T03:00:00.000Z",
+      },
+    }),
+    fakeSession({
+      sessionId: "s2",
+      label: "s2-label",
+      lastEvent: {
+        event: "needs_input",
+        message: "decide",
+        eventTimestamp: "2026-05-10T03:00:01.000Z",
+      },
+    }),
+    fakeSession({
+      sessionId: "s3",
+      label: "s3-label",
+      lastEvent: {
+        event: "task_failed",
+        message: "boom",
+        eventTimestamp: "2026-05-10T03:00:02.000Z",
+      },
+    }),
+  ]);
+  // applyAgentEvent for s3 task_failed sets currentSessionIndex to s3's index.
+  applyAgentEvent({
+    sessionId: "s3",
+    event: "task_failed",
+    message: "boom",
+    eventTimestamp: "2026-05-10T03:00:02.000Z",
+  });
+  assert.equal(getActiveSessions()[2].sessionId, "s3");
+  assert.equal(hasActiveBanner(), true, "live event sets banner");
+
+  // Simulate the server reordering on next hydrate: [s2, s3, s1].
+  hydrateActiveSessions([
+    fakeSession({
+      sessionId: "s2",
+      label: "s2-label",
+      lastEvent: {
+        event: "needs_input",
+        message: "decide",
+        eventTimestamp: "2026-05-10T03:00:01.000Z",
+      },
+    }),
+    fakeSession({
+      sessionId: "s3",
+      label: "s3-label",
+      lastEvent: {
+        event: "task_failed",
+        message: "boom",
+        eventTimestamp: "2026-05-10T03:00:02.000Z",
+      },
+    }),
+    fakeSession({
+      sessionId: "s1",
+      label: "s1-label",
+      lastEvent: {
+        event: "heartbeat",
+        message: null,
+        eventTimestamp: "2026-05-10T03:00:00.000Z",
+      },
+    }),
+  ]);
+  // Identity preservation: should still be on s3 (now at index 1).
+  assert.equal(getActiveSessions()[1].sessionId, "s3", "s3 at new index 1");
+  assert.equal(
+    hasActiveBanner(),
+    true,
+    "banner survives hydrate-reorder (identity preserved)",
+  );
+  const body = bodyContentFromBuild();
+  assert.equal(
+    body.split("\n")[0],
+    "[TASK FAILED]",
+    "banner overlay still rendered after server reorder",
+  );
+});
+
+test("Finding 1: hydrate falls back to index 0 if previous session filtered out", () => {
+  _resetState();
+  let now = 100_000_000_000;
+  _setNow(() => now);
+  // Setup: cache contains 2 sessions; user is viewing the second.
+  hydrateActiveSessions([
+    fakeSession({
+      sessionId: "fresh",
+      label: "fresh-label",
+      lastEvent: {
+        event: "heartbeat",
+        message: null,
+        eventTimestamp: new Date(now - 30_000).toISOString(),
+      },
+    }),
+    fakeSession({
+      sessionId: "going-stale",
+      label: "going-stale-label",
+      lastEvent: {
+        event: "heartbeat",
+        message: null,
+        eventTimestamp: new Date(now - 60_000).toISOString(),
+      },
+    }),
+  ]);
+  // Cycle to second session.
+  cycleSession();
+  assert.equal(getActiveSessions()[1].sessionId, "going-stale");
+
+  // Advance time so 'going-stale' becomes stale (>5min).
+  now += 6 * 60_000;
+  // Hydrate again with same data — 'going-stale' now filtered out.
+  hydrateActiveSessions([
+    fakeSession({
+      sessionId: "fresh",
+      label: "fresh-label",
+      lastEvent: {
+        event: "heartbeat",
+        message: null,
+        eventTimestamp: new Date(now - 30_000).toISOString(),
+      },
+    }),
+    fakeSession({
+      sessionId: "going-stale",
+      label: "going-stale-label",
+      lastEvent: {
+        event: "heartbeat",
+        message: null,
+        eventTimestamp: new Date(now - 6 * 60_000).toISOString(),
+      },
+    }),
+  ]);
+  assert.equal(
+    getActiveSessions().length,
+    1,
+    "stale session filtered, only fresh remains",
+  );
+  // Previous session 'going-stale' is gone — fall back to index 0 = 'fresh'.
+  const body = bodyContentFromBuild();
+  assert.equal(
+    body.split("\n")[0],
+    "fresh-label",
+    "fall back to index 0 when previous session filtered out",
+  );
+});
+
 test("Finding 1: cycling away from banner clears it (not stuck on prior session's banner)", () => {
   _resetState();
   hydrateActiveSessions([
