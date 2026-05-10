@@ -2,9 +2,12 @@
 
 import {
   RebuildPageContainer,
+  TextContainerProperty,
   OsEventTypeList,
 } from '@evenrealities/even_hub_sdk'
 import type { EvenAppBridge } from '@evenrealities/even_hub_sdk'
+
+import { DISPLAY_WIDTH, ContainerId } from './constants.ts'
 
 import { rebuildHomeScreen } from './screens/home.ts'
 import { buildWorkOrdersScreen, getLastFetchedTasks } from './screens/work-orders.ts'
@@ -64,16 +67,43 @@ async function buildScreen(screen: ScreenName): Promise<RebuildPageContainer> {
     case Screen.COMPANION: {
       // Phase 124 D-05 / AGENT-HUD-01 — hydrate from GET /v1/agent-sessions;
       // SSE shim provides live updates (wired in Plan 08 main.ts).
-      // Phase 125 follow-up: was a dynamic import; vite folded it into the
-      // main chunk anyway (INEFFECTIVE_DYNAMIC_IMPORT warning), and the
-      // remaining runtime `await import()` boundary returned an empty module
-      // on G2's older WebView engine — companion.ts loaded but its exports
-      // came back undefined, so this case threw and Companion was effectively
-      // missing from the carousel on hardware. Static import resolves at
-      // module load time and is engine-agnostic.
-      const sessions = await fetchAgentSessions()
-      hydrateActiveSessions(sessions)
-      return rebuildCompanionScreen()
+      // Phase 125 hardware-debug-2026-05-10: hardware retest revealed
+      // Companion was missing from carousel on G2. Root cause: container
+      // names 'companion-header'/'companion-footer' are exactly 16 chars
+      // — the runtime SDK enforces strict <16 even though check-verified.mjs
+      // accepts ≤16. TextContainerProperty constructor threw, buildScreen
+      // throw poisoned currentScreen, navigation appeared to skip Companion.
+      // Fix: container names shortened to 'comp-header'/'comp-body'/
+      // 'comp-footer' (≤11 chars, matching every other screen's pattern).
+      // try/catch retained as defense-in-depth so any future Companion
+      // failure renders a visible diagnostic instead of silently breaking
+      // the carousel.
+      try {
+        const sessions = await fetchAgentSessions()
+        hydrateActiveSessions(sessions)
+        return rebuildCompanionScreen()
+      } catch (e) {
+        const msg = (e as Error)?.message ?? String(e)
+        return new RebuildPageContainer({
+          containerTotalNum: 1,
+          textObject: [
+            new TextContainerProperty({
+              xPosition: 0,
+              yPosition: 0,
+              width: DISPLAY_WIDTH,
+              height: 288,
+              borderWidth: 0,
+              borderColor: 0,
+              borderRadius: 0,
+              paddingLength: 8,
+              containerID: ContainerId.COMPANION_BODY,
+              containerName: 'comp-err',
+              content: `COMPANION ERR\n${msg.slice(0, 60)}`,
+              isEventCapture: 1,
+            }),
+          ],
+        })
+      }
     }
     case Screen.WORK_ORDERS: {
       const brief = await fetchBrief()

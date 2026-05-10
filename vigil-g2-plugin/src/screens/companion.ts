@@ -379,7 +379,7 @@ function buildContainers(): TextContainerProperty[] {
 
   const header = buildVigilHeader(
     ContainerId.COMPANION_HEADER,
-    'companion-header',
+    'comp-header',
     computeRightSide(),
   )
 
@@ -393,7 +393,7 @@ function buildContainers(): TextContainerProperty[] {
     borderRadius: 0,
     paddingLength: 8,
     containerID: ContainerId.COMPANION_BODY,
-    containerName: 'companion-body',
+    containerName: 'comp-body',
     content: `${line1}\n${line2}\n${line3}`,
     isEventCapture: 1,
   })
@@ -408,7 +408,7 @@ function buildContainers(): TextContainerProperty[] {
     borderRadius: 0,
     paddingLength: 8,
     containerID: ContainerId.COMPANION_FOOTER,
-    containerName: 'companion-footer',
+    containerName: 'comp-footer',
     content: bannerActive
       ? '↓ work orders   () ack banner'
       : '↓ work orders   () double-tap',
