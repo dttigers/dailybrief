@@ -256,3 +256,12 @@ The E2E gate is a CONFIRMATION layer over a structurally-correct stack.
 Deferring it does not put the codebase in a regressed state; the partial
 SUMMARY.md (with this todo cross-referenced) preserves the chain-of-evidence
 the same way Phase 123 Plan 05's 24h-soak deferral did.
+
+---
+
+## CLOSEOUT — 2026-05-10 (jamesonmorrill)
+
+Closed via the live-E2E session documented in `124-VERIFICATION.md`.
+Captures archived to `/tmp/vigil-124-07-png/`.
+
+Sign-off matrix: see VERIFICATION.md `runs[1]` (date 2026-05-10).

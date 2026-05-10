@@ -28,3 +28,8 @@ DailyBriefMonitor.dSYM/
 .claude/
 .vercel
 .env*.local
+
+# evenhub-simulator screenshot output (📸 button writes to its cwd as
+# `glasses_YYYYMMDDHHMMSS.png` — these are operator-verification artifacts,
+# not source). Surfaced during Phase 124 D-14 PNG-equality verification.
+glasses_*.png
