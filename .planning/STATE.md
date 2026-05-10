@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 124 Plan 05 COMPLETE — ROADMAP SC #2 narrowed to D-08 SDK reality (DOUBLE_CLICK only) + SEED-011 lands deferred single-tap/long-press spec (commits da762d8, 9bf8064); Plan 04 PNG-equality operator run still pending in parallel
-last_updated: "2026-05-10T01:19:20.787Z"
+stopped_at: "Phase 124 Plan 06 COMPLETE — SSE shim landed (D-04 + D-11): bearer in Authorization header, BACKOFF_MS=[1000,2000,4000,8000,16000,30000], Last-Event-ID resume from localStorage, AbortController disconnect, event:ping silent drop, QuotaExceededError survival; 13 unit tests + 19/19 plugin suite green; commits a6d1846 + a3dff3c"
+last_updated: "2026-05-10T01:56:08.637Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 32
-  completed_plans: 28
-  percent: 88
+  completed_plans: 29
+  percent: 91
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — EXECUTING
-Plan: 5 of 9 — COMPLETE (ROADMAP SC #2 narrowed to D-08 reality; SEED-011 deferred-item lands)
-Status: Ready to advance to Plan 06 (Plan 04 PNG-equality operator run still pending in parallel; not a blocker)
+Plan: 6 of 9 — COMPLETE (ROADMAP SC #2 narrowed to D-08 reality; SEED-011 deferred-item lands)
+Status: Ready to execute
 Last activity: 2026-05-10
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 91%
 
 ## v3.8 Phase Table
 
@@ -75,6 +75,7 @@ Progress: [█████████░] 88%
 | Phase 124 P03 | 12min | 2 tasks (auto+TDD) | 6 files (2 created, 4 modified) |
 | Phase 124 P04 | 4min | 2 auto + 1 deferred (operator) | 5 files (2 created, 3 modified) |
 | Phase 124 P05 | 2min | 2 tasks | 2 files |
+| Phase 124 P06 | 26min | 2 tasks | 3 files |
 
 ## Deferred Items
 
@@ -236,6 +237,10 @@ Recent (v3.7 closeout):
 - [Phase 124 / Plan 05]: Narrow ROADMAP SC #2 instead of punting the entire criterion to Phase 125 — narrowed wording still covers the user-visible double-tap behavior shipped in Plans 06-08, so verify-phase has a structurally reachable gate without losing AGENT-HUD-02 acceptance signal entirely
 - [Phase 124 / Plan 05]: Adopt SEED-011 frontmatter shape (seed_id/title/discovered/related_phases/related_memories) prescribed in the plan rather than the legacy id/planted/planted_during/trigger_when shape used by SEED-001..010 — plan content is source of truth; cross-SEED frontmatter normalization is out-of-scope
 - [Phase 124 / Plan 05]: Reword SC #2 lead-in from sentence-start Double-tap to mid-sentence 'On the temple, double-tap is context-sensitive' to satisfy the case-sensitive grep -F 'double-tap is context-sensitive' acceptance gate while preserving D-08 semantics verbatim — Rule 3 fix reconciling plan-internal contradiction
+- [Phase ?]: [Phase 124 / Plan 06]: SSE shim test isolation — makeNeverResolvingResponse(signal) helper wires AbortController-on-disconnect through to manually-created ReadableStream's controller.error(); without this the abort doesn't propagate and reader.read() awaits forever, deadlocking the test runner at process exit. Wire pattern: signal.addEventListener('abort', () => ctrl.error(new DOMException('aborted', 'AbortError')), { once: true }) inside start(ctrl)
+- [Phase ?]: [Phase 124 / Plan 06]: Test sleepFn injection contract — always schedule setTimeout(0) inside the Promise executor, never resolve synchronously. Pure-microtask sleepFn causes microtask starvation against the test's polling loop's setTimeout(5), making isolated tests pass but the same test in the full suite hang. Pattern: (ms) => new Promise<void>((r) => { ...; setTimeout(r, 0); })
+- [Phase ?]: [Phase 124 / Plan 06]: backoffIndex reset to 0 on successful 200 OK BEFORE entering the reader.read() loop — even a 1-byte response that immediately EOFs resets the backoff schedule. Behavior matches CONTEXT D-11 'on successful reconnect, ⚠ clears' — offline indicator clears as soon as we get a 200 OK, not after we receive a frame. Test 13 pins this: failure→failure→empty-stream success→next failure uses BACKOFF_MS[0]=1000
+- [Phase ?]: [Phase 124 / Plan 06]: safeWriteStorage(storage, key, value) wraps setItem in try/catch with empty body — RESEARCH Pitfall 4. QuotaExceededError survival is structurally required because WebView localStorage quota is shared with all of vigil-g2-plugin's runtime state. Test 10 pins: setItem throws → onEvent still fires → loop continues. Replay still works on next reconnect via the next event we receive
 
 ### Pending Todos
 
@@ -272,9 +277,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T01:16:04.968Z
-Stopped at: Phase 124 Plan 05 COMPLETE — ROADMAP SC #2 narrowed to D-08 SDK reality (DOUBLE_CLICK only); SEED-011 lands deferred single-tap/long-press spec with three re-activation triggers (commits da762d8, 9bf8064)
-Resume file: .planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-05-SUMMARY.md
+Last session: 2026-05-10T01:55:54.622Z
+Stopped at: Phase 124 Plan 06 COMPLETE — SSE shim landed (D-04 + D-11): bearer in Authorization header, BACKOFF_MS=[1000,2000,4000,8000,16000,30000], Last-Event-ID resume from localStorage, AbortController disconnect, event:ping silent drop, QuotaExceededError survival; 13 unit tests + 19/19 plugin suite green; commits a6d1846 + a3dff3c
+Resume file: .planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-06-SUMMARY.md
 Next action: Advance to Plan 06 (or run Plans 06-09 in parallel per yolo+plan-level parallelization config). Two carry-over operator-action items still pending in parallel — neither blocks Plan 06+:
   (1) Phase 124 Plan 04 — D-14 byte-identical PNG comparison (`.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`)
   (2) Phase 123 — 24h vigil-watch soak (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`)

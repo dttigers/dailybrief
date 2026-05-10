@@ -31,7 +31,7 @@
 
 ### G2 Companion HUD (plugin v0.3.0)
 
-- [ ] **AGENT-HUD-01**: User can open the Companion view from the Vigil plugin tile in the Even Realities app and see a 3-line HUD (top: session label truncated; middle: state `idle` / `running` / `waiting` / `done`; bottom: last event message, scrolling if too long).
+- [x] **AGENT-HUD-01**: User can open the Companion view from the Vigil plugin tile in the Even Realities app and see a 3-line HUD (top: session label truncated; middle: state `idle` / `running` / `waiting` / `done`; bottom: last event message, scrolling if too long).
 - [x] **AGENT-HUD-02**: On the temple, double-tap is context-sensitive (per Phase 124 D-08): if a banner is displayed, double-tap acks the banner; else if ≥2 active sessions, double-tap cycles to the next session; else, double-tap navigates Home. Single-tap (`CLICK_EVENT`) and long-press (`LONG_PRESS_EVENT`) are NOT plumbed reliably on G2 hardware in v3.8 — original three-variant spec deferred via `.planning/seeds/SEED-011-g2-single-tap-long-press-tap-events.md` (Phase 124 Plan 05).
 - [ ] **AGENT-HUD-03**: When the user's iOS device is in Focus / Do Not Disturb mode (state exposed via Even SDK), only `needs_input` and `task_failed` events surface to the HUD. Other events queue silently and surface on next non-DND state change.
 
