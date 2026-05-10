@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
 stopped_at: Completed 125-02-PLAN.md
-last_updated: "2026-05-10T18:17:58.400Z"
+last_updated: "2026-05-10T18:27:43.527Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 43
-  completed_plans: 36
-  percent: 84
+  completed_plans: 37
+  percent: 86
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 9 of 9 — COMPLETE (Plan 09 VERIFICATION.md backfilled with 2026-05-10 li
 Status: Phase complete — ready for verification
 Last activity: 2026-05-10
 
-Progress: [████████░░] 84%
+Progress: [█████████░] 86%
 
 ## v3.8 Phase Table
 
@@ -83,6 +83,7 @@ Progress: [████████░░] 84%
 | Phase 125 P04 | 6m | 1 tasks | 2 files |
 | Phase 125 P03 | 44 min | 2 tasks | 4 files |
 | Phase 125 P02 | 62min | 2 tasks | 4 files |
+| Phase 125 P06 | ~38min | 3 tasks | 5 files |
 
 ## Deferred Items
 
@@ -271,6 +272,9 @@ Recent (v3.7 closeout):
 - [Phase 125]: Bus emitter Map cleanup gate now joint (EVENT_NAME + QUIET_NAME); off() and offQuiet() both apply the gate — Phase 125 Plan 03 — prevents T-125-W3-01: orphan QUIET listener after off() while onQuiet still registered
 - [Phase 125]: P02: hand-edit drizzle-kit auto-output to add ADD COLUMN IF NOT EXISTS guard and rename SQL to human-readable name; patch _journal.json tag in lockstep. — Pattern 1 (0015/0017 precedent) requires idempotency for Railway partial-fail-on-restart re-run safety.
 - [Phase 125]: P02: schema-only landing does NOT close AGENT-HUD-03. — Requirement is collectively closed by Plans 03/05/06 — 125-01-SUMMARY precedent. Marking complete now would generate false-green REQUIREMENTS.md state.
+- [Phase ?]: Plan 125-06: Filter site is computeBodyLines() (HUD-write boundary), NOT applyAgentEvent — cache must always update so cycling sessions shows accurate state per CONTEXT D-02
+- [Phase ?]: Plan 125-06: Used QUIET_BANNER_ALLOWLIST (BannerType-typed Set) over AgentEventType variant — filter site checks bannerState.type which is already BannerType-narrowed
+- [Phase ?]: Plan 125-06: _resetState() zeros quietMode (Rule 2 auto-fix) — prevents cross-test pollution leaking Q glyph into Phase 124 baseline tests
 
 ### Pending Todos
 
@@ -307,7 +311,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T18:17:58.390Z
+Last session: 2026-05-10T18:26:16.997Z
 Stopped at: Completed 125-02-PLAN.md
 Resume file: 
 
