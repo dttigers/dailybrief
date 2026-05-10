@@ -39,8 +39,52 @@ const HOME: ScreenName = 'home'
 const COMPANION: ScreenName = 'companion'
 
 /**
- * D-06 active-session filter: ≥1 row with eventTimestamp within 5min AND
- * event NOT IN terminal-set ('task_complete', 'task_failed').
+ * D-06 active-session window + terminal set. Exported so companion.ts
+ * (cycle-list filter) and main.ts (landing-screen routing) share one source.
+ */
+export const ACTIVE_WINDOW_MS = 5 * 60 * 1000
+const TERMINAL_EVENTS = new Set(['task_complete', 'task_failed'])
+// Cycle-list filter is looser than landing-routing filter: we still want
+// task_failed sessions visible so the banner overlay can show and the user
+// can ack via DOUBLE_CLICK (CONTEXT D-08). Only task_complete is hidden
+// from cycle (it auto-clears via 3s toast and there's nothing to ack).
+const CYCLE_HIDDEN_EVENTS = new Set(['task_complete'])
+
+/**
+ * D-06 per-row active-session predicate (LANDING-SCREEN ROUTING). A session
+ * is "active" iff its `lastEvent.eventTimestamp` is within the last 5
+ * minutes AND the event is not in the terminal set.
+ *
+ * Used by `hasActiveSession` and `pickInitialScreen` for the strict
+ * "should we land on Companion?" decision — a 4-minute-old task_failed
+ * shouldn't trigger a glassesMenu landing on Companion (D-06).
+ */
+export function isSessionActive(
+  session: AgentSessionRow,
+  now: number = Date.now(),
+): boolean {
+  const ts = new Date(session.lastEvent.eventTimestamp).getTime()
+  if (Number.isNaN(ts) || ts <= now - ACTIVE_WINDOW_MS) return false
+  return !TERMINAL_EVENTS.has(session.lastEvent.event)
+}
+
+/**
+ * Cycle-list visibility predicate (Companion HUD `hydrateActiveSessions`).
+ * Looser than `isSessionActive`: stale filter is the same (5min) but only
+ * task_complete is hidden — task_failed remains visible so its persistent
+ * banner can show and be ack'd per CONTEXT D-08.
+ */
+export function isSessionVisibleInCycle(
+  session: AgentSessionRow,
+  now: number = Date.now(),
+): boolean {
+  const ts = new Date(session.lastEvent.eventTimestamp).getTime()
+  if (Number.isNaN(ts) || ts <= now - ACTIVE_WINDOW_MS) return false
+  return !CYCLE_HIDDEN_EVENTS.has(session.lastEvent.event)
+}
+
+/**
+ * D-06 active-session filter: ≥1 row passes the per-row predicate.
  *
  * @param sessions  Agent session rows from GET /v1/agent-sessions
  * @param now       Override for testability — defaults to Date.now()
@@ -49,13 +93,7 @@ export function hasActiveSession(
   sessions: AgentSessionRow[],
   now: number = Date.now(),
 ): boolean {
-  const cutoff = now - 5 * 60 * 1000
-  const TERMINAL = new Set(['task_complete', 'task_failed'])
-  return sessions.some((s) => {
-    const ts = new Date(s.lastEvent.eventTimestamp).getTime()
-    if (Number.isNaN(ts) || ts <= cutoff) return false
-    return !TERMINAL.has(s.lastEvent.event)
-  })
+  return sessions.some((s) => isSessionActive(s, now))
 }
 
 /**

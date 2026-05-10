@@ -32,6 +32,7 @@ import {
 
 import type { AgentSessionRow, AgentEvent, AgentEventType } from '../types.ts'
 import { DISPLAY_WIDTH, ContainerId } from '../constants.ts'
+import { isSessionVisibleInCycle } from '../lib/launch-source-helpers.ts'
 import { buildVigilHeader } from './header.ts'
 
 const LABEL_MAX = 30
@@ -61,15 +62,82 @@ let bannerState: BannerState | null = null
 let sseConnected = true
 let nowFn: () => number = () => Date.now()
 
+// Phase 124 follow-up — ack tracking for banner-on-cycle/-hydrate.
+// Key = `${sessionId}:${eventTimestamp}`. When the user ack's a banner via
+// DOUBLE_CLICK, we record it here so cycling away and back doesn't re-show
+// the same banner. New events (different eventTimestamp) on the same
+// session create a new key and re-trigger the banner — correct UX for
+// "Claude Code asked, I answered, now it's asking again."
+const ackedBannerKeys: Set<string> = new Set()
+
+function bannerKeyFor(session: AgentSessionRow): string {
+  return `${session.sessionId}:${session.lastEvent.eventTimestamp}`
+}
+
+function bannerEligibleType(event: AgentEventType): BannerType | null {
+  if (event === 'needs_input' || event === 'task_failed') return event
+  // task_complete / milestone are toasts (3s self-clearing) — only set
+  // by live SSE events via applyAgentEvent, never re-derived from cache.
+  return null
+}
+
+/**
+ * Recompute the persistent banner overlay for the current session.
+ * Called after `hydrateActiveSessions` and `cycleSession` so cycling to
+ * a session whose lastEvent is needs_input/task_failed shows the banner
+ * (unless previously ack'd) — closes the gap between live-SSE-driven
+ * bannerState and cache-driven viewing.
+ *
+ * Toast banners (task_complete / milestone) are NOT re-derived: they're
+ * by design ephemeral and tied to live event delivery.
+ */
+function recomputePersistentBannerForCurrent(): void {
+  if (activeSessions.length === 0) {
+    if (bannerState && bannerState.expiresAt === undefined) bannerState = null
+    return
+  }
+  const session = activeSessions[currentSessionIndex]
+  // Don't clobber an active toast (task_complete / milestone with expiresAt).
+  if (bannerState && bannerState.expiresAt !== undefined) return
+
+  const bannerType = bannerEligibleType(session.lastEvent.event)
+  if (!bannerType) {
+    // Current session has no banner-eligible event → clear any stale
+    // persistent banner (e.g., user cycled away from a needs_input session).
+    if (bannerState && bannerState.expiresAt === undefined) bannerState = null
+    return
+  }
+
+  const key = bannerKeyFor(session)
+  if (ackedBannerKeys.has(key)) {
+    // User already ack'd this specific event — keep banner cleared.
+    if (bannerState && bannerState.sessionId === session.sessionId) {
+      bannerState = null
+    }
+    return
+  }
+
+  bannerState = { type: bannerType, sessionId: session.sessionId }
+}
+
 // ── State accessors / mutators (consumed by navigation.ts D-08 branch) ─
 
 export function hydrateActiveSessions(sessions: AgentSessionRow[]): void {
-  activeSessions = [...sessions]
+  // Phase 124 follow-up — cycle-list filter (was previously absent — every
+  // row from /v1/agent-sessions appeared in the cycle, including hours-old
+  // task_complete sessions). Looser than landing-routing's isSessionActive:
+  // stale 5min cutoff + hide only task_complete; task_failed STAYS in cycle
+  // so its persistent banner can show and the user can ack (D-08).
+  activeSessions = sessions.filter((s) => isSessionVisibleInCycle(s, nowFn()))
   // Clamp index — keeps currentSessionIndex valid when sessions list shrinks.
   if (currentSessionIndex >= activeSessions.length) {
     currentSessionIndex =
       activeSessions.length === 0 ? 0 : activeSessions.length - 1
   }
+  // Phase 124 follow-up — recompute persistent banner from cache so
+  // hydrating a cache that contains an unacked needs_input/task_failed
+  // session shows the banner overlay (was: banner only fired on live SSE).
+  recomputePersistentBannerForCurrent()
 }
 
 export function getActiveSessions(): AgentSessionRow[] {
@@ -79,9 +147,20 @@ export function getActiveSessions(): AgentSessionRow[] {
 export function cycleSession(): void {
   if (activeSessions.length === 0) return
   currentSessionIndex = (currentSessionIndex + 1) % activeSessions.length
+  // Phase 124 follow-up — show banner for the newly-current session if its
+  // lastEvent is needs_input/task_failed and not previously ack'd.
+  recomputePersistentBannerForCurrent()
 }
 
 export function ackBanner(): void {
+  // Phase 124 follow-up — record the ack against the current banner's
+  // (sessionId, eventTimestamp) key so cycling away and back doesn't
+  // re-show this same banner. New events on the same session create a
+  // new key and re-trigger the banner.
+  if (bannerState && activeSessions.length > 0) {
+    const session = activeSessions.find((s) => s.sessionId === bannerState!.sessionId)
+    if (session) ackedBannerKeys.add(bannerKeyFor(session))
+  }
   bannerState = null
 }
 
@@ -301,6 +380,7 @@ export function _resetState(): void {
   bannerState = null
   sseConnected = true
   nowFn = () => Date.now()
+  ackedBannerKeys.clear()
 }
 
 export function _setNow(fn: () => number): void {

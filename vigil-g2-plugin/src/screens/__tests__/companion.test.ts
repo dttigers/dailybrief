@@ -82,19 +82,47 @@ test("HUD-01: state-line mapping for all 5 event types (table-driven)", () => {
   ];
   for (const { event, expected } of cases) {
     _resetState();
-    // For needs_input/task_failed/task_complete/milestone, the banner
-    // overlay shows '[BANNER]' on line 1 instead of label. To test the
-    // STATE_LINE mapping we need NO banner — easiest is to inject the
-    // session via hydrate (no event) and bypass applyAgentEvent.
-    hydrateActiveSessions([
-      fakeSession({
-        lastEvent: {
-          event,
-          message: null,
-          eventTimestamp: new Date().toISOString(),
-        },
-      }),
-    ]);
+    // Phase 124 follow-up changed two things relevant here:
+    //   1. hydrate filters task_complete out of the cycle list
+    //      (isSessionVisibleInCycle) — so injecting task_complete via
+    //      hydrate produces empty state. Use applyAgentEvent for that case.
+    //   2. hydrate recomputes persistent banner from cache for needs_input
+    //      / task_failed — ack the banner so line 2 falls through to the
+    //      state-line mapping. (Banner overlay path is covered separately.)
+    if (event === "task_complete") {
+      // Seed the session via heartbeat hydrate, then dispatch task_complete
+      // via applyAgentEvent (bypasses cycle-filter; sets toast banner +
+      // updates state line). Ack to drop the toast.
+      hydrateActiveSessions([
+        fakeSession({
+          lastEvent: {
+            event: "heartbeat",
+            message: null,
+            eventTimestamp: new Date().toISOString(),
+          },
+        }),
+      ]);
+      applyAgentEvent({
+        sessionId: "sid-1",
+        event,
+        message: null,
+        eventTimestamp: new Date().toISOString(),
+      });
+      ackBanner();
+    } else {
+      hydrateActiveSessions([
+        fakeSession({
+          lastEvent: {
+            event,
+            message: null,
+            eventTimestamp: new Date().toISOString(),
+          },
+        }),
+      ]);
+      if (event === "needs_input" || event === "task_failed") {
+        ackBanner();
+      }
+    }
     const body = bodyContentFromBuild();
     assert.equal(
       body.split("\n")[1],
@@ -144,18 +172,22 @@ test("HUD-01: task_complete is a 3s toast (toastMs=3000); auto-clears via expire
 
 test("HUD-01: heartbeat does NOT set banner; updates state line", () => {
   _resetState();
+  // Setup: cache contains a heartbeat-only session (no banner-eligible
+  // lastEvent). Phase 124 follow-up changed hydrate to recompute banner
+  // from cache, so seeding with heartbeat is the cleanest setup that
+  // isolates "applyAgentEvent('heartbeat') does not set banner."
   hydrateActiveSessions([
     fakeSession({
       label: "proj",
       lastEvent: {
-        event: "needs_input",
-        message: "x",
+        event: "heartbeat",
+        message: null,
         eventTimestamp: new Date().toISOString(),
       },
     }),
   ]);
-  // Pre-condition: needs_input would set a banner. But hydrateActiveSessions
-  // does not set bannerState — it only sets the cache. So we explicitly do:
+  assert.equal(hasActiveBanner(), false, "no banner from heartbeat hydrate");
+
   const r = applyAgentEvent({
     sessionId: "sid-1",
     event: "heartbeat",
@@ -163,8 +195,11 @@ test("HUD-01: heartbeat does NOT set banner; updates state line", () => {
     eventTimestamp: new Date().toISOString(),
   });
   assert.equal(r.toastMs, null);
-  assert.equal(hasActiveBanner(), false);
-  // State line should now be 'running' (heartbeat)
+  assert.equal(
+    hasActiveBanner(),
+    false,
+    "applyAgentEvent('heartbeat') still does not set banner",
+  );
   const body = bodyContentFromBuild();
   assert.equal(body.split("\n")[1], "running");
 });
@@ -295,5 +330,230 @@ test("Footer copy: '() double-tap' when no banner; '() ack banner' when banner a
   assert.ok(
     withBanner.includes("ack banner"),
     `banner footer: ${withBanner}`,
+  );
+});
+
+// ── Phase 124 follow-up — Finding 2: D-06 cycle-list filter ─────────
+// Surfaced during sim E2E: stale + task_complete sessions appeared in the
+// cycle, so user could DOUBLE_CLICK their way to a `dailybrief / done /
+// stop_reason=end_turn` session that ended hours ago. hydrate now applies
+// `isSessionVisibleInCycle` (5min stale cutoff + drop task_complete; keep
+// task_failed so its banner can still show).
+
+test("Finding 2: hydrate filters out stale (>5min) sessions from cycle list", () => {
+  _resetState();
+  let now = 100_000_000_000;
+  _setNow(() => now);
+  const fresh = fakeSession({
+    sessionId: "fresh",
+    lastEvent: {
+      event: "heartbeat",
+      message: null,
+      eventTimestamp: new Date(now - 60_000).toISOString(), // 1min ago
+    },
+  });
+  const stale = fakeSession({
+    sessionId: "stale",
+    lastEvent: {
+      event: "heartbeat",
+      message: null,
+      eventTimestamp: new Date(now - 6 * 60_000).toISOString(), // 6min ago
+    },
+  });
+  hydrateActiveSessions([fresh, stale]);
+  const visible = getActiveSessions().map((s) => s.sessionId);
+  assert.deepEqual(visible, ["fresh"], "stale session filtered out");
+});
+
+test("Finding 2: hydrate filters out task_complete sessions from cycle list", () => {
+  _resetState();
+  let now = 100_000_000_000;
+  _setNow(() => now);
+  const recent = new Date(now - 30_000).toISOString(); // 30s ago — fresh
+  const heartbeat = fakeSession({
+    sessionId: "running",
+    lastEvent: { event: "heartbeat", message: null, eventTimestamp: recent },
+  });
+  const completed = fakeSession({
+    sessionId: "done",
+    lastEvent: { event: "task_complete", message: null, eventTimestamp: recent },
+  });
+  hydrateActiveSessions([heartbeat, completed]);
+  const visible = getActiveSessions().map((s) => s.sessionId);
+  assert.deepEqual(visible, ["running"], "task_complete filtered from cycle");
+});
+
+test("Finding 2: hydrate KEEPS task_failed sessions in cycle (banner needs ack)", () => {
+  _resetState();
+  let now = 100_000_000_000;
+  _setNow(() => now);
+  const recent = new Date(now - 30_000).toISOString();
+  const failed = fakeSession({
+    sessionId: "broken",
+    lastEvent: { event: "task_failed", message: "boom", eventTimestamp: recent },
+  });
+  hydrateActiveSessions([failed]);
+  const visible = getActiveSessions().map((s) => s.sessionId);
+  assert.deepEqual(visible, ["broken"], "task_failed retained for ack visibility");
+});
+
+// ── Phase 124 follow-up — Finding 1: banner-on-cycle ────────────────
+// Surfaced during sim E2E: cycling onto a needs_input/task_failed session
+// (whose banner was set in a prior live SSE delivery, never seen by user)
+// did not re-show the banner overlay. State-line said "waiting for input"
+// but line 1 still showed the session label, not [NEEDS INPUT]. Now hydrate
+// + cycleSession recompute the persistent banner from current session's
+// lastEvent unless the user already ack'd that specific (sessionId,
+// eventTimestamp) key.
+
+test("Finding 1: hydrate sets persistent banner if current session lastEvent is needs_input (unacked)", () => {
+  _resetState();
+  hydrateActiveSessions([
+    fakeSession({
+      sessionId: "s1",
+      lastEvent: {
+        event: "needs_input",
+        message: "decide auth",
+        eventTimestamp: new Date().toISOString(),
+      },
+    }),
+  ]);
+  assert.equal(hasActiveBanner(), true, "banner reconstructed from cache");
+  const body = bodyContentFromBuild();
+  assert.equal(body.split("\n")[0], "[NEEDS INPUT]");
+});
+
+test("Finding 1: hydrate sets persistent banner for task_failed (unacked)", () => {
+  _resetState();
+  hydrateActiveSessions([
+    fakeSession({
+      sessionId: "s1",
+      lastEvent: {
+        event: "task_failed",
+        message: "build failed",
+        eventTimestamp: new Date().toISOString(),
+      },
+    }),
+  ]);
+  assert.equal(hasActiveBanner(), true);
+  const body = bodyContentFromBuild();
+  assert.equal(body.split("\n")[0], "[TASK FAILED]");
+});
+
+test("Finding 1: cycleSession sets banner when landing on unacked needs_input session", () => {
+  _resetState();
+  hydrateActiveSessions([
+    fakeSession({
+      sessionId: "running",
+      lastEvent: {
+        event: "heartbeat",
+        message: null,
+        eventTimestamp: new Date().toISOString(),
+      },
+    }),
+    fakeSession({
+      sessionId: "asking",
+      lastEvent: {
+        event: "needs_input",
+        message: "decide",
+        eventTimestamp: new Date().toISOString(),
+      },
+    }),
+  ]);
+  // currentSessionIndex is 0 (heartbeat session); banner-from-hydrate should
+  // be null because current session is not banner-eligible.
+  assert.equal(hasActiveBanner(), false, "no banner on heartbeat session");
+
+  cycleSession(); // → index 1 → 'asking' (needs_input)
+  assert.equal(hasActiveBanner(), true, "cycling onto needs_input shows banner");
+  assert.equal(bodyContentFromBuild().split("\n")[0], "[NEEDS INPUT]");
+});
+
+test("Finding 1: ack persists across cycles — same banner does NOT re-show", () => {
+  _resetState();
+  const ts = new Date().toISOString();
+  hydrateActiveSessions([
+    fakeSession({
+      sessionId: "asking",
+      lastEvent: { event: "needs_input", message: "decide", eventTimestamp: ts },
+    }),
+    fakeSession({
+      sessionId: "running",
+      lastEvent: {
+        event: "heartbeat",
+        message: null,
+        eventTimestamp: new Date().toISOString(),
+      },
+    }),
+  ]);
+  assert.equal(hasActiveBanner(), true, "initial banner from hydrate");
+  ackBanner();
+  assert.equal(hasActiveBanner(), false, "banner cleared by ack");
+
+  cycleSession(); // → index 1 (heartbeat) — no banner
+  assert.equal(hasActiveBanner(), false);
+  cycleSession(); // → index 0 (back to acked needs_input) — should NOT re-show
+  assert.equal(
+    hasActiveBanner(),
+    false,
+    "acked banner does not re-show after cycle wraparound",
+  );
+});
+
+test("Finding 1: NEW event (different eventTimestamp) on acked session re-triggers banner", () => {
+  _resetState();
+  hydrateActiveSessions([
+    fakeSession({
+      sessionId: "asking",
+      lastEvent: {
+        event: "needs_input",
+        message: "v1",
+        eventTimestamp: "2026-05-10T03:00:00.000Z",
+      },
+    }),
+  ]);
+  ackBanner();
+  assert.equal(hasActiveBanner(), false, "v1 needs_input acked");
+
+  // Claude Code asks again — new event with new timestamp
+  applyAgentEvent({
+    sessionId: "asking",
+    event: "needs_input",
+    message: "v2",
+    eventTimestamp: "2026-05-10T03:05:00.000Z",
+  });
+  assert.equal(
+    hasActiveBanner(),
+    true,
+    "new (sessionId, eventTimestamp) key re-triggers banner",
+  );
+});
+
+test("Finding 1: cycling away from banner clears it (not stuck on prior session's banner)", () => {
+  _resetState();
+  hydrateActiveSessions([
+    fakeSession({
+      sessionId: "asking",
+      lastEvent: {
+        event: "needs_input",
+        message: "decide",
+        eventTimestamp: new Date().toISOString(),
+      },
+    }),
+    fakeSession({
+      sessionId: "running",
+      lastEvent: {
+        event: "heartbeat",
+        message: null,
+        eventTimestamp: new Date().toISOString(),
+      },
+    }),
+  ]);
+  assert.equal(hasActiveBanner(), true, "banner from hydrate (idx=0 needs_input)");
+  cycleSession(); // → idx 1 (heartbeat)
+  assert.equal(
+    hasActiveBanner(),
+    false,
+    "cycling onto non-banner session clears banner",
   );
 });
