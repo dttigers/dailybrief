@@ -28,9 +28,32 @@ agent activity on the G2 HUD. The plugin runs against my own backend
 Quick question on your roadmap: the Even Hub overview docs mention
 that the platform is "actively expanding to include Dashboard widgets
 and Dashboard layouts." That capability fits Vigil's intended use
-case far better than the current plugin model — users want their
-agent status, reminders, and work orders to be **always visible** on
-the dashboard when they look up, not behind a plugin-selection step.
+case far better than the current plugin model. I want to be specific
+about why — the gap isn't just "always visible," it's the **heads-up
+display lifecycle** the G2's default dashboard handles natively but
+plugins can't participate in.
+
+Concretely, my users want — and the G2's native dashboard already
+delivers — a flow like:
+
+- Look up → display lights with the latest agent status
+- ~3 seconds of attention → display dims out
+- New event arrives → display wakes for the new content
+
+The current plugin SDK (verified against
+`@evenrealities/even_hub_sdk@0.0.9`) doesn't expose any primitive for
+this loop — no dim, no auto-hide, no display-duration, no
+display-wake hooks tied to IMU look-up events. So today Vigil ends up
+keeping the G2 display lit 100% of the time while it's the active
+plugin, which is the wrong UX (and unkind to the battery) for an
+ambient surface that should fade into the background between events.
+
+This isn't something I want to hack around at the plugin layer —
+`shutDownPageContainer` after N seconds defeats ambient (plugin
+can't self-relaunch on the next event), and rendering blank
+containers as "dim" still keeps the backlight at full power. The
+right fix is to ship Vigil as a dashboard widget that natively
+participates in the G2's existing power/display lifecycle.
 
 Two asks:
 
@@ -45,14 +68,20 @@ Two asks:
    production plugin with active users (currently me + my immediate
    team) and a non-trivial backend already running, so we'd be a
    useful early-real-world test case rather than a hello-world widget.
+   Specifically I'd be testing the heads-up display lifecycle hooks —
+   that's the load-bearing capability for ambient AI on the G2, and
+   I'd be a motivated bug-hunter for whatever shape the widget
+   primitives take.
 
-For context: Vigil v0.3.6 was just resubmitted addressing the prior
-v0.2.0 review feedback (blank-screen issue in the iPhone WebView — now
-shows a brand splash). The plugin handles 5 event types
-(needs_input / task_failed / task_complete / milestone / heartbeat),
-double-tap banner ack on the temple, a Quiet mode toggle (PWA-driven
-filter that respects user-controlled DND state), and Last-Event-ID
-SSE replay on reconnect.
+For context on what's running today: Vigil v0.3.6 was just
+resubmitted addressing the prior v0.2.0 review feedback (blank-screen
+issue in the iPhone WebView — now shows a brand splash). The plugin
+handles 5 event types (needs_input / task_failed / task_complete /
+milestone / heartbeat), double-tap banner ack on the temple, a Quiet
+mode toggle (PWA-driven filter that respects user-controlled DND
+state), and Last-Event-ID SSE replay on reconnect. All of that
+carries over unchanged to a widget shape — only the render surface
+and pack manifest need to fork.
 
 Happy to share more about Vigil's architecture or pre-screen any
 preview screenshots / docs you'd find helpful. Either way, thanks for

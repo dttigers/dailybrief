@@ -35,6 +35,48 @@ Per https://hub.evenrealities.com/docs/getting-started/overview as of
 These are explicitly on Even's published roadmap but **NOT yet available
 to third-party developers**. No public timeline.
 
+### The load-bearing reason: heads-up display lifecycle
+
+The Even Realities default dashboard implements a **heads-up display
+lifecycle** that plugins fundamentally cannot replicate:
+
+- Detect when the user **looks up** (head tilts toward the HUD)
+- **Light the display** with content for ~3 seconds
+- **Dim out / power down** the display after no activity
+- **Re-wake on new event** or next look-up
+
+This is a firmware/OS-level behavior baked into the G2 + Even App. The
+plugin SDK (`@evenrealities/even_hub_sdk@0.0.9`) confirms — verified
+live in this session — that **no plugin-level primitive exposes any
+of these capabilities**. The full plugin surface is:
+
+- `createStartUpPageContainer` / `rebuildPageContainer` — render content
+  (display stays lit while content is rendered; no dim hook)
+- `shutDownPageContainer(exitMode)` — close the plugin entirely
+  (`exitMode=0` immediate, `exitMode=1` confirm prompt). User must
+  manually relaunch via glasses menu — defeats ambient.
+- `imuControl(isOpen, reportFrq)` — turn IMU events on/off; can detect
+  head motion but doesn't gate the display backlight.
+- **No `dim` / `sleep` / `wake` / `autoHide` / `displayDuration` /
+  `ttl` exposed anywhere in `dist/index.d.ts`.**
+
+This means plugins keep the G2 display **lit 100% of the time** while
+active (verified live 2026-05-10 — operator reported "vigil is live
+even in background, but display on 100% of the time"). There is no way
+within the plugin contract to achieve the heads-up "show briefly, dim,
+wake on event" experience users expect from native G2 dashboard
+content. The plugin-layer workarounds (`shutDownPageContainer` after
+N seconds idle / render-blank-container / IMU-driven render gating)
+are all flawed: each either prevents re-wake on new events, drains the
+display backlight identically, or adds non-trivial battery cost.
+
+Therefore: **heads-up display participation is not an enhancement but
+a fundamental capability gap.** The widget conversion isn't just "make
+Vigil always-visible" — it's "make Vigil play nicely with the G2's
+power and display lifecycle." Without widget access, Vigil cannot ship
+the polished version of its core value prop (ambient, glanceable AI
+that respects user attention + battery).
+
 ## When to surface
 
 Re-evaluate this SEED if **any** of the following becomes true:
