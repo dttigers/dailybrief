@@ -7,8 +7,13 @@ import type {
   AgentSessionRow,
 } from './types.ts'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/v1'
-const API_KEY = import.meta.env.VITE_API_KEY || ''
+// Phase 124 Plan 08: BASE_URL + API_KEY exported so main.ts can construct the
+// SSE URL (`${BASE_URL}/agent-stream`) and pass the bearer to createSseClient
+// without re-reading import.meta.env. Bearer goes ONLY into the Authorization
+// header (via createSseClient's apiKey opt) — never URL-appended (memory:
+// feedback_railway_variables_leak).
+export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/v1'
+export const API_KEY = import.meta.env.VITE_API_KEY || ''
 
 // Phase 106 G2-01: VITE_SCREENSHOT_MODE short-circuits fetches to deterministic demo
 // data so Plan 05's simulator session produces stable, reproducible PNGs.
