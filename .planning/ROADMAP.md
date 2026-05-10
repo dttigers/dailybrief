@@ -475,7 +475,7 @@ Plans:
 - [x] 125-01-PLAN.md — Wave 0 RED test scaffolds (8 W0 files: 3 NEW + 4 EXTENDED + VERIFIED.md refresh deferred to Plan 08)
 - [ ] 125-02-PLAN.md — vigil-core users.quiet_mode + quiet_mode_since drizzle migration + schema delta
 - [ ] 125-03-PLAN.md — quiet-mode-suppression lib + agent-events-bus emitQuiet/onQuiet/offQuiet extension
-- [ ] 125-04-PLAN.md — createDedupedDeviceStatusListener helper (G2-POLISH-08, no live consumer)
+- [x] 125-04-PLAN.md — createDedupedDeviceStatusListener helper (G2-POLISH-08, no live consumer)
 - [ ] 125-05-PLAN.md — /v1/quiet-mode GET/PUT route + agent-stream.ts Phase 0 frame + suppression filter on replay
 - [ ] 125-06-PLAN.md — plugin sse-client quiet_mode_changed dispatch + companion.ts Q glyph + main.ts wiring
 - [ ] 125-07-PLAN.md — PWA Settings G2 Plugin section + getQuietMode/setQuietMode api/client helpers
@@ -619,7 +619,7 @@ Plans:
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 10/10 | Complete    | 2026-05-09 |
 | 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 5/5 autonomous (operator soak pending) | Awaiting operator soak | - |
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 9/9 autonomous (operator E2E + D-14 PNG pending) | Awaiting operator E2E | - |
-| 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 1/11 | In Progress|  |
+| 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 2/11 | In Progress|  |
 
 ## Backlog
 

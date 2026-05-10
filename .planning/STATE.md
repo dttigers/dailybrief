@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
 stopped_at: Phase 125 Plan 01 complete (Wave-0 RED placeholders) — ready to execute Plans 02-07 (Wave 1+ implementations)
-last_updated: "2026-05-10T17:09:18.049Z"
+last_updated: "2026-05-10T17:15:08.003Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 43
-  completed_plans: 33
-  percent: 77
+  completed_plans: 34
+  percent: 79
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 9 of 9 — COMPLETE (Plan 09 VERIFICATION.md backfilled with 2026-05-10 li
 Status: Phase complete — ready for verification
 Last activity: 2026-05-10
 
-Progress: [████████░░] 77%
+Progress: [████████░░] 79%
 
 ## v3.8 Phase Table
 
@@ -80,6 +80,7 @@ Progress: [████████░░] 77%
 | Phase 124 P08 | 6min | 2 tasks | 4 files |
 | Phase 124 P09 | 4min | 1 tasks | 2 files |
 | Phase 125 P01 | 22min | 2 tasks | 7 files |
+| Phase 125 P04 | 6m | 1 tasks | 2 files |
 
 ## Deferred Items
 
@@ -263,6 +264,7 @@ Recent (v3.7 closeout):
 - [Phase 125]: Wave-0 RED placeholder pattern uses { skip: 'TODO(125-XX): ...' } not { todo: ... } — node:test prints explicit 'Skipped: ...' lines for skip-with-reason placeholders, satisfying D-04 readability
 - [Phase 125]: Wave-0 EXTEND-only invariant verified via git diff --numstat — 4/4 files show N additions, 0 deletions; T-125-W0-01 (Tampering of existing tests) closed by construction
 - [Phase 125]: Skip tests in EXTENDED files reused existing top-of-file test/assert imports — no duplicate import lines added; tsx accepts duplicates but plan interface explicitly called this out as cleaner
+- [Phase 125]: Plan 125-04 D-12: helper-only ship — createDedupedDeviceStatusListener at vigil-g2-plugin/src/lib/deduped-device-status.ts; main.ts intentionally untouched (no live bridge.onDeviceStatusChanged subscription this phase)
 
 ### Pending Todos
 
@@ -299,9 +301,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T17:09:18.036Z
+Last session: 2026-05-10T17:14:11.784Z
 Stopped at: Phase 125 Plan 01 complete (Wave-0 RED placeholders) — ready to execute Plans 02-07 (Wave 1+ implementations)
 Resume file: 
 
-  (1) Phase 124 Plan 04 — D-14 byte-identical PNG comparison (`.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`)
+  None
   (2) Phase 123 — 24h vigil-watch soak (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`)
