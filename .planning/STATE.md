@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
-stopped_at: Completed 125-11-PLAN.md (skeleton-only; operator wallclock pending for AGENT-DEMO-01)
-last_updated: "2026-05-10T19:28:41.282Z"
+stopped_at: "Phase 125: 10/11 plans complete — v0.3.6 submitted to Even Hub (in review); Plan 11 (60s demo) deferred"
+last_updated: "2026-05-10T21:47:37.635Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 43
-  completed_plans: 42
-  percent: 98
+  completed_plans: 43
+  percent: 100
 ---
 
 # Project State
@@ -328,9 +328,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T19:28:32.693Z
-Stopped at: Completed 125-11-PLAN.md (skeleton-only; operator wallclock pending for AGENT-DEMO-01)
+Last session: 2026-05-10T21:47:37.587Z
+Stopped at: Phase 125: 10/11 plans complete — v0.3.6 submitted to Even Hub (in review); Plan 11 (60s demo) deferred
 Resume file: 
 
   
-  (2) Phase 123 — 24h vigil-watch soak (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`)
+  .planning/phases/125-quiet-mode-remaining-polish-riders-plugin-v0-3-0-ship-portfo/
