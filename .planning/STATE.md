@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: executing
-stopped_at: "Phase 124 APPROVED-WITH-DEFERRALS — all 9 plans landed + 4 follow-up commits (4b278b8 CORS/footer, a977129 banner+filter, d6d3832 identity, 982d8d1 VERIFICATION skeleton fill). Live operator E2E completed 2026-05-10 — 7/9 sign-off items PASS, 2 PARTIAL (HUD-02 b3 inferred, AGENT-API-03.2 reconnect-storm covers related invariant). Plan 04 D-14 PNG todo + Plan 09 E2E todo moved to .planning/todos/completed/. Real-G2 hardware retest deferred-item per feedback_g2_tap_expand_broken pattern. Phase 123 24h soak gate remains parallel-pending. Phase 125 unblocked."
-last_updated: "2026-05-10T15:15:00.000Z"
+status: Phase 124 closed. Phase 125 ready (Quiet mode + DND filter, SEED-005/008, single-tap/long-press if SDK adds events per SEED-011). Run `/gsd-discuss-phase 125`.
+stopped_at: Phase 125 context gathered
+last_updated: "2026-05-10T15:39:53.143Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
@@ -295,9 +295,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T02:33:15.523Z
-Stopped at: Phase 124 Plan 09 PARTIAL — autonomous skeleton + operator runbook landed; commit 7e0c68f. 8/9 plans complete + Plan 09 partial (Task 1 auto-done, Task 2 deferred to operator). Phase 124 closes when operator fills 124-VERIFICATION.md per .planning/todos/pending/2026-05-10-phase-124-09-e2e-verification-operator-run.md. Concurrent operator todos: (1) Phase 123 24h soak (parallel, not blocking); (2) Plan 04 D-14 PNG (canonical for §G2-POLISH-07)
+Last session: 2026-05-10T15:39:53.115Z
+Stopped at: Phase 125 context gathered
 Resume file: 
-Next action: Advance to Plan 06 (or run Plans 06-09 in parallel per yolo+plan-level parallelization config). Two carry-over operator-action items still pending in parallel — neither blocks Plan 06+:
+.planning/phases/125-quiet-mode-remaining-polish-riders-plugin-v0-3-0-ship-portfo/125-CONTEXT.md
   (1) Phase 124 Plan 04 — D-14 byte-identical PNG comparison (`.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`)
   (2) Phase 123 — 24h vigil-watch soak (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`)
