@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
 stopped_at: Completed 125-05-PLAN.md
-last_updated: "2026-05-10T18:47:43.263Z"
+last_updated: "2026-05-10T18:50:04.247Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 43
-  completed_plans: 39
-  percent: 91
+  completed_plans: 40
+  percent: 93
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 9 of 9 — COMPLETE (Plan 09 VERIFICATION.md backfilled with 2026-05-10 li
 Status: Phase complete — ready for verification
 Last activity: 2026-05-10
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 93%
 
 ## v3.8 Phase Table
 
@@ -86,6 +86,7 @@ Progress: [█████████░] 91%
 | Phase 125 P06 | ~38min | 3 tasks | 5 files |
 | Phase 125 P05 | 11min | 2 tasks | 5 files |
 | Phase 125 P08 | 5min | 3 tasks | 9 files |
+| Phase 125 P07 | 5 min 18 sec | 2 tasks | 3 files |
 
 ## Deferred Items
 
@@ -285,6 +286,9 @@ Recent (v3.7 closeout):
 - [Phase ?]: Plan 125-08: min_sdk_version bumped 0.0.7 → 0.0.8 because bridge.onLaunchSource is invoked at vigil-g2-plugin/src/main.ts:82 (Phase 124 D-07); API added in SDK 0.0.8
 - [Phase ?]: Plan 125-08: PROJECT.md demo-tap amendment NO-OP — v3.8 milestone block has no single-tap reference (only generic G2 Companion HUD bullet on line 161)
 - [Phase ?]: Plan 125-08: tsconfig.json exclude for test files (vs install @types/node) — tests run via tsx --test which ignores tsconfig.exclude; shipped Vite build does not include tests; zero new dependencies
+- [Phase 125]: Plan 125-07: PWA Quiet-mode toggle uses native input checkbox with accent-teal-600 (mirrors CAL-01/SPORTS-01); NOT a custom switch component per UI-SPEC §Quiet-Mode Toggle Row lock
+- [Phase 125]: Plan 125-07: G2 Plugin section placed AFTER Sports closing and BEFORE Auto-generate ScheduleCard, preserving UI-SPEC data-source-type ordering and passing both awk ordering checks
+- [Phase 125]: Plan 125-07: tests use existing fetchImpl route-stub pattern (mirrors SPORTS-01 makeSportsFetchImpl), not vi.mock api-client module mocks — entire SettingsPage.test.tsx uses fetchImpl exclusively
 
 ### Pending Todos
 
@@ -321,7 +325,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T18:47:28.540Z
+Last session: 2026-05-10T18:48:58.842Z
 Stopped at: Completed 125-05-PLAN.md
 Resume file: 
 
