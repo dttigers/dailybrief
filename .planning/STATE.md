@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
 stopped_at: "Phase 124 Plan 06 COMPLETE — SSE shim landed (D-04 + D-11): bearer in Authorization header, BACKOFF_MS=[1000,2000,4000,8000,16000,30000], Last-Event-ID resume from localStorage, AbortController disconnect, event:ping silent drop, QuotaExceededError survival; 13 unit tests + 19/19 plugin suite green; commits a6d1846 + a3dff3c"
-last_updated: "2026-05-10T02:09:48.728Z"
+last_updated: "2026-05-10T02:23:01.891Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 32
-  completed_plans: 30
-  percent: 94
+  completed_plans: 31
+  percent: 97
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — EXECUTING
-Plan: 7 of 9 — COMPLETE (ROADMAP SC #2 narrowed to D-08 reality; SEED-011 deferred-item lands)
+Plan: 8 of 9 — COMPLETE (ROADMAP SC #2 narrowed to D-08 reality; SEED-011 deferred-item lands)
 Status: Ready to execute
 Last activity: 2026-05-10
 
-Progress: [█████████░] 94%
+Progress: [██████████] 97%
 
 ## v3.8 Phase Table
 
@@ -77,6 +77,7 @@ Progress: [█████████░] 94%
 | Phase 124 P05 | 2min | 2 tasks | 2 files |
 | Phase 124 P06 | 26min | 2 tasks | 3 files |
 | Phase Phase 124 P07 P07 | 7min | 3 tasks tasks | 6 files files |
+| Phase 124 P08 | 6min | 2 tasks | 4 files |
 
 ## Deferred Items
 
@@ -247,6 +248,11 @@ Recent (v3.7 closeout):
 - [Phase ?]: [Phase 124 / Plan 07]: Drift-detector test anchor changed from indexOf('Screen.COMPANION') to indexOf('currentScreen === Screen.COMPANION') — the literal handleNavEvent if-guard is structurally distinct from the SCREEN_ORDER literal AND buildScreen case. Original anchor found line 28 (SCREEN_ORDER), 1000-char window didn't reach line-180 DOUBLE_CLICK branch (Rule 1)
 - [Phase ?]: [Phase 124 / Plan 07]: Banner state machine returns { toastMs: number | null } explicitly — caller (Plan 08 SSE handler) decides whether to setTimeout(rebuild, toastMs). Decoupling timer scheduling from companion.ts lets tests use injected nowFn () => number for deterministic expiresAt-based hasActiveBanner() checks, never fighting real setTimeout
 - [Phase ?]: [Phase 124 / Plan 07]: LONG_PRESS_EVENT removed from explanatory comment in navigation.ts — Task 1 acceptance grep is non-comment-stripping, so the literal token in SEED-011 cross-reference falsely tripped drift gate. Replaced with 'long-press' plain English; Task 3 drift test strips comments anyway (Rule 1)
+- [Phase ?]: [Phase 124 / Plan 08]: Helpers extracted to src/lib/launch-source-helpers.ts (NOT inline in main.ts) — node:test cannot import a module with top-level SDK side effects (EvenAppBridge.getInstance + bridge.onLaunchSource); plan-spec anticipated this; main.ts re-exports the helpers preserving the public-facing import contract
+- [Phase ?]: [Phase 124 / Plan 08]: launch-source-helpers.ts uses TYPE-ONLY ScreenName import — runtime Screen pulls navigation.ts → api.ts → import.meta.env (Vite-only); type-only erased at compile-time avoids the cascade. Local HOME/COMPANION literals typed ScreenName kept in sync via in-file comment + Plan 07 W-6 + Plan 08 drift detectors
+- [Phase ?]: [Phase 124 / Plan 08]: 500ms timeout literal preserved verbatim (not extracted to LAUNCH_SOURCE_TIMEOUT_MS named const) — Task 2 drift detector regex requires literal 500 at the structurally-meaningful site; same Phase 123 Plan 04 idiom (single-use → keep literal, multi-use → name). Reverted during self-verification before commit
+- [Phase ?]: [Phase 124 / Plan 08]: bridge hoisted to module scope (let bridge: ... | null = null) — SSE callback closures capture lazily; bridge assigned in init() before sseClient.connect() so callbacks fire post-bridge-init; defensive null-check + getCurrentScreen()===Screen.COMPANION guard prevents pre-init() callback fan-out
+- [Phase ?]: [Phase 124 / Plan 08]: init() hydrates Companion cache BEFORE pickInitialScreen — without hydrate, pickInitialScreen routes correctly but rendered Companion shows empty-state copy (activeSessions still []); hydrate side-effect intentionally NOT inside helper to keep helpers SDK-free
 
 ### Pending Todos
 
@@ -283,7 +289,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T02:09:04.814Z
+Last session: 2026-05-10T02:22:47.225Z
 Stopped at: Phase 124 Plan 06 COMPLETE — SSE shim landed (D-04 + D-11): bearer in Authorization header, BACKOFF_MS=[1000,2000,4000,8000,16000,30000], Last-Event-ID resume from localStorage, AbortController disconnect, event:ping silent drop, QuotaExceededError survival; 13 unit tests + 19/19 plugin suite green; commits a6d1846 + a3dff3c
 Resume file: None
 Next action: Advance to Plan 06 (or run Plans 06-09 in parallel per yolo+plan-level parallelization config). Two carry-over operator-action items still pending in parallel — neither blocks Plan 06+:
