@@ -19,6 +19,8 @@ import {
   setSportsSelections,
   getSportsTeams,
   classifyFetchError,
+  getQuietMode,
+  setQuietMode,
 } from '../api/client'
 import type { CalendarInfo, SportsSelections, League, TeamListEntry, ErrorClass } from '../api/client'
 import { useToast } from '../hooks/useToast'
@@ -148,6 +150,14 @@ export default function SettingsPage() {
   const sportsSaveTimerRef = useRef<number | null>(null)
   /** Server-confirmed last good selections value — rollback target on PUT failure (D-21). */
   const lastSavedSportsRef = useRef<SportsSelections>({ enabledLeagues: [], favoriteTeams: {} })
+
+  // Phase 125 (AGENT-HUD-03 / D-05) — Quiet-mode toggle state (mirrors CAL-01 / SPORTS-01 shape).
+  const [quietModeEnabled, setQuietModeEnabled] = useState<boolean>(false)
+  const [quietModeStatus, setQuietModeStatus] = useState<'loading' | 'ok' | 'error'>('loading')
+  const [quietModeError, setQuietModeError] = useState<string | null>(null)
+  /** Server-confirmed last good quiet-mode boolean — rollback target on PUT failure. */
+  const lastSavedQuietModeRef = useRef<boolean>(false)
+  const quietModeSaveTimerRef = useRef<number | null>(null)
 
   // WR-02: clear any pending collapse timer when the component unmounts.
   useEffect(() => {
@@ -345,6 +355,37 @@ export default function SettingsPage() {
       if (sportsSaveTimerRef.current !== null) {
         window.clearTimeout(sportsSaveTimerRef.current)
         sportsSaveTimerRef.current = null
+      }
+    }
+  }, [])
+
+  // Phase 125 (AGENT-HUD-03 / D-05) — fetch quiet-mode state on mount.
+  // Mirrors loadSportsSelections shape; 'loading' / 'ok' / 'error' branching
+  // drives the UI per UI-SPEC §"State Matrix".
+  const loadQuietMode = useCallback(async () => {
+    setQuietModeStatus('loading')
+    setQuietModeError(null)
+    try {
+      const { enabled } = await getQuietMode()
+      setQuietModeEnabled(enabled)
+      lastSavedQuietModeRef.current = enabled
+      setQuietModeStatus('ok')
+    } catch {
+      setQuietModeError("Couldn't load quiet-mode setting.")
+      setQuietModeStatus('error')
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadQuietMode()
+  }, [loadQuietMode])
+
+  // Phase 125 (AGENT-HUD-03 / D-05) — debounced PUT cleanup on unmount.
+  useEffect(() => {
+    return () => {
+      if (quietModeSaveTimerRef.current !== null) {
+        window.clearTimeout(quietModeSaveTimerRef.current)
+        quietModeSaveTimerRef.current = null
       }
     }
   }, [])
@@ -658,6 +699,31 @@ export default function SettingsPage() {
     }
     setSportsSelectionsState(next)
     scheduleSportsSave(next)
+  }
+
+  // Phase 125 (AGENT-HUD-03 / D-05) — optimistic toggle, 400ms debounced PUT,
+  // rollback + verbatim error toast on failure (mirrors handleCalendarToggle pattern).
+  function handleQuietModeToggle() {
+    const next = !quietModeEnabled
+    setQuietModeEnabled(next)  // optimistic flip
+
+    if (quietModeSaveTimerRef.current !== null) {
+      window.clearTimeout(quietModeSaveTimerRef.current)
+    }
+    quietModeSaveTimerRef.current = window.setTimeout(async () => {
+      quietModeSaveTimerRef.current = null
+      try {
+        await setQuietMode(next)
+        lastSavedQuietModeRef.current = next
+      } catch {
+        // Rollback to last server-confirmed value + verbatim UI-SPEC error toast.
+        setQuietModeEnabled(lastSavedQuietModeRef.current)
+        showToast({
+          variant: 'error',
+          body: "Couldn't save quiet mode — try again",
+        })
+      }
+    }, 400)
   }
 
   const handleTimezoneSave = async () => {
@@ -1150,6 +1216,57 @@ export default function SettingsPage() {
               </p>
             )}
           </>
+        )}
+      </section>
+
+      {/* Phase 125 (AGENT-HUD-03 / D-05) — G2 Plugin section with Quiet-mode toggle */}
+      <section
+        data-testid="g2-plugin-section"
+        aria-labelledby="g2-plugin-heading"
+        className="bg-gray-900 border border-gray-900/40 rounded-lg p-5 mt-4"
+      >
+        <h2 id="g2-plugin-heading" className="text-lg font-medium">G2 Plugin</h2>
+        <p className="text-xs text-gray-500 mb-4">
+          Settings for the Vigil plugin running on your Even Realities G2 glasses.
+        </p>
+
+        {quietModeStatus === 'loading' && (
+          <p className="text-gray-400 text-sm">Loading G2 settings…</p>
+        )}
+
+        {quietModeStatus === 'error' && (
+          <div className="bg-red-900/20 border border-red-900/40 rounded p-3">
+            <p className="text-red-400 text-sm mb-2">
+              {quietModeError ?? "Couldn't load quiet-mode setting."}
+            </p>
+            <button
+              type="button"
+              onClick={() => void loadQuietMode()}
+              className="text-xs text-teal-400 hover:text-teal-300"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {quietModeStatus === 'ok' && (
+          <div data-testid="quiet-mode-row" className="space-y-1.5">
+            <label className="flex items-center gap-2 cursor-pointer py-1">
+              <input
+                type="checkbox"
+                checked={quietModeEnabled}
+                onChange={() => handleQuietModeToggle()}
+                className="w-4 h-4 rounded border-gray-400/30 bg-gray-900/80 accent-teal-600 cursor-pointer"
+                data-testid="quiet-mode-checkbox"
+                aria-describedby="quiet-mode-help"
+              />
+              <span className="text-sm text-gray-100">Quiet mode</span>
+            </label>
+            <p id="quiet-mode-help" className="text-xs text-gray-500 pl-6">
+              Only urgent events (need-input prompts and failures) reach your glasses while this is on.
+              Other events are queued and delivered when you turn it off.
+            </p>
+          </div>
         )}
       </section>
 

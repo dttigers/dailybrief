@@ -1122,4 +1122,167 @@ describe('SettingsPage', () => {
       }
     })
   })
+
+  // ── Phase 125 (AGENT-HUD-03 / D-05) G2 Plugin Quiet-mode toggle tests ──
+  //
+  // Mirrors the SPORTS-01 fetchImpl pattern: route-stub fetch by URL substring.
+  // Covers UI-SPEC §"Verification Gates Surface 1" (8 assertions).
+  describe('G2 Plugin Quiet-mode toggle (AGENT-HUD-03)', () => {
+    function makeQuietModeFetchImpl(opts: {
+      initialQuietMode?: { enabled: boolean; since: string | null } | 'pending' | 'error'
+      putResponse?: { status: number; body?: object }
+    }) {
+      const putCalls: Array<{ url: string; body: unknown }> = []
+      const fetchImpl = async (url: string, init?: RequestInit): Promise<Response> => {
+        const u = String(url)
+        if (u.includes('/v1/quiet-mode')) {
+          if (init?.method === 'PUT') {
+            putCalls.push({ url: u, body: init.body ? JSON.parse(init.body as string) : null })
+            const body = opts.putResponse?.body ?? { ok: true }
+            return new Response(JSON.stringify(body), { status: opts.putResponse?.status ?? 200 })
+          }
+          if (opts.initialQuietMode === 'pending') {
+            // Never-resolving promise — keeps the picker in loading state.
+            return await new Promise<Response>(() => {})
+          }
+          if (opts.initialQuietMode === 'error') {
+            return new Response(JSON.stringify({ error: 'down' }), { status: 500 })
+          }
+          const sel = opts.initialQuietMode ?? { enabled: false, since: null }
+          return new Response(JSON.stringify(sel), { status: 200 })
+        }
+        if (u.includes('/v1/google/status')) {
+          return new Response(JSON.stringify({ calendar: 'connected', gmail: 'connected' }), { status: 200 })
+        }
+        if (u.includes('/v1/calendar/list')) {
+          return new Response(JSON.stringify({ status: 'needs_reauth' }), { status: 200 })
+        }
+        if (u.includes('/v1/sports/selections')) {
+          return new Response(JSON.stringify({ enabledLeagues: [], favoriteTeams: {} }), { status: 200 })
+        }
+        if (u.includes('/v1/auth/me')) {
+          return new Response(JSON.stringify({ id: 1, email: 'a@b.com', emailVerifiedAt: '2026-01-01' }), { status: 200 })
+        }
+        if (u.includes('/v1/me')) {
+          return new Response(JSON.stringify({ userId: '1', email: 'a@b.com' }), { status: 200 })
+        }
+        // schedules + timezone — silent success
+        return new Response(JSON.stringify({ hour: 4, minute: 0, enabled: true }), { status: 200 })
+      }
+      return { fetchImpl, getPutCalls: () => putCalls }
+    }
+
+    it('QUIET-01-render: G2 Plugin section renders with heading + description after Sports section', async () => {
+      const { fetchImpl } = makeQuietModeFetchImpl({})
+      renderPage({ fetchImpl })
+      // Section heading + description present
+      const section = await screen.findByTestId('g2-plugin-section')
+      expect(section).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'G2 Plugin' })).toBeInTheDocument()
+      expect(
+        screen.getByText('Settings for the Vigil plugin running on your Even Realities G2 glasses.'),
+      ).toBeInTheDocument()
+    })
+
+    it('QUIET-02-loading: Loading G2 settings… shown while initial GET pending', async () => {
+      const { fetchImpl } = makeQuietModeFetchImpl({ initialQuietMode: 'pending' })
+      renderPage({ fetchImpl })
+      expect(await screen.findByText('Loading G2 settings…')).toBeInTheDocument()
+      // Checkbox NOT yet rendered.
+      expect(screen.queryByTestId('quiet-mode-checkbox')).toBeNull()
+    })
+
+    it('QUIET-03-loaded-off: checkbox unchecked when GET returns enabled=false', async () => {
+      const { fetchImpl } = makeQuietModeFetchImpl({ initialQuietMode: { enabled: false, since: null } })
+      renderPage({ fetchImpl })
+      const cb = await screen.findByTestId('quiet-mode-checkbox') as HTMLInputElement
+      await waitFor(() => expect(cb.checked).toBe(false))
+    })
+
+    it('QUIET-04-loaded-on: checkbox checked when GET returns enabled=true', async () => {
+      const { fetchImpl } = makeQuietModeFetchImpl({
+        initialQuietMode: { enabled: true, since: '2026-05-10T18:00:00Z' },
+      })
+      renderPage({ fetchImpl })
+      const cb = await screen.findByTestId('quiet-mode-checkbox') as HTMLInputElement
+      await waitFor(() => expect(cb.checked).toBe(true))
+    })
+
+    it('QUIET-05-optimistic-flip: click flips checkbox immediately before PUT resolves', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const { fetchImpl } = makeQuietModeFetchImpl({
+          initialQuietMode: { enabled: false, since: null },
+        })
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        renderPage({ fetchImpl })
+        const cb = await screen.findByTestId('quiet-mode-checkbox') as HTMLInputElement
+        await waitFor(() => expect(cb.checked).toBe(false))
+        await user.click(cb)
+        // Optimistic: instantly checked even though PUT hasn't yet fired (still in 400ms debounce).
+        expect(cb.checked).toBe(true)
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('QUIET-06-rollback-on-put-failure: PUT 500 rolls back checkbox + fires error toast with verbatim copy', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true })
+      try {
+        const { fetchImpl } = makeQuietModeFetchImpl({
+          initialQuietMode: { enabled: false, since: null },
+          putResponse: { status: 500, body: { error: 'down' } },
+        })
+        const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime })
+        renderPage({ fetchImpl })
+        const cb = await screen.findByTestId('quiet-mode-checkbox') as HTMLInputElement
+        await waitFor(() => expect(cb.checked).toBe(false))
+        await user.click(cb)
+        // Optimistic flip first.
+        expect(cb.checked).toBe(true)
+        // Advance past 400ms debounce → PUT fails → rollback to last-saved (false).
+        await act(async () => { vi.advanceTimersByTime(450) })
+        await waitFor(() => expect(cb.checked).toBe(false))
+        // Exact error toast copy from UI-SPEC §Copywriting Contract.
+        expect(
+          await screen.findByText("Couldn't save quiet mode — try again"),
+        ).toBeInTheDocument()
+      } finally {
+        vi.useRealTimers()
+      }
+    })
+
+    it('QUIET-07-helper-copy-verbatim: exact UI-SPEC helper string renders under the toggle', async () => {
+      const { fetchImpl } = makeQuietModeFetchImpl({
+        initialQuietMode: { enabled: false, since: null },
+      })
+      renderPage({ fetchImpl })
+      // Wait for the section to hydrate (avoid asserting on the loading-state DOM).
+      await screen.findByTestId('quiet-mode-checkbox')
+      // The helper copy is split across whitespace in JSX (`{' '}`) but RTL
+      // collapses whitespace by default; assert on the joined text.
+      expect(
+        screen.getByText(
+          /Only urgent events \(need-input prompts and failures\) reach your glasses while this is on\. Other events are queued and delivered when you turn it off\./,
+        ),
+      ).toBeInTheDocument()
+    })
+
+    it('QUIET-08-no-arbitrary-tailwind-values: G2 Plugin section uses zero text-[ / bg-[#…] arbitrary classes', async () => {
+      // Static-source grep — UI-SPEC §"Note on Tailwind v4 + @theme" prohibits arbitrary-value classes in the new section.
+      const fs = await import('fs')
+      const path = await import('path')
+      const src = fs.readFileSync(
+        path.resolve(process.cwd(), 'src/pages/SettingsPage.tsx'),
+        'utf-8',
+      )
+      // Extract the G2 Plugin section (data-testid sentinel → closing </section>).
+      const sectionMatch = src.match(/data-testid="g2-plugin-section"[\s\S]*?<\/section>/)
+      expect(sectionMatch).not.toBeNull()
+      const sectionText = sectionMatch![0]
+      // Reject text-[ and bg-[#…] arbitrary-value classes; standard utilities allowed.
+      expect(sectionText).not.toMatch(/text-\[/)
+      expect(sectionText).not.toMatch(/bg-\[#/)
+    })
+  })
 })
