@@ -50,6 +50,10 @@ export const users = pgTable(
     // newly registered users start with NULL until they click the verify
     // link. NO .notNull() and NO default.
     emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    // Phase 125 (AGENT-HUD-03 / D-05): per-user HUD DND filter state.
+    // Default false — every user starts non-quiet. NULL since column when off.
+    quietMode: boolean("quiet_mode").notNull().default(false),
+    quietModeSince: timestamp("quiet_mode_since", { withTimezone: true }),
   },
   (table) => [uniqueIndex("uq_users_email").on(table.email)],
 );
