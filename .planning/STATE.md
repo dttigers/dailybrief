@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: Phase 124 closed. Phase 125 ready (Quiet mode + DND filter, SEED-005/008, single-tap/long-press if SDK adds events per SEED-011). Run `/gsd-discuss-phase 125`.
-stopped_at: Phase 125 context gathered
-last_updated: "2026-05-10T15:39:53.143Z"
+stopped_at: Phase 125 plans verified (11 plans, 5 waves) — ready to execute
+last_updated: "2026-05-10T16:37:08.130Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 5
-  total_plans: 32
+  total_plans: 43
   completed_plans: 32
-  percent: 100
+  percent: 74
 ---
 
 # Project State
@@ -295,9 +295,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T15:39:53.115Z
-Stopped at: Phase 125 context gathered
+Last session: 2026-05-10T16:37:08.096Z
+Stopped at: Phase 125 plans verified (11 plans, 5 waves) — ready to execute
 Resume file: 
-.planning/phases/125-quiet-mode-remaining-polish-riders-plugin-v0-3-0-ship-portfo/125-CONTEXT.md
+.planning/phases/125-quiet-mode-remaining-polish-riders-plugin-v0-3-0-ship-portfo/
   (1) Phase 124 Plan 04 — D-14 byte-identical PNG comparison (`.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`)
   (2) Phase 123 — 24h vigil-watch soak (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`)
