@@ -10,6 +10,14 @@ import { rebuildHomeScreen } from './screens/home.ts'
 import { buildWorkOrdersScreen, getLastFetchedTasks } from './screens/work-orders.ts'
 import { buildAffirmationScreen } from './screens/affirmation.ts'
 import { buildTaskDetailScreen } from './screens/task-detail.ts'
+import {
+  rebuildCompanionScreen,
+  hydrateActiveSessions,
+  hasActiveBanner,
+  ackBanner,
+  getActiveSessions,
+  cycleSession,
+} from './screens/companion.ts'
 import { fetchSummary, fetchBrief, fetchAffirmation, fetchAgentSessions } from './api.ts'
 
 // Screen identifiers — const object pattern (erasableSyntaxOnly)
@@ -55,13 +63,15 @@ async function buildScreen(screen: ScreenName): Promise<RebuildPageContainer> {
     }
     case Screen.COMPANION: {
       // Phase 124 D-05 / AGENT-HUD-01 — hydrate from GET /v1/agent-sessions;
-      // SSE shim provides live updates (wired in Plan 08 main.ts). Dynamic
-      // import keeps companion.ts side-effect-free at module load until first
-      // navigation to the Companion screen.
+      // SSE shim provides live updates (wired in Plan 08 main.ts).
+      // Phase 125 follow-up: was a dynamic import; vite folded it into the
+      // main chunk anyway (INEFFECTIVE_DYNAMIC_IMPORT warning), and the
+      // remaining runtime `await import()` boundary returned an empty module
+      // on G2's older WebView engine — companion.ts loaded but its exports
+      // came back undefined, so this case threw and Companion was effectively
+      // missing from the carousel on hardware. Static import resolves at
+      // module load time and is engine-agnostic.
       const sessions = await fetchAgentSessions()
-      const { rebuildCompanionScreen, hydrateActiveSessions } = await import(
-        './screens/companion.ts'
-      )
       hydrateActiveSessions(sessions)
       return rebuildCompanionScreen()
     }
@@ -180,8 +190,9 @@ export async function handleNavEvent(
     currentScreen === Screen.COMPANION &&
     eventType === OsEventTypeList.DOUBLE_CLICK_EVENT
   ) {
-    const { hasActiveBanner, ackBanner, getActiveSessions, cycleSession } =
-      await import('./screens/companion.ts')
+    // Phase 125 follow-up: was `await import('./screens/companion.ts')`.
+    // Same INEFFECTIVE_DYNAMIC_IMPORT issue as above — converted to static
+    // import for engine-agnostic resolution.
     if (hasActiveBanner()) {
       ackBanner()
       await refreshCurrentScreen(bridge)
