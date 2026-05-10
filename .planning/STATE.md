@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 124 Plan 03 complete (SSE route + bus.emit hook + Block 4; 7+33+6 tests green; tsc clean)
-last_updated: "2026-05-10T00:58:08.163Z"
+stopped_at: Phase 124 Plan 04 PARTIAL — Tasks 1+2 (home-overflow trim + drift detector) committed; Task 3 (D-14 byte-identical PNG comparison) deferred to operator GUI run, runbook in pending todos
+last_updated: "2026-05-10T01:08:00.000Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — EXECUTING
-Plan: 4 of 9
-Status: Ready to execute
+Plan: 4 of 9 — PARTIAL (Tasks 1+2 done autonomously; Task 3 D-14 PNG-equality gate handed to operator)
+Status: Awaiting operator action to close Plan 04 (Task 3 PNG-equality verification — see `.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`)
 Last activity: 2026-05-10
 
 Progress: [████████░░] 81%
@@ -73,6 +73,7 @@ Progress: [████████░░] 81%
 | Phase 124 P01 | 1min | 1 task tasks | 5 files files |
 | Phase 124 P02 | 4min | 2 tasks tasks | 2 files files |
 | Phase 124 P03 | 12min | 2 tasks (auto+TDD) | 6 files (2 created, 4 modified) |
+| Phase 124 P04 | 4min | 2 auto + 1 deferred (operator) | 5 files (2 created, 3 modified) |
 
 ## Deferred Items
 
@@ -89,6 +90,8 @@ Carried forward from v3.7 milestone close (2026-05-06):
 | seed | SEED-010-g2-voice-capture-via-audio-pcm | dormant | → v3.9 milestone-anchor candidate |
 | ops_followup | Rotate Railway Postgres password | resolved | Rotated 2x (2026-05-02 + 2026-05-09 after recurrence); see `.planning/todos/completed/2026-05-01-rotate-railway-postgres-password.md` |
 | operator_action | Phase 123 — 24h soak run + 123-VERIFICATION.md back-fill | pending | `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md` — blocking for Phase 123 closeout + Phase 124 launch; D-10 wallclock requirement (cannot auto-run) |
+| operator_action | Phase 124 Plan 04 — D-14 byte-identical PNG comparison | pending | `.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md` — blocks Plan 04 closure; `evenhub-simulator` is GUI-only (no headless capture in `--help`); structural fix already shipped via Tasks 1+2 (commits cf4984e, 3a67c41), drift detector locks 4-line invariant |
+| operator_action | Phase 124 Plan 04 — G2-POLISH-07 hardware retest on real glasses | pending | Per D-14 carve-out — sim-equality is the gate, hardware retest is deferred-confirmation; ride-along to Phase 125 if hardware diverges from sim per `feedback_g2_tap_expand_broken` pattern |
 | uat | Phase 116 / 116.1 (HUMAN-UAT.md) | partial | Sports picker shipped to prod and in daily use since 2026-04-29 |
 | verification | Phase 116 / 116.1 (VERIFICATION.md) | human_needed | Functional verification implicit via prod usage |
 
@@ -224,6 +227,12 @@ Recent (v3.7 closeout):
 - [Phase 124 / Plan 03]: AgentEventsDeps `bus?: { emit(...): void }` optional dep pattern — pre-Phase-124 tests pass without modification; production singleton wires real `defaultBus`; optional chaining `deps.bus?.emit(...)` is no-op when bus undefined. Pattern locked for any future DI factory extension where existing tests must not break
 - [Phase 124 / Plan 03]: Defensive Last-Event-ID parse — `Number.isFinite(parsed) && parsed >= 0 && parsed < INT32_MAX`, fall back to null on negative/garbage/overflow (NOT 'every row'). T3 + T4 tests pin this; T2 + T7 tests pin the happy-path replay query (gt id, gt event_timestamp, eq user_id, orderBy id ASC) and 24h cutoff bound
 
+- [Phase 124 / Plan 04]: G2-POLISH-07 home overflow fix — bodyContent literal shrunk from 7 entries to 4 (drop blank + DIVIDER + affirmation.affirmation per D-12); cascading parameter removal — buildHomeContainers/buildHomeScreen/rebuildHomeScreen drop `affirmation: VigilAffirmation`; only `main.ts` drops the `fetchAffirmation` import (Home was its only consumer); `navigation.ts` keeps the import (case Screen.AFFIRMATION still consumes it)
+- [Phase 124 / Plan 04]: Source-content drift detector mirrors Phase 123 Plan 03 idiom (`fs.readFileSync` + comment-stripped regex). Comments are stripped FIRST so doc-comment mentions of "DIVIDER" in `// Inline affirmation + DIVIDER removed` cannot mask a real code regression — this lets the implementation keep a self-documenting comment without disabling the lock
+- [Phase 124 / Plan 04]: bodyContent entry count via `body.split(/,(?![^`]*`)/)` — heuristic skips commas inside template-string backticks; codebase's simple shape (template strings + plain literals, no nested arrays/parens) makes this safe; if a future entry adds a nested array literal, the regex will need a real parser
+- [Phase 124 / Plan 04]: D-14 byte-identical PNG-equality gate deferred to operator — `evenhub-simulator` is a GUI-only Mac app (`--help` shows no headless screenshot capture). Mirrors Phase 123 Plan 05 wallclock/operator deferral pattern: autonomous prerequisites land + `.planning/todos/pending/` runbook + partial SUMMARY.md with inline section ready for operator paste. Plan ships in `partial` state, not failed. Structural lock (drift detector + 4-line literal) means math-impossible to overflow at the container level even before the operator confirms sim equality
+- [Phase 124 / Plan 04]: Tsc baseline accepted — pre-existing 2 errors in `src/__tests__/smoke.test.ts` (missing `node:test` / `node:assert/strict` types) carry forward from Plan 01 baseline; out-of-scope per executor scope-boundary; no acceptance-criteria impact (target files home.ts/main.ts/navigation.ts compile clean)
+
 ### Pending Todos
 
 Captured for v3.8 execution (already in REQUIREMENTS.md):
@@ -259,7 +268,10 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T00:58:08.154Z
-Stopped at: Phase 124 Plan 03 complete (SSE route + bus.emit hook + Block 4; 7+33+6 tests green; tsc clean)
-Resume file: None
-Next action: Phase 124 Plan 04 (next plan in execution order). vigil-core SSE endpoint (`GET /v1/agent-stream`) is now live, fan-out wired (`POST /v1/agent-events` emits on isNew=true), Last-Event-ID resume bounded to 24h, cross-user isolation locked by Block 4 + 7 unit tests. Plugin-side SSE shim consumer + Companion screen + carousel insert + onLaunchSource wiring + home-overflow trim all unblocked. Operator-driven 24h soak gate for Phase 123 closeout still pending (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`) but does NOT block Phase 124 plugin-side work.
+Last session: 2026-05-10T01:08:00.000Z
+Stopped at: Phase 124 Plan 04 PARTIAL — Tasks 1+2 (home-overflow trim + drift detector) committed (cf4984e, 3a67c41); Task 3 (D-14 byte-identical PNG comparison) deferred to operator GUI run
+Resume file: .planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-04-SUMMARY.md (partial — operator pastes cmp result into Task 3 section)
+Next action: TWO PARALLEL OPTIONS:
+  (1) Operator runs `.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md` to close Plan 04 D-14 gate (GUI capture × 2 + cmp), then advance to Plan 05.
+  (2) Execute Plan 05 (or other independent waves) in parallel — the home-overflow structural fix is shipped via Tasks 1+2 + drift detector; Plan 05 does not depend on the PNG-equality confirmation. Plan 04 closure is bookkeeping, not a blocker for downstream plugin-side waves.
+Operator-driven 24h soak gate for Phase 123 closeout also still pending (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`).
