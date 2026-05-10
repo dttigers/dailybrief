@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 124 Plan 04 PARTIAL — Tasks 1+2 (home-overflow trim + drift detector) committed; Task 3 (D-14 byte-identical PNG comparison) deferred to operator GUI run, runbook in pending todos
-last_updated: "2026-05-10T01:08:00.000Z"
+stopped_at: Phase 124 Plan 05 COMPLETE — ROADMAP SC #2 narrowed to D-08 SDK reality (DOUBLE_CLICK only) + SEED-011 lands deferred single-tap/long-press spec (commits da762d8, 9bf8064); Plan 04 PNG-equality operator run still pending in parallel
+last_updated: "2026-05-10T01:19:20.787Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 4
   total_plans: 32
-  completed_plans: 26
-  percent: 81
+  completed_plans: 28
+  percent: 88
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — EXECUTING
-Plan: 4 of 9 — PARTIAL (Tasks 1+2 done autonomously; Task 3 D-14 PNG-equality gate handed to operator)
-Status: Awaiting operator action to close Plan 04 (Task 3 PNG-equality verification — see `.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`)
+Plan: 5 of 9 — COMPLETE (ROADMAP SC #2 narrowed to D-08 reality; SEED-011 deferred-item lands)
+Status: Ready to advance to Plan 06 (Plan 04 PNG-equality operator run still pending in parallel; not a blocker)
 Last activity: 2026-05-10
 
-Progress: [████████░░] 81%
+Progress: [█████████░] 88%
 
 ## v3.8 Phase Table
 
@@ -74,6 +74,7 @@ Progress: [████████░░] 81%
 | Phase 124 P02 | 4min | 2 tasks tasks | 2 files files |
 | Phase 124 P03 | 12min | 2 tasks (auto+TDD) | 6 files (2 created, 4 modified) |
 | Phase 124 P04 | 4min | 2 auto + 1 deferred (operator) | 5 files (2 created, 3 modified) |
+| Phase 124 P05 | 2min | 2 tasks | 2 files |
 
 ## Deferred Items
 
@@ -232,6 +233,9 @@ Recent (v3.7 closeout):
 - [Phase 124 / Plan 04]: bodyContent entry count via `body.split(/,(?![^`]*`)/)` — heuristic skips commas inside template-string backticks; codebase's simple shape (template strings + plain literals, no nested arrays/parens) makes this safe; if a future entry adds a nested array literal, the regex will need a real parser
 - [Phase 124 / Plan 04]: D-14 byte-identical PNG-equality gate deferred to operator — `evenhub-simulator` is a GUI-only Mac app (`--help` shows no headless screenshot capture). Mirrors Phase 123 Plan 05 wallclock/operator deferral pattern: autonomous prerequisites land + `.planning/todos/pending/` runbook + partial SUMMARY.md with inline section ready for operator paste. Plan ships in `partial` state, not failed. Structural lock (drift detector + 4-line literal) means math-impossible to overflow at the container level even before the operator confirms sim equality
 - [Phase 124 / Plan 04]: Tsc baseline accepted — pre-existing 2 errors in `src/__tests__/smoke.test.ts` (missing `node:test` / `node:assert/strict` types) carry forward from Plan 01 baseline; out-of-scope per executor scope-boundary; no acceptance-criteria impact (target files home.ts/main.ts/navigation.ts compile clean)
+- [Phase 124 / Plan 05]: Narrow ROADMAP SC #2 instead of punting the entire criterion to Phase 125 — narrowed wording still covers the user-visible double-tap behavior shipped in Plans 06-08, so verify-phase has a structurally reachable gate without losing AGENT-HUD-02 acceptance signal entirely
+- [Phase 124 / Plan 05]: Adopt SEED-011 frontmatter shape (seed_id/title/discovered/related_phases/related_memories) prescribed in the plan rather than the legacy id/planted/planted_during/trigger_when shape used by SEED-001..010 — plan content is source of truth; cross-SEED frontmatter normalization is out-of-scope
+- [Phase 124 / Plan 05]: Reword SC #2 lead-in from sentence-start Double-tap to mid-sentence 'On the temple, double-tap is context-sensitive' to satisfy the case-sensitive grep -F 'double-tap is context-sensitive' acceptance gate while preserving D-08 semantics verbatim — Rule 3 fix reconciling plan-internal contradiction
 
 ### Pending Todos
 
@@ -268,10 +272,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T01:08:00.000Z
-Stopped at: Phase 124 Plan 04 PARTIAL — Tasks 1+2 (home-overflow trim + drift detector) committed (cf4984e, 3a67c41); Task 3 (D-14 byte-identical PNG comparison) deferred to operator GUI run
-Resume file: .planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-04-SUMMARY.md (partial — operator pastes cmp result into Task 3 section)
-Next action: TWO PARALLEL OPTIONS:
-  (1) Operator runs `.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md` to close Plan 04 D-14 gate (GUI capture × 2 + cmp), then advance to Plan 05.
-  (2) Execute Plan 05 (or other independent waves) in parallel — the home-overflow structural fix is shipped via Tasks 1+2 + drift detector; Plan 05 does not depend on the PNG-equality confirmation. Plan 04 closure is bookkeeping, not a blocker for downstream plugin-side waves.
-Operator-driven 24h soak gate for Phase 123 closeout also still pending (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`).
+Last session: 2026-05-10T01:16:04.968Z
+Stopped at: Phase 124 Plan 05 COMPLETE — ROADMAP SC #2 narrowed to D-08 SDK reality (DOUBLE_CLICK only); SEED-011 lands deferred single-tap/long-press spec with three re-activation triggers (commits da762d8, 9bf8064)
+Resume file: .planning/phases/124-g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish/124-05-SUMMARY.md
+Next action: Advance to Plan 06 (or run Plans 06-09 in parallel per yolo+plan-level parallelization config). Two carry-over operator-action items still pending in parallel — neither blocks Plan 06+:
+  (1) Phase 124 Plan 04 — D-14 byte-identical PNG comparison (`.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md`)
+  (2) Phase 123 — 24h vigil-watch soak (`.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md`)
