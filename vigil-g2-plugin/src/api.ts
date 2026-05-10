@@ -106,6 +106,23 @@ const DEMO_AFFIRMATION: VigilAffirmation = {
   affirmation: 'You are exactly where you need to be today.',
 }
 
+// Phase 125 (AGENT-HUD-01 screenshot fixture): deterministic Companion HUD
+// content for Even Hub Preview slot capture. Single session in `needs_input`
+// state — banner-active layout shows headline feature most clearly.
+const DEMO_AGENT_SESSIONS: AgentSessionRow[] = [
+  {
+    sessionId: 'demo-session-1',
+    label: 'vigil-core deploy',
+    host: 'morrill-mac-mini',
+    eventCount: 4,
+    lastEvent: {
+      event: 'needs_input',
+      message: 'approve database migration?',
+      eventTimestamp: '2026-05-10T19:32:00Z',
+    },
+  },
+]
+
 const DEMO_SUMMARY: VigilSummary = {
   total: 12,
   byCategory: {},
@@ -179,6 +196,7 @@ export async function fetchAffirmation(): Promise<VigilAffirmation> {
  * already gates Authorization-header injection on a non-empty API_KEY.
  */
 export async function fetchAgentSessions(): Promise<AgentSessionRow[]> {
+  if (SCREENSHOT_MODE) return DEMO_AGENT_SESSIONS
   try {
     const res = await fetch(`${BASE_URL}/agent-sessions`, {
       headers: authHeaders(),
