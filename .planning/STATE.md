@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
 stopped_at: Completed 125-05-PLAN.md
-last_updated: "2026-05-10T18:38:17.643Z"
+last_updated: "2026-05-10T18:47:43.263Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 43
-  completed_plans: 38
-  percent: 88
+  completed_plans: 39
+  percent: 91
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 9 of 9 — COMPLETE (Plan 09 VERIFICATION.md backfilled with 2026-05-10 li
 Status: Phase complete — ready for verification
 Last activity: 2026-05-10
 
-Progress: [█████████░] 88%
+Progress: [█████████░] 91%
 
 ## v3.8 Phase Table
 
@@ -85,6 +85,7 @@ Progress: [█████████░] 88%
 | Phase 125 P02 | 62min | 2 tasks | 4 files |
 | Phase 125 P06 | ~38min | 3 tasks | 5 files |
 | Phase 125 P05 | 11min | 2 tasks | 5 files |
+| Phase 125 P08 | 5min | 3 tasks | 9 files |
 
 ## Deferred Items
 
@@ -281,6 +282,9 @@ Recent (v3.7 closeout):
 - [Phase 125 / Plan 05]: Made bus.onQuiet/offQuiet optional in AgentStreamDeps so test fakes can omit them; production singleton always supplies them — Minimal-surface change so existing T1-T7 fake-bus tests keep working with the smallest adapter delta
 - [Phase 125 / Plan 05]: Used real suppressionQueue module-scope singleton in agent-stream tests with _clearAll() between tests — agent-stream.ts imports the singleton directly (not via deps), so isolation comes from the queue's _clearAll escape hatch — matches Plan 03 test-fixture pattern
 - [Phase 125 / Plan 05]: makeStreamReader(res) helper holds a single reader for test lifetime in Phase 125 SSE tests — ERR_INVALID_STATE: re-acquiring res.body.getReader() after a prior reader.cancel fails (locked/closed); single-reader-per-test avoids the trap
+- [Phase ?]: Plan 125-08: min_sdk_version bumped 0.0.7 → 0.0.8 because bridge.onLaunchSource is invoked at vigil-g2-plugin/src/main.ts:82 (Phase 124 D-07); API added in SDK 0.0.8
+- [Phase ?]: Plan 125-08: PROJECT.md demo-tap amendment NO-OP — v3.8 milestone block has no single-tap reference (only generic G2 Companion HUD bullet on line 161)
+- [Phase ?]: Plan 125-08: tsconfig.json exclude for test files (vs install @types/node) — tests run via tsx --test which ignores tsconfig.exclude; shipped Vite build does not include tests; zero new dependencies
 
 ### Pending Todos
 
@@ -317,7 +321,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T18:38:17.634Z
+Last session: 2026-05-10T18:47:28.540Z
 Stopped at: Completed 125-05-PLAN.md
 Resume file: 
 
