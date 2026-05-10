@@ -89,42 +89,6 @@ export function createSseClient(opts: SseClientOptions): {
   const fetchFn = opts.fetchFn ?? globalThis.fetch.bind(globalThis)
   const sleep = opts.sleepFn ?? defaultSleep
 
-  // Phase 125 hardware-debug: fire-and-forget lifecycle GET to the
-  // unauthenticated /v1/dev/sse-log/emit ring buffer on vigil-core so
-  // we can see SSE failure modes from outside the WebView. GET-based to
-  // avoid CORS preflight issues with the plugin's WebView origin (POST
-  // with JSON content-type triggers preflight that silently failed in
-  // the v0.3.3 attempt). NEVER include Authorization / apiKey. Uses
-  // globalThis.fetch directly so it doesn't collide with test-time
-  // fetchFn injection. Remove after SSE bug resolved.
-  const DEBUG_EMIT_URL = opts.url.replace(
-    /\/agent-stream$/,
-    "/dev/sse-log/emit",
-  )
-  const debugFetch =
-    !opts.fetchFn && typeof globalThis.fetch === "function"
-      ? globalThis.fetch.bind(globalThis)
-      : null
-  function debugLog(kind: string, detail?: Record<string, unknown>): void {
-    if (!debugFetch) return // test mode — no instrumentation
-    try {
-      const params = new URLSearchParams({
-        kind,
-        ts: new Date().toISOString(),
-        ua: typeof navigator !== "undefined" ? navigator.userAgent : "n/a",
-        hasAuth: String(!!opts.apiKey),
-      })
-      for (const [k, v] of Object.entries(detail ?? {})) {
-        params.set(k, String(v))
-      }
-      void debugFetch(`${DEBUG_EMIT_URL}?${params.toString()}`).catch(() => {
-        /* fire-and-forget */
-      })
-    } catch {
-      /* never throw from instrumentation */
-    }
-  }
-
   let abortController: AbortController | null = null
   let backoffIndex = 0
   let stopped = false
@@ -133,7 +97,6 @@ export function createSseClient(opts: SseClientOptions): {
   async function loop(): Promise<void> {
     if (loopRunning) return
     loopRunning = true
-    debugLog("loop-start")
     try {
       while (!stopped) {
         abortController = new AbortController()
@@ -143,22 +106,11 @@ export function createSseClient(opts: SseClientOptions): {
           "Accept": "text/event-stream",
         }
         if (lastEventId) headers["Last-Event-ID"] = lastEventId
-        debugLog("connect-attempt", {
-          url: opts.url,
-          hasLastEventId: !!lastEventId,
-          backoffIndex,
-        })
 
         try {
           const res = await fetchFn(opts.url, {
             headers,
             signal: abortController.signal,
-          })
-          debugLog("fetch-resolved", {
-            status: res.status,
-            ok: res.ok,
-            hasBody: !!res.body,
-            contentType: res.headers.get("content-type"),
           })
           if (!res.ok || !res.body) {
             // Surface only status/shape — never the response body or
@@ -166,32 +118,20 @@ export function createSseClient(opts: SseClientOptions): {
             throw new Error(`SSE HTTP ${res.status}`)
           }
           opts.onStateChange?.(true)
-          debugLog("state-connected")
           backoffIndex = 0
 
           const reader = res.body.getReader()
           const decoder = new TextDecoder("utf-8")
           let buffer = ""
-          let frameCount = 0
           while (!stopped) {
             const { done, value } = await reader.read()
-            if (done) {
-              debugLog("reader-done", { framesReadInSession: frameCount })
-              break
-            }
+            if (done) break
             buffer += decoder.decode(value, { stream: true })
             let idx
             while ((idx = buffer.indexOf("\n\n")) >= 0) {
               const frame = buffer.slice(0, idx)
               buffer = buffer.slice(idx + 2)
               const parsed = parseFrame(frame)
-              frameCount++
-              debugLog("frame", {
-                n: frameCount,
-                event: parsed.event,
-                hasId: !!parsed.id,
-                dataLen: parsed.data.length,
-              })
               if (parsed.event === "ping") continue // server keepalive
               if (parsed.event === "agent-event" && parsed.id) {
                 safeWriteStorage(storage, STORAGE_KEY, parsed.id)
@@ -210,12 +150,8 @@ export function createSseClient(opts: SseClientOptions): {
           if (!stopped) {
             opts.onStateChange?.(false)
           }
-        } catch (err) {
+        } catch (_err) {
           if (stopped) return
-          debugLog("fetch-error", {
-            message: (err as Error)?.message ?? String(err),
-            name: (err as Error)?.name,
-          })
           opts.onStateChange?.(false)
         }
 

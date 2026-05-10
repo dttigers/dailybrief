@@ -91,3 +91,18 @@ follow-up rather than fixed inline.
   - **Option A — revert and re-mark:** Add corrective commit flipping `[x]` → `[ ]` for AGENT-DEMO-01 now; the operator re-marks `[x]` after the physical recording lands. Keeps `[x]` semantics honest (== requirement satisfied by artifact, not just wording amended).
   - **Option B — accept current state:** Treat the manifest's `status: pending` → `status: complete` flip in `artifacts/demo-clip-manifest.md` (post-recording backfill) as the operator's mark-complete artifact, even though REQUIREMENTS.md checkbox is already `[x]`. Slight false-positive risk for verifier/closer agents.
 - **Owner:** Operator at phase close (or sooner, if disposition is "revert"). Plan 125-11 executor does not touch REQUIREMENTS.md.
+
+---
+
+## Plan 125-09 (Wave 4 — Hardware retest)
+
+### DEF-125-09-01 — Persistent banner not redisplayed after expired toast (Phase 124 carry-over)
+
+- **Logged:** 2026-05-10
+- **Symptom:** After a `task_complete` toast expires on the Companion HUD, if the underlying session has an unacked persistent `needs_input` or `task_failed` state, the persistent banner does NOT redisplay. Instead the HUD falls back to the normal 3-line layout (label / state-line / message).
+- **Surfaced during:** Phase 125 Scenario 1 step 6 — Quiet OFF flushed the held task_complete; toast displayed for 3s; after expiry, HUD returned to normal state for the still-unacked needs_input session instead of re-showing `[NEEDS INPUT]`.
+- **Root cause:** `vigil-g2-plugin/src/screens/companion.ts:recomputePersistentBannerForCurrent()` line ~114 early-returns when `bannerState.expiresAt !== undefined`. The expired toast still has `expiresAt` defined (just in the past), so recompute never re-derives the persistent banner from the underlying event.
+- **Pre-existing:** Yes — this is a Phase 124 bug, not introduced by Phase 125. The recompute guard was written to "not clobber an active toast" but doesn't distinguish between active and expired toast states.
+- **Scope verdict:** Out-of-scope for Phase 125 closure. Does NOT block Scenario 1 — suppression + replay primary contract worked. Filed for Phase 126 follow-up.
+- **Recommendation:** Tighten the recompute guard to only skip when `bannerState.expiresAt > nowFn()` (i.e., toast still active). Add a unit test asserting: after toast expires AND the current session has unacked needs_input/task_failed, banner is redisplayed.
+- **Owner:** Phase 126 (or whichever phase next touches companion.ts banner state machine).

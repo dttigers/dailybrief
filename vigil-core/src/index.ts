@@ -39,7 +39,6 @@ import { resetPassword } from "./routes/reset-password.js";
 import { me } from "./routes/me.js";
 import { authMe } from "./routes/auth-me.js"; // Phase 113 (AUTH-11 D-27) — distinct from /v1/me
 import { verifyEmail } from "./routes/verify-email.js";          // Phase 113 (AUTH-11) — unauthenticated; mount BEFORE bearerAuth dispatcher
-import { devSseLog } from "./routes/dev-sse-log.js";              // Phase 125 hardware-debug — temporary, remove after SSE bug resolved
 import { resendVerification } from "./routes/resend-verification.js"; // Phase 113 (AUTH-11) — bearerAuth required; mount AFTER dispatcher
 import { agentEvents } from "./routes/agent-events.js"; // Phase 121 (AGENT-API-01, AGENT-API-02) — bearerAuth required; mount AFTER dispatcher
 import { agentStream } from "./routes/agent-stream.js"; // Phase 124 (AGENT-API-03) — bearerAuth required; mount AFTER dispatcher
@@ -152,12 +151,6 @@ app.route("/v1", resetPassword);
 // Task 3 added the path to the dispatcher's exempt list.
 app.route("/v1", verifyEmail);
 
-// Phase 125 hardware-debug — UNAUTHENTICATED ring-buffer log endpoint
-// for diagnosing G2 plugin SSE failures from outside the WebView.
-// Mount BEFORE bearerAuth and exempt the path below. Remove after SSE
-// bug is resolved.
-app.route("/v1", devSseLog);
-
 // Auth middleware — all /v1/* routes except /v1/health, register, login, and
 // the Google OAuth callback require a valid API key.
 // Phase 102 RESEARCH Open Q3 (path a): /v1/auth/google/callback stays public
@@ -171,8 +164,6 @@ app.use("/v1/*", async (c, next) => {
   if (c.req.path === "/v1/auth/forgot-password") return next(); // Plan 02 ADDED
   if (c.req.path === "/v1/auth/reset-password") return next();  // Plan 03 ADDED
   if (c.req.path === "/v1/auth/verify-email") return next();    // Phase 113 (AUTH-11 D-12) — token IS the auth
-  if (c.req.path === "/v1/dev/sse-log") return next();          // Phase 125 hardware-debug — unauth ring-buffer log
-  if (c.req.path === "/v1/dev/sse-log/emit") return next();     // Phase 125 hardware-debug — GET-based emit (no preflight)
   return bearerAuth(c, next);
 });
 
