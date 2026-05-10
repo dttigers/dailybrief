@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
-stopped_at: Completed 125-02-PLAN.md
-last_updated: "2026-05-10T18:27:43.527Z"
+stopped_at: Completed 125-05-PLAN.md
+last_updated: "2026-05-10T18:38:17.643Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 43
-  completed_plans: 37
-  percent: 86
+  completed_plans: 38
+  percent: 88
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 9 of 9 — COMPLETE (Plan 09 VERIFICATION.md backfilled with 2026-05-10 li
 Status: Phase complete — ready for verification
 Last activity: 2026-05-10
 
-Progress: [█████████░] 86%
+Progress: [█████████░] 88%
 
 ## v3.8 Phase Table
 
@@ -84,6 +84,7 @@ Progress: [█████████░] 86%
 | Phase 125 P03 | 44 min | 2 tasks | 4 files |
 | Phase 125 P02 | 62min | 2 tasks | 4 files |
 | Phase 125 P06 | ~38min | 3 tasks | 5 files |
+| Phase 125 P05 | 11min | 2 tasks | 5 files |
 
 ## Deferred Items
 
@@ -275,6 +276,11 @@ Recent (v3.7 closeout):
 - [Phase ?]: Plan 125-06: Filter site is computeBodyLines() (HUD-write boundary), NOT applyAgentEvent — cache must always update so cycling sessions shows accurate state per CONTEXT D-02
 - [Phase ?]: Plan 125-06: Used QUIET_BANNER_ALLOWLIST (BannerType-typed Set) over AgentEventType variant — filter site checks bannerState.type which is already BannerType-narrowed
 - [Phase ?]: Plan 125-06: _resetState() zeros quietMode (Rule 2 auto-fix) — prevents cross-test pollution leaking Q glyph into Phase 124 baseline tests
+- [Phase 125 / Plan 05]: Mount /v1/quiet-mode AFTER bearerAuth dispatcher; userId always from c.get('userId'), never from body — T-125-01 / T-125-02 cross-user isolation lock — mounting before would allow userA to read/write userB's quiet_mode state
+- [Phase 125 / Plan 05]: Phase 0 synthetic quiet_mode_changed frame emitted FIRST after auth in agent-stream — BEFORE Phase 1 Last-Event-ID replay — Pitfall 1 / D-03 ordering invariant — without this, a task_complete row in the replay set surfaces on HUD before plugin knows DND is on
+- [Phase 125 / Plan 05]: Made bus.onQuiet/offQuiet optional in AgentStreamDeps so test fakes can omit them; production singleton always supplies them — Minimal-surface change so existing T1-T7 fake-bus tests keep working with the smallest adapter delta
+- [Phase 125 / Plan 05]: Used real suppressionQueue module-scope singleton in agent-stream tests with _clearAll() between tests — agent-stream.ts imports the singleton directly (not via deps), so isolation comes from the queue's _clearAll escape hatch — matches Plan 03 test-fixture pattern
+- [Phase 125 / Plan 05]: makeStreamReader(res) helper holds a single reader for test lifetime in Phase 125 SSE tests — ERR_INVALID_STATE: re-acquiring res.body.getReader() after a prior reader.cancel fails (locked/closed); single-reader-per-test avoids the trap
 
 ### Pending Todos
 
@@ -311,8 +317,8 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T18:26:16.997Z
-Stopped at: Completed 125-02-PLAN.md
+Last session: 2026-05-10T18:38:17.634Z
+Stopped at: Completed 125-05-PLAN.md
 Resume file: 
 
   None
