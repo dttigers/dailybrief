@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
-stopped_at: Phase 125 Plan 01 complete (Wave-0 RED placeholders) — ready to execute Plans 02-07 (Wave 1+ implementations)
-last_updated: "2026-05-10T18:01:42.916Z"
+stopped_at: Completed 125-02-PLAN.md
+last_updated: "2026-05-10T18:17:58.400Z"
 last_activity: 2026-05-10
 progress:
   total_phases: 8
   completed_phases: 5
   total_plans: 43
-  completed_plans: 35
-  percent: 81
+  completed_plans: 36
+  percent: 84
 ---
 
 # Project State
@@ -30,7 +30,7 @@ Plan: 9 of 9 — COMPLETE (Plan 09 VERIFICATION.md backfilled with 2026-05-10 li
 Status: Phase complete — ready for verification
 Last activity: 2026-05-10
 
-Progress: [████████░░] 81%
+Progress: [████████░░] 84%
 
 ## v3.8 Phase Table
 
@@ -82,6 +82,7 @@ Progress: [████████░░] 81%
 | Phase 125 P01 | 22min | 2 tasks | 7 files |
 | Phase 125 P04 | 6m | 1 tasks | 2 files |
 | Phase 125 P03 | 44 min | 2 tasks | 4 files |
+| Phase 125 P02 | 62min | 2 tasks | 4 files |
 
 ## Deferred Items
 
@@ -268,6 +269,8 @@ Recent (v3.7 closeout):
 - [Phase 125]: Plan 125-04 D-12: helper-only ship — createDedupedDeviceStatusListener at vigil-g2-plugin/src/lib/deduped-device-status.ts; main.ts intentionally untouched (no live bridge.onDeviceStatusChanged subscription this phase)
 - [Phase 125]: Suppression queue (userId, sessionId, eventType) with last-of-each-kind via Map.set overwrite; flush sorts by eventTimestamp ASC — Phase 125 Plan 03 — Pitfall 4 (chronological replay) + T-125-03 cap; cross-user isolation per T-125-01
 - [Phase 125]: Bus emitter Map cleanup gate now joint (EVENT_NAME + QUIET_NAME); off() and offQuiet() both apply the gate — Phase 125 Plan 03 — prevents T-125-W3-01: orphan QUIET listener after off() while onQuiet still registered
+- [Phase 125]: P02: hand-edit drizzle-kit auto-output to add ADD COLUMN IF NOT EXISTS guard and rename SQL to human-readable name; patch _journal.json tag in lockstep. — Pattern 1 (0015/0017 precedent) requires idempotency for Railway partial-fail-on-restart re-run safety.
+- [Phase 125]: P02: schema-only landing does NOT close AGENT-HUD-03. — Requirement is collectively closed by Plans 03/05/06 — 125-01-SUMMARY precedent. Marking complete now would generate false-green REQUIREMENTS.md state.
 
 ### Pending Todos
 
@@ -304,8 +307,8 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T18:01:42.907Z
-Stopped at: Phase 125 Plan 01 complete (Wave-0 RED placeholders) — ready to execute Plans 02-07 (Wave 1+ implementations)
+Last session: 2026-05-10T18:17:58.390Z
+Stopped at: Completed 125-02-PLAN.md
 Resume file: 
 
   None
