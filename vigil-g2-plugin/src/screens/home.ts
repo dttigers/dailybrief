@@ -66,7 +66,7 @@ function buildHomeContainers(
     paddingLength: 8,
     containerID: ContainerId.HOME_FOOTER,
     containerName: 'home-footer',
-    content: '↓ work orders   () double-tap to exit',
+    content: '↓ companion   () double-tap to exit',
     isEventCapture: 0,
   })
 

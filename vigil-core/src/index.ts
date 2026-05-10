@@ -92,7 +92,10 @@ app.use(
   cors({
     origin: corsOrigins ?? "*",
     allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
+    // Phase 124 D-02: Last-Event-ID is required by the SSE shim on reconnect
+    // for missed-event replay. Without it in allowHeaders, the browser CORS
+    // preflight rejects the request and the plugin gets stuck offline (`!`).
+    allowHeaders: ["Content-Type", "Authorization", "Last-Event-ID"],
   })
 );
 
