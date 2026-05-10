@@ -480,7 +480,7 @@ Plans:
 - [x] 125-06-PLAN.md — plugin sse-client quiet_mode_changed dispatch + companion.ts Q glyph + main.ts wiring
 - [x] 125-07-PLAN.md — PWA Settings G2 Plugin section + getQuietMode/setQuietMode api/client helpers
 - [x] 125-08-PLAN.md — VERIFIED.md path fix + 0.3.0 bump + min_sdk_version verify + npm run package:ehpk + 5-doc amendments cascade
-- [ ] 125-09-PLAN.md — Hardware retest checklist on real G2 (operator wallclock; gates Plan 10)
+- [x] 125-09-PLAN.md — Hardware retest checklist on real G2 (operator wallclock; gates Plan 10)
 - [ ] 125-10-PLAN.md — Even Hub developer portal upload + dashboard acknowledgment screenshot (operator wallclock)
 - [ ] 125-11-PLAN.md — 60-second portfolio demo recording on real G2 hardware (operator wallclock)
 **UI hint**: yes
@@ -619,7 +619,7 @@ Plans:
 | 122. vigil-watch core — watcher + parser + emitter + config | v3.8 | 10/10 | Complete    | 2026-05-09 |
 | 123. vigil-watch shell — launchd + CLI surface + 24h soak | v3.8 | 5/5 autonomous (operator soak pending) | Awaiting operator soak | - |
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 9/9 autonomous (operator E2E + D-14 PNG pending) | Awaiting operator E2E | - |
-| 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 8/11 | In Progress|  |
+| 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 9/11 | In Progress|  |
 
 ## Backlog
 
