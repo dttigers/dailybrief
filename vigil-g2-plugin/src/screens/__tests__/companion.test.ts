@@ -14,6 +14,8 @@ import {
   hasActiveBanner,
   getActiveSessions,
   setSseConnected,
+  setQuietMode,
+  isQuietMode,
   _resetState,
   _setNow,
   _getBannerState,
@@ -724,56 +726,155 @@ test("Finding 1: cycling away from banner clears it (not stuck on prior session'
 // ── Phase 125 Wave 0 (AGENT-HUD-03 / D-02 / UI-SPEC) ────────────────
 // setQuietMode mutator + Q glyph in header rightSide + buildContainers
 // allowlist filter (defense-in-depth — server suppression is primary).
-// Plan 06 turns these green by replacing { skip: PLAN_06_COMP } with
-// the asserted bodies, after adding setQuietMode/isQuietMode exports
-// + computeRightSide Q-glyph branch + buildContainers allowlist guard.
+// Plan 06 GREEN — setQuietMode/isQuietMode exports + computeRightSide
+// Q-glyph branch + computeBodyLines() allowlist guard.
 // (`test` and `assert` already imported above — no re-import needed.)
 
-const PLAN_06_COMP = "TODO(125-06): pending implementation — companion.ts setQuietMode + Q glyph + ALLOWLIST filter"
+test("setQuietMode(true) toggles module-level quietMode ref to true", () => {
+  // Plan 125-06 Task 2 behavior 1 (MUTATOR).
+  _resetState();
+  setQuietMode(true);
+  assert.equal(isQuietMode(), true);
+});
 
-test("setQuietMode(true) toggles module-level quietMode ref to true", { skip: PLAN_06_COMP }, () => {
-  // TODO(125-06): import { setQuietMode, isQuietMode } from '../companion.ts';
-  // _resetState(); setQuietMode(true); assert isQuietMode() === true.
-  assert.fail('placeholder')
-})
+test("isQuietMode() reflects setQuietMode value", () => {
+  // Plan 125-06 Task 2 behavior 1 (MUTATOR, full cycle).
+  _resetState();
+  assert.equal(isQuietMode(), false, "default after _resetState is false");
+  setQuietMode(true);
+  assert.equal(isQuietMode(), true);
+  setQuietMode(false);
+  assert.equal(isQuietMode(), false);
+});
 
-test("isQuietMode() reflects setQuietMode value", { skip: PLAN_06_COMP }, () => {
-  // TODO(125-06): _resetState(); assert isQuietMode() === false (default);
-  // setQuietMode(true); assert isQuietMode() === true; setQuietMode(false); assert false.
-  assert.fail('placeholder')
-})
+test("computeRightSide() prepends 'Q' when isQuietMode()=true (UI-SPEC priority order)", () => {
+  // Plan 125-06 Task 2 behavior 2 (Q PREPEND): quiet ON, sseConnected=true,
+  // single session — header rightSide is exactly 'Q' (UI-SPEC table row 4).
+  _resetState();
+  setQuietMode(true);
+  hydrateActiveSessions([fakeSession({ sessionId: "s1" })]);
+  const c = rebuildCompanionScreen();
+  const headerContent = (c as any).textObject[0].content as string;
+  // Q must appear left of any other rightSide glyph; with only quiet active
+  // and 1 session online, rightSide collapses to exactly 'Q'.
+  assert.ok(/Q/.test(headerContent), `Q glyph present; got: ${headerContent}`);
+  // Confirm Q is positioned at the rightSide slot (after the WORDMARK padding,
+  // it should be the leading non-space glyph of the right-aligned content).
+  const trailing = headerContent.split("\n")[0].trimEnd();
+  assert.ok(trailing.endsWith("Q"), `Q glyph at rightSide tail; got: ${trailing}`);
+});
 
-test("computeRightSide() prepends 'Q' when isQuietMode()=true (UI-SPEC priority order)", { skip: PLAN_06_COMP }, () => {
-  // TODO(125-06): _resetState(); setQuietMode(true);
-  // hydrate single online session; rebuild; assert header rightSide
-  // contains 'Q' as the leftmost glyph (Q before any !/N/M).
-  assert.fail('placeholder')
-})
+test("computeRightSide() with quiet=true + offline + 2/3 sessions returns 'Q ! 2/3' (UI-SPEC table row 1)", () => {
+  // Plan 125-06 Task 2 behavior 3 (Q + ALL): all three rightSide tokens
+  // active — Q glyph + offline '!' + N/M cycle indicator. Per UI-SPEC
+  // §"Updated rightSide Priority Order" table row 1: 'Q ! 2/3'.
+  _resetState();
+  setQuietMode(true);
+  setSseConnected(false);
+  hydrateActiveSessions([
+    fakeSession({ sessionId: "s1" }),
+    fakeSession({ sessionId: "s2" }),
+    fakeSession({ sessionId: "s3" }),
+  ]);
+  cycleSession(); // currentSessionIndex 0 → 1 → '2/3'
+  const c = rebuildCompanionScreen();
+  const headerContent = (c as any).textObject[0].content as string;
+  assert.ok(
+    /Q\s+!\s+2\/3/.test(headerContent),
+    `combined rightSide 'Q ! 2/3'; got: ${headerContent}`,
+  );
+});
 
-test("computeRightSide() with quiet=true + offline + 2/3 sessions returns 'Q ! 2/3' (UI-SPEC table row 1)", { skip: PLAN_06_COMP }, () => {
-  // TODO(125-06): _resetState(); setQuietMode(true); setSseConnected(false);
-  // hydrate 3 sessions; cycle to idx 1; rebuild; assert header rightSide matches /Q\s*!\s*2\/3/.
-  assert.fail('placeholder')
-})
+test("computeRightSide() with quiet=false matches Phase 124 baseline (Q glyph absent)", () => {
+  // Plan 125-06 Task 2 behavior 4 (Q OFF BASELINE): quiet=false path must
+  // produce a Phase 124-identical rightSide so the D-14 byte-identity
+  // invariant carries forward unchanged.
+  _resetState();
+  setQuietMode(false);
+  hydrateActiveSessions([fakeSession({ sessionId: "s1" })]);
+  const c = rebuildCompanionScreen();
+  const headerContent = (c as any).textObject[0].content as string;
+  assert.ok(
+    !/Q/.test(headerContent.replace(/VIGIL/g, "")),
+    `Q glyph absent when quiet=false; got: ${headerContent}`,
+  );
+});
 
-test("computeRightSide() with quiet=false matches Phase 124 baseline (Q glyph absent)", { skip: PLAN_06_COMP }, () => {
-  // TODO(125-06): _resetState(); setQuietMode(false); hydrate 1 online session;
-  // rebuild; assert header rightSide does NOT contain 'Q' (Phase 124 byte-equality
-  // path preserved — D-14 invariant carryover).
-  assert.fail('placeholder')
-})
+test("buildContainers() with quietMode=true and needs_input banner STILL renders (allowlist passes through)", () => {
+  // Plan 125-06 Task 2 behavior 5 (ALLOWLIST PASSES): needs_input is in
+  // the D-04 hard-locked allowlist — the HUD-write filter does NOT suppress
+  // it even with quiet on. Glanceability for actionable events.
+  _resetState();
+  setQuietMode(true);
+  hydrateActiveSessions([fakeSession({ sessionId: "s1", label: "proj" })]);
+  applyAgentEvent({
+    sessionId: "s1",
+    event: "needs_input",
+    message: "decide auth",
+    eventTimestamp: new Date().toISOString(),
+  });
+  assert.equal(hasActiveBanner(), true, "banner set in cache");
+  const body = bodyContentFromBuild();
+  assert.equal(
+    body.split("\n")[0],
+    "[NEEDS INPUT]",
+    "needs_input passes the allowlist; banner renders despite quiet mode",
+  );
+});
 
-test("buildContainers() with quietMode=true and non-allowlist banner suppresses banner overlay (defense-in-depth)", { skip: PLAN_06_COMP }, () => {
-  // TODO(125-06): _resetState(); setQuietMode(true);
-  // dispatch task_complete (not in allowlist); assert hasActiveBanner() may be true
-  // in cache but rebuildCompanionScreen body line 1 does NOT show '[DONE]' overlay
-  // (HUD-write filter blocks it).
-  assert.fail('placeholder')
-})
+test("buildContainers() with quietMode=true and non-allowlist banner suppresses banner overlay (defense-in-depth)", () => {
+  // Plan 125-06 Task 2 behavior 6 (NON-ALLOWLIST SUPPRESSED): task_complete
+  // is NOT in the D-04 allowlist. With quiet on, the HUD-write filter must
+  // suppress the [DONE] toast even though applyAgentEvent set bannerState
+  // in the cache (server-side suppression queue is primary; this is the
+  // defense-in-depth safety net for the synthetic-frame race window).
+  _resetState();
+  let now = 1_000_000;
+  _setNow(() => now);
+  setQuietMode(true);
+  hydrateActiveSessions([fakeSession({ sessionId: "s1", label: "proj" })]);
+  applyAgentEvent({
+    sessionId: "s1",
+    event: "task_complete",
+    message: "all green",
+    eventTimestamp: new Date(now).toISOString(),
+  });
+  // Cache state: bannerState is set (applyAgentEvent doesn't know about
+  // quietMode — caches always update per CONTEXT D-02). HUD-write filter
+  // is the layer that suppresses the toast overlay.
+  assert.equal(
+    hasActiveBanner(),
+    true,
+    "cache layer still sets bannerState (filter is at HUD-write, not at applyAgentEvent)",
+  );
+  const body = bodyContentFromBuild();
+  assert.notEqual(
+    body.split("\n")[0],
+    "[DONE]",
+    "non-allowlist banner suppressed by HUD-write filter when quiet=true",
+  );
+});
 
-test("buildContainers() with quietMode=true and needs_input banner STILL renders (allowlist passes through)", { skip: PLAN_06_COMP }, () => {
-  // TODO(125-06): _resetState(); setQuietMode(true);
-  // dispatch needs_input; assert rebuildCompanionScreen body line 1 === '[NEEDS INPUT]'
-  // (allowlist exempts banner-write filter — HUD glanceability for actionable events).
-  assert.fail('placeholder')
-})
+test("buildContainers() with quietMode=true reflects 'Q' in rendered header content", () => {
+  // Plan 125-06 Task 2 behavior 7 (REBUILD): setQuietMode(true) followed
+  // by a buildContainers() invocation must surface the Q glyph in the
+  // rendered header — confirms computeRightSide() is read on every rebuild
+  // (no stale-cached header path).
+  _resetState();
+  hydrateActiveSessions([fakeSession({ sessionId: "s1" })]);
+  // Before quiet: no Q.
+  const beforeHeader = (rebuildCompanionScreen() as any).textObject[0]
+    .content as string;
+  assert.ok(
+    !/Q/.test(beforeHeader.replace(/VIGIL/g, "")),
+    `quiet=false rebuild has no Q; got: ${beforeHeader}`,
+  );
+  // Toggle quiet, rebuild — Q appears.
+  setQuietMode(true);
+  const afterHeader = (rebuildCompanionScreen() as any).textObject[0]
+    .content as string;
+  assert.ok(
+    /Q/.test(afterHeader),
+    `quiet=true rebuild surfaces Q; got: ${afterHeader}`,
+  );
+});

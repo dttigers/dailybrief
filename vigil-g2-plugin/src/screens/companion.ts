@@ -62,6 +62,19 @@ let bannerState: BannerState | null = null
 let sseConnected = true
 let nowFn: () => number = () => Date.now()
 
+// Phase 125 (AGENT-HUD-03 / D-02 / UI-SPEC §"Updated rightSide Priority Order"):
+// module-level quiet-mode ref. Toggled by setQuietMode() invoked from main.ts
+// when an SSE quiet_mode_changed frame arrives. Idempotent — setting the same
+// value twice is a no-op.
+let quietMode = false
+
+// Phase 125 (D-04 hard-locked allowlist; UI-SPEC §"What Quiet Mode Suppresses").
+// Defense-in-depth HUD-write filter — server-side suppression queue (Plan 05)
+// is the primary mechanism, but the plugin filter exists because the synthetic
+// state-bootstrap frame (D-03) narrows but doesn't eliminate the reconnect
+// race window. Allowlist mirrors the AGENT-HUD-03 spec verbatim.
+const QUIET_BANNER_ALLOWLIST = new Set<BannerType>(['needs_input', 'task_failed'])
+
 // Phase 124 follow-up — ack tracking for banner-on-cycle/-hydrate.
 // Key = `${sessionId}:${eventTimestamp}`. When the user ack's a banner via
 // DOUBLE_CLICK, we record it here so cycling away and back doesn't re-show
@@ -202,6 +215,17 @@ export function isSseConnected(): boolean {
   return sseConnected
 }
 
+// Phase 125 (AGENT-HUD-03 / D-02): mutator + getter for module-level quietMode
+// ref. setQuietMode is invoked from main.ts when an SSE quiet_mode_changed
+// frame arrives. Idempotent — same value twice is a no-op.
+export function setQuietMode(next: boolean): void {
+  quietMode = next
+}
+
+export function isQuietMode(): boolean {
+  return quietMode
+}
+
 /**
  * Apply an incoming agent event from SSE. Updates activeSessions + bannerState.
  * Returns toastMs > 0 if caller should schedule a 3s rebuild to clear the
@@ -275,12 +299,17 @@ function emptyStateBottomLine(): string {
 }
 
 function computeRightSide(): string | undefined {
+  // Phase 125 (UI-SPEC §"Updated rightSide Priority Order"): Q glyph
+  // prepended before offline + sessions. Strict superset of Phase 124 —
+  // quiet=false path returns identical output, preserving the Phase 124
+  // D-14 byte-identity invariant.
+  const quiet = quietMode ? 'Q' : ''
   const offline = sseConnected ? '' : '!'
   const sessions =
     activeSessions.length >= 2
       ? `${currentSessionIndex + 1}/${activeSessions.length}`
       : ''
-  const combined = [offline, sessions].filter(Boolean).join(' ')
+  const combined = [quiet, offline, sessions].filter(Boolean).join(' ')
   return combined || undefined
 }
 
@@ -301,7 +330,18 @@ function computeBodyLines(): {
   }
 
   const session = activeSessions[currentSessionIndex]
-  const banner = hasActiveBanner() ? bannerState : null
+  // Phase 125 (AGENT-HUD-03 / Pattern 5 defense-in-depth): server-side
+  // suppression queue (Plan 05) is the primary mechanism — most non-allowlist
+  // events never reach the plugin while Quiet is on. The plugin-side filter
+  // exists because the synthetic state-bootstrap frame (D-03) narrows but
+  // doesn't eliminate the reconnect race window, and because cache cycling
+  // (cycleSession) can surface a banner that arrived before quietMode flipped.
+  // UI-SPEC §"What Quiet Mode Suppresses" — allowlist = { needs_input, task_failed }.
+  const rawBanner = hasActiveBanner() ? bannerState : null
+  const banner =
+    rawBanner && quietMode && !QUIET_BANNER_ALLOWLIST.has(rawBanner.type)
+      ? null
+      : rawBanner
 
   // Banner overlay (persistent or active toast)
   if (banner) {
@@ -405,6 +445,10 @@ export function _resetState(): void {
   sseConnected = true
   nowFn = () => Date.now()
   ackedBannerKeys.clear()
+  // Phase 125: ensure quiet-mode ref returns to its compile-time default
+  // between tests so cross-test pollution doesn't surface a Q glyph in
+  // Phase 124 baseline tests.
+  quietMode = false
 }
 
 export function _setNow(fn: () => number): void {
