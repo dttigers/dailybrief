@@ -106,3 +106,36 @@ test("setMaxListeners(50) prevents warning under 11+ listeners on same userId", 
     process.off("warning", onWarning);
   }
 });
+
+// ── Phase 125 Wave 0 (AGENT-HUD-03 / D-02 / T-125-01) ───────────────
+// quiet_mode_changed fan-out additions. Plan 03 turns these green by
+// replacing { skip: PLAN_03_BUS } with the asserted bodies, after
+// extending AgentEventBus with emitQuiet / onQuiet / offQuiet.
+// (`test` and `assert` already imported above — no re-import needed.)
+
+const PLAN_03_BUS = "TODO(125-03): pending implementation — bus.emitQuiet/onQuiet/offQuiet";
+
+test("bus.emitQuiet(userId, payload) fires onQuiet listeners for that userId only (T-125-01)", { skip: PLAN_03_BUS }, () => {
+  // TODO(125-03): bus.onQuiet(101, listener); bus.emitQuiet(101, {enabled:true, since:'…'});
+  // assert listener invoked exactly once with the payload.
+  assert.fail("placeholder");
+});
+
+test("bus.emitQuiet(userId) does NOT fire onQuiet listeners for other userIds (cross-user isolation)", { skip: PLAN_03_BUS }, () => {
+  // TODO(125-03): bus.onQuiet(101, listenerA); bus.onQuiet(102, listenerB);
+  // bus.emitQuiet(101, payload); assert listenerA fired AND listenerB did NOT.
+  assert.fail("placeholder");
+});
+
+test("bus.offQuiet removes the listener; subsequent emitQuiet does not fire", { skip: PLAN_03_BUS }, () => {
+  // TODO(125-03): bus.onQuiet(101, l); bus.offQuiet(101, l); bus.emitQuiet(101, payload);
+  // assert listener never called.
+  assert.fail("placeholder");
+});
+
+test("emitter Map entry is deleted when both EVENT_NAME and QUIET_NAME listenerCount=0", { skip: PLAN_03_BUS }, () => {
+  // TODO(125-03): bus.on(101, eventL); bus.onQuiet(101, quietL);
+  // bus.off(101, eventL); assert _size() >= 1 (still has quietL);
+  // bus.offQuiet(101, quietL); assert _size() === 0 (Map entry deleted).
+  assert.fail("placeholder");
+});

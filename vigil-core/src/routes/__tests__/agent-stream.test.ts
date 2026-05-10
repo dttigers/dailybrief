@@ -299,3 +299,47 @@ test("T7: replay 24h cutoff — dbReplayMissed receives cutoff ~24h before now",
     `cutoff (${(captured as unknown as Date).toISOString()}) is within ~24h of now ±200ms`,
   );
 });
+
+// ── Phase 125 Wave 0 (AGENT-HUD-03 / D-03 / D-04 / T-125-04) ────────
+// Phase 0 synthetic frame ordering + suppression filter on replay +
+// live-attach quietListener wiring. Plan 05 turns these green by
+// replacing { skip: PLAN_05_STREAM } with the asserted bodies, after
+// extending agent-stream.ts deps with dbGetQuietMode + suppressionQueue +
+// bus.onQuiet hook (per RESEARCH §Example C lines 688-743).
+// (`test` and `assert` already imported above — no re-import needed.)
+
+const PLAN_05_STREAM = "TODO(125-05): pending implementation — agent-stream Phase 0 synthetic frame + suppression filter on replay";
+
+test("Phase 0 synthetic quiet_mode_changed frame is emitted FIRST after auth, BEFORE Phase 1 replay (Pitfall 1)", { skip: PLAN_05_STREAM }, async () => {
+  // TODO(125-05): inject dbGetQuietMode → {enabled:true, since:Date}; supply replay rows;
+  // assert frames[0].event === 'quiet_mode_changed' AND frames[1+].event === 'agent-event'
+  // (synthetic frame BEFORE any replay rows).
+  assert.fail("placeholder");
+});
+
+test("Phase 1 Last-Event-ID replay loop filters through suppressionQueue.shouldSuppress when isQuiet=true (T-125-04)", { skip: PLAN_05_STREAM }, async () => {
+  // TODO(125-05): seed dbGetQuietMode → {enabled:true}; replay returns 3 rows
+  // (heartbeat, needs_input, milestone); fake suppressionQueue says heartbeat+milestone
+  // suppress, needs_input passthrough. Assert only 1 agent-event frame surfaces (needs_input).
+  assert.fail("placeholder");
+});
+
+test("Phase 2 live attach: bus.on listener invokes suppressionQueue.shouldSuppress before stream.writeSSE", { skip: PLAN_05_STREAM }, async () => {
+  // TODO(125-05): connect with isQuiet=true; bus.emit a heartbeat row; assert
+  // suppressionQueue.shouldSuppress called with (userId, true, row) AND
+  // NO agent-event frame emitted on the stream.
+  assert.fail("placeholder");
+});
+
+test("bus.onQuiet listener writes a quiet_mode_changed SSE frame and updates local isQuiet ref", { skip: PLAN_05_STREAM }, async () => {
+  // TODO(125-05): connect with isQuiet=false; bus.emitQuiet(uid, {enabled:true, since:'...'});
+  // assert a quiet_mode_changed frame is written; subsequent bus.emit non-allowlist row
+  // is suppressed (proves local isQuiet ref flipped to true).
+  assert.fail("placeholder");
+});
+
+test("stream.onAbort cleanup calls bus.off AND bus.offQuiet (no listener leak)", { skip: PLAN_05_STREAM }, async () => {
+  // TODO(125-05): connect; observe bus.listenerCount === 1 AND bus.quietListenerCount === 1;
+  // abort the stream; observe both counts === 0 (cleanup hooks both events, no leak).
+  assert.fail("placeholder");
+});

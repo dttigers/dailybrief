@@ -364,3 +364,33 @@ test("successful connect resets backoffIndex (next disconnect waits 1000 again)"
   assert.equal(sleeps[1], 2000);
   assert.equal(sleeps[2], 1000, "successful connect reset backoffIndex");
 });
+
+// ── Phase 125 Wave 0 (AGENT-HUD-03 / D-02) ──────────────────────────
+// quiet_mode_changed event-type dispatch in the SSE shim. Plan 06 turns
+// these green by replacing { skip: PLAN_06_SSE } with asserted bodies,
+// after adding `else if (parsed.event === 'quiet_mode_changed')` branch
+// + `onQuietMode?: (data: string) => void` to SseClientOptions
+// (per RESEARCH §Pattern 4 lines 446-479).
+// (`test` and `assert` already imported above — no re-import needed.)
+
+const PLAN_06_SSE = "TODO(125-06): pending implementation — sse-client.ts quiet_mode_changed dispatch"
+
+test("parsed.event === 'quiet_mode_changed' invokes opts.onQuietMode with parsed.data string", { skip: PLAN_06_SSE }, async () => {
+  // TODO(125-06): mock fetch returning a stream with
+  //   "event: quiet_mode_changed\ndata: {\"enabled\":true,\"since\":\"2026-05-10T...\"}\n\n"
+  // assert opts.onQuietMode invoked with the JSON-string data argument.
+  assert.fail('placeholder')
+})
+
+test("opts.onQuietMode is optional — missing callback does not throw on quiet_mode_changed frame", { skip: PLAN_06_SSE }, async () => {
+  // TODO(125-06): construct client WITHOUT onQuietMode; emit quiet_mode_changed frame;
+  // assert no throw, loop continues, subsequent agent-event frames still fire onEvent.
+  assert.fail('placeholder')
+})
+
+test("agent-event dispatch path UNCHANGED — quiet_mode_changed branch does not steal agent-event frames", { skip: PLAN_06_SSE }, async () => {
+  // TODO(125-06): emit interleaved agent-event + quiet_mode_changed frames;
+  // assert opts.onEvent fires for each agent-event AND opts.onQuietMode fires for each
+  // quiet_mode_changed; neither path is starved.
+  assert.fail('placeholder')
+})

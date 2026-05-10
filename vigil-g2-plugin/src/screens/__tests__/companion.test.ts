@@ -720,3 +720,60 @@ test("Finding 1: cycling away from banner clears it (not stuck on prior session'
     "cycling onto non-banner session clears banner",
   );
 });
+
+// ── Phase 125 Wave 0 (AGENT-HUD-03 / D-02 / UI-SPEC) ────────────────
+// setQuietMode mutator + Q glyph in header rightSide + buildContainers
+// allowlist filter (defense-in-depth — server suppression is primary).
+// Plan 06 turns these green by replacing { skip: PLAN_06_COMP } with
+// the asserted bodies, after adding setQuietMode/isQuietMode exports
+// + computeRightSide Q-glyph branch + buildContainers allowlist guard.
+// (`test` and `assert` already imported above — no re-import needed.)
+
+const PLAN_06_COMP = "TODO(125-06): pending implementation — companion.ts setQuietMode + Q glyph + ALLOWLIST filter"
+
+test("setQuietMode(true) toggles module-level quietMode ref to true", { skip: PLAN_06_COMP }, () => {
+  // TODO(125-06): import { setQuietMode, isQuietMode } from '../companion.ts';
+  // _resetState(); setQuietMode(true); assert isQuietMode() === true.
+  assert.fail('placeholder')
+})
+
+test("isQuietMode() reflects setQuietMode value", { skip: PLAN_06_COMP }, () => {
+  // TODO(125-06): _resetState(); assert isQuietMode() === false (default);
+  // setQuietMode(true); assert isQuietMode() === true; setQuietMode(false); assert false.
+  assert.fail('placeholder')
+})
+
+test("computeRightSide() prepends 'Q' when isQuietMode()=true (UI-SPEC priority order)", { skip: PLAN_06_COMP }, () => {
+  // TODO(125-06): _resetState(); setQuietMode(true);
+  // hydrate single online session; rebuild; assert header rightSide
+  // contains 'Q' as the leftmost glyph (Q before any !/N/M).
+  assert.fail('placeholder')
+})
+
+test("computeRightSide() with quiet=true + offline + 2/3 sessions returns 'Q ! 2/3' (UI-SPEC table row 1)", { skip: PLAN_06_COMP }, () => {
+  // TODO(125-06): _resetState(); setQuietMode(true); setSseConnected(false);
+  // hydrate 3 sessions; cycle to idx 1; rebuild; assert header rightSide matches /Q\s*!\s*2\/3/.
+  assert.fail('placeholder')
+})
+
+test("computeRightSide() with quiet=false matches Phase 124 baseline (Q glyph absent)", { skip: PLAN_06_COMP }, () => {
+  // TODO(125-06): _resetState(); setQuietMode(false); hydrate 1 online session;
+  // rebuild; assert header rightSide does NOT contain 'Q' (Phase 124 byte-equality
+  // path preserved — D-14 invariant carryover).
+  assert.fail('placeholder')
+})
+
+test("buildContainers() with quietMode=true and non-allowlist banner suppresses banner overlay (defense-in-depth)", { skip: PLAN_06_COMP }, () => {
+  // TODO(125-06): _resetState(); setQuietMode(true);
+  // dispatch task_complete (not in allowlist); assert hasActiveBanner() may be true
+  // in cache but rebuildCompanionScreen body line 1 does NOT show '[DONE]' overlay
+  // (HUD-write filter blocks it).
+  assert.fail('placeholder')
+})
+
+test("buildContainers() with quietMode=true and needs_input banner STILL renders (allowlist passes through)", { skip: PLAN_06_COMP }, () => {
+  // TODO(125-06): _resetState(); setQuietMode(true);
+  // dispatch needs_input; assert rebuildCompanionScreen body line 1 === '[NEEDS INPUT]'
+  // (allowlist exempts banner-write filter — HUD glanceability for actionable events).
+  assert.fail('placeholder')
+})
