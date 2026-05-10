@@ -4,8 +4,8 @@ import {
   TextContainerProperty,
 } from '@evenrealities/even_hub_sdk'
 
-import type { VigilSummary, VigilAffirmation } from '../types.ts'
-import { DISPLAY_WIDTH, DIVIDER, ContainerId } from '../constants.ts'
+import type { VigilSummary } from '../types.ts'
+import { DISPLAY_WIDTH, ContainerId } from '../constants.ts'
 import { buildVigilHeader } from './header.ts'
 
 /**
@@ -20,7 +20,6 @@ import { buildVigilHeader } from './header.ts'
  */
 function buildHomeContainers(
   summary: VigilSummary,
-  affirmation: VigilAffirmation,
 ): TextContainerProperty[] {
   const pendingCount = (summary.tasksByStatus['open'] ?? 0) + (summary.tasksByStatus['inProgress'] ?? 0)
   const topPriority = summary.recent[0]?.content ?? 'No tasks'
@@ -29,15 +28,15 @@ function buildHomeContainers(
   const header = buildVigilHeader(ContainerId.HOME_HEADER, 'home-header')
   // rightSide omitted → falls back to HH:MM AM/PM (preserves existing home behavior)
 
-  // Body: task count + top priority + affirmation
+  // Body: 4 logical lines fitting 210px container (Phase 124 D-12 — G2-POLISH-07).
+  // Inline affirmation + DIVIDER removed; affirmation lives on its own carousel
+  // screen. Locks v3.5 HARDWARE-DIVERGENCE Divergence 4 ("two captures show
+  // different scroll positions") structurally — content can no longer overflow.
   const bodyContent = [
     `* ${pendingCount} tasks pending`,
     '',
     'TOP PRIORITY:',
     topPriority,
-    '',
-    DIVIDER,
-    affirmation.affirmation,
   ].join('\n')
 
   const body = new TextContainerProperty({
@@ -76,9 +75,8 @@ function buildHomeContainers(
 
 export function buildHomeScreen(
   summary: VigilSummary,
-  affirmation: VigilAffirmation,
 ): CreateStartUpPageContainer {
-  const textObject = buildHomeContainers(summary, affirmation)
+  const textObject = buildHomeContainers(summary)
   return new CreateStartUpPageContainer({
     containerTotalNum: textObject.length,
     textObject,
@@ -87,9 +85,8 @@ export function buildHomeScreen(
 
 export function rebuildHomeScreen(
   summary: VigilSummary,
-  affirmation: VigilAffirmation,
 ): RebuildPageContainer {
-  const textObject = buildHomeContainers(summary, affirmation)
+  const textObject = buildHomeContainers(summary)
   return new RebuildPageContainer({
     containerTotalNum: textObject.length,
     textObject,

@@ -45,11 +45,11 @@ export function getPrevScreen(current: ScreenName): ScreenName {
 async function buildScreen(screen: ScreenName): Promise<RebuildPageContainer> {
   switch (screen) {
     case Screen.HOME: {
-      const [summary, affirmation] = await Promise.all([
-        fetchSummary(),
-        fetchAffirmation(),
-      ])
-      return rebuildHomeScreen(summary, affirmation)
+      // Phase 124 D-12 (G2-POLISH-07): Home no longer renders affirmation
+      // inline; fetchAffirmation() is dropped from this path. The Affirmation
+      // screen below still uses fetchAffirmation() (do not remove the import).
+      const summary = await fetchSummary()
+      return rebuildHomeScreen(summary)
     }
     case Screen.WORK_ORDERS: {
       const brief = await fetchBrief()

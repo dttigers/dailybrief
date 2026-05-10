@@ -4,7 +4,7 @@ import {
 } from '@evenrealities/even_hub_sdk'
 import { buildHomeScreen } from './screens/home.ts'
 import { handleNavEvent, navigateToTaskDetail, refreshCurrentScreen } from './navigation.ts'
-import { fetchSummary, fetchAffirmation } from './api.ts'
+import { fetchSummary } from './api.ts'
 
 const NAV_EVENTS = new Set([
   OsEventTypeList.SCROLL_TOP_EVENT,
@@ -32,11 +32,11 @@ async function init(): Promise<void> {
   const bridge = await waitForEvenAppBridge()
 
   // Fetch real data and build the home screen
-  const [summary, affirmation] = await Promise.all([
-    fetchSummary(),
-    fetchAffirmation(),
-  ])
-  const container = buildHomeScreen(summary, affirmation)
+  // Phase 124 D-12 (G2-POLISH-07): Home no longer renders affirmation inline;
+  // fetchAffirmation() is dropped from this path. Affirmation screen still
+  // calls fetchAffirmation() in its own buildScreen branch (navigation.ts).
+  const summary = await fetchSummary()
+  const container = buildHomeScreen(summary)
   await bridge.createStartUpPageContainer(container)
 
   // Start 60s auto-refresh timer
