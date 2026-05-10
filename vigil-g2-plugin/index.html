@@ -4,9 +4,114 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vigil</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0f0d;
+        --fg: #e8efeb;
+        --muted: #7d8983;
+        --teal: #1D9E75;
+      }
+      * { box-sizing: border-box; }
+      html, body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+        height: 100%;
+        min-height: 100vh;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 24px 32px;
+        line-height: 1.5;
+      }
+      .stack {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        max-width: 320px;
+        width: 100%;
+        gap: 20px;
+      }
+      .mark {
+        width: 96px;
+        height: 96px;
+        border-radius: 22px;
+        display: block;
+      }
+      .wordmark {
+        font-size: 24px;
+        font-weight: 600;
+        letter-spacing: 0.18em;
+        margin: 0;
+      }
+      .tagline {
+        font-size: 14px;
+        color: var(--muted);
+        margin: -12px 0 0;
+        max-width: 260px;
+      }
+      .note {
+        font-size: 13px;
+        color: var(--fg);
+        opacity: 0.85;
+        margin: 4px 0 0;
+        padding: 14px 16px;
+        border: 1px solid rgba(232, 239, 235, 0.08);
+        border-radius: 10px;
+        background: rgba(232, 239, 235, 0.02);
+      }
+      .status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+        margin-top: 4px;
+      }
+      .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--muted);
+        flex-shrink: 0;
+      }
+      .status[data-state='connected'] .status-dot { background: var(--teal); }
+      .status[data-state='connected'] .status-text { color: var(--fg); }
+      .footer {
+        font-size: 11px;
+        color: var(--muted);
+        margin: 0;
+        letter-spacing: 0.04em;
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <main class="stack" id="app">
+      <svg class="mark" viewBox="0 0 1024 1024" aria-hidden="true">
+        <rect width="1024" height="1024" rx="229" fill="#1D9E75"/>
+        <g transform="translate(512 512)" fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="0,-307 307,0 0,307 -307,0" stroke-width="36"/>
+          <polyline points="-130,-100 0,70 130,-100" stroke-width="44"/>
+          <circle cx="0" cy="85" r="34" fill="#FFFFFF" stroke="none"/>
+        </g>
+      </svg>
+      <h1 class="wordmark">VIGIL</h1>
+      <p class="tagline">Ambient AI for your G2 glasses</p>
+      <p class="note">This plugin runs on your glasses. Look up to see your work orders, reminders, and Claude Code activity.</p>
+      <div class="status" id="vigil-status" data-state="loading">
+        <span class="status-dot"></span>
+        <span class="status-text">Connecting…</span>
+      </div>
+      <p class="footer">vigilhub.io</p>
+    </main>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

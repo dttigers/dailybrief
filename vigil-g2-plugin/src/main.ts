@@ -134,6 +134,15 @@ const sseClient = createSseClient({
     if (bridge && getCurrentScreen() === Screen.COMPANION) {
       void rebuildCurrentScreen(bridge)
     }
+    // Phase 125 v0.3.6 — update iPhone WebView splash status indicator.
+    // Even Hub reviewer rejected v0.2.0 for blank WebView; index.html now
+    // shows a brand splash with a connection dot.
+    const el = document.getElementById('vigil-status')
+    if (el) {
+      el.setAttribute('data-state', connected ? 'connected' : 'offline')
+      const text = el.querySelector('.status-text')
+      if (text) text.textContent = connected ? 'Connected' : 'Offline'
+    }
   },
   // Phase 125 (AGENT-HUD-03 / D-02 / UI-SPEC §"Header rebuild on
   // quiet_mode_changed"): when the server emits quiet_mode_changed (either
