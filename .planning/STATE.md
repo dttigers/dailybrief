@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
 stopped_at: Completed 126-07-PLAN.md
-last_updated: "2026-05-11T18:07:18.054Z"
+last_updated: "2026-05-11T18:13:24.541Z"
 last_activity: 2026-05-11
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 54
-  completed_plans: 48
-  percent: 89
+  completed_plans: 49
+  percent: 91
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 126 (wide-release-auth-hardening) — EXECUTING
-Plan: 6 of 11
+Plan: 7 of 11
 Status: Ready to execute
 Last activity: 2026-05-11
 
-Progress: [█████████░] 89%
+Progress: [█████████░] 91%
 
 ## v3.8 Phase Table
 
@@ -94,6 +94,7 @@ Progress: [█████████░] 89%
 | Phase 126 PP03 | 2m 21s | 2 tasks | 4 files |
 | Phase 126 P04 | 3m | 1 tasks | 2 files |
 | Phase 126 P07 | 2m 23s | 2 tasks | 3 files |
+| Phase 126 P08 | 2m 49s | 2 tasks | 3 files |
 
 ## Deferred Items
 
@@ -314,6 +315,9 @@ Recent (v3.7 closeout):
 - [Phase 126]: [Phase 126 / Plan 07]: Object.prototype.hasOwnProperty.call lookup-guard in resolveApiError — defense-in-depth against pathological code values (toString/constructor/__proto__); PATTERNS skeleton hardened without changing public surface (Rule 2)
 - [Phase 126]: [Phase 126 / Plan 07]: Co-located dep installs (Turnstile + Sentry React) in one infra plan to avoid package.json contention with parallel Plans 09 + 10; single npm install reconciles lockfile once, 0 peer warnings
 - [Phase 126]: [Phase 126 / Plan 07]: INVALID_TOKEN_SUBJECT mapped with ctaLabel='Sign in' + ctaHref='/auth' — distinct from INVALID_CREDENTIALS (D-04 login-only lock); closes T-126-04-07 + T-126-07-06 enum-confusion threat
+- [Phase ?]: [Phase 126 / Plan 08]: Hand-rolled legal content over Termly-hosted iframe — avoids CSP carve-outs + survives /v1/* downtime by design (T-126-08-06)
+- [Phase ?]: [Phase 126 / Plan 08]: Public Route mount position pinned BETWEEN /auth/verify and the /* isAuthenticated cluster — closes T-126-08-05 by construction; mirrors Phase 112+113 sibling pattern
+- [Phase ?]: [Phase 126 / Plan 08]: pre-existing tsc --noEmit TS6305 noise (76 errors, all stale .d.ts cache from node_modules/.tmp/tsconfig.app.tsbuildinfo) deferred out-of-scope — vite build is the actual production path and exits clean (1.24s)
 
 ### Pending Todos
 
@@ -350,7 +354,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-11T18:07:18.044Z
+Last session: 2026-05-11T18:13:17.845Z
 Stopped at: Completed 126-07-PLAN.md
 Resume file: 
 
