@@ -10,6 +10,8 @@ import AuthPage from './pages/AuthPage'
 import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import ResetPasswordPage from './pages/ResetPasswordPage'
 import VerifyEmailPage from './pages/VerifyEmailPage'
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsOfServicePage from './pages/TermsOfServicePage'
 import DashboardPage from './pages/DashboardPage'
 import WorkOrdersPage from './pages/WorkOrdersPage'
 import ProjectsPage from './pages/ProjectsPage'
@@ -74,6 +76,10 @@ export default function App() {
           isAuthenticated guard) so users hitting verify links from email
           while logged-out can still complete the verify action. */}
       <Route path="/auth/verify" element={<VerifyEmailPage />} />
+      {/* Phase 126 (AUTH-126-06) — legal pages outside isAuthenticated guard.
+          Publicly reachable for signup-screen footer link consumption + SEO. */}
+      <Route path="/legal/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/legal/terms" element={<TermsOfServicePage />} />
       <Route
         path="/*"
         element={
