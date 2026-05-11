@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: executing
-stopped_at: Mid-execute 126-06 — vigil-core/src/index.ts edits in working tree (Sentry init + email-verify mount + Sentry sink in onError); mount-order.test.ts lastIndexOf correction also staged. No commit yet, no 126-06-SUMMARY.md.
-last_updated: "2026-05-11T19:44:32.330Z"
-last_activity: 2026-05-11 -- Phase 126 execution started
+status: verifying
+stopped_at: "Phase 126 wave 5/5 complete — 10/11 plans fully closed (06 vigil-core integration, 09 PWA Sentry, 10 PWA Turnstile widget). Plan 11 PARTIAL — operator wallclock action pending (Anthropic Console spend cap; AUTH-126-07). Phase 126 awaiting /gsd-verify-work 126 after operator moves .planning/todos/pending/2026-05-11-phase-126-anthropic-spend-cap.md → /done/."
+last_updated: "2026-05-11T20:00:00.000Z"
+last_activity: 2026-05-11 — Phase 126 execution complete pending operator wallclock
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 54
-  completed_plans: 50
-  percent: 93
+  completed_plans: 53
+  percent: 98
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 126 (wide-release-auth-hardening-rate-limit-auth-register-5-hr-ip) — EXECUTING
-Plan: 1 of 11
-Status: Executing Phase 126
-Last activity: 2026-05-11 -- Phase 126 execution started
+Plan: 5 of 11
+Status: Ready to execute
+Last activity: 2026-05-11
 
 Progress: [█████████░] 93%
 
