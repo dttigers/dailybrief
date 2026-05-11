@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
 stopped_at: Phase 126 context gathered
-last_updated: "2026-05-11T17:13:27.848Z"
-last_activity: 2026-05-11 -- Phase 126 planning complete
+last_updated: "2026-05-11T17:38:06.081Z"
+last_activity: 2026-05-11
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 54
-  completed_plans: 43
-  percent: 80
+  completed_plans: 44
+  percent: 81
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 124 — g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish
+**Current focus:** Phase 126 — wide-release-auth-hardening
 
 ## Current Position
 
-Phase: 124 (g2-companion-hud-websocket-fan-out-launch-source-home-overflow-polish) — APPROVED-WITH-DEFERRALS (all 9 plans + 4 follow-up commits + 2 operator E2E sessions complete)
-Plan: 9 of 9 — COMPLETE (Plan 09 VERIFICATION.md backfilled with 2026-05-10 live-E2E results; status `approved-with-deferrals` set)
+Phase: 126 (wide-release-auth-hardening) — EXECUTING
+Plan: 2 of 11
 Status: Ready to execute
-Last activity: 2026-05-11 -- Phase 126 planning complete
+Last activity: 2026-05-11
 
-Progress: [██████████] 98%
+Progress: [████████░░] 81%
 
 ## v3.8 Phase Table
 
@@ -89,6 +89,7 @@ Progress: [██████████] 98%
 | Phase 125 P07 | 5 min 18 sec | 2 tasks | 3 files |
 | Phase 125 P09 | 0:02 | 1 tasks | 2 files |
 | Phase 125 P11 | 66 | 1 tasks | 1 files |
+| Phase 126 P01 | 4m | 2 tasks | 7 files |
 
 ## Deferred Items
 
@@ -293,6 +294,10 @@ Recent (v3.7 closeout):
 - [Phase 125]: Plan 125-07: G2 Plugin section placed AFTER Sports closing and BEFORE Auto-generate ScheduleCard, preserving UI-SPEC data-source-type ordering and passing both awk ordering checks
 - [Phase 125]: Plan 125-07: tests use existing fetchImpl route-stub pattern (mirrors SPORTS-01 makeSportsFetchImpl), not vi.mock api-client module mocks — entire SettingsPage.test.tsx uses fetchImpl exclusively
 - [Phase ?]: Phase 125 Plan 11: Skeleton-only delivery — manifest scaffolded by executor; physical 60s recording + iCloud save + manifest backfill + AGENT-DEMO-01 mark-complete are operator wallclock per memory feedback_wallclock_checkpoint_exempt
+- [Phase 126]: Wave 0 RED-by-construction scaffolds: 7 test files import not-yet-existing production modules so failure documents what Wave 1 must build (mirrors Phase 102 Wave 0 + Phase 117 fs.readFileSync drift-detector convention)
+- [Phase 126]: vigil-pwa router imports always from 'react-router' v7 (single-package namespace); plan-verify grep contract forbids the legacy alternative-package literal even inside cautionary comments — comment rewording is Rule 3 (blocking) not scope drift
+- [Phase 126]: 9-key LOCKED enum (CONTEXT D-04) pinned in api-error-codes.test.ts via AUTH-126-CODE-MAP-LOCKED-ENUM — planners may extend (add codes) but not remove from the locked tuple
+- [Phase 126]: mount-order.test.ts uses source.indexOf(A) < source.indexOf(B) with negative-fallback-friendly assert.ok(idxA != -1 && idxB != -1 && idxA < idxB, …) — until index.ts is patched by later waves the failure message reads 'got idxA=-1, idxB=-1' instead of silently passing on -1 < -1
 
 ### Pending Todos
 
@@ -329,9 +334,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-11T16:22:52.025Z
+Last session: 2026-05-11T17:34:51.635Z
 Stopped at: Phase 126 context gathered
 Resume file: 
 
   
-  .planning/phases/126-wide-release-auth-hardening-rate-limit-auth-register-5-hr-ip/126-CONTEXT.md
+  None

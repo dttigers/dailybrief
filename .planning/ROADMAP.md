@@ -693,11 +693,11 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 
 **Context:** Audit performed 2026-05-11 found these gaps as the blockers to flipping the allowlist open. Source files: `vigil-core/src/routes/auth.ts:74-128` (allowlist gate), `vigil-core/src/middleware/rate-limit.ts` (global 100/60s, reusable pattern), `vigil-core/src/routes/resend-verification.ts:37` (per-route rate-limit reference pattern), `vigil-core/src/index.ts:121-130` (security headers — extend with CSP), `vigil-pwa/` (error message collapse + Sentry client). Triggered by SEED-017's sibling concern: family member hit "Invalid email or password" on what was actually a 403 allowlist rejection. The PWA error collapse is the load-bearing UX bug.
 
-**Plans:** 11 plans
+**Plans:** 1/11 plans executed
 
 Plans:
 **Wave 1**
-- [ ] 126-01-PLAN.md — Wave 0 test scaffolds (RED stubs for 6 new test files across vigil-core + vigil-pwa)
+- [x] 126-01-PLAN.md — Wave 0 test scaffolds (RED stubs for 6 new test files across vigil-core + vigil-pwa)
 
 **Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 126-02-PLAN.md — Cloudflare Turnstile server-side verify helper (vigil-core/src/lib/turnstile.ts) with DI seam
