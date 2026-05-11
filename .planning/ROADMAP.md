@@ -696,14 +696,23 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 **Plans:** 11 plans
 
 Plans:
+**Wave 1**
 - [ ] 126-01-PLAN.md — Wave 0 test scaffolds (RED stubs for 6 new test files across vigil-core + vigil-pwa)
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 126-02-PLAN.md — Cloudflare Turnstile server-side verify helper (vigil-core/src/lib/turnstile.ts) with DI seam
 - [ ] 126-03-PLAN.md — Sentry server-side wrapper (vigil-core/src/lib/sentry.ts) + @sentry/node install
 - [ ] 126-04-PLAN.md — Email-verify middleware with 24h grace (vigil-core/src/middleware/require-verified-email.ts)
-- [ ] 126-05-PLAN.md — auth.ts surgery: rate-limit dual-counter + Turnstile invocation + allowlist sentinel + code field on every error
-- [ ] 126-06-PLAN.md — index.ts composition: Sentry init before Hono + middleware mount + Sentry sibling in onError
 - [ ] 126-07-PLAN.md — PWA api-error-codes.ts resolver + locked-enum map; install @marsidev/react-turnstile + @sentry/react
 - [ ] 126-08-PLAN.md — Legal pages (PrivacyPolicyPage + TermsOfServicePage) + App.tsx route registration
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 126-05-PLAN.md — auth.ts surgery: rate-limit dual-counter + Turnstile invocation + allowlist sentinel + code field on every error
+- [ ] 126-06-PLAN.md — index.ts composition: Sentry init before Hono + middleware mount + Sentry sibling in onError
 - [ ] 126-09-PLAN.md — PWA Sentry init in main.tsx + ErrorBoundary sibling capture
+
+**Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 126-10-PLAN.md — AuthPage surgery: Turnstile widget mount + fix 3 error-collapse sites + legal footer links
+
+**Wave 5** *(blocked on Wave 4 completion)*
 - [ ] 126-11-PLAN.md — Operator wallclock checkpoint: Anthropic Console spend cap (autonomous: false)
