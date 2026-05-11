@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Phase 126 context gathered
-last_updated: "2026-05-11T17:38:06.081Z"
+stopped_at: Completed 126-02-PLAN.md (Wave 1)
+last_updated: "2026-05-11T17:42:55.233Z"
 last_activity: 2026-05-11
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 54
-  completed_plans: 44
-  percent: 81
+  completed_plans: 45
+  percent: 83
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 126 (wide-release-auth-hardening) — EXECUTING
-Plan: 2 of 11
+Plan: 3 of 11
 Status: Ready to execute
 Last activity: 2026-05-11
 
-Progress: [████████░░] 81%
+Progress: [████████░░] 83%
 
 ## v3.8 Phase Table
 
@@ -90,6 +90,7 @@ Progress: [████████░░] 81%
 | Phase 125 P09 | 0:02 | 1 tasks | 2 files |
 | Phase 125 P11 | 66 | 1 tasks | 1 files |
 | Phase 126 P01 | 4m | 2 tasks | 7 files |
+| Phase 126 P02 | 6m | 1 tasks | 1 files |
 
 ## Deferred Items
 
@@ -298,6 +299,9 @@ Recent (v3.7 closeout):
 - [Phase 126]: vigil-pwa router imports always from 'react-router' v7 (single-package namespace); plan-verify grep contract forbids the legacy alternative-package literal even inside cautionary comments — comment rewording is Rule 3 (blocking) not scope drift
 - [Phase 126]: 9-key LOCKED enum (CONTEXT D-04) pinned in api-error-codes.test.ts via AUTH-126-CODE-MAP-LOCKED-ENUM — planners may extend (add codes) but not remove from the locked tuple
 - [Phase 126]: mount-order.test.ts uses source.indexOf(A) < source.indexOf(B) with negative-fallback-friendly assert.ok(idxA != -1 && idxB != -1 && idxA < idxB, …) — until index.ts is patched by later waves the failure message reads 'got idxA=-1, idxB=-1' instead of silently passing on -1 < -1
+- [Phase ?]: Phase 126 Plan 02: Native fetch + AbortController(5s) chosen over npm wrapper — zero new deps
+- [Phase ?]: Phase 126 Plan 02: Fail-closed on D-01 — network errors propagate (caller→503), success:false→ok:false (caller→400), missing TURNSTILE_SECRET_KEY throws sync
+- [Phase ?]: Phase 126 Plan 02: Two DI seams intentionally NOT identically named — helper exports __setVerifyTurnstileTokenForTest; Plan 05 will add separately-named __setRegisterTurnstileFnForTest
 
 ### Pending Todos
 
@@ -334,8 +338,8 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-11T17:34:51.635Z
-Stopped at: Phase 126 context gathered
+Last session: 2026-05-11T17:42:55.223Z
+Stopped at: Completed 126-02-PLAN.md (Wave 1)
 Resume file: 
 
   
