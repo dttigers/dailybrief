@@ -43,7 +43,9 @@ describe("vigil-core/src/index.ts — Phase 126 mount-order lock", () => {
   });
 
   it("AUTH-126-MOUNT-VERIFY-AFTER-BEARER: requireVerifiedEmailWithGrace must mount AFTER the bearerAuth dispatcher so c.get('userId') is set", () => {
-    const verifyIdx = indexSrc.indexOf("requireVerifiedEmailWithGrace");
+    // Use lastIndexOf so the import line at the top of index.ts does not match;
+    // the mount site is necessarily the LAST occurrence of the symbol in the file.
+    const verifyIdx = indexSrc.lastIndexOf("requireVerifiedEmailWithGrace");
     const bearerIdx = indexSrc.indexOf("return bearerAuth(c, next)");
     assert.ok(
       verifyIdx !== -1 && bearerIdx !== -1 && verifyIdx > bearerIdx,
@@ -52,7 +54,9 @@ describe("vigil-core/src/index.ts — Phase 126 mount-order lock", () => {
   });
 
   it("AUTH-126-MOUNT-VERIFY-BEFORE-PROTECTED: requireVerifiedEmailWithGrace must mount BEFORE the first protected route registration", () => {
-    const verifyIdx = indexSrc.indexOf("requireVerifiedEmailWithGrace");
+    // Use lastIndexOf so the top-of-file import does not match; the mount site
+    // is the LAST occurrence of the symbol in the file.
+    const verifyIdx = indexSrc.lastIndexOf("requireVerifiedEmailWithGrace");
     // First protected /v1/* route mount in current codebase — the summary
     // routes (see vigil-core/src/index.ts post-bearerAuth dispatcher block).
     // Wave 1 will insert requireVerifiedEmailWithGrace BEFORE this anchor.
