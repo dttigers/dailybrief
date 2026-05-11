@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Completed 126-02-PLAN.md (Wave 1)
-last_updated: "2026-05-11T17:58:03.561Z"
+stopped_at: Completed 126-07-PLAN.md
+last_updated: "2026-05-11T18:07:18.054Z"
 last_activity: 2026-05-11
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 54
-  completed_plans: 47
-  percent: 87
+  completed_plans: 48
+  percent: 89
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 126 (wide-release-auth-hardening) — EXECUTING
-Plan: 5 of 11
+Plan: 6 of 11
 Status: Ready to execute
 Last activity: 2026-05-11
 
-Progress: [█████████░] 87%
+Progress: [█████████░] 89%
 
 ## v3.8 Phase Table
 
@@ -93,6 +93,7 @@ Progress: [█████████░] 87%
 | Phase 126 P02 | 6m | 1 tasks | 1 files |
 | Phase 126 PP03 | 2m 21s | 2 tasks | 4 files |
 | Phase 126 P04 | 3m | 1 tasks | 2 files |
+| Phase 126 P07 | 2m 23s | 2 tasks | 3 files |
 
 ## Deferred Items
 
@@ -310,6 +311,9 @@ Recent (v3.7 closeout):
 - [Phase 126]: Plan 126-04: DI seam __setUserLookupForTest mirrors auth.ts:32 — Wave 0 test was shipped without DB stubbing path; seam unblocks RED→GREEN with zero architectural change (Rule 3 reconciliation)
 - [Phase 126]: Plan 126-04: JSDoc rewording avoids verbatim R5-forbidden token (Phase 110 AUTH-09 password-change column) — mirrors Phase 126 Plan 01 comment-vs-grep reconciliation precedent
 - [Phase 126]: Plan 126-04: INVALID_TOKEN_SUBJECT shipped as D-04 extension code for defensive !user branch; INVALID_CREDENTIALS structurally forbidden in this file (login-only reservation per D-04 lock)
+- [Phase 126]: [Phase 126 / Plan 07]: Object.prototype.hasOwnProperty.call lookup-guard in resolveApiError — defense-in-depth against pathological code values (toString/constructor/__proto__); PATTERNS skeleton hardened without changing public surface (Rule 2)
+- [Phase 126]: [Phase 126 / Plan 07]: Co-located dep installs (Turnstile + Sentry React) in one infra plan to avoid package.json contention with parallel Plans 09 + 10; single npm install reconciles lockfile once, 0 peer warnings
+- [Phase 126]: [Phase 126 / Plan 07]: INVALID_TOKEN_SUBJECT mapped with ctaLabel='Sign in' + ctaHref='/auth' — distinct from INVALID_CREDENTIALS (D-04 login-only lock); closes T-126-04-07 + T-126-07-06 enum-confusion threat
 
 ### Pending Todos
 
@@ -346,8 +350,8 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-11T17:54:41.865Z
-Stopped at: Completed 126-02-PLAN.md (Wave 1)
+Last session: 2026-05-11T18:07:18.044Z
+Stopped at: Completed 126-07-PLAN.md
 Resume file: 
 
   
