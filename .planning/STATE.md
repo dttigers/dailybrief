@@ -119,6 +119,7 @@ Carried forward from v3.7 milestone close (2026-05-06):
 - v3.8 started 2026-05-06 — anchor: `vigil-watch` macOS daemon + agent-events API + G2 Companion HUD with 4 G2 polish riders folded in
 - v3.8 ROADMAP.md landed 2026-05-06 — 6 phases (120-125), 20/20 requirements mapped (1 verification gate, 2 server, 4 daemon-core, 3 daemon-shell, 5 HUD+WS+polish, 5 ship+polish+demo)
 - Phase 120 is a load-bearing verification gate — three documented fallback paths (notification observation / VS Code extension / process inspection) if JSONL schema diverges from spec assumption; downstream Phase 122/123 goals shift accordingly if a fallback is selected
+- Phase 126 added 2026-05-11 — wide-release auth hardening (rate-limit /auth/register, captcha, email-verified API gate, Sentry, PWA error UX, legal pages, Anthropic spend cap, VIGIL_ALLOWED_EMAILS="*" sentinel). Triggered by family signup error triage — generic "Invalid email or password" was hiding a real 403 allowlist rejection. Drives v3.8 from family-allowlist beta to public-traffic-ready.
 
 ### Decisions
 

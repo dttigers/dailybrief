@@ -665,3 +665,35 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 **Context:** Phase 115 plan 115-03 fixed display-side rendering (`whitespace-pre-line` on `ThoughtRow.tsx:399 <p>`). Edit-mode `<textarea>` already preserves newlines (D-16, unchanged in 115). Only the capture entry point lags. Real-world trigger: user attempted to paste a three-line reflection during 115-HUMAN-UAT and the newlines silently disappeared — the `whitespace-pre-line` had nothing to render because the data never had newlines.
 
 **Depends on:** Nothing — independent of all server work.
+
+### Phase 126: Wide-release auth hardening
+
+**Goal:** Drive Vigil from family-allowlist beta to public-traffic-ready by closing the auth surface gaps surfaced during a 2026-05-11 family signup error triage. Take the system from "I can hand this URL to my parents" to "I can hand it to 1000 strangers without flinching."
+
+**Requirements (candidates, refined during /gsd-plan-phase):**
+- AUTH-126-01: Rate-limit `POST /auth/register` — 5/hr/IP, reusing the per-route pattern from `resend-verification.ts` (declared `RATE_LIMIT_MAX = 5` verbatim per Phase 117 drift-detector convention)
+- AUTH-126-02: Captcha on the signup form (Cloudflare Turnstile preferred — free tier, no PII; Vercel BotID acceptable alternative). Verify token server-side in `/auth/register` before allowlist check
+- AUTH-126-03: Email-verification gate enforced for `/v1/*` API access — middleware reads `emailVerifiedAt` from JWT or DB and 403s unverified users on protected routes. Currently the column is recorded but never gated
+- AUTH-126-04: Sentry wired into `vigil-core` (server) and `vigil-pwa` (client) — free tier (5k events/mo) is sufficient for launch; capture unhandled exceptions, /auth/* error rates, AI route errors
+- AUTH-126-05: PWA error-message UX — surface real 4xx/5xx messages on signup/login screens instead of collapsing them to "Invalid email or password" (the bug that hid the real allowlist 403 from the operator's family member). Per memory `project_vigil_core_env_gates.md`
+- AUTH-126-06: Privacy Policy + Terms of Service published at `app.vigilhub.io/legal/privacy` and `/legal/terms`. Termly free tier is fine for a v1 — refine post-launch with a lawyer if revenue warrants. Link from signup screen + footer
+- AUTH-126-07: Anthropic monthly spend cap set in console (operator action — document in `.planning/todos/` as a wallclock checkpoint, NOT a code task)
+- AUTH-126-08: Open the allowlist gate — `VIGIL_ALLOWED_EMAILS="*"` sentinel handling in `isAllowlistedEmail()` so the env var becomes a kill-switch rather than a per-email list. Default to closed; flip to `*` only once 01-07 are green
+
+**Success criteria:**
+- A bot scripted against `/auth/register` from a single IP gets rate-limited at request 6/hour
+- A bot scripted against `/auth/register` from rotating IPs gets blocked by Turnstile at the captcha boundary
+- A registered-but-unverified user calling `GET /v1/sessions` (or any `/v1/*` endpoint) gets a 403 with a "Verify your email to continue" body
+- An exception thrown anywhere in `vigil-core` shows up in Sentry within 60s with stack trace + request context
+- A 403 from `/auth/register` (e.g., not on allowlist when in restricted mode) displays a meaningful error in the PWA — not "Invalid email or password"
+- `app.vigilhub.io/legal/privacy` and `/legal/terms` return 200 with publishable content
+- `VIGIL_ALLOWED_EMAILS="*"` allows any well-formed email to register; reverting to a comma-list re-locks the gate
+
+**Depends on:** Phase 125 (just-shipped soak baseline — don't touch auth while the daemon is mid-soak)
+
+**Context:** Audit performed 2026-05-11 found these gaps as the blockers to flipping the allowlist open. Source files: `vigil-core/src/routes/auth.ts:74-128` (allowlist gate), `vigil-core/src/middleware/rate-limit.ts` (global 100/60s, reusable pattern), `vigil-core/src/routes/resend-verification.ts:37` (per-route rate-limit reference pattern), `vigil-core/src/index.ts:121-130` (security headers — extend with CSP), `vigil-pwa/` (error message collapse + Sentry client). Triggered by SEED-017's sibling concern: family member hit "Invalid email or password" on what was actually a 403 allowlist rejection. The PWA error collapse is the load-bearing UX bug.
+
+**Plans:** 0 plans
+
+Plans:
+- [ ] TBD (run /gsd-plan-phase 126 to break down)
