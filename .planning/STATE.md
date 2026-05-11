@@ -4,14 +4,14 @@ milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
 stopped_at: Completed 126-02-PLAN.md (Wave 1)
-last_updated: "2026-05-11T17:42:55.233Z"
+last_updated: "2026-05-11T17:48:16.238Z"
 last_activity: 2026-05-11
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 54
-  completed_plans: 45
-  percent: 83
+  completed_plans: 46
+  percent: 85
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 126 (wide-release-auth-hardening) — EXECUTING
-Plan: 3 of 11
+Plan: 4 of 11
 Status: Ready to execute
 Last activity: 2026-05-11
 
-Progress: [████████░░] 83%
+Progress: [█████████░] 85%
 
 ## v3.8 Phase Table
 
@@ -91,6 +91,7 @@ Progress: [████████░░] 83%
 | Phase 125 P11 | 66 | 1 tasks | 1 files |
 | Phase 126 P01 | 4m | 2 tasks | 7 files |
 | Phase 126 P02 | 6m | 1 tasks | 1 files |
+| Phase 126 PP03 | 2m 21s | 2 tasks | 4 files |
 
 ## Deferred Items
 
@@ -302,6 +303,9 @@ Recent (v3.7 closeout):
 - [Phase ?]: Phase 126 Plan 02: Native fetch + AbortController(5s) chosen over npm wrapper — zero new deps
 - [Phase ?]: Phase 126 Plan 02: Fail-closed on D-01 — network errors propagate (caller→503), success:false→ok:false (caller→400), missing TURNSTILE_SECRET_KEY throws sync
 - [Phase ?]: Phase 126 Plan 02: Two DI seams intentionally NOT identically named — helper exports __setVerifyTurnstileTokenForTest; Plan 05 will add separately-named __setRegisterTurnstileFnForTest
+- [Phase ?]: Phase 126 / Plan 03: Deprecated-API references in JSDoc rewritten to wording-not-token ("pre-v8 hub/scope surface") so plan-level grep contract returns 0 — mirrors Phase 126 Plan 01 deviation pattern for comment-vs-grep reconciliation
+- [Phase ?]: Phase 126 / Plan 03: tracesSampleRate: 0 — errors-only, keeps under 5k events/mo Developer-tier quota per CONTEXT.md additional_context
+- [Phase ?]: Phase 126 / Plan 03: Module-scope let initialized = false (mutable boolean) chosen over null-singleton — Sentry.init has side effects that survive module reload; boolean lets captureToSentry no-op idempotently even if init never called (T-126-03-05 accept disposition)
 
 ### Pending Todos
 
@@ -338,7 +342,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-11T17:42:55.223Z
+Last session: 2026-05-11T17:48:07.659Z
 Stopped at: Completed 126-02-PLAN.md (Wave 1)
 Resume file: 
 
