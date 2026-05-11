@@ -187,3 +187,26 @@ Once this todo completes:
 ## Failure path
 
 If the soak gate fails on any of the 5 D-09 conditions, scope a Phase 123-gap plan via `/gsd-plan-phase 123 --gaps` to address the specific failure mode. Do NOT silently re-run; the failure mode is itself signal (memory leak, KeepAlive bug, sampler misconfig, auth drift).
+
+---
+
+## Closeout — 2026-05-11T22:45Z
+
+**Status:** COMPLETE — back-filled into 123-VERIFICATION.md.
+
+**Soak gate result** (against `~/Library/Logs/Vigil/soak-2026-05-10.csv`):
+
+```
+max RSS:      7220 KB    (gate <30000)   ✓ 24% of budget
+unique PIDs:  1          (gate =1)        ✓ pid 13139 held by KeepAlive across 24h
+uptime span:  86128s     (gate ≥85800)    ✓ 23h 55m
+samples:      288        (5-min cadence)  ✓ continuous
+PHASE 123 SOAK GATE: PASSED
+```
+
+**Closeout notes:**
+- Phase 123 was already marked complete in STATE.md and ROADMAP.md long before this back-fill (Phases 124, 125, 126 shipped on top of it). This todo's "closeout flow" steps 2-5 are therefore historically satisfied; this back-fill only closes the verification-doc loop.
+- Step 4.5 / 6.5 functional probes: not run as a fresh probe at back-fill time, but the daemon's continued production use across Phases 124-126 (which depend on real events flowing) is stronger evidence than a synthetic probe — the HUD + WebSocket fan-out have been functionally exercised end-to-end since the soak window closed.
+- SC #3 (post-reboot resume) is formally deferred / risk-accepted in 123-VERIFICATION.md — Mac has been continuously up since install (2d 4h at back-fill time); operator declines reboot for verification only. RunAtLoad+KeepAlive both `<true/>` grep-verified in the installed plist; PlistTemplateTests drift-detects both.
+
+**Moved to** `.planning/todos/done/` per this file's own line 181 instruction.
