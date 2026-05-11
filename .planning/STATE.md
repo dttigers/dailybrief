@@ -3,9 +3,9 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Completed 126-05-PLAN.md
-last_updated: "2026-05-11T18:26:54.642Z"
-last_activity: 2026-05-11
+stopped_at: Mid-execute 126-06 — vigil-core/src/index.ts edits in working tree (Sentry init + email-verify mount + Sentry sink in onError); mount-order.test.ts lastIndexOf correction also staged. No commit yet, no 126-06-SUMMARY.md.
+last_updated: "2026-05-11T19:44:32.330Z"
+last_activity: 2026-05-11 -- Phase 126 execution started
 progress:
   total_phases: 9
   completed_phases: 6
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 126 — wide-release-auth-hardening
+**Current focus:** Phase 126 — wide-release-auth-hardening-rate-limit-auth-register-5-hr-ip
 
 ## Current Position
 
-Phase: 126 (wide-release-auth-hardening) — EXECUTING
-Plan: 8 of 11
-Status: Ready to execute
-Last activity: 2026-05-11
+Phase: 126 (wide-release-auth-hardening-rate-limit-auth-register-5-hr-ip) — EXECUTING
+Plan: 1 of 11
+Status: Executing Phase 126
+Last activity: 2026-05-11 -- Phase 126 execution started
 
 Progress: [█████████░] 93%
 
@@ -360,8 +360,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 ## Session Continuity
 
 Last session: 2026-05-11T18:26:54.632Z
-Stopped at: Completed 126-05-PLAN.md
-Resume file: 
+Stopped at: Mid-execute 126-06 — vigil-core/src/index.ts edits in working tree (Sentry init + email-verify mount + Sentry sink in onError); mount-order.test.ts lastIndexOf correction also staged. No commit yet, no 126-06-SUMMARY.md.
+Resume file:
 
-  
-  None
+  Stale .planning/HANDOFF.json (Phase 112, 2026-04-25) removed during resume.
