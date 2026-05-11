@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
-stopped_at: "Phase 126 wave 5/5 complete — 10/11 plans fully closed (06 vigil-core integration, 09 PWA Sentry, 10 PWA Turnstile widget). Plan 11 PARTIAL — operator wallclock action pending (Anthropic Console spend cap; AUTH-126-07). Phase 126 awaiting /gsd-verify-work 126 after operator moves .planning/todos/pending/2026-05-11-phase-126-anthropic-spend-cap.md → /done/."
-last_updated: "2026-05-11T20:00:00.000Z"
-last_activity: 2026-05-11 — Phase 126 execution complete pending operator wallclock
+stopped_at: "Phase 126 execution + operator wallclock complete. All 11 plans closed. AUTH-126-07 satisfied — Anthropic monthly spend cap = $500/mo (alert: jamesonmorrill1@gmail.com). Ready for /gsd-verify-work 126."
+last_updated: "2026-05-11T20:05:00.000Z"
+last_activity: 2026-05-11 — Phase 126 11/11 plans closed; operator gate cleared; ready to verify
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 54
-  completed_plans: 53
-  percent: 98
+  completed_plans: 54
+  percent: 100
 ---
 
 # Project State

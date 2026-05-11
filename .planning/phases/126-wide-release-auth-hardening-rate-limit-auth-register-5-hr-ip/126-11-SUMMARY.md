@@ -2,23 +2,27 @@
 phase: 126
 plan: 11
 type: execute
-status: partial
+status: complete
 completed: 2026-05-11
 files_modified:
-  - (none — Task 1 is verification-only; Task 2 is operator wallclock)
+  - .planning/todos/pending/2026-05-11-phase-126-anthropic-spend-cap.md → .planning/todos/done/ (operator action recorded; cap = $500/mo)
 commits:
   - "docs(126-11): partial — Anthropic spend-cap operator checkpoint surfaced"
+  - "chore(126-11): operator complete — Anthropic spend cap set to $500/mo; AUTH-126-07 closed"
 requirements: [AUTH-126-07]
-operator_action_pending: true
+operator_cap_usd: 500
+operator_completed: 2026-05-11
 ---
 
 # Plan 126-11 — Anthropic spend-cap operator wallclock checkpoint
 
-## Status: PARTIAL
+## Status: COMPLETE
 
 **Task 1 (autonomous) — DONE:** Verified operator todo file at `.planning/todos/pending/2026-05-11-phase-126-anthropic-spend-cap.md` exists with the runbook content required for Phase 126 closure. File was planted during `/gsd-discuss-phase` (commit `5eef2705 docs(126): capture phase context`) and contains the full operator runbook.
 
-**Task 2 (operator wallclock) — DEFERRED:** No CLI/API path exists for Anthropic Console spend limits as of 2026-05-11. Operator must complete the browser-based action and move the todo file before AUTH-126-07 can close.
+**Task 2 (operator wallclock) — DONE 2026-05-11:** Operator set Anthropic Console monthly spend cap to **$500/mo** with alert destination `jamesonmorrill1@gmail.com`. Todo file moved from `/pending/` → `/done/` with cap value recorded in frontmatter (`cap_value_usd: 500`, `status: done`, `alert_email: jamesonmorrill1@gmail.com`). Gate verifier sweep `find .planning/todos/pending -name 'phase-126*' | wc -l` returns 0 — Phase 126 ready for `/gsd-verify-work 126`.
+
+**Cap rationale:** $500/mo is ~5× expected baseline at v3.8 launch traffic. Comfortable headroom for organic growth while still providing a hard upper bound before the per-user quota system lands in a later phase.
 
 Per memory `feedback_wallclock_checkpoint_exempt.md`: yolo mode / skip_checkpoints does NOT bypass real-world physical actions. This plan ships in `partial` state matching the Phase 123 P05 / Phase 124 P04 / Phase 124 P09 deferral precedent.
 
@@ -71,7 +75,7 @@ Currently `1`. After step 7 above, it becomes `0` and Phase 126 can proceed to `
 ## Decisions / Deviations
 
 - **Decision:** Task 1 is verification-only — file was already committed during `/gsd-discuss-phase` context gathering. No new commit needed for the file itself; only the SUMMARY commits this plan's closure (per partial-deferral pattern from Phase 123 P05).
-- **Decision:** Plan ships in `status: partial`. Phase 126 cannot run `/gsd-verify-work` to completion until operator completes Task 2 and resumes with `done`/`approved`. Memory `feedback_wallclock_checkpoint_exempt` is the binding constraint.
+- **Decision:** Plan initially shipped in `status: partial` waiting on operator. After operator completed Task 2 on 2026-05-11 with cap = $500/mo, status flipped to `complete`. Memory `feedback_wallclock_checkpoint_exempt` is the binding constraint that prevented auto-closure during execute-phase.
 
 ## Cross-Plan Impact
 

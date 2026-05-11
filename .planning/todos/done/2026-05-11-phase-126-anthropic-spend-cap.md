@@ -1,12 +1,19 @@
 ---
 created: 2026-05-11
+completed: 2026-05-11
 phase: 126
 requirement: AUTH-126-07
 type: operator-wallclock
-blocks: phase-complete
+status: done
+cap_value_usd: 500
+alert_email: jamesonmorrill1@gmail.com
 ---
 
-# Phase 126 — Anthropic monthly spend cap (operator action)
+# Phase 126 — Anthropic monthly spend cap (operator action — DONE)
+
+**Operator action (2026-05-11):** Anthropic Console monthly spend cap set to **$500/mo**. Alert destination confirmed as `jamesonmorrill1@gmail.com`. Cap is ~5× expected baseline at v3.8 launch traffic — comfortable headroom for organic growth while still providing a hard upper bound before the per-user quota system lands in a later phase.
+
+
 
 **What:** Log into the Anthropic Console → Plans & Billing → Spend Limits → set a monthly cap.
 
