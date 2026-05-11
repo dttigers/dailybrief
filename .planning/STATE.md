@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: executing
-stopped_at: Completed 126-07-PLAN.md
-last_updated: "2026-05-11T18:13:24.541Z"
+stopped_at: Completed 126-05-PLAN.md
+last_updated: "2026-05-11T18:26:54.642Z"
 last_activity: 2026-05-11
 progress:
   total_phases: 9
   completed_phases: 6
   total_plans: 54
-  completed_plans: 49
-  percent: 91
+  completed_plans: 50
+  percent: 93
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 ## Current Position
 
 Phase: 126 (wide-release-auth-hardening) — EXECUTING
-Plan: 7 of 11
+Plan: 8 of 11
 Status: Ready to execute
 Last activity: 2026-05-11
 
-Progress: [█████████░] 91%
+Progress: [█████████░] 93%
 
 ## v3.8 Phase Table
 
@@ -95,6 +95,7 @@ Progress: [█████████░] 91%
 | Phase 126 P04 | 3m | 1 tasks | 2 files |
 | Phase 126 P07 | 2m 23s | 2 tasks | 3 files |
 | Phase 126 P08 | 2m 49s | 2 tasks | 3 files |
+| Phase 126 P5 | 22m | 2 tasks | 2 files |
 
 ## Deferred Items
 
@@ -318,6 +319,10 @@ Recent (v3.7 closeout):
 - [Phase ?]: [Phase 126 / Plan 08]: Hand-rolled legal content over Termly-hosted iframe — avoids CSP carve-outs + survives /v1/* downtime by design (T-126-08-06)
 - [Phase ?]: [Phase 126 / Plan 08]: Public Route mount position pinned BETWEEN /auth/verify and the /* isAuthenticated cluster — closes T-126-08-05 by construction; mirrors Phase 112+113 sibling pattern
 - [Phase ?]: [Phase 126 / Plan 08]: pre-existing tsc --noEmit TS6305 noise (76 errors, all stale .d.ts cache from node_modules/.tmp/tsconfig.app.tsbuildinfo) deferred out-of-scope — vite build is the actual production path and exits clean (1.24s)
+- [Phase 126 / Plan 05]: Distinct-seam invariant: route-level __setRegisterTurnstileFnForTest in auth.ts vs helper-unit __setVerifyTurnstileTokenForTest in turnstile.ts — pinned by AUTH-126-SEAM-NAMING drift detector + cross-layer-seam ban in test file (forbidden literal constructed via string concatenation in drift-detector body to satisfy contiguous-string grep)
+- [Phase 126 / Plan 05]: PASSWORD_TOO_SHORT vs PASSWORD_TOO_LONG branch SPLIT — PWA needs the distinction for ctaLabel; CONTEXT D-04 LOCKED enum honored verbatim
+- [Phase 126 / Plan 05]: Rate-limit gate runs BEFORE Turnstile siteverify (RESEARCH AUTH-126-01 mount-order constraint) — prevents attackers from burning Cloudflare siteverify quota per attempt; captcha shape gate runs BEFORE allowlist so failed captcha never leaks allowlist contents via differential timing
+- [Phase 126 / Plan 05]: __resetRegisterBucketsForTest named distinctly from forgot-password.ts's __resetBucketsForTest to prevent import-site ambiguity in the shared test module
 
 ### Pending Todos
 
@@ -354,8 +359,8 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-11T18:13:17.845Z
-Stopped at: Completed 126-07-PLAN.md
+Last session: 2026-05-11T18:26:54.632Z
+Stopped at: Completed 126-05-PLAN.md
 Resume file: 
 
   
