@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: verifying
-stopped_at: "Phase 126 execution + operator wallclock complete. All 11 plans closed. AUTH-126-07 satisfied — Anthropic monthly spend cap = $500/mo (alert: jamesonmorrill1@gmail.com). Ready for /gsd-verify-work 126."
-last_updated: "2026-05-11T20:05:00.000Z"
-last_activity: 2026-05-11 — Phase 126 11/11 plans closed; operator gate cleared; ready to verify
+status: completed
+stopped_at: "Phase 126 SHIPPED to prod 2026-05-11 — wide-release auth hardening live (Turnstile + rate-limit + email-verify gate + Sentry sink + legal pages + structured error codes + Anthropic spend cap $500/mo + VIGIL_ALLOWED_EMAILS=* sentinel). Smoke-test signup from app.vigilhub.com confirmed real Cloudflare Turnstile widget rendering + token validation + signup success. UAT 8 passed / 0 issues; SECURITY 46/46 threats closed. v3.8 operator backlog (Phase 123 24h soak, Phase 124 PNG-equality + E2E) still pending."
+last_updated: "2026-05-11T22:03:15.662Z"
+last_activity: 2026-05-11 -- Phase 126 marked complete
 progress:
   total_phases: 9
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 54
   completed_plans: 54
-  percent: 100
+  percent: 78
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
 
 ## Current Position
 
-Phase: 126 (wide-release-auth-hardening-rate-limit-auth-register-5-hr-ip) — EXECUTING
+Phase: 126 — COMPLETE
 Plan: 5 of 11
-Status: Ready to execute
-Last activity: 2026-05-11
+Status: Phase 126 complete
+Last activity: 2026-05-11 -- Phase 126 marked complete
 
 Progress: [█████████░] 93%
 
