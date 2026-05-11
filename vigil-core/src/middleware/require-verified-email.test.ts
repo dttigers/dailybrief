@@ -33,11 +33,27 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import { Hono } from "hono";
 
-// The `./require-verified-email.js` module does NOT exist yet — Plan 126-04 creates it.
-// This import failure IS the Wave 0 RED signal for this file.
+// The `./require-verified-email.js` module is created by Plan 126-04.
+// DI seam (__setUserLookupForTest) lets us stub the users-table lookup
+// without spinning up Postgres in unit tests — mirror of the auth.ts
+// __setSendEmailVerificationEmailForTest pattern.
 const verifyModule = await import("./require-verified-email.js");
-const { requireVerifiedEmailWithGrace } = verifyModule as {
+const {
+  requireVerifiedEmailWithGrace,
+  __setUserLookupForTest,
+  __resetUserLookupForTest,
+} = verifyModule as {
   requireVerifiedEmailWithGrace: import("hono").MiddlewareHandler;
+  __setUserLookupForTest: (
+    fn: (
+      userId: number,
+    ) => Promise<
+      | { emailVerifiedAt: Date | null; createdAt: Date }
+      | null
+      | "db-unavailable"
+    >,
+  ) => void;
+  __resetUserLookupForTest: () => void;
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -51,6 +67,17 @@ interface FakeUser {
 }
 
 function buildApp(injectedUser: FakeUser | null) {
+  // Stub the user lookup so the middleware reads from the in-memory fake
+  // instead of hitting Postgres. Reset is callers' responsibility (handled
+  // by the per-test `__resetUserLookupForTest()` call below).
+  __setUserLookupForTest(async (userId: number) => {
+    if (!injectedUser) return null;
+    if (userId !== injectedUser.id) return null;
+    return {
+      emailVerifiedAt: injectedUser.emailVerifiedAt,
+      createdAt: injectedUser.createdAt,
+    };
+  });
   const app = new Hono();
   // Fake bearerAuth: set userId to 42 (matches injectedUser.id) on every request.
   app.use("/v1/*", async (c, next) => {
@@ -74,6 +101,14 @@ async function get(app: ReturnType<typeof buildApp>, path: string): Promise<Resp
 }
 
 describe("requireVerifiedEmailWithGrace — AUTH-126-03 / D-02 (24h grace matrix)", () => {
+  // node:test has no built-in beforeEach/afterEach when using describe/it
+  // import style without t.beforeEach — buildApp() reinjects the lookup at
+  // the top of every test (overwriting any prior state) and a final reset
+  // restores the real DB lookup so other suites aren't polluted.
+  // Cleanup runs implicitly when this module's tests finish (no other suite
+  // imports this DI seam directly), but we still expose __resetUserLookupForTest
+  // for any future suite that mounts the middleware in a different shape.
+
   it("AUTH-126-VERIFY-PASS-VERIFIED: verified user (emailVerifiedAt non-null) → next() → 200", async () => {
     const user: FakeUser = {
       id: 42,
@@ -176,6 +211,15 @@ describe("requireVerifiedEmailWithGrace — AUTH-126-03 / D-02 (24h grace matrix
       /"\/v1\/auth\/"|'\/v1\/auth\/'/,
       "require-verified-email.ts must declare '/v1/auth/' prefix literal in bypass list",
     );
+  });
+
+  // ── Cleanup: restore real DB lookup so suite ordering doesn't leak the
+  //    in-memory fake into any subsequent test file that imports this
+  //    middleware via the production singleton. Lives as its own it() block
+  //    because node:test lacks a top-level afterEach hook with this describe
+  //    style. Test always passes — the side-effect IS the assertion.
+  it("cleanup: restore real DB lookup", () => {
+    __resetUserLookupForTest();
   });
 
   // ── AUTH-126-VERIFY-TOKEN-SUBJECT-CODE: drift detector ────────────────────
