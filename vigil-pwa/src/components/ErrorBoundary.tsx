@@ -1,4 +1,5 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react'
+import * as Sentry from "@sentry/react";
 import { captureException } from '../analytics/posthog'
 
 interface Props {
@@ -17,7 +18,8 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, _info: ErrorInfo): void {
-    captureException(error, { boundary: 'root' }) // D-19
+    captureException(error, { boundary: 'root' }) // D-19 (PostHog — preserved verbatim)
+    Sentry.captureException(error, { tags: { boundary: 'root' } }) // Phase 126 (AUTH-126-04) — additive Sentry sibling
   }
 
   render() {
