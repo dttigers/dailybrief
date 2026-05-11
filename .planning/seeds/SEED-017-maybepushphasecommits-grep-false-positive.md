@@ -1,10 +1,11 @@
 ---
 id: SEED-017
-status: dormant
+status: ripe
 planted: 2026-05-11
+ripened: 2026-05-11
 planted_during: gsd-update --reapply smoke test of restored Phase 56 deploy_targets feature
-trigger_when: next time `maybePushPhaseCommits` false-positives in the wild (push log shows a deploy target touched that wasn't actually touched by the named phase); OR any phase that edits `~/.claude/get-shit-done/bin/lib/phase.cjs`; OR a future GSD update reapply cycle touches the function again
-scope: Small
+trigger_when: NEXT deliberate edit to `~/.claude/get-shit-done/bin/lib/phase.cjs` — land the regex fix as a piggy-back so it survives the next gsd-update --reapply via the gsd-local-patches mechanism. Also fires on: a false-positive observed in the wild (push log says deploy target touched but the named phase didn't actually touch it); OR a future GSD update reapply cycle touches the function again.
+scope: Small (≤ 5-line localized regex change + a smoke test invocation against phase 9999, 120, and one false-positive candidate like 122)
 ---
 
 # SEED-017: maybePushPhaseCommits grep regex false-positives on body matches
