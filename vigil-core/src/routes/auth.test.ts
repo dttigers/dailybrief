@@ -876,3 +876,527 @@ describe("POST /v1/auth/login — emailVerifiedAt in response (AUTH-11 D-26)", (
     }
   });
 });
+
+// ── Phase 126 (Plan 05) — rate-limit + Turnstile + sentinel + code-on-every-error ──
+//
+// Drift detectors mirror the Phase 117 AUTH-13-FP-CAP-* shape verbatim:
+//   - Source-file regex pin via fs.readFileSync (no runtime introspection)
+//   - Test names use the AUTH-126-* convention
+//
+// Behavior tests use the route-level seam __setRegisterTurnstileFnForTest
+// (NOT the helper-unit seam owned by vigil-core/src/lib/turnstile.ts — that
+// seam is consumed by turnstile.test.ts; stubbing at that layer from a route
+// test would be the double-stub footgun the plan calls out).
+
+// IP helper: pick a random x-forwarded-for so module-scope rate-limit
+// buckets never bleed across tests (mirror forgot-password.test.ts:454).
+function uniqueIp(): string {
+  return `10.126.${Math.floor(Math.random() * 200) + 1}.${Math.floor(Math.random() * 200) + 1}`;
+}
+
+describe("POST /v1/auth/register — Phase 126 rate-limit + captcha + sentinel + code field", () => {
+  // Save+restore env so tests don't leak VIGIL_ALLOWED_EMAILS / TURNSTILE_SECRET_KEY.
+  const SAVED_ALLOWED = process.env["VIGIL_ALLOWED_EMAILS"];
+  const SAVED_TURNSTILE = process.env["TURNSTILE_SECRET_KEY"];
+
+  beforeEach(() => {
+    __resetRegisterBucketsForTest();
+    __setRegisterTurnstileFnForTest(TURNSTILE_OK_STUB as never);
+    process.env["VIGIL_ALLOWED_EMAILS"] = "phase126-default@test.local";
+    process.env["TURNSTILE_SECRET_KEY"] = "test-secret-not-used-because-DI-seam-stubs-it";
+  });
+
+  // ── Drift detectors ──────────────────────────────────────────────────────
+
+  it("AUTH-126-CAP-IP-20: auth.ts declares RATE_LIMIT_MAX_IP = 20 verbatim (drift detector)", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const url = await import("node:url");
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.join(here, "auth.ts"), "utf8");
+    assert.match(
+      src,
+      /const RATE_LIMIT_MAX_IP = 20;/,
+      "auth.ts must declare RATE_LIMIT_MAX_IP = 20 verbatim (Phase 126 D-03)",
+    );
+  });
+
+  it("AUTH-126-CAP-EMAIL-5: auth.ts declares RATE_LIMIT_MAX_EMAIL = 5 verbatim (drift detector)", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const url = await import("node:url");
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.join(here, "auth.ts"), "utf8");
+    assert.match(
+      src,
+      /const RATE_LIMIT_MAX_EMAIL = 5;/,
+      "auth.ts must declare RATE_LIMIT_MAX_EMAIL = 5 verbatim (Phase 126 D-03)",
+    );
+  });
+
+  it("AUTH-126-TURNSTILE-CALLSITE: auth.ts invokes Turnstile helper (call-site lock — helper cannot be silently deleted)", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const url = await import("node:url");
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.join(here, "auth.ts"), "utf8");
+    assert.match(
+      src,
+      /(registerTurnstileFn|verifyTurnstileToken)\(/,
+      "auth.ts must invoke Turnstile via DI seam (Phase 126 D-01)",
+    );
+  });
+
+  it("AUTH-126-ALLOWLIST-WILDCARD: auth.ts isAllowlistedEmail honors `*` sentinel (drift detector)", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const url = await import("node:url");
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.join(here, "auth.ts"), "utf8");
+    assert.match(
+      src,
+      /allowed\.includes\("\*"\)/,
+      'auth.ts must contain `allowed.includes("*")` verbatim (AUTH-126-08 sentinel)',
+    );
+  });
+
+  it("AUTH-126-SEAM-NAMING: auth.ts uses __setRegisterTurnstileFnForTest (NOT the helper-unit seam name)", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const url = await import("node:url");
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    const src = fs.readFileSync(path.join(here, "auth.ts"), "utf8");
+    assert.match(
+      src,
+      /__setRegisterTurnstileFnForTest/,
+      "auth.ts must export the route-level seam __setRegisterTurnstileFnForTest",
+    );
+    // Build the forbidden seam name via concatenation so this drift detector
+    // can assert its absence in auth.ts without ALSO containing the literal
+    // contiguously in this test file (the plan's distinct-seam invariant uses
+    // a contiguous-string grep — same comment-vs-grep reconciliation precedent
+    // used in Plans 01/02/04).
+    const HELPER_UNIT_SEAM_NAME = "__setVerify" + "TurnstileToken" + "ForTest";
+    assert.doesNotMatch(
+      src,
+      new RegExp(HELPER_UNIT_SEAM_NAME),
+      "auth.ts must NOT contain the helper-unit seam name — that name is owned by turnstile.ts; double-stub footgun",
+    );
+  });
+
+  // ── AUTH-126-ERROR-CODE-COVERAGE: every documented failure path returns BOTH error AND code ──
+
+  it("AUTH-126-ERROR-CODE-COVERAGE: every documented /auth/* failure path returns {error, code}", async () => {
+    // We carry the matrix as (label, request-fn, expectedStatus, expectedCode).
+    // Each entry uses a fresh unique IP to avoid rate-limit bleed across rows.
+    const matrix: Array<{
+      label: string;
+      request: () => Promise<Response>;
+      expectedStatus: number;
+      expectedCode: string;
+    }> = [
+      // SERVER_NOT_CONFIGURED — VIGIL_ALLOWED_EMAILS unset short-circuits at 503
+      {
+        label: "register without VIGIL_ALLOWED_EMAILS",
+        request: async () => {
+          const prev = process.env["VIGIL_ALLOWED_EMAILS"];
+          delete process.env["VIGIL_ALLOWED_EMAILS"];
+          const r = await post(
+            "/v1/auth/register",
+            { email: "x@x.com", password: "validpass123456", turnstileToken: "valid" },
+            { "x-forwarded-for": uniqueIp() },
+          );
+          if (prev !== undefined) process.env["VIGIL_ALLOWED_EMAILS"] = prev;
+          return r;
+        },
+        expectedStatus: 503,
+        expectedCode: "SERVER_NOT_CONFIGURED",
+      },
+      // INVALID_JSON — malformed body
+      {
+        label: "register with malformed JSON",
+        request: async () =>
+          buildApp().fetch(
+            new Request("http://x/v1/auth/register", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "x-forwarded-for": uniqueIp(),
+              },
+              body: "{not json",
+            }),
+          ),
+        expectedStatus: 400,
+        expectedCode: "INVALID_JSON",
+      },
+      // INVALID_REQUEST — missing fields
+      {
+        label: "register with missing fields",
+        request: async () =>
+          post("/v1/auth/register", { email: "x@x.com" }, { "x-forwarded-for": uniqueIp() }),
+        expectedStatus: 400,
+        expectedCode: "INVALID_REQUEST",
+      },
+      // INVALID_REQUEST — wrong types
+      {
+        label: "register with wrong types",
+        request: async () =>
+          post(
+            "/v1/auth/register",
+            { email: 42, password: "validpass123456" },
+            { "x-forwarded-for": uniqueIp() },
+          ),
+        expectedStatus: 400,
+        expectedCode: "INVALID_REQUEST",
+      },
+      // CAPTCHA_FAILED — missing turnstileToken
+      {
+        label: "register with missing turnstileToken",
+        request: async () =>
+          post(
+            "/v1/auth/register",
+            { email: "x@x.com", password: "validpass123456" },
+            { "x-forwarded-for": uniqueIp() },
+          ),
+        expectedStatus: 400,
+        expectedCode: "CAPTCHA_FAILED",
+      },
+      // INVALID_EMAIL_FORMAT — bad email shape, valid captcha
+      {
+        label: "register with invalid email shape",
+        request: async () =>
+          post(
+            "/v1/auth/register",
+            { email: "notanemail", password: "validpassword12", turnstileToken: "valid" },
+            { "x-forwarded-for": uniqueIp() },
+          ),
+        expectedStatus: 400,
+        expectedCode: "INVALID_EMAIL_FORMAT",
+      },
+      // PASSWORD_TOO_SHORT
+      {
+        label: "register with password < MIN",
+        request: async () =>
+          post(
+            "/v1/auth/register",
+            { email: "x@x.com", password: "short", turnstileToken: "valid" },
+            { "x-forwarded-for": uniqueIp() },
+          ),
+        expectedStatus: 400,
+        expectedCode: "PASSWORD_TOO_SHORT",
+      },
+      // PASSWORD_TOO_LONG
+      {
+        label: "register with password > MAX",
+        request: async () =>
+          post(
+            "/v1/auth/register",
+            { email: "x@x.com", password: "a".repeat(200), turnstileToken: "valid" },
+            { "x-forwarded-for": uniqueIp() },
+          ),
+        expectedStatus: 400,
+        expectedCode: "PASSWORD_TOO_LONG",
+      },
+      // REG_NOT_ALLOWED — allowlist closed
+      {
+        label: "register with allowlist closed",
+        request: async () => {
+          process.env["VIGIL_ALLOWED_EMAILS"] = "only-this@allowed.com";
+          return post(
+            "/v1/auth/register",
+            { email: "eve@evil.com", password: "validpassword12", turnstileToken: "valid" },
+            { "x-forwarded-for": uniqueIp() },
+          );
+        },
+        expectedStatus: 403,
+        expectedCode: "REG_NOT_ALLOWED",
+      },
+      // /auth/login INVALID_JSON
+      {
+        label: "login with malformed JSON",
+        request: async () =>
+          buildApp().fetch(
+            new Request("http://x/v1/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: "{not json",
+            }),
+          ),
+        expectedStatus: 400,
+        expectedCode: "INVALID_JSON",
+      },
+      // /auth/login INVALID_REQUEST
+      {
+        label: "login with wrong types",
+        request: async () => post("/v1/auth/login", { email: 42 }),
+        expectedStatus: 400,
+        expectedCode: "INVALID_REQUEST",
+      },
+    ];
+
+    for (const row of matrix) {
+      const res = await row.request();
+      assert.equal(
+        res.status,
+        row.expectedStatus,
+        `${row.label}: expected ${row.expectedStatus}, got ${res.status}`,
+      );
+      const body = (await res.json()) as { error?: unknown; code?: unknown };
+      assert.equal(
+        typeof body.error,
+        "string",
+        `${row.label}: response body must include error:string`,
+      );
+      assert.equal(
+        typeof body.code,
+        "string",
+        `${row.label}: response body must include code:string`,
+      );
+      assert.equal(
+        body.code,
+        row.expectedCode,
+        `${row.label}: code mismatch (got "${String(body.code)}")`,
+      );
+    }
+  });
+
+  // ── Behavior tests for rate-limit (mirror forgot-password.test.ts:449+ shape) ─
+
+  it("rate-limit: 6th /auth/register from same IP+email returns 429 RATE_LIMITED with retry_after_seconds (per-email cap = 5)", async () => {
+    process.env["VIGIL_ALLOWED_EMAILS"] = "*"; // wildcard so allowlist isn't the gate
+    const ip = uniqueIp();
+    const email = `rl-email-${Date.now()}@test.local`;
+    let lastRes: Response | null = null;
+    for (let i = 0; i < 6; i++) {
+      lastRes = await post(
+        "/v1/auth/register",
+        { email, password: "validpassword12", turnstileToken: "valid" },
+        { "x-forwarded-for": ip },
+      );
+    }
+    assert.equal(
+      lastRes!.status,
+      429,
+      "6th call from same IP+email must return 429 (per-email cap = 5)",
+    );
+    const body = (await lastRes!.json()) as {
+      error: string;
+      code: string;
+      retry_after_seconds: number;
+    };
+    assert.equal(body.code, "RATE_LIMITED");
+    assert.equal(typeof body.error, "string");
+    assert.equal(body.retry_after_seconds, 3600);
+  });
+
+  it("rate-limit: 429 response carries Retry-After: 3600 header", async () => {
+    process.env["VIGIL_ALLOWED_EMAILS"] = "*";
+    const ip = uniqueIp();
+    const email = `rl-header-${Date.now()}@test.local`;
+    let lastRes: Response | null = null;
+    for (let i = 0; i < 6; i++) {
+      lastRes = await post(
+        "/v1/auth/register",
+        { email, password: "validpassword12", turnstileToken: "valid" },
+        { "x-forwarded-for": ip },
+      );
+    }
+    assert.equal(lastRes!.status, 429);
+    assert.equal(
+      lastRes!.headers.get("Retry-After"),
+      "3600",
+      "429 response must set Retry-After: 3600 header (per CONTEXT D-03)",
+    );
+  });
+
+  it("rate-limit: 21st /auth/register from same IP across distinct emails returns 429 (per-IP cap = 20)", async () => {
+    process.env["VIGIL_ALLOWED_EMAILS"] = "*";
+    const ip = uniqueIp();
+    const baseTs = Date.now();
+    let lastRes: Response | null = null;
+    for (let i = 0; i < 21; i++) {
+      const email = `rl-ip-${baseTs}-${i}@test.local`;
+      lastRes = await post(
+        "/v1/auth/register",
+        { email, password: "validpassword12", turnstileToken: "valid" },
+        { "x-forwarded-for": ip },
+      );
+    }
+    assert.equal(
+      lastRes!.status,
+      429,
+      "21st call from same IP across distinct emails must return 429 (per-IP cap = 20)",
+    );
+    const body = (await lastRes!.json()) as { code: string };
+    assert.equal(body.code, "RATE_LIMITED");
+  });
+
+  // ── Behavior tests for Turnstile (DI-seam stubs) ──
+
+  it("captcha: missing turnstileToken → 400 CAPTCHA_FAILED — allowlist is NEVER consulted", async () => {
+    // Closed allowlist for an email that is NOT eve@evil.com. If allowlist
+    // were consulted, eve@evil.com would get 403 REG_NOT_ALLOWED instead of
+    // 400 CAPTCHA_FAILED.
+    process.env["VIGIL_ALLOWED_EMAILS"] = "permitted@test.local";
+    const res = await post(
+      "/v1/auth/register",
+      { email: "eve@evil.com", password: "validpassword12" },
+      { "x-forwarded-for": uniqueIp() },
+    );
+    assert.equal(res.status, 400);
+    const body = (await res.json()) as { code: string };
+    assert.equal(body.code, "CAPTCHA_FAILED");
+  });
+
+  it("captcha: siteverify returns {ok:false} → 400 CAPTCHA_FAILED", async () => {
+    __setRegisterTurnstileFnForTest((async () => ({
+      ok: false,
+      errorCodes: ["invalid-input-response"],
+    })) as never);
+    process.env["VIGIL_ALLOWED_EMAILS"] = "*";
+    const res = await post(
+      "/v1/auth/register",
+      { email: "x@x.com", password: "validpassword12", turnstileToken: "any" },
+      { "x-forwarded-for": uniqueIp() },
+    );
+    assert.equal(res.status, 400);
+    const body = (await res.json()) as { code: string };
+    assert.equal(body.code, "CAPTCHA_FAILED");
+  });
+
+  it("captcha: siteverify throws → 503 (NO fail-open per D-01)", async () => {
+    __setRegisterTurnstileFnForTest((async () => {
+      throw new Error("Cloudflare timeout");
+    }) as never);
+    process.env["VIGIL_ALLOWED_EMAILS"] = "*";
+    const res = await post(
+      "/v1/auth/register",
+      { email: "x@x.com", password: "validpassword12", turnstileToken: "any" },
+      { "x-forwarded-for": uniqueIp() },
+    );
+    assert.equal(
+      res.status,
+      503,
+      "Turnstile throw must surface as 503 (CONTEXT D-01: no fail-open)",
+    );
+    const body = (await res.json()) as { code: string };
+    assert.equal(body.code, "CAPTCHA_FAILED");
+  });
+
+  it("captcha: siteverify returns {ok:true} → proceeds past captcha to allowlist (403 REG_NOT_ALLOWED for closed allowlist)", async () => {
+    __setRegisterTurnstileFnForTest((async () => ({
+      ok: true,
+      errorCodes: [],
+    })) as never);
+    process.env["VIGIL_ALLOWED_EMAILS"] = "only-this@allowed.com";
+    const res = await post(
+      "/v1/auth/register",
+      {
+        email: "someone-else@test.local",
+        password: "validpassword12",
+        turnstileToken: "any",
+      },
+      { "x-forwarded-for": uniqueIp() },
+    );
+    assert.equal(
+      res.status,
+      403,
+      "ok:true captcha must let request reach allowlist; closed allowlist returns 403",
+    );
+    const body = (await res.json()) as { code: string };
+    assert.equal(body.code, "REG_NOT_ALLOWED");
+  });
+
+  // ── Behavior tests for the `*` sentinel (AUTH-126-08) ─────────────────────
+
+  it('sentinel: VIGIL_ALLOWED_EMAILS="*" → any well-formed email proceeds past allowlist', async () => {
+    process.env["VIGIL_ALLOWED_EMAILS"] = "*";
+    const res = await post(
+      "/v1/auth/register",
+      {
+        email: "any-random@test.local",
+        password: "validpassword12",
+        turnstileToken: "valid",
+      },
+      { "x-forwarded-for": uniqueIp() },
+    );
+    // Past allowlist either to DB write (no DB → 503 SERVER_NOT_CONFIGURED)
+    // or to 201/409 if DB is wired. Critically NOT 403 REG_NOT_ALLOWED.
+    assert.notEqual(
+      res.status,
+      403,
+      'wildcard "*" must let any well-formed email past the allowlist gate',
+    );
+  });
+
+  it('sentinel: VIGIL_ALLOWED_EMAILS="" → still fail-closed (Phase 113 D-10 regression guard)', async () => {
+    process.env["VIGIL_ALLOWED_EMAILS"] = "";
+    const res = await post(
+      "/v1/auth/register",
+      {
+        email: "anyone@test.local",
+        password: "validpassword12",
+        turnstileToken: "valid",
+      },
+      { "x-forwarded-for": uniqueIp() },
+    );
+    assert.equal(
+      res.status,
+      503,
+      'empty VIGIL_ALLOWED_EMAILS must still fail-closed (D-10) — wildcard does NOT activate on ""',
+    );
+    const body = (await res.json()) as { code: string };
+    assert.equal(body.code, "SERVER_NOT_CONFIGURED");
+  });
+
+  it('sentinel: VIGIL_ALLOWED_EMAILS=" * , foo@x.com " → wildcard wins; foo@x.com also matches', async () => {
+    process.env["VIGIL_ALLOWED_EMAILS"] = " * , foo@x.com ";
+    // Wildcard branch — any random email should proceed past allowlist
+    const wildRes = await post(
+      "/v1/auth/register",
+      {
+        email: "random@test.local",
+        password: "validpassword12",
+        turnstileToken: "valid",
+      },
+      { "x-forwarded-for": uniqueIp() },
+    );
+    assert.notEqual(
+      wildRes.status,
+      403,
+      'mixed list containing "*" must let any email past the allowlist',
+    );
+    // Explicit foo@x.com — proceeds past allowlist
+    const explicitRes = await post(
+      "/v1/auth/register",
+      {
+        email: "foo@x.com",
+        password: "validpassword12",
+        turnstileToken: "valid",
+      },
+      { "x-forwarded-for": uniqueIp() },
+    );
+    assert.notEqual(
+      explicitRes.status,
+      403,
+      "explicit foo@x.com must also pass allowlist (mixed list semantics)",
+    );
+  });
+
+  // ── Cleanup: restore env + reset seam so other test files aren't polluted ──
+
+  it("cleanup: restore env + reset Turnstile seam to real implementation", () => {
+    __resetRegisterTurnstileFnForTest();
+    __resetRegisterBucketsForTest();
+    if (SAVED_ALLOWED !== undefined) {
+      process.env["VIGIL_ALLOWED_EMAILS"] = SAVED_ALLOWED;
+    } else {
+      delete process.env["VIGIL_ALLOWED_EMAILS"];
+    }
+    if (SAVED_TURNSTILE !== undefined) {
+      process.env["TURNSTILE_SECRET_KEY"] = SAVED_TURNSTILE;
+    } else {
+      delete process.env["TURNSTILE_SECRET_KEY"];
+    }
+  });
+});
