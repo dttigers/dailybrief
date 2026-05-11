@@ -11,6 +11,8 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@marsidev/react-turnstile": "^1.5.2",
+    "@sentry/react": "^10.52.0",
     "posthog-js": "^1.369.3",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
