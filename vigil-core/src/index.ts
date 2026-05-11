@@ -43,7 +43,9 @@ import { resendVerification } from "./routes/resend-verification.js"; // Phase 1
 import { agentEvents } from "./routes/agent-events.js"; // Phase 121 (AGENT-API-01, AGENT-API-02) — bearerAuth required; mount AFTER dispatcher
 import { agentStream } from "./routes/agent-stream.js"; // Phase 124 (AGENT-API-03) — bearerAuth required; mount AFTER dispatcher
 import { quietMode } from "./routes/quiet-mode.js"; // Phase 125 (AGENT-HUD-03 / D-01) — auth required; mount AFTER dispatcher
+import { requireVerifiedEmailWithGrace } from "./middleware/require-verified-email.js"; // Phase 126 (AUTH-126-03 / D-02) — 24h grace email-verify gate; mount comments live at the mount site below
 import { captureException, shutdownPosthog } from "./analytics/posthog.js";
+import { initSentry, captureToSentry } from "./lib/sentry.js"; // Phase 126 (AUTH-126-04 / Plan 06) — init position constraint documented at the call site below
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
 import { testConnection, closeConnection, db as mainDb } from "./db/connection.js";
@@ -80,6 +82,11 @@ if (process.env.NODE_ENV === "production" && !process.env.CORS_ORIGINS) {
   console.error("FATAL: CORS_ORIGINS must be set in production — refusing to boot with wildcard CORS");
   process.exit(1);
 }
+
+// Phase 126 (AUTH-126-04 / D-04): Sentry init MUST precede Hono construction
+// (the call on the next line) so import-time + middleware-construction errors
+// are captured (R1). Mount-order drift detector pins this position.
+initSentry();
 
 export const app = new Hono();
 
@@ -167,6 +174,12 @@ app.use("/v1/*", async (c, next) => {
   return bearerAuth(c, next);
 });
 
+// Phase 126 (AUTH-126-03 / D-02): email-verify gate with 24h grace.
+// Mounts AFTER bearerAuth dispatcher (c.get("userId") populated) and BEFORE
+// first protected /v1/* route so every protected route inherits the gate.
+// Mirror Phase 124/125 mount-order comment block.
+app.use("/v1/*", requireVerifiedEmailWithGrace);
+
 // ── Phase 105 Plan 02 — ANLY-03 per-route API metrics ─────────────────────
 // Registered AFTER the bearerAuth dispatcher (line ~105) and BEFORE every
 // protected route (googleAuth + the block below) so EVERY authenticated
@@ -253,6 +266,14 @@ app.onError((err, c) => {
   console.error("[vigil-core] unhandled error:", err);
   const userId = (c.get("userId") as number | undefined) ?? null;
   captureException(userId, err, {
+    route: c.req.path,
+    method: c.req.method,
+  });
+  // Phase 126 (AUTH-126-04 / Plan 06): additive Sentry sink — fires alongside
+  // the PostHog captureException above. {route, method} context object shape
+  // mirrors the PostHog call exactly (Phase 103 BLOCKED_PROPERTY_NAMES denylist
+  // compliance — R12). Failure of one sink does NOT block the other.
+  captureToSentry(userId, err, {
     route: c.req.path,
     method: c.req.method,
   });
