@@ -201,6 +201,63 @@
 
 ---
 
+## Milestone: v3.8 — Claude Code Companion
+
+**Shipped:** 2026-05-11
+**Phases:** 7 (120-126; Phase 126 was a mid-milestone insert added 2026-05-11) | **Plans:** 54 | **Timeline:** 2026-05-07 → 2026-05-11 (5 days)
+**Requirements:** 28/28 satisfied (20 original + 8 AUTH-126 added mid-milestone)
+**Git:** 200 commits, 245 files changed (+64,890 / −284 LOC)
+
+### What Was Built
+
+- **`vigil-watch` Swift daemon** (Phases 122-123) — observes `~/.claude/projects/` via FSEventStream, parses 5 Vigil event types per detection rules locked in Phase 120's empirical schema verification, posts to Vigil Core with retry/backoff + 100-event offline queue; 24h SOAK PASSED at 7220 KB max RSS (24% of 30 MB budget). 6-subcommand CLI (`run`/`tail`/`test`/`install`/`uninstall`/`status`), launchd round-trip with mode 0600 plists + `<true/>` self-closing booleans + xmlEscape on api key (T-123-01/02/03 mitigations).
+- **Per-userId agent-events API** (Phase 121) — `POST /v1/agent-events` (idempotent via composite partial unique on `(user_id, client_event_id)`) + `GET /v1/agent-sessions` (sliding 24h, DISTINCT ON CTE) + `GET /v1/agent-stream` SSE fan-out (Phase 124) via `Map<userId, EventEmitter>` bus with `setMaxListeners(50)` reconnect-storm headroom + auto-cleanup. Three W-01/W-02-style isolation lock blocks in `cross-user-isolation.test.ts`.
+- **G2 Companion HUD** (Phase 124, plugin v0.3.0 in Phase 125) — 3-line glanceable layout (label / state / last event), context-sensitive DOUBLE_CLICK (banner-ack → cycle-session → home; narrowed from three-tap spec after empirical hardware proof, single-tap + long-press deferred to SEED-011). Hand-rolled fetch + ReadableStream + TextDecoder SSE shim (~150 LOC, full control over backoff + Last-Event-ID + bearer hygiene).
+- **Quiet mode + plugin v0.3.0 ship** (Phase 125) — `users.quiet_mode` column gates SSE fan-out; PWA toggle UI; G2-POLISH-05/06/07/08 polish riders folded in; `vigil.ehpk` v0.3.0 packed at 30564 bytes + resubmitted to Even Hub; 60s portfolio demo recorded.
+- **Wide-release auth hardening** (Phase 126, mid-milestone insert) — Cloudflare Turnstile + per-IP rate-limit (5/hr) on `POST /auth/register` + email-verify gate on `/v1/*` (with 24h grace) + Sentry sink (server + PWA) + locked-enum `ERROR_CODE_MAP` killing the "Invalid email or password" collapse class + Termly privacy/terms pages + Anthropic $500/mo spend cap + `VIGIL_ALLOWED_EMAILS="*"` sentinel kill-switch. SECURITY 46/46 threats closed; UAT 8 passed / 0 issues.
+
+### What Worked
+
+- **Day-1 empirical verification gate before production code** — Phase 120 mined 184 corpus JSONL files + ran a scripted Claude Code VS Code session BEFORE any vigil-watch parsing code. Verdict `spec-correct-and-proceed` came back binary; the planned fallback paths (notification observation / VS Code extension / process inspection) stayed untouched. Removed a load-bearing assumption risk on day 1 for one day of work.
+- **Per-phase ROADMAP-locked detection rules** — Phase 120 D-01..D-10 + Phase 122 detection rules were pinned in CONTEXT before any test was authored. Phase 122 unit tests (NSRegularExpression milestone matcher, per-session timer state machine, EmitterActor backoff schedule, parser drift detector) were drift detectors against the ROADMAP-locked rules — not duplications of the implementation.
+- **Mid-milestone insert pattern (Phase 126)** — A 2026-05-11 family-signup error triage exposed hard blockers to wide-release. Rather than punt to v3.9 and ship v3.8 in "family-allowlist" mode, the insert closed the gaps in a single phase (11 plans, 5 waves) and shipped same-day. The roadmap absorbed the insert without re-shaping prior phases.
+- **Hardware-truth-first capability narrowing** — Phase 124 D-08 narrowed the three-tap spec (single/double/long) to "context-sensitive DOUBLE_CLICK overload" after live G2 hardware testing showed CLICK_EVENT + LONG_PRESS_EVENT aren't reliably plumbed. SEED-011 preserves the deferred variants. Pattern: don't ship a promise the hardware can't honor.
+- **Risk-accept + plist-pin pattern for operator gates** — Phase 123 SC #3 (post-reboot resume) needed a Mac reboot. Operator declined reboot for verification only. Closure: risk-accepted with RunAtLoad+KeepAlive `<true/>` grep-pinned in installed plist + PlistTemplateTests drift-detecting both keys against the source template. Lets a milestone close cleanly without forcing wallclock physical actions.
+
+### What Was Inefficient
+
+- **R-123-01 `RunLoop.main.run()` daemon-exit regression** — Phase 123 Plan 03 lifted `RunLoop.main.run()` verbatim from Phase 122's `main.swift` into `func run() async throws`. `AsyncParsableCommand` executes on the cooperative pool, not the main thread, so `RunLoop.main.run()` returns immediately — daemon exited clean (exit 0), launchd KeepAlive cycled spawn-scheduled indefinitely, sampler CSV stopped after ~35 min. RunSubcommandTests instantiated `Run` and called `.parse([...])` but never `.run()` (which would block forever), so the regression was invisible to in-process tests. Lost ~6h of soak window. Coverage gap: spawn `.build/release/vigil-watch run` as `Process()`, sleep 5s, assert `Process.isRunning == true`. Pattern queued for follow-up phase.
+- **vigil-watch silent-but-running bug** — Daemon passed liveness checks (RSS, uptime, PID stability) for 28h+ while emitting zero events. FSEvent pipeline silently died at bootstrap exit due to (a) Swift release-mode lifetime collapse of FSEventStream local + (b) UnsafeBitCast UB in FSEventBridge. Pattern: liveness is not functionality. Phase 123 Plan 05's operator runbook was extended with step 4.5 + 6.5 (synthetic JSONL append + 10s event-emission probe) BEFORE and AFTER the 24h window to catch this class of regression in future soaks.
+- **STATE.md `stopped_at` drift** — `stopped_at` field said "Mid-execute 126-06 — no commit yet, no 126-06-SUMMARY.md" long after Plan 126-06 shipped and 126-SUMMARY existed. STATE.md frontmatter doesn't auto-update on commit; needs explicit touch at plan-close. Surfaced during /gsd-progress integrity audit; corrected at milestone close.
+- **Audit-uat staleness** — The 24h soak passed on 2026-05-10, but `123-VERIFICATION.md` carried `status: human_needed` and the operator todo stayed in `pending/` for ~24h until back-fill on 2026-05-11. `audit-uat` and `gsd-progress` correctly surfaced this as verification debt, but the gap was operator-driven (no auto-detection of "soak window has data, run gate, update verification"). Could be automated with a routine that polls `~/Library/Logs/Vigil/soak-$(date).csv` size + age and fires `soak-check.sh` once a full 24h CSV exists.
+
+### Patterns Established
+
+- **Day-1 verification gate** — when downstream phases assume an external system's contract, verify-first as Phase 0. Empirical proof drives a binary `spec-correct-and-proceed` vs `select-fallback-path` decision before any dependent code lands.
+- **Operator-driven wallclock checkpoints exempt from `skip_checkpoints: true`** — `mode: yolo` auto-skips confirmation gates only; checkpoints whose payload requires real-world wallclock time (24h soak, Mac reboot, dashboard action) stay as pending operator todos. Phase 123 soak + Phase 126 spend cap both used this pattern.
+- **Liveness ≠ functionality probe** — soak/longevity checks (RSS, uptime, PID stability) must be paired with end-to-end functional probes (synthetic input → expected output within Ns) at soak start AND soak end. RSS-only-passes is a load-bearing gap pattern.
+- **`withCheckedContinuation` for top-level Swift daemon lifetime in AsyncParsableCommand** — `RunLoop.main.run()` is a no-op off the main thread. Use `await withCheckedContinuation { _ in }` to suspend the Task forever; signal handlers + FSEvents run on independent queues.
+- **Hand-roll over polyfill when runtime is constrained** — G2 plugin runtime lacks `EventSource`; hand-rolling fetch + ReadableStream + TextDecoder (~150 LOC, 13 unit tests) was better than vendoring a ~10KB polyfill for full control over backoff + bearer hygiene + Last-Event-ID + keepalive handling.
+- **Hardware-truth-first capability narrowing** — when live hardware testing diverges from the SDK's documented capability surface, narrow the milestone promise to what the hardware actually honors and create a SEED-* for the deferred variants.
+- **Mid-milestone insert for shipping-blocker phases** — when a real-world signal proves a hard blocker for "the next thing the milestone unlocks," fold it in instead of deferring.
+- **Locked-enum API error UX mapping** — server attaches `code: "INVALID_TOKEN_SUBJECT"` etc on every 4xx/5xx; PWA renders specific copy via a frozen lookup table. Adding a new error path requires only a server `code` + PWA table entry. Kills the "Invalid email or password" collapse class structurally.
+- **Risk-accepted closure for physical-host-bound SC items** — when an operator declines a physical action (e.g., Mac reboot) and the underlying behavior is OS-guaranteed + grep-pinned in installed config + drift-detected in tests, mark `deferred / risk-accepted` rather than blocking milestone close.
+
+### Key Lessons
+
+- **Drift detectors are worth their weight 10x over** — Phase 122-126 added drift detectors at every layer (Package.swift pin, plist template, milestone matcher source-line regex, rate-limit constant, locked enum keys). Saved a day-of debugging during Phase 123's R-123-01 regression because structural drift was still caught even when runtime regressions were invisible.
+- **The audit-uat output is the milestone-close compass** — `gsd-sdk query audit-uat` returning `total_items: 0` is the actual gate for "the milestone is verifiably done." Use it before `/gsd-complete-milestone`, not after. Today's session caught the stale Phase 123 verification debt before close — turned a closure-time scramble into a controlled back-fill.
+- **Operator todos with verbatim runbooks are commit-grade artifacts** — Phase 123 Plan 05's 114-line operator todo file (8-step procedure + closeout flow + failure-path decision tree + back-fill template) was the canonical record. When the operator ran the gate 2 days later, every step was reproducible from the file alone.
+- **`/gsd-progress` integrity audit catches what surface progress hides** — the standard report said "Phase 126 SHIPPED, verification debt 1 file." The deeper read on the verification debt revealed the back-fill was 95% there — soak CSV + script were both already on disk. Surface progress reports are not the same as truth-state audits.
+
+### Cost Observations
+
+- **Model mix:** ~70% sonnet (autonomous-plan execution), ~25% opus (planning + verification + close-out), ~5% haiku (CLI scripts)
+- **Sessions:** ~25 across 5 days; biggest single session was Phase 122 (10 plans, ~2h)
+- **Notable:** Wave-based parallel execution in Phase 122 (3 waves) and Phase 124 (4 waves) compressed wall-clock time but didn't reduce token spend — each plan still ran serially under its agent. Real efficiency came from yolo-mode autonomous execution where viable; checkpoints only at human-decision boundaries.
+
+---
+
 ## Cross-Milestone Trends
 
 ### Process Evolution

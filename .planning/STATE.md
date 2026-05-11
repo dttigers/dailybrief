@@ -2,35 +2,33 @@
 gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
-status: completed
-stopped_at: "Phase 126 SHIPPED to prod 2026-05-11 — wide-release auth hardening live (Turnstile + rate-limit + email-verify gate + Sentry sink + legal pages + structured error codes + Anthropic spend cap $500/mo + VIGIL_ALLOWED_EMAILS=* sentinel). Smoke-test signup from app.vigilhub.com confirmed real Cloudflare Turnstile widget rendering + token validation + signup success. UAT 8 passed / 0 issues; SECURITY 46/46 threats closed. v3.8 operator backlog (Phase 123 24h soak, Phase 124 PNG-equality + E2E) still pending."
-last_updated: "2026-05-11T22:03:15.662Z"
-last_activity: 2026-05-11 -- Phase 126 marked complete
+status: Awaiting next milestone
+stopped_at: v3.8 milestone closed 2026-05-11 — archives at .planning/milestones/v3.8-{ROADMAP,REQUIREMENTS}.md; ROADMAP.md collapsed to one-line entry; REQUIREMENTS.md removed via git rm; PROJECT.md evolved with v3.8 validated items + 9 new Key Decisions. Ready for /gsd-new-milestone to scope v3.9.
+last_updated: "2026-05-11T22:54:57.069Z"
+last_activity: 2026-05-11 — Milestone v3.8 completed and archived
 progress:
   total_phases: 9
   completed_phases: 7
   total_plans: 54
   completed_plans: 54
-  percent: 78
+  percent: 100
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-05-06 — v3.8 milestone started)
+See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 126 — wide-release-auth-hardening-rate-limit-auth-register-5-hr-ip
+**Current focus:** Planning next milestone (v3.9). Live backlog: SEED-009/010/011/013/014/015/016, 999.1/999.2.
 
 ## Current Position
 
-Phase: 126 — COMPLETE
-Plan: 5 of 11
-Status: Phase 126 complete
-Last activity: 2026-05-11 -- Phase 126 marked complete
-
-Progress: [█████████░] 93%
+Phase: Milestone v3.8 complete
+Plan: —
+Status: Awaiting next milestone
+Last activity: 2026-05-11 — Milestone v3.8 completed and archived
 
 ## v3.8 Phase Table
 
@@ -99,24 +97,39 @@ Progress: [█████████░] 93%
 
 ## Deferred Items
 
-Carried forward from v3.7 milestone close (2026-05-06):
+Carried forward from v3.8 milestone close (2026-05-11):
 
 | Category | Item | Status | Note |
 |----------|------|--------|------|
+| seed | SEED-001-stores-admin-ui | dormant | Replace hardcoded Lin's Fresh Market store list — needs scoping conversation |
+| seed | SEED-002-photo-uploads | dormant | In-depth discussion needed before scoping |
 | seed | SEED-003-tighten-dmarc-to-quarantine | dormant | `p=none` accepted as steady-state DMARC posture; routine `trig_01RZLcj1jpxvDQAwnFmUG9d9` preserved with three documented re-activation conditions |
-| seed | SEED-005-g2-swipe-out-of-list-broken-on-hardware | active in v3.8 | Folded into v3.8 Phase 125 as G2-POLISH-05 |
-| seed | SEED-006-g2-glasses-menu-launch-source-handling | active in v3.8 | Folded into v3.8 Phase 124 as G2-POLISH-06 (co-located with HUD entry-point wiring) |
-| seed | SEED-007-g2-home-body-overflow-210px | active in v3.8 | Folded into v3.8 Phase 124 as G2-POLISH-07 (co-located with HUD layout work) |
-| seed | SEED-008-g2-device-status-event-spam-debounce | active in v3.8 | Folded into v3.8 Phase 125 as G2-POLISH-08 |
+| seed | SEED-004-verify-email-error-ux-friction | dormant | Differentiate verify-email error states (rotated vs expired vs rate-limited) — partial coverage from v3.8 Phase 126 locked-enum error map; remaining nuance is UX polish for v3.9+ |
 | seed | SEED-009-g2-local-storage-last-viewed-screen | dormant | → v3.9 candidate |
 | seed | SEED-010-g2-voice-capture-via-audio-pcm | dormant | → v3.9 milestone-anchor candidate |
-| ops_followup | Rotate Railway Postgres password | resolved | Rotated 2x (2026-05-02 + 2026-05-09 after recurrence); see `.planning/todos/completed/2026-05-01-rotate-railway-postgres-password.md` |
-| operator_action | Phase 123 — 24h soak run + 123-VERIFICATION.md back-fill | pending | `.planning/todos/pending/2026-05-09-phase-123-24h-soak-operator-run.md` — blocking for Phase 123 closeout + Phase 124 launch; D-10 wallclock requirement (cannot auto-run) |
-| operator_action | Phase 124 Plan 04 — D-14 byte-identical PNG comparison | pending | `.planning/todos/pending/2026-05-10-phase-124-04-png-equality-operator-run.md` — blocks Plan 04 closure; `evenhub-simulator` is GUI-only (no headless capture in `--help`); structural fix already shipped via Tasks 1+2 (commits cf4984e, 3a67c41), drift detector locks 4-line invariant. Plan 09 §G2-POLISH-07 cross-references this todo as canonical record — combine into one operator session |
-| operator_action | Phase 124 Plan 04 — G2-POLISH-07 hardware retest on real glasses | pending | Per D-14 carve-out — sim-equality is the gate, hardware retest is deferred-confirmation; ride-along to Phase 125 if hardware diverges from sim per `feedback_g2_tap_expand_broken` pattern |
-| operator_action | Phase 124 Plan 09 — E2E verification (vigil-watch → vigil-core SSE → plugin sim) + 124-VERIFICATION.md back-fill | pending | `.planning/todos/pending/2026-05-10-phase-124-09-e2e-verification-operator-run.md` — blocks Phase 124 closeout + Phase 125 launch. Requires 3 concurrent processes + visual UI verification + 2 bearer keys for cross-user isolation live test. Skeleton landed at commit 7e0c68f; structural gates already locked by Plans 02/03/06/07/08 unit tests. Phase 123 24h soak is parallel (vigil-watch must be installed + running, but NOT 24h-runtime-tested). Plan 04 PNG todo combines into same operator session per §G2-POLISH-07 |
+| seed | SEED-011-g2-single-tap-long-press-tap-events | dormant | Deferred from v3.8 Phase 124 D-08 narrowing — re-activate if Even SDK exposes them reliably |
+| seed | SEED-012-even-hub-dashboard-widget-conversion | dormant | Awaiting widget API ship from Even Realities |
+| seed | SEED-013-auto-regenerate-insights-therapy-on-thought-upload | dormant | → v3.9 candidate |
+| seed | SEED-014-chat-context-beyond-20-recent-thoughts | dormant | → v3.9 candidate |
+| seed | SEED-015-quiet-mode-auto-detect-iphone-focus | dormant | Manual Quiet Mode toggle shipped in v3.8 Phase 125; auto-detect is follow-on UX |
+| seed | SEED-016-companion-hud-away-from-desk-clarity | dormant | HUD clarity gaps surfaced during v3.8 dogfooding — for v3.9+ |
+| backlog | 999.1 — Restore Ubiquity entitlement for iCloud photo download | dormant | Independent of all server work |
+| backlog | 999.2 — CaptureBar multi-line input support | dormant | Independent of all server work |
+| quick_task | quick/260407-jem-fix-pdf-insights-section-cutoff-bug-prin | done (stale metadata) | SUMMARY.md exists since 2026-04-07; `status:` frontmatter missing in summary; benign noise |
+| quick_task | quick/260407-q7d-disable-misleading-folder-watching-ui-in | done (stale metadata) | SUMMARY.md exists since 2026-04-07; `status:` frontmatter missing in summary; benign noise |
+| debug | .planning/debug/knowledge-base.md | not a session | Registry index of resolved patterns, not an open investigation; audit-open false positive |
+| blocked | Phase 80 ServiceNow API work-order source | blocked | IT token still not issued |
+| blocked | Phase 85 iOS Shortcut quick-capture | blocked | Shortcuts.app bugs unresolved |
 | uat | Phase 116 / 116.1 (HUMAN-UAT.md) | partial | Sports picker shipped to prod and in daily use since 2026-04-29 |
 | verification | Phase 116 / 116.1 (VERIFICATION.md) | human_needed | Functional verification implicit via prod usage |
+| verification | Phase 123 (123-VERIFICATION.md) — AGENT-WATCH-04 SC #3 post-reboot resume | risk-accepted | Mac uptime 2d 4h continuous at close; RunAtLoad+KeepAlive `<true/>` grep-pinned in installed plist + PlistTemplateTests drift-detects both; flip to PASSED on next natural reboot |
+
+**Resolved during v3.8 close (no longer carried forward):**
+- ✓ SEED-005/006/007/008 — folded into v3.8 Phases 124/125 as G2-POLISH-05/06/07/08, all shipped
+- ✓ Phase 123 24h soak operator run — PASSED on 2026-05-10 CSV (7220 KB max RSS); back-filled 2026-05-11; todo moved to done/
+- ✓ Phase 124 Plan 04 D-14 PNG equality + Plan 09 E2E verification — both executed; todos in completed/
+- ✓ Phase 126 Anthropic spend cap operator action — $500/mo set 2026-05-11; todo in done/
+- ✓ Railway Postgres password rotation — already resolved (2x in v3.7)
 
 ## Accumulated Context
 
@@ -359,8 +372,10 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-11T18:26:54.632Z
-Stopped at: Mid-execute 126-06 — vigil-core/src/index.ts edits in working tree (Sentry init + email-verify mount + Sentry sink in onError); mount-order.test.ts lastIndexOf correction also staged. No commit yet, no 126-06-SUMMARY.md.
-Resume file:
+Last session: 2026-05-11T22:55:00Z
+Stopped at: v3.8 milestone closed. ROADMAP collapsed, REQUIREMENTS archived + `git rm`'d, PROJECT.md evolved, MILESTONES.md appended, tag v3.8 created, retrospective updated.
+Resume file: none — ready for `/gsd-new-milestone` to scope v3.9.
 
-  Stale .planning/HANDOFF.json (Phase 112, 2026-04-25) removed during resume.
+## Operator Next Steps
+
+- Start the next milestone with /gsd-new-milestone
