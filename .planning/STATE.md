@@ -3,11 +3,11 @@ gsd_state_version: 1.0
 milestone: v3.8
 milestone_name: Claude Code Companion
 status: verifying
-stopped_at: "Phase 125: 10/11 plans complete — v0.3.6 submitted to Even Hub (in review); Plan 11 (60s demo) deferred"
-last_updated: "2026-05-10T21:47:37.635Z"
+stopped_at: Phase 126 context gathered
+last_updated: "2026-05-11T16:22:52.034Z"
 last_activity: 2026-05-10
 progress:
-  total_phases: 8
+  total_phases: 9
   completed_phases: 6
   total_plans: 43
   completed_plans: 43
@@ -329,9 +329,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-10T21:47:37.587Z
-Stopped at: Phase 125: 10/11 plans complete — v0.3.6 submitted to Even Hub (in review); Plan 11 (60s demo) deferred
+Last session: 2026-05-11T16:22:52.025Z
+Stopped at: Phase 126 context gathered
 Resume file: 
 
   
-  .planning/phases/125-quiet-mode-remaining-polish-riders-plugin-v0-3-0-ship-portfo/
+  .planning/phases/126-wide-release-auth-hardening-rate-limit-auth-register-5-hr-ip/126-CONTEXT.md
