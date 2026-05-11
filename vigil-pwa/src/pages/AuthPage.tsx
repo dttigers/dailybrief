@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router'
 import { storeKey, API_BASE } from '../api/client'
+import { resolveApiError } from '../lib/api-error-codes'
+import TurnstileWidget from '../components/TurnstileWidget'
 
 interface AuthPageProps {
   onAuthSuccess?: (userId: string, email: string) => void
@@ -27,6 +29,7 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [sessionExpired, setSessionExpired] = useState<boolean>(readSessionExpiredFlag)
   const [passwordReset, setPasswordReset] = useState<boolean>(readPasswordResetFlag)
   const navigate = useNavigate()
@@ -50,7 +53,9 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
           body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
         })
         if (!res.ok) {
-          setError(GENERIC_ERROR)
+          const body = await res.json().catch(() => ({})) as { error?: string; code?: string }
+          const ux = resolveApiError(body, GENERIC_ERROR)
+          setError(ux.message)
           return
         }
         // Phase 113 (AUTH-11 D-26) — login response now includes emailVerifiedAt
@@ -70,10 +75,12 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
         const regRes = await fetch(`${API_BASE}/v1/auth/register`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+          body: JSON.stringify({ email: email.trim().toLowerCase(), password, turnstileToken }),
         })
         if (!regRes.ok) {
-          setError(GENERIC_ERROR)
+          const body = await regRes.json().catch(() => ({})) as { error?: string; code?: string }
+          const ux = resolveApiError(body, GENERIC_ERROR)
+          setError(ux.message)
           return
         }
         // Auto-login after successful registration (D-04)
@@ -83,7 +90,9 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
           body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
         })
         if (!loginRes.ok) {
-          setError(GENERIC_ERROR)
+          const body = await loginRes.json().catch(() => ({})) as { error?: string; code?: string }
+          const ux = resolveApiError(body, GENERIC_ERROR)
+          setError(ux.message)
           return
         }
         // Phase 113 (AUTH-11 D-26) — same shape change for the post-register
@@ -159,6 +168,12 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
             className="w-full px-3 py-2 bg-gray-900/80 border border-gray-400/30 rounded text-white placeholder-gray-400 focus:outline-none focus:border-teal-600"
             disabled={loading}
           />
+          {/* AUTH-126-02 / D-01 — Turnstile captcha widget, signup mode only.
+              Login mode does NOT render Turnstile (Open-Q-3 — login captcha deferred).
+              Submit button is disabled until token is non-null. */}
+          {!isLogin && (
+            <TurnstileWidget onToken={setTurnstileToken} />
+          )}
           {/* Phase 112 (AUTH-10 D-14) — Forgot password? link, login mode only.
               Hidden in signup mode (recovery is irrelevant for not-yet-existing
               accounts per UI-SPEC §Surface-1a visibility rules). */}
@@ -177,7 +192,7 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
           )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (!isLogin && !turnstileToken)}
             className="w-full mt-4 py-2 bg-teal-600 hover:bg-teal-800 text-white rounded font-medium disabled:opacity-50"
           >
             {isLogin
@@ -193,6 +208,14 @@ export default function AuthPage({ onAuthSuccess }: AuthPageProps) {
           >
             {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
           </button>
+        </div>
+        {/* AUTH-126-06 — Legal footer links (Plan 08 shipped the pages themselves).
+            Link from 'react-router' v7 (single-package namespace).
+            The existing line-2 import covers Link; no new import needed. */}
+        <div className="mt-4 text-center text-xs text-gray-500">
+          <Link to="/legal/privacy" className="hover:text-gray-300">Privacy</Link>
+          {' · '}
+          <Link to="/legal/terms" className="hover:text-gray-300">Terms</Link>
         </div>
       </div>
     </div>
