@@ -21,7 +21,14 @@ import { Hono } from "hono";
 process.env["JWT_SECRET"] = "test-secret-32-chars-minimum-value-xxxxxx";
 // Test-only — each test sets/unsets VIGIL_ALLOWED_EMAILS as needed.
 
-const { auth, __setSendEmailVerificationEmailForTest, __resetSendEmailVerificationEmailForTest } = await import("./auth.js"); // Plan 03 creates this
+const {
+  auth,
+  __setSendEmailVerificationEmailForTest,
+  __resetSendEmailVerificationEmailForTest,
+  __setRegisterTurnstileFnForTest,
+  __resetRegisterTurnstileFnForTest,
+  __resetRegisterBucketsForTest,
+} = await import("./auth.js"); // Plan 03 creates this
 
 function buildApp() {
   const app = new Hono();
@@ -29,22 +36,41 @@ function buildApp() {
   return app;
 }
 
-async function post(path: string, body: unknown) {
+async function post(path: string, body: unknown, headers: Record<string, string> = {}) {
   return buildApp().fetch(
     new Request(`http://x${path}`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify(body),
     }),
   );
 }
 
+// Phase 126 (D-01 / AUTH-126-02): happy-path Turnstile stub. Tests that exercise
+// /auth/register past the JSON-parse + typeof gates must install this (or a
+// failure stub) so the captcha gate doesn't short-circuit with 400 CAPTCHA_FAILED
+// before the gate the test actually cares about. Reset between describe blocks
+// via __resetRegisterTurnstileFnForTest.
+const TURNSTILE_OK_STUB = async () => ({ ok: true, errorCodes: [] });
+
 describe("POST /v1/auth/register — allowlist + claim-flow (D-08..D-11)", () => {
+  // Phase 126 (D-01 / AUTH-126-02 + D-03 / AUTH-126-01): install happy-path
+  // Turnstile stub + reset rate-limit buckets before every test so:
+  //   (a) tests past the JSON+typeof gates aren't short-circuited by the new
+  //       captcha shape/siteverify gate, and
+  //   (b) module-scope rate-limit state doesn't leak across tests (would
+  //       eventually 429 on the 21st /auth/register call).
+  beforeEach(() => {
+    __resetRegisterBucketsForTest();
+    __setRegisterTurnstileFnForTest(TURNSTILE_OK_STUB as never);
+  });
+
   it("returns 503 'Registration not configured' when VIGIL_ALLOWED_EMAILS is unset (D-10 fail-closed)", async () => {
     delete process.env["VIGIL_ALLOWED_EMAILS"];
     const res = await post("/v1/auth/register", {
       email: "anyone@test.local",
       password: "validpass123",
+      turnstileToken: "valid",
     });
     assert.equal(res.status, 503);
     const body = (await res.json()) as { error: string };
@@ -56,6 +82,7 @@ describe("POST /v1/auth/register — allowlist + claim-flow (D-08..D-11)", () =>
     const res = await post("/v1/auth/register", {
       email: "anyone@test.local",
       password: "validpass123",
+      turnstileToken: "valid",
     });
     assert.equal(res.status, 503);
   });
@@ -65,6 +92,7 @@ describe("POST /v1/auth/register — allowlist + claim-flow (D-08..D-11)", () =>
     const res = await post("/v1/auth/register", {
       email: "eve@evil.com",
       password: "validpass123",
+      turnstileToken: "valid",
     });
     assert.equal(res.status, 403);
     const body = (await res.json()) as { error: string };
@@ -85,6 +113,7 @@ describe("POST /v1/auth/register — allowlist + claim-flow (D-08..D-11)", () =>
     const res = await post("/v1/auth/register", {
       email: "UPPER@CASE.com",
       password: "validpass123",
+      turnstileToken: "valid",
     });
     assert.notEqual(res.status, 403);
   });
@@ -94,6 +123,7 @@ describe("POST /v1/auth/register — allowlist + claim-flow (D-08..D-11)", () =>
     const res = await post("/v1/auth/register", {
       email: "short@test.local",
       password: "short",
+      turnstileToken: "valid",
     });
     assert.equal(res.status, 400);
   });
@@ -103,22 +133,26 @@ describe("POST /v1/auth/register — allowlist + claim-flow (D-08..D-11)", () =>
     const res = await post("/v1/auth/register", {
       email: "long@test.local",
       password: "a".repeat(129),
+      turnstileToken: "valid",
     });
     assert.equal(res.status, 400);
   });
 
   it("returns 400 when email or password missing / wrong type", async () => {
     process.env["VIGIL_ALLOWED_EMAILS"] = "e@t.local";
+    // These all short-circuit on the typeof gate BEFORE the captcha gate,
+    // so turnstileToken absence doesn't matter — but include it for parity
+    // with the other /auth/register tests in this describe block.
     assert.equal(
-      (await post("/v1/auth/register", { email: "e@t.local" })).status,
+      (await post("/v1/auth/register", { email: "e@t.local", turnstileToken: "valid" })).status,
       400,
     );
     assert.equal(
-      (await post("/v1/auth/register", { password: "validpass123" })).status,
+      (await post("/v1/auth/register", { password: "validpass123", turnstileToken: "valid" })).status,
       400,
     );
     assert.equal(
-      (await post("/v1/auth/register", { email: 42, password: "validpass123" }))
+      (await post("/v1/auth/register", { email: 42, password: "validpass123", turnstileToken: "valid" }))
         .status,
       400,
     );
@@ -493,7 +527,16 @@ describe("POST /v1/auth/change-password — D-09..D-14 + ordering pin (CP-CHG-01
 // ── Phase 113 (AUTH-11) — register email_verify token issuance + login emailVerifiedAt ──
 
 describe("POST /v1/auth/register — email_verify token issuance (AUTH-11)", () => {
-  beforeEach(() => __resetSendEmailVerificationEmailForTest());
+  beforeEach(() => {
+    __resetSendEmailVerificationEmailForTest();
+    // Phase 126: AUTH-11 register tests POST to /v1/auth/register which now has
+    // a captcha+rate-limit gate stack. Install happy-path Turnstile stub +
+    // reset buckets so the AUTH-11 token-issuance assertions reach the DB
+    // write path. All these tests are DATABASE_URL-skipped today, but the
+    // setup is needed when the test env grows a DB.
+    __resetRegisterBucketsForTest();
+    __setRegisterTurnstileFnForTest(TURNSTILE_OK_STUB as never);
+  });
 
   // Helper: seed a test user directly in DB (bypasses allowlist + register flow)
   async function seedVerifyTestUser(email: string) {
@@ -536,7 +579,7 @@ describe("POST /v1/auth/register — email_verify token issuance (AUTH-11)", () 
     const testEmail = `auth11-r01-${now}@test.local`;
     process.env["VIGIL_ALLOWED_EMAILS"] = testEmail;
 
-    const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456" });
+    const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456", turnstileToken: "valid" });
     assert.equal(res.status, 201);
 
     const body = (await res.json()) as { id: number; email: string };
@@ -579,7 +622,7 @@ describe("POST /v1/auth/register — email_verify token issuance (AUTH-11)", () 
     const testEmail = `auth11-r02-${now}@test.local`;
     process.env["VIGIL_ALLOWED_EMAILS"] = testEmail;
 
-    const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456" });
+    const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456", turnstileToken: "valid" });
     assert.equal(res.status, 201);
     const body = (await res.json()) as { id: number };
 
@@ -617,7 +660,7 @@ describe("POST /v1/auth/register — email_verify token issuance (AUTH-11)", () 
     const rejectionHandler = () => { rejectionFired = true; };
     process.on("unhandledRejection", rejectionHandler);
 
-    const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456" });
+    const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456", turnstileToken: "valid" });
     const body = (await res.json()) as { id: number };
 
     // Give the .catch() handler time to run
@@ -662,7 +705,7 @@ describe("POST /v1/auth/register — email_verify token issuance (AUTH-11)", () 
       .returning({ id: users.id });
 
     try {
-      const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456" });
+      const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456", turnstileToken: "valid" });
       assert.equal(res.status, 201);
       const body = (await res.json()) as { claimed?: boolean };
       assert.equal(body.claimed, true);
@@ -719,7 +762,7 @@ describe("POST /v1/auth/register — email_verify token issuance (AUTH-11)", () 
       .returning({ id: users.id });
 
     try {
-      const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456" });
+      const res = await post("/v1/auth/register", { email: testEmail, password: "validpass123456", turnstileToken: "valid" });
       assert.equal(res.status, 201);
 
       // Give fire-and-forget a tick
