@@ -2,9 +2,10 @@
 phase: 127
 slug: pre-spike-guardrails
 status: draft
-nyquist_compliant: false
+nyquist_compliant: true
 wave_0_complete: false
 created: 2026-05-11
+revised: 2026-05-11
 ---
 
 # Phase 127 — Validation Strategy
@@ -44,18 +45,19 @@ created: 2026-05-11
 | 127-01-B | 01 GUARD-01 | 1 | GUARD-01 | T-127-01 | `Sentry.init` registers `beforeSend` (source-string assertion) | unit (source-grep) | same file | ❌ W0 | ⬜ pending |
 | 127-01-C | 01 GUARD-01 | 1 | GUARD-01 | T-127-01 | No `console.*` call site references `audio`/`pcm` locals | unit (repo-grep) | same file | ❌ W0 | ⬜ pending |
 | 127-01-D | 01 GUARD-01 | 1 | GUARD-01 | T-127-01 | `posthog.test.ts:103` size assertion updated from `=== 8` to new count | unit | `pnpm --filter vigil-core test src/analytics/posthog.test.ts` | ✅ (extend existing) | ⬜ pending |
-| 127-01-E | 02 GUARD-01-PWA | 1 | GUARD-01 | T-127-01 | PWA Sentry init registers `beforeSend` + denylist parity | unit | `pnpm --filter vigil-pwa test src/lib/sentry-redact.test.ts` | ❌ W0 | ⬜ pending |
+| 127-01-E | 02 GUARD-01-PWA | 1 | GUARD-01 | T-127-01 | PWA Sentry init registers `beforeSend` + denylist parity HARD-FAIL on cross-workspace read failure (no size-only fallback) + sentry-init.test.ts source-grep on main.tsx + pnpm denylist-parity:ci CI script | unit + CI script | `pnpm --filter vigil-pwa test src/lib/sentry-redact.test.ts src/__tests__/denylist-parity.test.ts src/__tests__/sentry-init.test.ts` + `pnpm --filter vigil-pwa denylist-parity:ci` | ❌ W0 | ⬜ pending |
 | 127-02-A | 03 GUARD-02 | 1 | GUARD-02 | T-127-02 (runaway audio session) | `assertAudioSessionWithinCap(b64)` throws at >2.56MB base64 | unit | `pnpm --filter vigil-core test src/lib/audio-cap.test.ts` | ❌ W0 | ⬜ pending |
-| 127-02-B | 04 GUARD-02-G2 | 1 | GUARD-02 | T-127-02 | `safeAudioControl(true)` then each of 4 exit events fires `audioControl(false)` | unit (4 cases) | `pnpm --filter vigil-g2-plugin test src/lib/audio-session-guard.test.ts` | ❌ W0 | ⬜ pending |
+| 127-02-B | 04 GUARD-02-G2 | 1 | GUARD-02 | T-127-02 | `safeAudioControl(true)` then each of 4 exit events fires `audioControl(false)` — no bare `6`/`7` integer literals anywhere in audio-session-guard.ts (code OR prose) | unit (6 cases + grep) | `pnpm --filter vigil-g2-plugin test src/lib/audio-session-guard.test.ts` | ❌ W0 | ⬜ pending |
 | 127-02-C | 03 GUARD-02 | 1 | GUARD-02 | T-127-02 | `ERROR_CODE_MAP` exposes `AUDIO_SESSION_TOO_LONG` with locked copy | unit | `pnpm --filter vigil-pwa test src/lib/api-error-codes.test.ts` | ✅ (extend) | ⬜ pending |
 | 127-03-A | 05 GUARD-03 | 2 | GUARD-03 | T-127-03 (AI cost burn) | `ai_usage_daily` migration shape (columns, PK, index) | integration | `pnpm --filter vigil-core test src/db/__tests__/ai-usage-daily.test.ts` | ❌ W0 | ⬜ pending |
-| 127-03-B | 05 GUARD-03 | 2 | GUARD-03 | T-127-03 | `requireAiBudget(userId)` throws `DailyBudgetExceededError` at watermark | unit | `pnpm --filter vigil-core test src/lib/ai-budget.test.ts` | ❌ W0 | ⬜ pending |
-| 127-03-C | 05 GUARD-03 | 2 | GUARD-03 | T-127-03 | `withBudgetTracking(userId, fn)` accumulates usd_estimate from `usage` field | unit | same file | ❌ W0 | ⬜ pending |
-| 127-03-D | 05 GUARD-03 | 2 | GUARD-03 | T-127-03 | `app.onError` returns 429 + code for `DailyBudgetExceededError` BEFORE Sentry sink | unit | `pnpm --filter vigil-core test src/__tests__/on-error.test.ts` (new or extend) | ❌ W0 | ⬜ pending |
-| 127-03-E | 05 GUARD-03 | 2 | GUARD-03 | T-127-03 / W-01 | `cross-user-isolation.test.ts` grep allowlist includes `ai_usage_daily` | unit (grep) | `pnpm --filter vigil-core test src/__tests__/cross-user-isolation.test.ts` | ✅ (extend) | ⬜ pending |
+| 127-03-B | 05 GUARD-03 | 2 | GUARD-03 | T-127-03 | `requireAiBudget(userId)` throws `DailyBudgetExceededError` at watermark; ALL 7 enumerated test cases pass (no skip allowance — `__computeUsdForTest` + `__readCapUsdForTest` test helpers required as exports) | unit | `pnpm --filter vigil-core test src/lib/ai-budget.test.ts` | ❌ W0 | ⬜ pending |
+| 127-03-C | 05 GUARD-03 | 2 | GUARD-03 | T-127-03 | `withBudgetTracking(userId, fn)` accumulates usd_estimate from `usage` field; math verified via `__computeUsdForTest` pure function | unit | same file | ❌ W0 | ⬜ pending |
+| 127-03-D | 05.1b GUARD-03 | 3 | GUARD-03 | T-127-03 | `app.onError` returns 429 + code for `DailyBudgetExceededError` BEFORE Sentry sink; spy-based assertion `captureException + captureToSentry` have 0 calls on budget-error path | unit | `pnpm --filter vigil-core test src/__tests__/app-on-error.test.ts` | ❌ W0 | ⬜ pending |
+| 127-03-E | 05.1b GUARD-03 | 3 | GUARD-03 | T-127-03 / W-01 | `cross-user-isolation.test.ts` extended with `ai-usage-daily isolation` block + W-01-AI-BUDGET source-grep on ai-budget.ts | unit (grep + integration) | `pnpm --filter vigil-core test src/integration/cross-user-isolation.test.ts` | ✅ (extend) | ⬜ pending |
 | 127-03-F | 06 GUARD-03-PWA | 2 | GUARD-03 | T-127-03 | `ERROR_CODE_MAP` exposes `DAILY_AI_BUDGET_EXCEEDED` with locked copy | unit | `pnpm --filter vigil-pwa test src/lib/api-error-codes.test.ts` | ✅ (extend) | ⬜ pending |
-| 127-04-A | 07 GUARD-04 | 1 | GUARD-04 | T-127-04 (schema drift) | `drizzle-kit generate` stdout contains `No schema changes, nothing to migrate 😴` | integration (shell) | `pnpm --filter vigil-core test src/__tests__/migration-drift.test.ts` | ❌ W0 | ⬜ pending |
-| 127-04-B | 07 GUARD-04 | 1 | GUARD-04 | T-127-04 | `.planning/STATE.md` Phase 107.1 blocker entry resolved | doc check | manual / state-doc test | ✅ (edit) | ⬜ pending |
+| 127-03-G | 05.1a GUARD-03 | 2 | GUARD-03 | T-127-03 (Pitfall 4 closure) | `client.test.ts` drift detector pins `withBudgetTracking(userId,` >= 3 in client.ts AND zero un-wrapped `messages.create` sites across routes/ + ai/ | unit (source-grep) | `pnpm --filter vigil-core test src/ai/client.test.ts` | ❌ W0 | ⬜ pending |
+| 127-04-A | 07 GUARD-04 | 2 | GUARD-04 | T-127-04 (schema drift) | `drizzle-kit generate` stdout contains `No schema changes, nothing to migrate 😴` (after Plan 05's migration/schema landed — Wave 2 ordering) | integration (shell) | `pnpm --filter vigil-core test src/__tests__/migration-drift.test.ts` | ❌ W0 | ⬜ pending |
+| 127-04-B | 07 GUARD-04 | 2 | GUARD-04 | T-127-04 | `.planning/STATE.md` Phase 107.1 blocker entry resolved | doc check | manual / state-doc test | ✅ (edit) | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -67,10 +69,13 @@ created: 2026-05-11
 - [ ] `vigil-core/src/lib/audio-cap.test.ts` — stubs for GUARD-02 server cap
 - [ ] `vigil-g2-plugin/src/lib/audio-session-guard.test.ts` — stubs for GUARD-02 cleanup wrapper
 - [ ] `vigil-core/src/db/__tests__/ai-usage-daily.test.ts` — stubs for GUARD-03 schema/PK
-- [ ] `vigil-core/src/lib/ai-budget.test.ts` — stubs for GUARD-03 watermark + accumulator
-- [ ] `vigil-core/src/__tests__/on-error.test.ts` (new or extend index.test.ts) — stubs for GUARD-03 429 branch
+- [ ] `vigil-core/src/lib/ai-budget.test.ts` — stubs for GUARD-03 watermark + accumulator (all 7 cases required, no skip)
+- [ ] `vigil-core/src/ai/client.test.ts` — stubs for GUARD-03 Pitfall-4 drift detector (Plan 05.1a)
+- [ ] `vigil-core/src/__tests__/app-on-error.test.ts` — stubs for GUARD-03 429 branch (Plan 05.1b, Wave 3)
 - [ ] `vigil-core/src/__tests__/migration-drift.test.ts` — stubs for GUARD-04 drift detector
 - [ ] `vigil-pwa/src/lib/sentry-redact.test.ts` — stubs for GUARD-01 PWA Sentry parity
+- [ ] `vigil-pwa/src/__tests__/sentry-init.test.ts` — stubs for GUARD-01 PWA main.tsx beforeSend source-grep (T-127-01-D mitigation)
+- [ ] `vigil-pwa/scripts/denylist-parity-ci.mjs` — sibling CI script for denylist parity (T-127-01-C hardening)
 
 *node:test ships with Node ≥18; no framework install task is required. Vitest is already configured in vigil-pwa.*
 
@@ -88,11 +93,11 @@ created: 2026-05-11
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references (8 new test files)
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 60s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references (11 new test files / CI scripts after revision split)
+- [x] No watch-mode flags
+- [x] Feedback latency < 60s
+- [x] `nyquist_compliant: true` set in frontmatter (revised after blocker + warning fixes landed)
 
-**Approval:** pending
+**Approval:** ready — Plan 05.1 split into 05.1a (Wave 2) + 05.1b (Wave 3); Plan 02 hardened (sentry-init.test.ts + denylist-parity:ci script; T-127-01-D mitigation); Plan 04 acceptance criterion tightened (no bare 6/7 in code OR prose); Plan 05 requires all 7 tests via `__computeUsdForTest` + `__readCapUsdForTest` helper exports; Plan 07 moved to Wave 2 with explicit depends_on: [05]

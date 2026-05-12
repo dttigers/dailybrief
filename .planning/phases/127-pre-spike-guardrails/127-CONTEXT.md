@@ -4,6 +4,13 @@
 **Status:** Ready for planning
 **Mode:** `--auto` (autonomous discuss — all gray areas resolved with recommended defaults; user said "work without stopping for clarifying questions")
 
+> **CORRECTIONS (2026-05-11, post-research):** Two decisions below are empirically wrong and the plans deliberately deviate from this CONTEXT — see 127-RESEARCH.md Pitfalls 1 + 2 for the live verification.
+>
+> - **D-04.2 is OBSOLETE.** The four "drift" columns (notes, last_change_at, last_change_summary, archived_at) ARE ALREADY migrated via `vigil-core/drizzle/0013_work_orders_drift_repair.sql` (shipped 2026-04-22). GUARD-04 is re-scoped from "write `0020_reconcile_work_orders_107_1.sql`" → "ship `migration-drift.test.ts` drift detector + STATE.md Phase 107.1 cleanup." Slot `0020` is now used by GUARD-03's `ai_usage_daily` migration.
+> - **D-04.3 is OBSOLETE.** `drizzle-kit generate --dry` is not a real flag in `drizzle-kit@^0.31.10`. The actual verification: run plain `drizzle-kit generate` and grep stdout for `/No schema changes, nothing to migrate/i` (sentinel string verified live).
+>
+> Plans 05 + 07 implement the corrected scope. ROADMAP.md and Plan 07 frontmatter reflect it.
+
 <domain>
 ## Phase Boundary
 
