@@ -13,7 +13,7 @@
 
 ### Phase 0 — Guardrails (must land before feature code)
 
-- [ ] **GUARD-01**: Audio PCM data is redacted at every logging boundary — `console.*`, Sentry (`beforeSend`), PostHog (`BLOCKED_PROPERTY_NAMES`) — with a drift-detector test pinning the patterns.
+- [x] **GUARD-01**: Audio PCM data is redacted at every logging boundary — `console.*`, Sentry (`beforeSend`), PostHog (`BLOCKED_PROPERTY_NAMES`) — with a drift-detector test pinning the patterns.
 - [ ] **GUARD-02**: Server-side hard cap on single G2 audio session (≤60s); idempotent unconditional `audioControl(false)` on every plugin exit path (`ABNORMAL_EXIT_EVENT`, `SYSTEM_EXIT_EVENT`, `beforeunload`).
 - [ ] **GUARD-03**: Per-user daily AI-cost watermark with locked-enum `DAILY_AI_BUDGET_EXCEEDED` error (extends Phase 126 `ERROR_CODE_MAP`); blocks ai_cache regenerate + chat + voice transcription when exceeded.
 - [ ] **GUARD-04**: Schema reconciliation — `drizzle-kit generate --dry` is clean before any v3.9 migration; Phase 107.1 stale `work_orders` columns either land via migration or are removed from `schema.ts`.
@@ -143,7 +143,7 @@ Empty initially. Populated by roadmapper during phase mapping.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GUARD-01 | 127 | Pending |
+| GUARD-01 | 127 | Complete |
 | GUARD-02 | 127 | Pending |
 | GUARD-03 | 127 | Pending |
 | GUARD-04 | 127 | Pending |

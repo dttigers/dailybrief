@@ -4,14 +4,14 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Phase 127 context gathered
-last_updated: "2026-05-12T02:58:42.512Z"
-last_activity: 2026-05-12 -- Phase 127 planning complete
+last_updated: "2026-05-12T04:00:37.068Z"
+last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 0
   total_plans: 9
-  completed_plans: 0
-  percent: 0
+  completed_plans: 1
+  percent: 11
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v3.9 ROADMAPPED — 9 phases (127, 127.5, 128a, 128b, 129–133), 53 requirements mapped. Two spike-first gates (VOICE-01 + G2-REPLY-01) scope-lock downstream phases. Next: Phase 127 (pre-spike guardrails). Live backlog: 999.1/999.2.
+**Current focus:** Phase 127 — Pre-spike guardrails
 
 ## Current Position
 
-Phase: 127 (Pre-spike guardrails) — next to plan
-Plan: —
+Phase: 127 (Pre-spike guardrails) — EXECUTING
+Plan: 2 of 9
 Status: Ready to execute
-Last activity: 2026-05-12 -- Phase 127 planning complete
+Last activity: 2026-05-12
 
 **v3.9 phase sequence:**
 
@@ -122,6 +122,7 @@ Last activity: 2026-05-12 -- Phase 127 planning complete
 | Phase 126 P07 | 2m 23s | 2 tasks | 3 files |
 | Phase 126 P08 | 2m 49s | 2 tasks | 3 files |
 | Phase 126 P5 | 22m | 2 tasks | 2 files |
+| Phase 127 P01 | 6m | 3 tasks | 5 files |
 
 ## Deferred Items
 
@@ -365,6 +366,8 @@ Recent (v3.7 closeout):
 - [Phase 126 / Plan 05]: PASSWORD_TOO_SHORT vs PASSWORD_TOO_LONG branch SPLIT — PWA needs the distinction for ctaLabel; CONTEXT D-04 LOCKED enum honored verbatim
 - [Phase 126 / Plan 05]: Rate-limit gate runs BEFORE Turnstile siteverify (RESEARCH AUTH-126-01 mount-order constraint) — prevents attackers from burning Cloudflare siteverify quota per attempt; captcha shape gate runs BEFORE allowlist so failed captcha never leaks allowlist contents via differential timing
 - [Phase 126 / Plan 05]: __resetRegisterBucketsForTest named distinctly from forgot-password.ts's __resetBucketsForTest to prevent import-site ambiguity in the shared test module
+- [Phase ?]: Tightened Rail 2 anchor to multi-line Sentry.init({\n form — JSDoc comment-prose false-positive defense (Plan 127-01)
+- [Phase ?]: Added routes/process-audio.ts to Rail 3 safe-list (Plan 127-01 Rule 3 — route-path substring false-positive; no audio DATA leaks)
 
 ### Pending Todos
 
@@ -401,9 +404,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-12T01:57:49.657Z
+Last session: 2026-05-12T04:00:31.950Z
 Stopped at: Phase 127 context gathered
-Resume file: .planning/phases/127-pre-spike-guardrails/127-CONTEXT.md
+Resume file: None
 
 ## Operator Next Steps
 

@@ -364,7 +364,7 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
   2. Server-side hard cap rejects any single G2 audio session longer than 60s, and `audioControl(false)` fires unconditionally on every plugin exit path (ABNORMAL_EXIT_EVENT, SYSTEM_EXIT_EVENT, `beforeunload`)
   3. When a user crosses the per-day AI-cost watermark, ai_cache regenerate + chat + voice transcription all return `DAILY_AI_BUDGET_EXCEEDED` (locked-enum extension of Phase 126 `ERROR_CODE_MAP`) with operator-friendly copy in the PWA
   4. `drizzle-kit generate --dry` produces zero pending changes against `schema.ts` — Phase 107.1 stale `work_orders` columns either land in a migration or are removed from the schema file
-**Plans:** 9 plans (Wave 1: 01, 02, 03, 04, 05 — five parallel; Plan 05 has an internal `pnpm db:migrate` checkpoint between Task 1 (schema+migration) and Task 3 (library unit tests) that operators must clear before downstream waves run. Wave 2: 05.1a (deps 05), 06 (deps 03), 07 (deps 05). Wave 3: 05.1b (deps 05.1a). Success criterion #4 in this ROADMAP entry uses `drizzle-kit generate --dry`, a flag that does not exist in pinned drizzle-kit; Plans 05 + 07 implement the corrected sentinel-string check — see 127-RESEARCH.md Pitfalls 1+2 + 127-CONTEXT.md corrections header.)
+**Plans:** 1/9 plans executed
   - [ ] `127-01-PLAN.md` — GUARD-01 vigil-core: extend BLOCKED_PROPERTY_NAMES with 6 audio keys + Sentry beforeSend + three-rail drift detector (Wave 1)
   - [ ] `127-02-PLAN.md` — GUARD-01 vigil-pwa: duplicate denylist + Browser sentry-redact + HARD-FAIL parity drift detector + sentry-init.test.ts + denylist-parity:ci CI script (Wave 1)
   - [ ] `127-03-PLAN.md` — GUARD-02 vigil-core server: audio-cap.ts helper + AudioSessionTooLongError + AUDIO_SESSION_TOO_LONG ERROR_CODE_MAP entry (Wave 1)
@@ -617,7 +617,7 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 9/9 | Complete | 2026-05-10 |
 | 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 11/11 | Complete | 2026-05-11 |
 | 126. Wide-release auth hardening (mid-milestone insert) | v3.8 | 11/11 | Complete | 2026-05-11 |
-| 127. Pre-spike guardrails (audio redaction + audio caps + AI-cost watermark + schema reconcile) | v3.9 | 0/TBD | Not started | - |
+| 127. Pre-spike guardrails (audio redaction + audio caps + AI-cost watermark + schema reconcile) | v3.9 | 1/9 | In Progress|  |
 | 127.5. G2 input gesture audit (30-min code review; verdict shapes G2-ACTION + G2-REPLY) | v3.9 | 0/TBD | Not started | - |
 | 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 0/TBD | Not started | - |
 | 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 0/TBD | Not started | - |
