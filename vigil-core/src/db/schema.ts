@@ -3,6 +3,7 @@ import {
   serial,
   text,
   doublePrecision,
+  numeric,
   timestamp,
   jsonb,
   boolean,
@@ -254,6 +255,53 @@ export const workOrderStatuses = pgTable(
   (table) => [
     primaryKey({ columns: [table.userId, table.caseNumber] }),
     index("idx_work_order_statuses_user_id").on(table.userId),
+  ],
+);
+
+// ── ai_usage_daily table (Phase 127 GUARD-03 / D-03.1) ─────────────────────
+// Per-user daily AI spend watermark. Composite PK (user_id, usage_date) is
+// the W-01 cross-user-isolation pattern (Phase 121 D-D2 lock). Daily rollover
+// happens naturally by the usage_date key — no cron, no nightly job. The
+// helper library at src/lib/ai-budget.ts reads/writes this table via
+// `requireAiBudget(userId)` (pre-flight throw on cap exceed) and
+// `withBudgetTracking(userId, fn)` (post-call accumulator via INSERT … ON
+// CONFLICT (user_id, usage_date) DO UPDATE).
+//
+// usd_estimate is numeric(12,6) — Pitfall 9 override of CONTEXT D-03.1's
+// numeric(10,4). The sub-cent precision lets a single chat turn (e.g.
+// 100 input + 50 output tokens at $3/$15 per 1M = $0.00105) accumulate
+// without rounding to zero; CONTEXT's (10,4) would round that to $0.0011
+// and silently inflate the watermark.
+//
+// onDelete: "cascade" — when a user is hard-deleted (rare; mostly test
+// cleanup), their daily spend rows go with them. workOrderStatuses uses
+// "restrict" because work-order data is operationally precious; ai_usage_daily
+// is throwaway telemetry that resets at UTC 00:00 anyway.
+//
+// idx_ai_usage_daily_date covers the usage_date alone — the composite PK
+// (user_id, usage_date) already provides an implicit index for queries
+// leading with user_id (which is the common shape: `WHERE user_id = $1
+// AND usage_date = CURRENT_DATE`). The date-only index covers future
+// admin queries like "all users who hit the cap today" without scanning
+// the whole table.
+
+export const aiUsageDaily = pgTable(
+  "ai_usage_daily",
+  {
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    usageDate: date("usage_date").notNull(),
+    usdEstimate: numeric("usd_estimate", { precision: 12, scale: 6 })
+      .notNull()
+      .default("0"),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.userId, table.usageDate] }),
+    index("idx_ai_usage_daily_date").on(table.usageDate),
   ],
 );
 
