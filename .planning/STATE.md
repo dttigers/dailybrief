@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
-stopped_at: Plan 128a-01 complete; smoke RED as designed
-last_updated: "2026-05-12T19:15:23.476Z"
+stopped_at: "Plan 128a-05 partial: Task 1 D-A3 bundle-exclusion PASS; Tasks 2-3 (C-1 OPENAI_API_KEY + C-2 g2-microphone portal) pending operator wallclock — do NOT advance Current Plan past 5 until resume signals arrive"
+last_updated: "2026-05-12T19:18:18Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 128a (voice-01-pcm-feasibility-spike) — EXECUTING
-Plan: 5 of 6
-Status: Ready to execute
+Plan: 5 of 6 — **Partial — wallclock pending** (Task 1 D-A3 bundle-exclusion PASS 2026-05-12T19:18Z; Tasks 2-3 are C-1 / C-2 operator wallclock checkpoints — see `.planning/phases/128a-voice-01-pcm-feasibility-spike/128a-05-SUMMARY.md` for operator C-1/C-2 instructions and resume signals required before Plan 06)
+Status: Awaiting operator resume signals (c1-done / c1-blocked + c2-allowed / c2-rejected / c2-not-listed)
 Last activity: 2026-05-12
 
 **v3.9 phase sequence:**
@@ -134,6 +134,7 @@ Last activity: 2026-05-12
 | Phase 128a P02 | 50min | 2 tasks | 5 files |
 | Phase 128a PP03 | 3min | 3 tasks | 4 files |
 | Phase 128a P04 | 4min | 2 tasks | 3 files |
+| Phase 128a P05 (partial — wallclock pending) | 1m 13s (Task 1 only) | 1 of 3 tasks (D-A3 PASS; C-1 + C-2 pending operator) | 1 file (SUMMARY.md only — vigil.ehpk and dist/ are gitignored) |
 
 ## Deferred Items
 
@@ -395,6 +396,8 @@ Recent (v3.7 closeout):
 - [Phase ?]: 5-of-7 UI-SPEC states wired ([IDLE]/[REC]/[UPLOADING…]/[DONE]/[ERR]); permission-denied + budget-exceeded deferred to Phase 130
 - [Phase ?]: Per-chunk live-counter re-render deferred — appendPcmChunk is a pure push to preserve clean inter_chunk_latency measurement
 - [Phase ?]: Plan 128a-04: VOICE_SPIKE registered as carousel slot 4 via static imports; DOUBLE_CLICK carve-out routes to toggleVoiceSpikeRecording; audioEvent collector logs only GUARD-01 safe keys
+- [Phase 128a]: Plan 128a-05 Task 1 D-A3 verification — `unzip -l vigil.ehpk` does not work (EHPK is opaque custom format, not zip; magic 'EHPK', no `evenhub` unpack subcommand). Substituted `grep -rE '<spike-token>' dist/` (pack input) + `strings vigil.ehpk | grep -iE '<spike-token>'` (leak belt on opaque binary). All four greps returned 0 matches → D-A3 PASS. Rule 3 fix (blocking-issue substitution; same correctness assertion, method that works on this format).
+- [Phase 128a]: Plan 128a-05 Tasks 2-3 (C-1 OPENAI_API_KEY + C-2 g2-microphone portal) are operator wallclock checkpoints — Claude must NOT execute. yolo/`--auto` does not bypass wallclock per `[feedback_wallclock_checkpoint_exempt]`. SUMMARY.md documents the exact operator commands (subcommand `railway variables get OPENAI_API_KEY` REQUIRED — bare `railway variables` is the [Railway variables leak] memory's two-Postgres-rotation footgun).
 
 ### Pending Todos
 

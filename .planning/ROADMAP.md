@@ -406,7 +406,7 @@ Plans:
 - [x] 128a-04-PLAN.md — Plugin wiring: navigation.ts Screen/SCREEN_ORDER/buildScreen + DOUBLE_CLICK carve-out + main.ts audioEvent collector
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 128a-05-PLAN.md — Pre-hardware gates: bundle exclusion (D-A3) + C-1 OPENAI_API_KEY + C-2 g2-microphone portal
+- [ ] 128a-05-PLAN.md — Pre-hardware gates: bundle exclusion (D-A3) + C-1 OPENAI_API_KEY + C-2 g2-microphone portal — **Partial — wallclock pending** (Task 1 D-A3 PASS 2026-05-12; Tasks 2-3 pending operator C-1/C-2 wallclock per `[feedback_wallclock_checkpoint_exempt]`; see `128a-05-SUMMARY.md` for operator instructions)
 
 **Wave 4** *(blocked on Wave 3 completion)*
 - [ ] 128a-06-PLAN.md — Hardware spike (C-3/C-4/C-5): MEASUREMENTS.md + mechanical-verdict SPIKE-DECISION.md + 60s Loom
