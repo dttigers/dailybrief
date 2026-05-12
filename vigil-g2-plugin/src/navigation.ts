@@ -21,6 +21,14 @@ import {
   getActiveSessions,
   cycleSession,
 } from './screens/companion.ts'
+// Phase 128a SPIKE — TOSSABLE. Static import (NOT dynamic) per Phase 125
+// Hermes fix at navigation.ts:222-224. Phase 130 owns hardening/removal.
+// (toggleVoiceSpikeRecording added to this import in Task 2's DOUBLE_CLICK
+// carve-out below.)
+import {
+  buildVoiceSpikeScreen,
+  getRecording,
+} from './screens/voice-spike.ts'
 import { fetchSummary, fetchBrief, fetchAffirmation, fetchAgentSessions } from './api.ts'
 
 // Screen identifiers — const object pattern (erasableSyntaxOnly)
@@ -30,6 +38,7 @@ export const Screen = {
   WORK_ORDERS: 'work-orders',
   AFFIRMATION: 'affirmation',
   TASK_DETAIL: 'task-detail',
+  VOICE_SPIKE: 'voice-spike', // Phase 128a SPIKE — TOSSABLE
 } as const
 export type ScreenName = (typeof Screen)[keyof typeof Screen]
 
@@ -39,6 +48,7 @@ const SCREEN_ORDER: readonly ScreenName[] = [
   Screen.COMPANION,    // NEW slot 1 — Phase 124 D-05
   Screen.WORK_ORDERS,
   Screen.AFFIRMATION,
+  Screen.VOICE_SPIKE,  // Phase 128a SPIKE — TOSSABLE (visible-not-hidden per 128A-UI-SPEC)
 ]
 
 /** Module-level current screen state */
@@ -112,6 +122,11 @@ async function buildScreen(screen: ScreenName): Promise<RebuildPageContainer> {
     case Screen.AFFIRMATION: {
       const result = await fetchAffirmation()
       return buildAffirmationScreen(result.affirmation)
+    }
+    case Screen.VOICE_SPIKE: {
+      // Phase 128a SPIKE — TOSSABLE. No API fetch — recording state lives in
+      // the screen module (mirrors audio-session-guard module-scope pattern).
+      return buildVoiceSpikeScreen(getRecording())
     }
     case Screen.TASK_DETAIL: {
       // Sub-screen — on refresh, fall back to work orders list

@@ -4,8 +4,11 @@
 //   - LONG_PRESS_EVENT is never referenced (not in OsEventTypeList anyway,
 //     but a future ride-along could re-introduce dead spec wording —
 //     drift detector trips before that lands).
-//   - SCREEN_ORDER carries [HOME, COMPANION, WORK_ORDERS, AFFIRMATION]
-//     in this exact order.
+//   - SCREEN_ORDER carries [HOME, COMPANION, WORK_ORDERS, AFFIRMATION,
+//     VOICE_SPIKE] in this exact order.
+//     Phase 128a SPIKE — TOSSABLE: slot 4 (VOICE_SPIKE) was added by the
+//     PCM feasibility spike and MUST be removed when Phase 130 lands
+//     (revert slot count to 4 + drop the VOICE_SPIKE assertion below).
 //
 // W-1 portability fix (from plan-checker): comment-stripped source content
 // is the asserted surface — BSD grep / GNU grep parity on macOS + CI.
@@ -59,7 +62,7 @@ test("D-08 drift: navigation.ts handles DOUBLE_CLICK_EVENT for Companion", () =>
   );
 });
 
-test("SCREEN_ORDER lock: [HOME, COMPANION, WORK_ORDERS, AFFIRMATION] exact order", () => {
+test("SCREEN_ORDER lock: [HOME, COMPANION, WORK_ORDERS, AFFIRMATION, VOICE_SPIKE] exact order", () => {
   // Locate the SCREEN_ORDER literal
   const m = noComments.match(/SCREEN_ORDER[^=]*=\s*\[([\s\S]*?)\]/);
   assert.ok(m, "SCREEN_ORDER literal found");
@@ -69,10 +72,13 @@ test("SCREEN_ORDER lock: [HOME, COMPANION, WORK_ORDERS, AFFIRMATION] exact order
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
+  // Phase 128a SPIKE — TOSSABLE: slot 4 (VOICE_SPIKE) was added by the PCM
+  // feasibility spike. When Phase 130 lands and the spike is removed,
+  // revert this to `4` entries and drop the slot-4 assertion below.
   assert.equal(
     entries.length,
-    4,
-    `expected 4 SCREEN_ORDER entries, got ${entries.length}: ${JSON.stringify(entries)}`,
+    5,
+    `expected 5 SCREEN_ORDER entries, got ${entries.length}: ${JSON.stringify(entries)}`,
   );
   assert.ok(/Screen\.HOME/.test(entries[0]!), `slot 0: ${entries[0]}`);
   assert.ok(
@@ -86,6 +92,11 @@ test("SCREEN_ORDER lock: [HOME, COMPANION, WORK_ORDERS, AFFIRMATION] exact order
   assert.ok(
     /Screen\.AFFIRMATION/.test(entries[3]!),
     `slot 3: ${entries[3]}`,
+  );
+  // Phase 128a SPIKE — TOSSABLE assertion (drop when Phase 130 removes spike).
+  assert.ok(
+    /Screen\.VOICE_SPIKE/.test(entries[4]!),
+    `slot 4: ${entries[4]}`,
   );
 });
 
