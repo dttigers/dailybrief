@@ -2,16 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: roadmapped
-last_updated: "2026-05-12T01:30:00.000Z"
-last_activity: 2026-05-12
-next_phase: 127
+status: Roadmapped, awaiting `/gsd-plan-phase 127`
+stopped_at: Phase 127 context gathered
+last_updated: "2026-05-12T01:57:49.666Z"
+last_activity: 2026-05-12 — Roadmapper mapped 53 v3.9 requirements to phases 127–133
 progress:
-  total_phases: 9
+  total_phases: 11
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
-  percent: 0
 ---
 
 # Project State
@@ -31,6 +30,7 @@ Status: Roadmapped, awaiting `/gsd-plan-phase 127`
 Last activity: 2026-05-12 — Roadmapper mapped 53 v3.9 requirements to phases 127–133
 
 **v3.9 phase sequence:**
+
 - 127 — Pre-spike guardrails (GUARD-01..04)
 - 127.5 — G2 input gesture audit (AUDIT-G2-INPUT-01)
 - 128a — VOICE-01 PCM feasibility spike (gates Phase 130)
@@ -400,9 +400,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-12T01:30:00Z
-Stopped at: v3.9 ROADMAP authored — 9 phases (127, 127.5, 128a, 128b, 129–133) mapping all 53 requirements. Two spike-first gates (VOICE-01 at 128a, G2-REPLY-01 at 128b) scope-lock downstream Phase 130 + 133. STATE.md + REQUIREMENTS.md traceability synced.
-Resume file: none — ready for `/gsd-plan-phase 127` to begin guardrails phase.
+Last session: 2026-05-12T01:57:49.657Z
+Stopped at: Phase 127 context gathered
+Resume file: .planning/phases/127-pre-spike-guardrails/127-CONTEXT.md
 
 ## Operator Next Steps
 
