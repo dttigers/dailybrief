@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
-stopped_at: Plan 127-05.1a completed (GUARD-03 AI client wrap — Pitfall 4 closed)
-last_updated: "2026-05-12T05:16:08.875Z"
+stopped_at: Plan 127-07 completed (GUARD-04 drift detector + Phase 107.1 STATE.md cleanup)
+last_updated: "2026-05-12T05:24:11.942Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 0
   total_plans: 9
-  completed_plans: 7
-  percent: 78
+  completed_plans: 8
+  percent: 89
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 127 (Pre-spike guardrails) — EXECUTING
-Plan: 8 of 9 (Plans 01/02/03/04/05/05.1a complete; Plan 05.1b next — Wave 3 chat.ts gate + app.onError 429 branch)
+Plan: 9 of 9 (Plans 01/02/03/04/05/05.1a complete; Plan 05.1b next — Wave 3 chat.ts gate + app.onError 429 branch)
 Status: Ready to execute
 Last activity: 2026-05-12
 
@@ -129,6 +129,7 @@ Last activity: 2026-05-12
 | Phase 127 P05 | 29min | 3 tasks (1 schema/migration + 1 inline checkpoint + 1 library/test) | 6 files (4 created, 2 modified) |
 | Phase 127 P05.1a | 8m | 3 tasks | 13 files |
 | Phase 127 P06 | 10m | 1 tasks | 2 files |
+| Phase 127 P07 | ~10 min | 2 tasks | 2 files |
 
 ## Deferred Items
 
@@ -379,6 +380,9 @@ Recent (v3.7 closeout):
 - [Phase ?]: Plan 05.1a: chat.ts gets userId propagation (TypeScript-forced) but NOT requireAiBudget gate — gate + 429 branch stay for Plan 05.1b. Strictly additive split keeps file conflicts bounded.
 - [Phase ?]: Plan 05.1a: drift detector client.test.ts pins withBudgetTracking(userId, count === 3 in client.ts (exact, not >=) — two JSDoc literal references softened to non-literal prose so the strict count holds. Mirrors Plan 05 DailyBudgetExceededError.code precedent.
 - [Phase ?]: Phase 127 Plan 06: Verbatim-copy + undefined-CTA double-lock pattern (expect.toBe(literal) + expect.toBeUndefined()) for ERROR_CODE_MAP EXTENSION entries — T-127-03-G/H mitigation
+- [Phase ?]: GUARD-04 re-scoped: drift detector + STATE.md cleanup (no new migration)
+- [Phase ?]: Phase 127 Plan 07: No --dry flag (drizzle-kit generate --dry is fictional in 0.31.10 per RESEARCH §Pitfall 1); use plain generate + regex /No schema changes/i (emoji-tolerant §A2)
+- [Phase ?]: Phase 127 Plan 07: Phase 107.1 work_orders drift closed by 0013_work_orders_drift_repair.sql 2026-04-22 — not by Plan 07 (Plan 07 ships the structural drift detector + STATE.md closing note)
 
 ### Pending Todos
 
@@ -415,8 +419,8 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-12T05:16:02.178Z
-Stopped at: Plan 127-05.1a completed (GUARD-03 AI client wrap — Pitfall 4 closed)
+Last session: 2026-05-12T05:24:11.933Z
+Stopped at: Plan 127-07 completed (GUARD-04 drift detector + Phase 107.1 STATE.md cleanup)
 Resume file: None
 
 ## Operator Next Steps
