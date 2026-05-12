@@ -30,6 +30,8 @@
 
 **Phase prerequisite (all G2-touching phases):** Run `/plugin install even-realities/everything-evenhub` in the Claude Code session before plan authoring. The 13 skills (`handle-input`, `device-features`, `background-state`, `glasses-ui`, `sdk-reference`, etc.) auto-load Even SDK context so the planner doesn't need verbose SDK trivia briefings.
 
+**Phase 0 audit (locked 2026-05-11 — operator decision):** 30-min code review of `vigil-g2-plugin/src/screens/companion.ts` + `vigil-g2-plugin/src/main.ts` event handlers BEFORE G2-ACTION + G2-REPLY scope locks. Hypothesis: Phase 124 D-08's "single-tap not reliably plumbed" was a missing `?? 0` nullish coalesce (protobuf zero-omission), not a hardware limit. Outcome reactivates or confirms-deferral of single-tap as a usable gesture, which shapes G2-ACTION gesture grammar.
+
 **Deferred to future milestones:**
 - SEED-011 (long-press only) — `LONG_PRESS_EVENT` is NOT in canonical `OsEventTypeList` enum per Even SDK docs; the gesture genuinely doesn't exist at the SDK level. Permanent deferral confirmed. (Single-tap from SEED-011 is REACTIVATED into v3.9 scope — see G2-ACTION above.)
 - 999.1 — Ubiquity entitlement for iCloud photo download
