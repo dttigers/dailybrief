@@ -395,7 +395,21 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
   2. The decision file resolves to exactly one of `PASS` (proceed full scope) / `DEGRADE` (push-to-record short clips only) / `BLOCK` (defer entire voice anchor to v3.10)
   3. A 60s portfolio Loom (`60s-demo.mp4`) demonstrates a working capture → transcription → PWA dashboard round-trip OR documents the failure mode that drove DEGRADE/BLOCK
   4. `audioControl(false)` cleanup is verified to fire on every documented exit path (no zombie microphone sessions after 5 force-quit cycles)
-**Plans:** TBD
+**Plans:** 6 plans
+Plans:
+**Wave 1**
+- [ ] 128a-01-PLAN.md — Wave 0 scaffolding: pin openai@^6.37.0 (DRIFT-03) + Wave 0 smoke test
+- [ ] 128a-02-PLAN.md — Backend: transcribe-spike.ts + voice-spike.ts route + index.ts mount
+- [ ] 128a-03-PLAN.md — Plugin assets: app.json + constants + encoder + screen module
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 128a-04-PLAN.md — Plugin wiring: navigation.ts Screen/SCREEN_ORDER/buildScreen + DOUBLE_CLICK carve-out + main.ts audioEvent collector
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 128a-05-PLAN.md — Pre-hardware gates: bundle exclusion (D-A3) + C-1 OPENAI_API_KEY + C-2 g2-microphone portal
+
+**Wave 4** *(blocked on Wave 3 completion)*
+- [ ] 128a-06-PLAN.md — Hardware spike (C-3/C-4/C-5): MEASUREMENTS.md + mechanical-verdict SPIKE-DECISION.md + 60s Loom
 **UI hint**: yes
 
 ### Phase 128b: G2-REPLY-01 write-back path spike

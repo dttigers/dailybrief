@@ -727,32 +727,32 @@ Already provided inline above under **Pattern 1-4**. Cross-references:
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 1. **Should the spike screen be added to `SCREEN_ORDER` (carousel-navigable from Home via swipe) or be hidden (only reachable via a deep-link or `bridge.callEvenApp` invocation)?**
    - What we know: Carousel adds a 5th slot users see daily; hiding requires a deep-link mechanism that may not exist in the SDK.
    - What's unclear: Whether the spike author wants the operator to swipe past "Voice Spike" between Home / Companion / Work Orders / Affirmation in normal use, or whether the screen should only appear in a "spike-mode" build.
-   - Recommendation: Add to `SCREEN_ORDER` for the spike-running operator (one user, one device), use the planner-discretion "keep checked in" flag (CONTEXT Claude's Discretion §3) — delete the screen entry when Phase 130 productionizes a real "Voice" screen.
+   - RESOLVED: Recommendation: Add to `SCREEN_ORDER` for the spike-running operator (one user, one device), use the planner-discretion "keep checked in" flag (CONTEXT Claude's Discretion §3) — delete the screen entry when Phase 130 productionizes a real "Voice" screen.
 
 2. **What's the minimum regression test for `voice-spike.ts` / `transcribe-spike.ts` that the planner SHOULD include despite CONTEXT explicitly skipping drift detectors?**
    - What we know: CONTEXT Claude's Discretion §4 says "Drift-detector tests for the spike scaffold are explicitly skipped." But the existing GUARD-01 audio-log-redaction.test.ts Rail 3 walks `routes|lib|ai|middleware/**/*.ts` and may trip on the spike's `console.log` calls if any variable is named `audio*`/`pcm*`. The test runs in CI on every commit.
    - What's unclear: Whether "spike scaffold files (`voice-spike.ts`, `transcribe-spike.ts`, `voice-spike-encoder.ts`) get auto-safe-listed in audio-log-redaction.test.ts" should be a one-line PR or whether the spike author should write log lines that pass the existing regex without a safe-list addition.
-   - Recommendation: **Write log lines that pass the regex without safe-list changes.** Use `bytes`/`chunk_n`/`gap_ms`/`mic_on_ms`/`wavB64` variable names; never use `audio` or `pcm` tokens in any string passed to `console.*`. This preserves the GUARD-01 invariant without touching the drift detector — keeping it tossable.
+   - RESOLVED: Recommendation: **Write log lines that pass the regex without safe-list changes.** Use `bytes`/`chunk_n`/`gap_ms`/`mic_on_ms`/`wavB64` variable names; never use `audio` or `pcm` tokens in any string passed to `console.*`. This preserves the GUARD-01 invariant without touching the drift detector — keeping it tossable.
 
 3. **Does the spike need any unit test at all?**
    - What we know: Spike code is tossable; CONTEXT explicitly skips drift detectors; `safeAudioControl` already has 6 tests in `audio-session-guard.test.ts`; `assertAudioSessionWithinCap` already has tests in `audio-cap.test.ts` (verified via file presence in routes/__tests__).
    - What's unclear: Whether the planner should add ONE smoke test for the spike route — e.g., `voice-spike.test.ts` — to catch (a) auth chain breakage at mount-order regression and (b) the `transcribeWav` mock returning `{text}` shape.
-   - Recommendation: **One node:test smoke test in `vigil-core/src/routes/__tests__/voice-spike.test.ts`** — mock `transcribeWav` to return `{text: 'hello'}`, assert 201 + `{id, content: 'hello'}`. Total cost: ~15 LOC. Prevents Phase 130's first task from inheriting a broken spike route. The test is itself tossable and gets deleted alongside `voice-spike.ts`.
+   - RESOLVED: Recommendation: **One node:test smoke test in `vigil-core/src/routes/__tests__/voice-spike.test.ts`** — mock `transcribeWav` to return `{text: 'hello'}`, assert 201 + `{id, content: 'hello'}`. Total cost: ~15 LOC. Prevents Phase 130's first task from inheriting a broken spike route. The test is itself tossable and gets deleted alongside `voice-spike.ts`.
 
 4. **Should the spike emit any PostHog events?**
    - What we know: CONTEXT discretion-area #1 lists "Console log format for measurement events — researcher/planner pick (must be Phase 127 GUARD-01 redaction-compatible)." PostHog events would be additionally CI-checked via Rail 1 (BLOCKED_PROPERTY_NAMES) and Rail 2 (Sentry beforeSend).
    - What's unclear: Whether the planner wants spike measurements to land in PostHog (for cross-spike comparison and future-spike replay) or stay in `console.*` (operator-facing only) + MEASUREMENTS.md tabulation.
-   - Recommendation: **Stay console-only.** Spike is tossable; PostHog drift detector adds a maintenance surface that disappears when spike code is deleted; raw `console.time`/`console.timeEnd` + manual log copy into MEASUREMENTS.md is faster for the spike author. Phase 130 productionizes the PostHog events as `voice_captured` (per STACK §1c snippet at line 151).
+   - RESOLVED: Recommendation: **Stay console-only.** Spike is tossable; PostHog drift detector adds a maintenance surface that disappears when spike code is deleted; raw `console.time`/`console.timeEnd` + manual log copy into MEASUREMENTS.md is faster for the spike author. Phase 130 productionizes the PostHog events as `voice_captured` (per STACK §1c snippet at line 151).
 
 5. **Sentry breadcrumbs from spike route — auto-redacted or needs explicit safe-listing?**
    - What we know: GUARD-01.2 `redactSentryEvent` runs as `beforeSend` and strips audio keys from `event.extra` / `event.contexts` / `event.breadcrumbs[].data`. The spike route's `console.error` calls flow into Sentry breadcrumbs automatically (via Sentry's default `console` integration if enabled — verify in initSentry config).
    - What's unclear: Whether the spike's `console.error("[vigil-core] /voice/transcribe OpenAI call failed: ...", err.message)` could ever embed an audio-PCM-shaped value in the message string (e.g., if OpenAI returns a 413 with the file size encoded).
-   - Recommendation: **Sanity-check audio-free messaging.** Spike's `console.error` messages reference only route name + error message (`err.message`); the error message from OpenAI SDK for transcription failures never includes audio bytes. No safe-listing needed. `[ASSUMED-low-risk]`
+   - RESOLVED: Recommendation: **Sanity-check audio-free messaging.** Spike's `console.error` messages reference only route name + error message (`err.message`); the error message from OpenAI SDK for transcription failures never includes audio bytes. No safe-listing needed. `[ASSUMED-low-risk]`
 
 ---
 
