@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: ready_to_plan
-stopped_at: Plan 127-07 completed (GUARD-04 drift detector + Phase 107.1 STATE.md cleanup)
-last_updated: "2026-05-12T13:06:03.731Z"
+status: planning
+stopped_at: Phase 128a context gathered
+last_updated: "2026-05-12T17:19:37.896Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 2
-  total_plans: 9
-  completed_plans: 9
-  percent: 18
+  total_plans: 10
+  completed_plans: 10
+  percent: 100
 ---
 
 # Project State
@@ -419,9 +419,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-12T05:24:11.933Z
-Stopped at: Plan 127-07 completed (GUARD-04 drift detector + Phase 107.1 STATE.md cleanup)
-Resume file: None
+Last session: 2026-05-12T17:19:37.887Z
+Stopped at: Phase 128a context gathered
+Resume file: .planning/phases/128a-voice-01-pcm-feasibility-spike/128a-CONTEXT.md
 
 ## Operator Next Steps
 
