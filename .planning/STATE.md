@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
-stopped_at: Phase 127 context gathered
-last_updated: "2026-05-12T04:24:02.660Z"
+stopped_at: Plan 127-05 completed (GUARD-03 storage + library)
+last_updated: "2026-05-12T04:55:17Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 0
   total_plans: 9
-  completed_plans: 4
-  percent: 44
+  completed_plans: 5
+  percent: 56
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 127 (Pre-spike guardrails) — EXECUTING
-Plan: 5 of 9 (Plans 01/02/03 complete; Plan 04 next)
+Plan: 6 of 9 (Plans 01/02/03/04/05 complete; Plan 05.1a or 06 next per wave gating)
 Status: Ready to execute
 Last activity: 2026-05-12
 
@@ -126,6 +126,7 @@ Last activity: 2026-05-12
 | Phase 127 P02 | 4m | 2 tasks | 7 files |
 | Phase 127 P03 | 2m | 2 tasks (TDD: 2 RED + 2 GREEN) | 4 files (2 created, 2 modified) |
 | Phase 127 P04 | 10min | 2 tasks | 2 files |
+| Phase 127 P05 | 29min | 3 tasks (1 schema/migration + 1 inline checkpoint + 1 library/test) | 6 files (4 created, 2 modified) |
 
 ## Deferred Items
 

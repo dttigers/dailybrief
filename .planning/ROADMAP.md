@@ -364,12 +364,12 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
   2. Server-side hard cap rejects any single G2 audio session longer than 60s, and `audioControl(false)` fires unconditionally on every plugin exit path (ABNORMAL_EXIT_EVENT, SYSTEM_EXIT_EVENT, `beforeunload`)
   3. When a user crosses the per-day AI-cost watermark, ai_cache regenerate + chat + voice transcription all return `DAILY_AI_BUDGET_EXCEEDED` (locked-enum extension of Phase 126 `ERROR_CODE_MAP`) with operator-friendly copy in the PWA
   4. `drizzle-kit generate --dry` produces zero pending changes against `schema.ts` — Phase 107.1 stale `work_orders` columns either land in a migration or are removed from the schema file
-**Plans:** 4/9 plans executed
+**Plans:** 5/9 plans executed
   - [x] `127-01-PLAN.md` — GUARD-01 vigil-core: extend BLOCKED_PROPERTY_NAMES with 6 audio keys + Sentry beforeSend + three-rail drift detector (Wave 1)
   - [x] `127-02-PLAN.md` — GUARD-01 vigil-pwa: duplicate denylist + Browser sentry-redact + HARD-FAIL parity drift detector + sentry-init.test.ts + denylist-parity:ci CI script (Wave 1)
   - [x] `127-03-PLAN.md` — GUARD-02 vigil-core server: audio-cap.ts helper + AudioSessionTooLongError + AUDIO_SESSION_TOO_LONG ERROR_CODE_MAP entry (Wave 1)
   - [ ] `127-04-PLAN.md` — GUARD-02 vigil-g2-plugin: safeAudioControl cleanup wrapper + six-case exit-event unit test (Wave 1)
-  - [ ] `127-05-PLAN.md` — GUARD-03 storage + library: ai_usage_daily table + 0020 migration + ai-budget.ts (requireAiBudget + withBudgetTracking + DailyBudgetExceededError + __computeUsdForTest + __readCapUsdForTest) + library unit tests (all 7 cases required) (Wave 2, internal checkpoint for `pnpm db:migrate`)
+  - [x] `127-05-PLAN.md` — GUARD-03 storage + library: ai_usage_daily table + 0020 migration + ai-budget.ts (requireAiBudget + withBudgetTracking + DailyBudgetExceededError + __computeUsdForTest + __readCapUsdForTest) + library unit tests (all 7 cases required) (Wave 2, internal checkpoint for `pnpm db:migrate`) [done 2026-05-12, 29min]
   - [ ] `127-05.1a-PLAN.md` — GUARD-03 AI client wrap: widen callClaude* to require userId + wrap ai.messages.create in withBudgetTracking + Pitfall 4 process-audio.ts:82-115 fix + client.test.ts drift detector (Wave 2; depends on 05)
   - [ ] `127-05.1b-PLAN.md` — GUARD-03 route gating + onError + integration: chat.ts requireAiBudget gate + index.ts app.onError 429 branch (Pitfall 5) + app-on-error.test.ts + cross-user-isolation.test.ts extension (Wave 3; depends on 05.1a)
   - [ ] `127-06-PLAN.md` — GUARD-03 vigil-pwa: DAILY_AI_BUDGET_EXCEEDED ERROR_CODE_MAP extension + pin test (Wave 2; depends on 03 — same file ownership)
