@@ -77,4 +77,17 @@ describe('resolveApiError + ERROR_CODE_MAP — AUTH-126-05 / D-04', () => {
       expect(entry.message.length).toBeGreaterThan(0)
     }
   })
+
+  it('GUARD-127-CODE-MAP-AUDIO-EXTENSION: AUDIO_SESSION_TOO_LONG present in EXTENSION block with locked copy + no CTA (D-02.4)', () => {
+    // CONTEXT D-02.4 verbatim copy lock — server returns HTTP 413 + code on
+    // base64 payloads > 2_560_000 chars; PWA renders this string. Future
+    // copy tuning requires updating this test alongside the source.
+    expect(ERROR_CODE_MAP, 'ERROR_CODE_MAP must contain Phase 127 GUARD-02 key "AUDIO_SESSION_TOO_LONG"').toHaveProperty('AUDIO_SESSION_TOO_LONG')
+    const entry = ERROR_CODE_MAP['AUDIO_SESSION_TOO_LONG']!
+    expect(entry.message).toBe('Recording is too long. Voice clips must be 60 seconds or less.')
+    // CONTEXT D-02.4: no CTA — operator can't act their way out of "clip is too long",
+    // they just need to retry with a shorter recording.
+    expect(entry.ctaLabel).toBeUndefined()
+    expect(entry.ctaHref).toBeUndefined()
+  })
 })
