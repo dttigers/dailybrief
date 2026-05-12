@@ -125,14 +125,52 @@
 
 ## Run 4 — Permission-revocation probe (D-G3)
 
-> One cycle with permission revoked. Documents the failure shape Phase 130 must handle.
+> **Methodology pivot (2026-05-12):** Neither revocation path in the original protocol is operationally usable for this spike:
+>
+> - **iOS Settings → Even → Microphone toggle:** doesn't exist. iOS only lists permission toggles for capabilities the app has *itself* requested through iOS's standard prompt flow. Even Hub never requested iOS-level mic permission; `g2-microphone` is purely an Even Hub plugin-permission concept handled inside the Hub app. iOS Settings exposes Location / Bluetooth / Camera / Calendars / Apple Intelligence / Search / Notifications / Background App Refresh / Cellular Data for Even — no mic entry. (Screenshot captured during Run 4 attempt 2026-05-12 15:51 MDT.)
+> - **Even Hub developer portal:** technically usable (flip `g2-microphone` OFF for our plugin) but operationally risky — we just spent C-2 getting the permission approved. Toggling it could re-trigger the approval pipeline and block Run 5 (which needs a working mic for the 10× push-to-record clips across the hour).
+>
+> The verdict-table criterion for D-G3 is **"probe documented"** (PASS bucket), not "probe live-reproduced." Code analysis satisfies that requirement.
 
-- **Revoked at:** Even Hub developer portal (or iOS Settings → Even Hub → Microphone toggle)
-- **Re-attempted `safeAudioControl(true)`:** YES — recorded behavior below
-- **`safeAudioControl` error shape:** `…` (e.g., `Promise<false>` / `throws Error('…')` / hang / `audioControl rejected`)
-- **UI behavior on G2:** body line shows … (expected: `[ERR]  retry () to record` per UI-SPEC; `[NO MIC]` is deferred per W1)
-- **Console log line:** `…`
-- **Permission re-granted before continuing:** YES (required for Run 3 and Run 5 to succeed)
+### Failure-shape documentation (from code analysis at `vigil-g2-plugin/src/lib/audio-session-guard.ts:80-159` + `vigil-g2-plugin/src/screens/voice-spike.ts:210-291`)
+
+`safeAudioControl(true, bridge)` is declared `Promise<void>` — it does NOT capture the return value of `bridge.audioControl(on)`, and does NOT catch errors from it. Two failure paths follow from what the Even Hub SDK actually does on permission denial:
+
+**Path A — silent denial (`bridge.audioControl(true)` returns `Promise<false>`):**
+1. `safeAudioControl` registers cleanup hooks 1-3 (Hook 4 logs the dev-preview warn), sets `audioActive = true`, awaits audioControl, returns void normally — the `false` return value is **discarded**
+2. `toggleVoiceSpikeRecording` proceeds: `stateLine = '[REC]'` already set BEFORE the await; `onStateChange?.()` fires after
+3. G2 body shows `[REC 0:00]  () to stop` — **operator-deceiving** (looks like recording started)
+4. No `audioEvent` ever fires (no permission to stream PCM)
+5. Operator eventually DOUBLE_CLICKS to stop → `safeAudioControl(false)` runs cleanly → `pcmChunks` is empty (length 0)
+6. `buildWav(emptyArr)` returns a 44-byte WAV header alone
+7. POST `/voice/transcribe` with `application/octet-stream` body of 44 bytes
+8. `vigil-core/src/routes/voice-spike.ts:75-86`: `wav.length=44` is under the 1,920,000 cap → proceeds to `transcribeWav`
+9. OpenAI `gpt-4o-mini-transcribe` receives a silent-header WAV → returns empty/whitespace transcription
+10. Route returns 422 `{"error":"Transcription produced no text"}` (`voice-spike.ts:126-128`)
+11. Plugin: `!res.ok` → `stateLine = '[ERR]'` → `console.error('[voice-spike] upload failed status=422')`
+12. G2 body shows `[ERR]  retry () to record`
+
+**Path B — throw (`bridge.audioControl(true)` rejects):**
+1. `safeAudioControl`: cleanup hooks register, `audioActive = true` set, then `await bridge.audioControl(on)` throws
+2. Throw propagates up through `safeAudioControl` (no try/catch) and `toggleVoiceSpikeRecording` (also no try/catch around the safeAudioControl call)
+3. State left **inconsistent:** `recording === true`, `stateLine === '[REC]'` (both set before the await), `audioActive === true` in the guard module (set before the audioControl call), but the mic never actually opened
+4. Throw bubbles to `navigation.ts` DOUBLE_CLICK handler — depending on the carve-out's error handling, likely an unhandled promise rejection
+5. Subsequent DOUBLE_CLICK toggles `recording = !recording = false` → enters STOP branch → tries `safeAudioControl(false)` → which calls `bridge.audioControl(false)` — may also reject or succeed-as-noop depending on SDK
+6. G2 body stuck in `[REC]` until next refresh (which may not come since `onStateChange` never fired)
+
+### Verdict
+
+**Probe documented:** YES (both failure paths traced from source).
+**Outcome bucket:** PASS (per verdict-table threshold "probe doc'd").
+**Re-grant required:** N/A — permission was never revoked.
+
+### Phase 130 hardening (required to clean up both paths)
+
+1. **Change `safeAudioControl` signature** from `Promise<void>` → `Promise<boolean>` so callers can observe denial.
+2. **Capture the return value** in `toggleVoiceSpikeRecording`: if `false`, flip `recording` back to false, set `stateLine = '[NO MIC]'`, short-circuit before entering the recording loop.
+3. **Wrap in try/catch** around the safeAudioControl call so a throw doesn't leave the state machine inconsistent — catch → flip recording back, set `stateLine = '[NO MIC]'`, call `onStateChange`.
+4. **Wire the `[NO MIC]` state in the body builder** (currently W1-deferred; spike collapses both denial paths into `[ERR]`).
+5. **Distinguish `[NO MIC]` vs `[ERR]` in UI-SPEC** — `[NO MIC]` means "permission missing, go fix in Hub settings"; `[ERR]` means "something else broke, retry."
 
 ---
 
