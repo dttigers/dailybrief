@@ -2,8 +2,9 @@
 seed_id: SEED-012
 purpose: Operator outreach to Even Realities re: dashboard widget API timeline
 to: software@evenrealities.com
-status: draft (operator sends manually)
+status: ready-to-send (operator sends manually; v0.3.6 approved 2026-05-12)
 drafted: 2026-05-10
+updated: 2026-05-12
 ---
 
 # Email draft — Dashboard widget API timeline + early access
@@ -19,7 +20,7 @@ drafted: 2026-05-10
 Hi Even Realities team,
 
 I'm Jameson, the developer behind Vigil (`com.vigilapp.g2`) — a G2 plugin
-currently in beta review on the Even Hub developer portal at v0.3.6.
+approved and live on the Even Hub developer portal at v0.3.6.
 Vigil is an ambient AI life-assistant that surfaces work orders,
 reminders, daily affirmations, and (new in v0.3.x) live Claude Code
 agent activity on the G2 HUD. The plugin runs against my own backend
@@ -73,10 +74,10 @@ Two asks:
    I'd be a motivated bug-hunter for whatever shape the widget
    primitives take.
 
-For context on what's running today: Vigil v0.3.6 was just
-resubmitted addressing the prior v0.2.0 review feedback (blank-screen
-issue in the iPhone WebView — now shows a brand splash). The plugin
-handles 5 event types (needs_input / task_failed / task_complete /
+For context on what's running today: Vigil v0.3.6 shipped after
+addressing the prior v0.2.0 review feedback (blank-screen issue in
+the iPhone WebView — now shows a brand splash). The plugin handles
+5 event types (needs_input / task_failed / task_complete /
 milestone / heartbeat), double-tap banner ack on the temple, a Quiet
 mode toggle (PWA-driven filter that respects user-controlled DND
 state), and Last-Event-ID SSE replay on reconnect. All of that
@@ -96,9 +97,7 @@ github.com/dttigers/dailybrief (private — happy to add reviewers on request)
 
 ## Send-when checklist (operator)
 
-- [ ] v0.3.6 review status: accepted (preferred — landing a "submission
-      acknowledged" or "in review" note is fine too, but accepted is
-      strongest credibility signal)
+- [x] v0.3.6 review status: **accepted and live on Even Hub** (confirmed 2026-05-12)
 - [ ] Re-read once for tone (calm/professional; no marketing speak)
 - [ ] Confirm `software@evenrealities.com` is still the right alias
       (verify via Even Hub developer portal contact page)
