@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { MessageParam } from "@anthropic-ai/sdk/resources/messages.js";
+import { withBudgetTracking } from "../lib/ai-budget.js";
 
 let client: Anthropic | null = null;
 
@@ -17,22 +18,37 @@ export function getAIClient(): Anthropic | null {
   return client;
 }
 
+/**
+ * Phase 127 GUARD-03 (T-127-03 mitigation): callers MUST pass `userId` so
+ * the budget-tracking wrapper can accumulate spend per user. Sourced from
+ * `c.get("userId")` in route handlers; for queue/cron paths, supply the
+ * persisted userId of the user the work is being done for.
+ *
+ * The `ai.messages.create` call is wrapped via the budget-tracking helper
+ * imported from `lib/ai-budget.js` — the chokepoint that closes Pitfall 4
+ * at the wrapper level. The drift detector in `client.test.ts` pins the
+ * wrap pattern by source-grepping this file.
+ */
 export async function callClaude(options: {
   system: string;
   userMessage: string;
   maxTokens: number;
+  userId: number;
 }): Promise<string> {
   const ai = getAIClient();
   if (!ai) throw new Error("AI client not available");
 
   const model = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
 
-  const response = await ai.messages.create({
-    model,
-    max_tokens: options.maxTokens,
-    system: options.system,
-    messages: [{ role: "user", content: options.userMessage }],
-  });
+  const { userId } = options;
+  const response = await withBudgetTracking(userId, () =>
+    ai.messages.create({
+      model,
+      max_tokens: options.maxTokens,
+      system: options.system,
+      messages: [{ role: "user", content: options.userMessage }],
+    })
+  );
 
   const block = response.content[0];
   if (block.type !== "text") {
@@ -41,22 +57,32 @@ export async function callClaude(options: {
   return block.text;
 }
 
+/**
+ * Phase 127 GUARD-03 (T-127-03 mitigation): callers MUST pass `userId` so
+ * `withBudgetTracking` can accumulate spend per user. Sourced from
+ * `c.get("userId")` in route handlers; for queue/cron paths, supply the
+ * persisted userId of the user the work is being done for.
+ */
 export async function callClaudeConversation(options: {
   system: string;
   messages: Array<{ role: "user" | "assistant"; content: string }>;
   maxTokens: number;
+  userId: number;
 }): Promise<string> {
   const ai = getAIClient();
   if (!ai) throw new Error("AI client not available");
 
   const model = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
 
-  const response = await ai.messages.create({
-    model,
-    max_tokens: options.maxTokens,
-    system: options.system,
-    messages: options.messages,
-  });
+  const { userId } = options;
+  const response = await withBudgetTracking(userId, () =>
+    ai.messages.create({
+      model,
+      max_tokens: options.maxTokens,
+      system: options.system,
+      messages: options.messages,
+    })
+  );
 
   const block = response.content[0];
   if (block.type !== "text") {
@@ -65,22 +91,32 @@ export async function callClaudeConversation(options: {
   return block.text;
 }
 
+/**
+ * Phase 127 GUARD-03 (T-127-03 mitigation): callers MUST pass `userId` so
+ * `withBudgetTracking` can accumulate spend per user. Sourced from
+ * `c.get("userId")` in route handlers; for queue/cron paths, supply the
+ * persisted userId of the user the work is being done for.
+ */
 export async function callClaudeMultimodal(options: {
   system?: string;
   content: MessageParam["content"];
   maxTokens: number;
+  userId: number;
 }): Promise<string> {
   const ai = getAIClient();
   if (!ai) throw new Error("AI client not available");
 
   const model = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
 
-  const response = await ai.messages.create({
-    model,
-    max_tokens: options.maxTokens,
-    ...(options.system ? { system: options.system } : {}),
-    messages: [{ role: "user", content: options.content }],
-  });
+  const { userId } = options;
+  const response = await withBudgetTracking(userId, () =>
+    ai.messages.create({
+      model,
+      max_tokens: options.maxTokens,
+      ...(options.system ? { system: options.system } : {}),
+      messages: [{ role: "user", content: options.content }],
+    })
+  );
 
   const block = response.content[0];
   if (block.type !== "text") {
