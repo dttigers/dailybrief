@@ -30,6 +30,7 @@ const SENSITIVE_ROUTES = new Set<string>([
 // Exported for tests and to make the rule grep-visible.
 // Easy to extend — add a string, no type changes needed.
 export const BLOCKED_PROPERTY_NAMES = new Set<string>([
+  // ── LOCKED as of Phase 103 D-04 ──
   "content",
   "body",
   "text",
@@ -38,6 +39,13 @@ export const BLOCKED_PROPERTY_NAMES = new Set<string>([
   "title",
   "note",
   "transcript",
+  // ── Phase 127 GUARD-01 EXTENSION — audio PCM denylist (D-01.1) ──
+  "audioPcm",
+  "audio_pcm",
+  "pcm",
+  "audio",
+  "audioBuffer",
+  "audio_buffer",
 ]);
 
 /**
