@@ -21,6 +21,8 @@
 - **Chat context expansion (SEED-014)** — Lift the hard 20-thought cap on `/v1/chat` so "what was I thinking about last month?" resolves
 - **iPhone Focus/DND auto-detect for Quiet Mode (SEED-015)** — Follow-on to v3.8 AGENT-HUD-03 manual toggle; "iPhone Focus = quiet glasses" finally lands
 - **Companion HUD clarity for away-from-desk (SEED-016)** — Three gaps surfaced during bypass-permission long-runs ("still running, or done?" at a glance in <2s)
+- **vigil-watch payload enrichment** — Today the Companion HUD shows only `session label / state / last event timestamp`. The JSONL stream contains far richer signal that the parser currently discards. Three enrichments: (1) **project context** — extract `cwd` from session header → derive project name → HUD shows `dailybrief: running` not `session abc123: running`; (2) **current tool/step** — surface the active `tool_use` name (Edit / Bash / Read / etc.) on the HUD body so glance answers "editing files / running build / waiting on Claude"; (3) **prompt/message preview** — truncated first line of current user prompt OR last assistant message text, privacy-aware (length-cap + redact-on-secret-pattern). Together these convert the HUD from "is Claude running?" to "what is Claude doing right now?"
+- **Simple replies via G2 — close the ambient loop** — Today G2 is read-only: HUD surfaces `needs_input` banners but operator has to walk back to the keyboard to answer. New capability: when a `needs_input` event fires, DOUBLE_CLICK enters reply mode → cycle through prefab quick replies (`yes` / `no` / `continue` / `abort` / `defer`) → DOUBLE_CLICK to send. Server adds `POST /v1/agent-replies` that vigil-watch (or a paired writer process) injects back into the active Claude Code session. **Technical feasibility TBD** — Claude Code's input channel may not accept programmatic out-of-band injection; spike-first phase needs to prove the write-back path (candidates: JSONL append + IPC, Claude Code SDK hook, named-pipe to operator terminal). If full reply round-trip proves infeasible, down-scope to "ack/dismiss banner from G2" only.
 
 **Spike-first gate:** SEED-010 1-2 day PCM feasibility spike is the first phase. If `audioControl` + `audioEvent` can't deliver clean PCM at acceptable latency, voice anchor down-scopes (e.g. push-to-record short clips only) before the rest of the milestone commits.
 
@@ -176,6 +178,11 @@ Capture every thought with zero friction and have the system organize it for you
 - [ ] **CHAT-CTX-01** — Lift 20-thought cap on `/v1/chat` context window
 - [ ] **QUIET-AUTO-01** — iPhone Focus/DND auto-detect → Quiet Mode toggle
 - [ ] **HUD-CLARITY-01..N** — Companion HUD away-from-desk clarity gaps (SEED-016)
+- [ ] **WATCH-ENRICH-01** — Extract cwd/project name from JSONL header → HUD shows project context
+- [ ] **WATCH-ENRICH-02** — Surface current tool_use name (Edit/Bash/Read) on HUD body line
+- [ ] **WATCH-ENRICH-03** — Truncated prompt / last-assistant-message preview on HUD (privacy-aware)
+- [ ] **G2-REPLY-SPIKE** — Spike: can vigil-watch (or paired writer) inject programmatic input into an active Claude Code session? Decides scope of G2-REPLY-02..N
+- [ ] **G2-REPLY-02..N** — Quick-reply UX on G2 (DOUBLE_CLICK to enter reply mode + cycle prefab options + DOUBLE_CLICK to send); down-scopes to banner-ack-only if spike fails
 
 **v3.5 paused (blocked on G2 hardware):**
 - [ ] G2 resubmit: latest-simulator screenshots (G2-01 — code side done, simulator session pending)
@@ -308,4 +315,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 — v3.9 Voice & Companion Polish opened via `/gsd-new-milestone`. Anchor: SEED-010 G2 PCM voice capture (spike-gated). Action-on-glasses: mark tasks complete from G2 (gesture allocation TBD). Capture-reach: ServiceNow assisted-capture popup ships around the Polaris Web-Component/Shadow-DOM scrape block. Polish: SEED-009 last-viewed restore, SEED-013 insights regen, SEED-014 chat context expansion, SEED-015 Focus/DND auto-detect, SEED-016 HUD clarity. SEED-011 + 999.1/999.2 + Phase 85 stay deferred.*
+*Last updated: 2026-05-11 — v3.9 Voice & Companion Polish opened via `/gsd-new-milestone`. Anchor: SEED-010 G2 PCM voice capture (spike-gated). Action-on-glasses: mark tasks complete from G2 (gesture allocation TBD). Watch-enrich: project/cwd + tool name + prompt preview on HUD. Ambient loop closure: G2 quick-replies to needs_input (spike-gated for write-back path). Capture-reach: ServiceNow assisted-capture popup ships around the Polaris Web-Component/Shadow-DOM scrape block. Polish: SEED-009 last-viewed restore, SEED-013 insights regen, SEED-014 chat context expansion, SEED-015 Focus/DND auto-detect, SEED-016 HUD clarity. Two spike-first gates: VOICE-01 + G2-REPLY-SPIKE.*
