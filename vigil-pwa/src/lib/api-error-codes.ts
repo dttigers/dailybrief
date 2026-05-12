@@ -135,6 +135,16 @@ export const ERROR_CODE_MAP: Record<string, ApiErrorUx> = {
     ctaLabel: "Sign in",
     ctaHref: "/auth",
   },
+
+  // ── EXTENSION (Phase 127 GUARD-02 — D-04 additivity) ──
+  // vigil-core /v1/voice/transcribe (Phase 130) returns HTTP 413 + this code
+  // when `assertAudioSessionWithinCap` rejects a base64 payload exceeding
+  // 2_560_000 chars (~60s of 16 kHz × 16-bit LE × mono PCM). Verbatim copy
+  // pinned by GUARD-127-CODE-MAP-AUDIO-EXTENSION test (CONTEXT D-02.4).
+  // No CTA — the user just needs to retry with a shorter recording.
+  AUDIO_SESSION_TOO_LONG: {
+    message: "Recording is too long. Voice clips must be 60 seconds or less.",
+  },
 }
 
 /**
