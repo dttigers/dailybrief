@@ -14,6 +14,7 @@
 
 **Target features:**
 - **Voice anchor — G2 PCM capture (SEED-010)** — `audioControl` + `audioEvent` SDK pipeline; 1-2 day spike gates milestone scope per seed's own recommendation
+- **Mark tasks complete from G2** — Action-on-glasses for work orders + reminders + thoughts (today they're read-only from G2; completion only happens on Mac/PWA). Gesture allocation TBD via hardware-truth-first phase: must navigate the v3.8 reality that DOUBLE_CLICK is already overloaded (exit-to-home on most screens; banner-ack/cycle-session/home on Companion) and single-tap + long-press are unreliable on hardware per SEED-011. Likely shape: two-step DOUBLE_CLICK pattern (enter "action mode" → confirm) or per-screen mode-isolation. Touches POST `/v1/work-orders/:id/status` + `/v1/thoughts/:id/status` (both exist from v1.2) + per-userId SSE echo to PWA for live sync.
 - **ServiceNow assisted-capture popup** — Browser extension popup pre-fills CS# from page title, operator types short description + priority, syncs to vigil-core; ships around the Polaris Web-Component + Shadow-DOM scrape block documented 2026-05-07
 - **G2 last-viewed screen restore (SEED-009)** — `bridge.setLocalStorage`-backed lifecycle UX so context-switched users don't re-navigate to home carousel every plugin re-open
 - **Auto-regenerate insights/therapy cache (SEED-013)** — Close the "are these about *this week*?" trust gap by invalidating `(userId, type)` cache on new thought upload
@@ -168,6 +169,7 @@ Capture every thought with zero friction and have the system organize it for you
 **v3.9 — in planning (see Current Milestone section above for full scope):**
 - [ ] **VOICE-01** — G2 PCM voice capture spike (SEED-010 anchor; 1-2 day feasibility gate)
 - [ ] **VOICE-02..N** — G2 voice capture full implementation (scope locked after VOICE-01 spike)
+- [ ] **G2-ACTION-01..N** — Mark tasks complete from G2 (work orders + reminders + thoughts; gesture allocation TBD via hardware-truth-first sub-phase)
 - [ ] **SVCNOW-01** — ServiceNow assisted-capture popup (CS# pre-fill + description/priority typed input + sync)
 - [ ] **G2-LIFECYCLE-01** — G2 plugin last-viewed screen restore via `bridge.setLocalStorage`
 - [ ] **INSIGHTS-FRESH-01** — Auto-regenerate `ai_cache (userId, type)` on new thought upload
@@ -306,4 +308,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 — v3.9 Voice & Companion Polish opened via `/gsd-new-milestone`. Anchor: SEED-010 G2 PCM voice capture (spike-gated). Capture-reach: ServiceNow assisted-capture popup ships around the Polaris Web-Component/Shadow-DOM scrape block. Polish: SEED-009 last-viewed restore, SEED-013 insights regen, SEED-014 chat context expansion, SEED-015 Focus/DND auto-detect, SEED-016 HUD clarity. SEED-011 + 999.1/999.2 + Phase 85 stay deferred.*
+*Last updated: 2026-05-11 — v3.9 Voice & Companion Polish opened via `/gsd-new-milestone`. Anchor: SEED-010 G2 PCM voice capture (spike-gated). Action-on-glasses: mark tasks complete from G2 (gesture allocation TBD). Capture-reach: ServiceNow assisted-capture popup ships around the Polaris Web-Component/Shadow-DOM scrape block. Polish: SEED-009 last-viewed restore, SEED-013 insights regen, SEED-014 chat context expansion, SEED-015 Focus/DND auto-detect, SEED-016 HUD clarity. SEED-011 + 999.1/999.2 + Phase 85 stay deferred.*
