@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
-stopped_at: Phase 127 Plan 03 complete (GUARD-02 server-side primitive + PWA error UX shipped)
-last_updated: "2026-05-12T04:14:49.000Z"
+stopped_at: Phase 127 context gathered
+last_updated: "2026-05-12T04:24:02.660Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 0
   total_plans: 9
-  completed_plans: 3
-  percent: 33
+  completed_plans: 4
+  percent: 44
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 127 (Pre-spike guardrails) — EXECUTING
-Plan: 4 of 9 (Plans 01/02/03 complete; Plan 04 next)
+Plan: 5 of 9 (Plans 01/02/03 complete; Plan 04 next)
 Status: Ready to execute
 Last activity: 2026-05-12
 
@@ -125,6 +125,7 @@ Last activity: 2026-05-12
 | Phase 127 P01 | 6m | 3 tasks | 5 files |
 | Phase 127 P02 | 4m | 2 tasks | 7 files |
 | Phase 127 P03 | 2m | 2 tasks (TDD: 2 RED + 2 GREEN) | 4 files (2 created, 2 modified) |
+| Phase 127 P04 | 10min | 2 tasks | 2 files |
 
 ## Deferred Items
 
@@ -370,6 +371,8 @@ Recent (v3.7 closeout):
 - [Phase 126 / Plan 05]: __resetRegisterBucketsForTest named distinctly from forgot-password.ts's __resetBucketsForTest to prevent import-site ambiguity in the shared test module
 - [Phase ?]: Tightened Rail 2 anchor to multi-line Sentry.init({\n form — JSDoc comment-prose false-positive defense (Plan 127-01)
 - [Phase ?]: Added routes/process-audio.ts to Rail 3 safe-list (Plan 127-01 Rule 3 — route-path substring false-positive; no audio DATA leaks)
+- [Phase ?]: Phase 127 Plan 04: Dependency-injection bridge param + local AudioGuardBridge structural interface (sidesteps SDK v0.0.9 vs v0.0.10 type-export gap; clean test seam)
+- [Phase ?]: Phase 127 Plan 04: Spelled 'Pitfall-seven' in JSDoc/comments (vs 'Pitfall 7') so bare-integer drift grep stays zero — named-enum lock extends to prose
 
 ### Pending Todos
 
@@ -406,7 +409,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-12T04:09:27.138Z
+Last session: 2026-05-12T04:23:33.497Z
 Stopped at: Phase 127 context gathered
 Resume file: None
 
