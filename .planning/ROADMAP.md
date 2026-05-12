@@ -344,7 +344,7 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
 ### Phases
 
 - [ ] **Phase 127: Pre-spike guardrails** — audio-redaction + audio-session caps + per-user daily AI-cost watermark + schema reconciliation before any feature code
-- [ ] **Phase 127.5: G2 input gesture audit** — 30-min code audit of single-press event plumbing; output verdict shapes downstream gesture grammar
+- [x] **Phase 127.5: G2 input gesture audit** — 30-min code audit of single-press event plumbing; output verdict shapes downstream gesture grammar (completed 2026-05-12)
 - [ ] **Phase 128a: VOICE-01 PCM feasibility spike** — measure chunk size / E2E latency / dropout / battery / `audioControl(false)` cleanup; output `128a-SPIKE-DECISION.md`
 - [ ] **Phase 128b: G2-REPLY-01 write-back path spike** — empirically prove or rule out programmatic Claude Code input injection across 3+ candidate paths; output `128b-SPIKE-DECISION.md`
 - [ ] **Phase 129: Lifecycle restore + ServiceNow popup** — parallel-safe wins during spike windows (G2-LIFECYCLE-01/02/03 + SVCNOW-01..05)
@@ -383,7 +383,7 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
   1. A written verdict in `127.5-AUDIT.md` records either REACTIVATE (the `?? 0` nullish-coalesce fix is the cause and single-press is shipable) or CONFIRM-DEFER (single-press genuinely doesn't fire on hardware)
   2. The verdict cites specific source lines in `vigil-g2-plugin/src/screens/companion.ts` and/or `main.ts` (no hand-wave conclusions)
   3. Downstream Phase 133 G2-ACTION-01/02 gesture grammar choice is decidable from the verdict alone (no second audit needed at plan-authoring time)
-**Plans:** TBD
+**Plans:** 1/1 plans complete
 **UI hint**: yes
 
 ### Phase 128a: VOICE-01 PCM feasibility spike
@@ -618,7 +618,7 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
 | 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 11/11 | Complete | 2026-05-11 |
 | 126. Wide-release auth hardening (mid-milestone insert) | v3.8 | 11/11 | Complete | 2026-05-11 |
 | 127. Pre-spike guardrails (audio redaction + audio caps + AI-cost watermark + schema reconcile) | v3.9 | 8/9 | In Progress|  |
-| 127.5. G2 input gesture audit (30-min code review; verdict shapes G2-ACTION + G2-REPLY) | v3.9 | 0/TBD | Not started | - |
+| 127.5. G2 input gesture audit (30-min code review; verdict shapes G2-ACTION + G2-REPLY) | v3.9 | 1/1 | Complete    | 2026-05-12 |
 | 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 0/TBD | Not started | - |
 | 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 0/TBD | Not started | - |
 | 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 0/TBD | Not started | - |

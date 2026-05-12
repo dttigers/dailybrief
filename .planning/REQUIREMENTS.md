@@ -17,7 +17,7 @@
 - [x] **GUARD-02**: Server-side hard cap on single G2 audio session (≤60s); idempotent unconditional `audioControl(false)` on every plugin exit path (`ABNORMAL_EXIT_EVENT`, `SYSTEM_EXIT_EVENT`, `beforeunload`).
 - [x] **GUARD-03**: Per-user daily AI-cost watermark with locked-enum `DAILY_AI_BUDGET_EXCEEDED` error (extends Phase 126 `ERROR_CODE_MAP`); blocks ai_cache regenerate + chat + voice transcription when exceeded.
 - [x] **GUARD-04**: Schema reconciliation — `drizzle-kit generate --dry` is clean before any v3.9 migration; Phase 107.1 stale `work_orders` columns either land via migration or are removed from `schema.ts`.
-- [ ] **AUDIT-G2-INPUT-01**: 30-min code audit of `vigil-g2-plugin/src/screens/companion.ts` + `main.ts` event handlers confirms or refutes Phase 124 D-08's "single-tap not reliably plumbed" finding. Output: written verdict in `127.5-AUDIT.md` (REACTIVATE single-tap / CONFIRM-DEFER). Verdict shapes G2-ACTION + G2-REPLY gesture grammar.
+- [x] **AUDIT-G2-INPUT-01**: 30-min code audit of `vigil-g2-plugin/src/screens/companion.ts` + `main.ts` event handlers confirms or refutes Phase 124 D-08's "single-tap not reliably plumbed" finding. Output: written verdict in `127.5-AUDIT.md` (REACTIVATE single-tap / CONFIRM-DEFER). Verdict shapes G2-ACTION + G2-REPLY gesture grammar.
 
 ### Voice — G2 PCM capture (anchor)
 
@@ -147,7 +147,7 @@ Empty initially. Populated by roadmapper during phase mapping.
 | GUARD-02 | 127 | Complete |
 | GUARD-03 | 127 | Complete |
 | GUARD-04 | 127 | Complete |
-| AUDIT-G2-INPUT-01 | 127.5 | Pending |
+| AUDIT-G2-INPUT-01 | 127.5 | Complete |
 | VOICE-01 | 128a | Pending |
 | VOICE-02 | 130 | Pending |
 | VOICE-03 | 130 | Pending |
