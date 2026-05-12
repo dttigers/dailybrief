@@ -44,6 +44,22 @@ Tracking out-of-scope issues discovered during execution.
 
 **Why deferred:** this is a measurement-instrumentation correctness improvement, not a functional bug — the spike's verdict already uses the corrected math. Phase 130 hardening is the right place to land the fix because Phase 130 is rewriting/replacing this screen anyway (file is marked TOSSABLE in its banner).
 
+## Cleanup-hook tracing dies with the WebView (surfaced 2026-05-12 during Run 3 cycle 1)
+
+**Issue:** Safari Web Inspector attaches to the live WebView process. When iOS swipe-kills Even Hub, the WebView dies and the inspector session terminates — every `console.log` line that fired in the cleanup hooks (`audio-session-guard.ts` Hooks 1-3: `beforeunload` / `ABNORMAL_EXIT` / `SYSTEM_EXIT`) is lost with the buffer. We cannot directly observe which cleanup path reaped the mic.
+
+**Spike-time workaround (Run 3 methodology pivot):** use G2 battery drain over 60s post-kill as the PASS signal. Operationally definitive — `audioControl(false)`'s observable effect *is* releasing the mic so it stops drawing power. If post-kill drain ≈ idle, the mic is off regardless of code path.
+
+**Phase 130 fix:** add localStorage breadcrumbs inside each cleanup hook in `audio-session-guard.ts`:
+```ts
+const trail = JSON.parse(localStorage.getItem('audio-cleanup-trail') ?? '[]')
+trail.push({ ts: Date.now(), hook: 'beforeunload', audioActive })
+localStorage.setItem('audio-cleanup-trail', JSON.stringify(trail))
+```
+On next page load, dump and clear the trail to console. localStorage survives WebView restarts (persisted per-origin to disk on iOS), so the trace survives the force-quit. Pair with the existing battery-drain check for defense-in-depth.
+
+**Why deferred:** Run 3 has 4 remaining cycles and a code change + resideload mid-spike would invalidate Run 1/Run 2's matched build. Battery-drain methodology measures what the verdict actually cares about (mic released? yes/no).
+
 ## End-of-spike: bulk-delete g2_voice test thoughts
 
 Spike runs (Run 1 ×10 short clips, Run 2 ×1 near-cap, Run 5 battery-delta ×10 push-to-record) generate `source='g2_voice'` test thoughts in production. Operator deferred cleanup until after Run 5 completes (single sweep beats incremental cleanup).

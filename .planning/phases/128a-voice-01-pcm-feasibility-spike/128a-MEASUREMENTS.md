@@ -94,19 +94,30 @@
 
 ## Run 3 — 5× force-quit cleanup cycles (D-M4)
 
-> For each cycle: `safeAudioControl(true)` → record 3s → swipe-kill Even Hub iPhone app mid-recording → reopen → check console + battery drain rate.
+> **Methodology pivot (2026-05-12):** Safari Web Inspector attaches to the live WebView; when iOS swipe-kills Even Hub, the WebView process dies and the inspector session terminates — previous console buffer is irretrievable. The "Cleanup path observed" column is therefore best-effort (only captured if `onBackgroundRestore` fires on the new WebView after reopen). **Primary PASS signal is battery drain**, which is operationally what `audioControl(false)` does: release the mic so it stops drawing power. If post-kill drain ≈ idle, the mic is off regardless of which hook reaped it.
+>
+> Per-cycle protocol:
+> 1. Note G2 battery % (pre-kill baseline)
+> 2. DOUBLE_CLICK on G2 — body shows `[REC 0:0X]`
+> 3. Wait ~3s while recording
+> 4. Swipe-kill Even Hub iPhone app (app switcher → swipe up)
+> 5. **Wait 60s without reopening** (let any leaked mic session drain measurably)
+> 6. Note G2 battery % (post-kill, 60s elapsed)
+> 7. Reopen Even Hub, return to Voice Spike screen; scroll up in new console for any `onBackgroundRestore` log line (likely absent in vite dev preview — Hook 4 is disabled per audio-session-guard.ts feature-detect)
 
-| Cycle | Cleanup path observed (ABNORMAL_EXIT / SYSTEM_EXIT / beforeunload / onBackgroundRestore) | mic-drain-check (drain rate over 30s vs idle) | Outcome |
-|-------|----------------------------------------------------------------------------------------|------------------------------------------------|---------|
-| 1     |                                                                                        |                                                | PASS / FAIL |
-| 2     |                                                                                        |                                                | PASS / FAIL |
-| 3     |                                                                                        |                                                | PASS / FAIL |
-| 4     |                                                                                        |                                                | PASS / FAIL |
-| 5     |                                                                                        |                                                | PASS / FAIL |
+| Cycle | Pre-kill battery % | Post-kill battery % (60s later) | Drain pp/60s | Cleanup log observed (if any) | Outcome |
+|-------|--------------------|---------------------------------|--------------|-------------------------------|---------|
+| 1     |                    |                                 |              |                               | PASS / FAIL |
+| 2     |                    |                                 |              |                               | PASS / FAIL |
+| 3     |                    |                                 |              |                               | PASS / FAIL |
+| 4     |                    |                                 |              |                               | PASS / FAIL |
+| 5     |                    |                                 |              |                               | PASS / FAIL |
+
+**Reference: G2 idle drain rate** (mic OFF, screen on, Hub foreground): expect ~__ pp/hr → ~__ pp/60s. Half A of Run 5 will produce the canonical baseline; for Run 3 use any cycle where the pre/post delta is ≤ 1pp as the de-facto "≈ idle" reference.
 
 **Cleanup pass count:** __ / 5
 
-(PASS = `audioControl(false)` confirmed fired AND battery drain ≈ idle. FAIL = mic still draining at active rate after force-quit.)
+(PASS = battery drain over 60s post-kill ≈ idle (≤ 1pp or no measurable delta on G2's 1pp-resolution gauge) AND no error log indicating the mic stayed open. FAIL = drain measurably faster than idle, indicating mic still active after force-quit. **Methodology limitation acknowledged:** cannot directly observe `audioControl(false)` firing — inferred from battery behavior. Phase 130 should add localStorage breadcrumbs to `audio-session-guard.ts` cleanup hooks so the trace survives WebView death; see `deferred-items.md`.)
 
 ---
 
