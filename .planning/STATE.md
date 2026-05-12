@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
-stopped_at: Plan 128a-03 complete; plugin scaffold landed (encoder + screen + manifest)
-last_updated: "2026-05-12T19:07:30.060Z"
+stopped_at: Plan 128a-01 complete; smoke RED as designed
+last_updated: "2026-05-12T19:15:23.476Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 16
-  completed_plans: 13
-  percent: 81
+  completed_plans: 14
+  percent: 88
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 128a (voice-01-pcm-feasibility-spike) — EXECUTING
-Plan: 4 of 6
+Plan: 5 of 6
 Status: Ready to execute
 Last activity: 2026-05-12
 
@@ -133,6 +133,7 @@ Last activity: 2026-05-12
 | Phase 128a P01 | 1m 32s | 2 tasks | 3 files |
 | Phase 128a P02 | 50min | 2 tasks | 5 files |
 | Phase 128a PP03 | 3min | 3 tasks | 4 files |
+| Phase 128a P04 | 4min | 2 tasks | 3 files |
 
 ## Deferred Items
 
@@ -393,6 +394,7 @@ Recent (v3.7 closeout):
 - [Phase ?]: Bearer-fetch inlined; api.ts NOT modified (W3 lock)
 - [Phase ?]: 5-of-7 UI-SPEC states wired ([IDLE]/[REC]/[UPLOADING…]/[DONE]/[ERR]); permission-denied + budget-exceeded deferred to Phase 130
 - [Phase ?]: Per-chunk live-counter re-render deferred — appendPcmChunk is a pure push to preserve clean inter_chunk_latency measurement
+- [Phase ?]: Plan 128a-04: VOICE_SPIKE registered as carousel slot 4 via static imports; DOUBLE_CLICK carve-out routes to toggleVoiceSpikeRecording; audioEvent collector logs only GUARD-01 safe keys
 
 ### Pending Todos
 
@@ -429,7 +431,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-12T19:07:16.865Z
+Last session: 2026-05-12T19:15:19.685Z
 Stopped at: Plan 128a-01 complete; smoke RED as designed
 Resume file: None
 
