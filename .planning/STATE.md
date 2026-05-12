@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: completed
-stopped_at: Plan 127-07 completed (GUARD-04 drift detector + Phase 107.1 STATE.md cleanup)
+stopped_at: Phase 127 complete — all 9 plans shipped, verification passed
 last_updated: "2026-05-12T06:52:17.593Z"
 last_activity: 2026-05-12 -- Phase 127 marked complete
 progress:
