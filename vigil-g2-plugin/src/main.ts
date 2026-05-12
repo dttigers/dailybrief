@@ -53,6 +53,8 @@ import {
 } from './api.ts'
 import { createSseClient } from './lib/sse-client.ts'
 import { pickInitialScreen } from './lib/launch-source-helpers.ts'
+// Phase 128a SPIKE — TOSSABLE. PCM chunk collector for VOICE_SPIKE; Phase 130 owns removal.
+import { appendPcmChunk } from './screens/voice-spike.ts'
 
 // Re-export the testable launch-source helpers from main.ts so any future
 // caller importing them via './main.ts' still works (and so the plan's
@@ -219,6 +221,24 @@ async function init(): Promise<void> {
 
   // Listen for lifecycle + navigation events
   bridge.onEvenHubEvent((event) => {
+    // Phase 128a SPIKE — VOICE_SPIKE audioEvent collector (TOSSABLE).
+    // Append PCM chunks while recording. Log strings use GUARD-01 safe
+    // keys (bytes, chunk_n) — never pcm/audio* (per BLOCKED_PROPERTY_NAMES
+    // at vigil-core/src/analytics/posthog.ts:32). Per W2 revision the
+    // screen does NOT re-render here — counter refresh happens on screen
+    // entry / state transition / post-upload, so we don't round-trip the
+    // SDK ≥10x/s and contaminate the inter_chunk_latency measurement.
+    if (event.audioEvent?.audioPcm) {
+      const bytes = event.audioEvent.audioPcm.length
+      // First chunk per session ends the mic-on timer started by
+      // toggleVoiceSpikeRecording() in screens/voice-spike.ts; subsequent
+      // calls no-op (console.timeEnd is idempotent after first hit).
+      console.timeEnd('mic-on')
+      console.log(`[voice-spike] chunk bytes=${bytes}`)
+      appendPcmChunk(event.audioEvent.audioPcm)
+      return
+    }
+
     // List item click → task detail
     if (
       event.listEvent?.eventType === OsEventTypeList.CLICK_EVENT &&

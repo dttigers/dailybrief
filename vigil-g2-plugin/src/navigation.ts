@@ -23,11 +23,10 @@ import {
 } from './screens/companion.ts'
 // Phase 128a SPIKE — TOSSABLE. Static import (NOT dynamic) per Phase 125
 // Hermes fix at navigation.ts:222-224. Phase 130 owns hardening/removal.
-// (toggleVoiceSpikeRecording added to this import in Task 2's DOUBLE_CLICK
-// carve-out below.)
 import {
   buildVoiceSpikeScreen,
   getRecording,
+  toggleVoiceSpikeRecording,
 } from './screens/voice-spike.ts'
 import { fetchSummary, fetchBrief, fetchAffirmation, fetchAgentSessions } from './api.ts'
 
@@ -249,6 +248,30 @@ export async function handleNavEvent(
       return
     }
     await navigateTo(Screen.HOME, bridge)
+    return
+  }
+
+  // Phase 128a SPIKE — VOICE_SPIKE DOUBLE_CLICK toggles recording (TOSSABLE).
+  // Mirrors Companion D-08 carve-out at lines 219-238 above. Hardware-verified
+  // DOUBLE_CLICK per project_g2_companion_doubletap_hardware_verified 2026-05-10.
+  // Single-press REACTIVATE patch is Phase 133. MUST be checked BEFORE the
+  // default NAV_EVENTS dispatch below — otherwise DOUBLE_CLICK would jump to
+  // HOME via the switch at the bottom of this function.
+  //
+  // Cast rationale: `toggleVoiceSpikeRecording` consumes the
+  // `AudioGuardBridge` structural type from `audio-session-guard.ts`, which
+  // declares `setBackgroundState`/`onBackgroundRestore` per EVEN-SKILLS.md
+  // §"Background state". The runtime EvenAppBridge exposes those methods,
+  // but `@evenrealities/even_hub_sdk@0.0.9`'s `.d.ts` does NOT type them.
+  // Cast through `unknown` per Phase 127 GUARD-02 pattern; Phase 130
+  // productionization owns the upstream SDK .d.ts fix.
+  if (
+    currentScreen === Screen.VOICE_SPIKE &&
+    eventType === OsEventTypeList.DOUBLE_CLICK_EVENT
+  ) {
+    await toggleVoiceSpikeRecording(
+      bridge as unknown as Parameters<typeof toggleVoiceSpikeRecording>[0],
+    )
     return
   }
 
