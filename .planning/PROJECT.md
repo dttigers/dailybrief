@@ -8,24 +8,30 @@
 
 **Shipped:** v3.6 Multi-User Completion, Auth UX & Safari Parity (2026-04-26) — 7 phases (108-114), 27 plans, 8/8 requirements satisfied via live HUMAN-UAT against Railway production.
 
-## Next Milestone
+## Current Milestone: v3.9 Voice & Companion Polish
 
-Ready for `/gsd-new-milestone` to scope v3.9. Live backlog candidates surfaced during v3.8:
-- **SEED-009** — Local-storage for last-viewed screen / scroll position (G2 lifecycle UX, Small)
-- **SEED-010** — Voice capture from G2 via SDK `audioControl` + `audioEvent` PCM stream (Large, milestone-anchor candidate)
-- **SEED-011** — G2 Companion single-tap + long-press tap variants (deferred from Phase 124 D-08 narrowing; reactivate if Even SDK exposes them reliably)
-- **SEED-013** — Auto-regenerate insights/therapy cache on new thought upload
-- **SEED-014** — Expand chat context beyond 20 most-recent thoughts
-- **SEED-015** — Auto-detect iPhone Focus / DND state for Quiet Mode (follow-on to AGENT-HUD-03 manual toggle)
-- **SEED-016** — Companion HUD clarity gaps for "long-run, away-from-desk" use case
-- **999.1** (backlog) — Restore Ubiquity entitlement for iCloud photo download
-- **999.2** (backlog) — CaptureBar multi-line input support
+**Goal:** Unlock G2 PCM voice capture as Vigil's first true ambient capture surface, extend the capture reach to ServiceNow Polaris via an assisted-capture popup that ships around the IT-API-token blocker, and tighten the Claude Code Companion HUD + freshness loops shipped in v3.8 with five operator-validated polish seeds.
 
-**Still blocked (carried forward):**
-- Phase 80 ServiceNow API — IT token
-- Phase 85 iOS Shortcut — Shortcuts.app bugs
-- SEED-001 Stores Admin UI, SEED-002 Photo uploads (need scoping conversations)
+**Target features:**
+- **Voice anchor — G2 PCM capture (SEED-010)** — `audioControl` + `audioEvent` SDK pipeline; 1-2 day spike gates milestone scope per seed's own recommendation
+- **ServiceNow assisted-capture popup** — Browser extension popup pre-fills CS# from page title, operator types short description + priority, syncs to vigil-core; ships around the Polaris Web-Component + Shadow-DOM scrape block documented 2026-05-07
+- **G2 last-viewed screen restore (SEED-009)** — `bridge.setLocalStorage`-backed lifecycle UX so context-switched users don't re-navigate to home carousel every plugin re-open
+- **Auto-regenerate insights/therapy cache (SEED-013)** — Close the "are these about *this week*?" trust gap by invalidating `(userId, type)` cache on new thought upload
+- **Chat context expansion (SEED-014)** — Lift the hard 20-thought cap on `/v1/chat` so "what was I thinking about last month?" resolves
+- **iPhone Focus/DND auto-detect for Quiet Mode (SEED-015)** — Follow-on to v3.8 AGENT-HUD-03 manual toggle; "iPhone Focus = quiet glasses" finally lands
+- **Companion HUD clarity for away-from-desk (SEED-016)** — Three gaps surfaced during bypass-permission long-runs ("still running, or done?" at a glance in <2s)
+
+**Spike-first gate:** SEED-010 1-2 day PCM feasibility spike is the first phase. If `audioControl` + `audioEvent` can't deliver clean PCM at acceptable latency, voice anchor down-scopes (e.g. push-to-record short clips only) before the rest of the milestone commits.
+
+**Deferred to future milestones:**
+- SEED-011 — G2 single-tap + long-press variants (gated on Even SDK reliability; reactivate if exposed)
+- 999.1 — Ubiquity entitlement for iCloud photo download
+- 999.2 — CaptureBar multi-line input
+- Phase 85 iOS Shortcut — still blocked on Shortcuts.app bugs
+- SEED-001 Stores Admin UI, SEED-002 Photo uploads — need scoping conversations
 - SEED-003 DMARC ramp — dormant; routine `trig_01RZLcj1jpxvDQAwnFmUG9d9` preserved with three re-activation conditions per v3.7 Phase 119 amendment
+
+**ServiceNow note (Phase 80 long-blocked):** v3.9 unblocks ServiceNow via the assisted-capture popup (operator-typed description, CS# auto-captured). The formal read-only `sn_customerservice_case` API token ask to IT runs as a parallel non-engineering track; the popup ships regardless. Reference: `~/Desktop/servicenow-integration-report.pdf` (2026-05-07 six-approach attempt log + root cause + recommendations).
 
 ## What This Is
 
@@ -159,7 +165,15 @@ Capture every thought with zero friction and have the system organize it for you
 
 ### Active
 
-**v3.9 candidates (not yet planned):** see "Next Milestone" section above.
+**v3.9 — in planning (see Current Milestone section above for full scope):**
+- [ ] **VOICE-01** — G2 PCM voice capture spike (SEED-010 anchor; 1-2 day feasibility gate)
+- [ ] **VOICE-02..N** — G2 voice capture full implementation (scope locked after VOICE-01 spike)
+- [ ] **SVCNOW-01** — ServiceNow assisted-capture popup (CS# pre-fill + description/priority typed input + sync)
+- [ ] **G2-LIFECYCLE-01** — G2 plugin last-viewed screen restore via `bridge.setLocalStorage`
+- [ ] **INSIGHTS-FRESH-01** — Auto-regenerate `ai_cache (userId, type)` on new thought upload
+- [ ] **CHAT-CTX-01** — Lift 20-thought cap on `/v1/chat` context window
+- [ ] **QUIET-AUTO-01** — iPhone Focus/DND auto-detect → Quiet Mode toggle
+- [ ] **HUD-CLARITY-01..N** — Companion HUD away-from-desk clarity gaps (SEED-016)
 
 **v3.5 paused (blocked on G2 hardware):**
 - [ ] G2 resubmit: latest-simulator screenshots (G2-01 — code side done, simulator session pending)
@@ -292,4 +306,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-05-11 after v3.8 milestone close — 7 phases (120-126) and 54 plans shipped; 28/28 requirements satisfied (20 original + 8 AUTH-126 mid-milestone insert). `vigil-watch` Swift daemon + per-userId agent-events API + G2 Companion HUD with context-sensitive DOUBLE_CLICK + plugin v0.3.0 to Even Hub + wide-release auth hardening. 24h SOAK PASSED at 7220 KB max RSS. SECURITY 46/46 closed. Ready for v3.9 via `/gsd-new-milestone`. Carry-forward backlog: SEED-009/010/011/013/014/015/016, 999.1/999.2, Phase 80 ServiceNow, Phase 85 iOS Shortcut.*
+*Last updated: 2026-05-11 — v3.9 Voice & Companion Polish opened via `/gsd-new-milestone`. Anchor: SEED-010 G2 PCM voice capture (spike-gated). Capture-reach: ServiceNow assisted-capture popup ships around the Polaris Web-Component/Shadow-DOM scrape block. Polish: SEED-009 last-viewed restore, SEED-013 insights regen, SEED-014 chat context expansion, SEED-015 Focus/DND auto-detect, SEED-016 HUD clarity. SEED-011 + 999.1/999.2 + Phase 85 stay deferred.*

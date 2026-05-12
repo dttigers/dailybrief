@@ -1,17 +1,16 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.8
-milestone_name: Claude Code Companion
-status: Awaiting next milestone
-stopped_at: v3.8 milestone closed 2026-05-11 — archives at .planning/milestones/v3.8-{ROADMAP,REQUIREMENTS}.md; ROADMAP.md collapsed to one-line entry; REQUIREMENTS.md removed via git rm; PROJECT.md evolved with v3.8 validated items + 9 new Key Decisions. Ready for /gsd-new-milestone to scope v3.9.
-last_updated: "2026-05-11T22:54:57.069Z"
-last_activity: 2026-05-11 — Milestone v3.8 completed and archived
+milestone: v3.9
+milestone_name: Voice & Companion Polish
+status: planning
+last_updated: "2026-05-12T00:05:59.394Z"
+last_activity: 2026-05-12
 progress:
-  total_phases: 9
-  completed_phases: 7
-  total_plans: 54
-  completed_plans: 54
-  percent: 100
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -25,10 +24,10 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 ## Current Position
 
-Phase: Milestone v3.8 complete
+Phase: Not started (defining requirements)
 Plan: —
-Status: Awaiting next milestone
-Last activity: 2026-05-11 — Milestone v3.8 completed and archived
+Status: Defining requirements
+Last activity: 2026-05-12 — Milestone v3.9 started
 
 ## v3.8 Phase Table
 
@@ -125,6 +124,7 @@ Carried forward from v3.8 milestone close (2026-05-11):
 | verification | Phase 123 (123-VERIFICATION.md) — AGENT-WATCH-04 SC #3 post-reboot resume | risk-accepted | Mac uptime 2d 4h continuous at close; RunAtLoad+KeepAlive `<true/>` grep-pinned in installed plist + PlistTemplateTests drift-detects both; flip to PASSED on next natural reboot |
 
 **Resolved during v3.8 close (no longer carried forward):**
+
 - ✓ SEED-005/006/007/008 — folded into v3.8 Phases 124/125 as G2-POLISH-05/06/07/08, all shipped
 - ✓ Phase 123 24h soak operator run — PASSED on 2026-05-10 CSV (7220 KB max RSS); back-filled 2026-05-11; todo moved to done/
 - ✓ Phase 124 Plan 04 D-14 PNG equality + Plan 09 E2E verification — both executed; todos in completed/
