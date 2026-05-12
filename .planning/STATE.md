@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: verifying
-stopped_at: Plan 127-05.1b completed — Phase 127 ready for verification
-last_updated: "2026-05-12T06:39:36.937Z"
-last_activity: 2026-05-12
+status: completed
+stopped_at: Plan 127-07 completed (GUARD-04 drift detector + Phase 107.1 STATE.md cleanup)
+last_updated: "2026-05-12T06:52:17.593Z"
+last_activity: 2026-05-12 -- Phase 127 marked complete
 progress:
   total_phases: 11
   completed_phases: 1
   total_plans: 9
   completed_plans: 9
-  percent: 100
+  percent: 9
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 ## Current Position
 
-Phase: 127 (Pre-spike guardrails) — EXECUTING
+Phase: 127 — COMPLETE
 Plan: 9 of 9 (all plans complete — 01/02/03/04/05/05.1a/05.1b/06/07)
-Status: Phase complete — ready for verification
-Last activity: 2026-05-12
+Status: Phase 127 complete
+Last activity: 2026-05-12 -- Phase 127 marked complete
 
 **v3.9 phase sequence:**
 
