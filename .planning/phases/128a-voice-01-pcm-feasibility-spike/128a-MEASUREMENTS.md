@@ -107,15 +107,17 @@
 
 | Cycle | Pre-kill battery % | Post-kill battery % (60s later) | Drain pp/60s | Cleanup log observed (if any) | Outcome |
 |-------|--------------------|---------------------------------|--------------|-------------------------------|---------|
-| 1     |                    |                                 |              |                               | PASS / FAIL |
-| 2     |                    |                                 |              |                               | PASS / FAIL |
-| 3     |                    |                                 |              |                               | PASS / FAIL |
-| 4     |                    |                                 |              |                               | PASS / FAIL |
-| 5     |                    |                                 |              |                               | PASS / FAIL |
+| 1     | 70                 | 70                              | 0            | (inspector lost on swipe-kill; no post-mortem log on reopen)  | **PASS** |
+| 2     | 70                 | 69                              | 1            | (inspector lost; no post-mortem log)                          | **PASS** ¹ |
+| 3     | 69                 | 69                              | 0 over LONGER window (operator thought app was killed but it wasn't; whenever the ACTUAL swipe-kill happened, 60+s later still showed 0pp drain — more rigorous test of cleanup since mic was active longer before reap) | (inspector lost; no post-mortem log) | **PASS** |
+| 4     | 69                 | 69                              | 0            | (inspector lost; no post-mortem log)                          | **PASS** |
+| 5     | 69                 | 69                              | 0            | (inspector lost; no post-mortem log)                          | **PASS** |
 
-**Reference: G2 idle drain rate** (mic OFF, screen on, Hub foreground): expect ~__ pp/hr → ~__ pp/60s. Half A of Run 5 will produce the canonical baseline; for Run 3 use any cycle where the pre/post delta is ≤ 1pp as the de-facto "≈ idle" reference.
+**¹ Cycle 2 analysis:** 1pp drain over 60s falls right at G2's gauge resolution. Across the full Run 3 wallclock (~10-15 minutes total, including all 5 cycles + reopen/reset between each), total battery delta was 70 → 69 = 1pp. That works out to ~4-6 pp/hr, which is idle-range G2 drain. A leaked active mic would be ~30 pp/hr (1pp in 60s sustained, showing up across multiple cycles). Cycle 2's single 1pp tick is normal idle decay crossing the 70→69 threshold during that 60s window, not evidence of a mic leak.
 
-**Cleanup pass count:** __ / 5
+**Reference: G2 idle drain rate** (mic OFF, screen on, Hub foreground): inferred ~4-6 pp/hr from Run 3 wallclock (70 → 69 across ~10-15 min). Half A of Run 5 will produce the canonical baseline.
+
+**Cleanup pass count:** **5 / 5**
 
 (PASS = battery drain over 60s post-kill ≈ idle (≤ 1pp or no measurable delta on G2's 1pp-resolution gauge) AND no error log indicating the mic stayed open. FAIL = drain measurably faster than idle, indicating mic still active after force-quit. **Methodology limitation acknowledged:** cannot directly observe `audioControl(false)` firing — inferred from battery behavior. Phase 130 should add localStorage breadcrumbs to `audio-session-guard.ts` cleanup hooks so the trace survives WebView death; see `deferred-items.md`.)
 
