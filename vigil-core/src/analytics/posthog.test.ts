@@ -89,8 +89,9 @@ describe("trackEvent / captureException — D-10 null-guard", () => {
 });
 
 describe("BLOCKED_PROPERTY_NAMES — D-04 denylist literal", () => {
-  it("exports a Set with exactly the 8 documented names", () => {
+  it("exports a Set with exactly the 14 documented names (8 LOCKED Phase 103 + 6 Phase 127 audio EXTENSION)", () => {
     const expected = new Set([
+      // ── LOCKED as of Phase 103 D-04 ──
       "content",
       "body",
       "text",
@@ -99,6 +100,13 @@ describe("BLOCKED_PROPERTY_NAMES — D-04 denylist literal", () => {
       "title",
       "note",
       "transcript",
+      // ── Phase 127 GUARD-01 EXTENSION — audio PCM denylist (D-01.1) ──
+      "audioPcm",
+      "audio_pcm",
+      "pcm",
+      "audio",
+      "audioBuffer",
+      "audio_buffer",
     ]);
     assert.equal(BLOCKED_PROPERTY_NAMES.size, expected.size);
     for (const name of expected) {
