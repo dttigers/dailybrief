@@ -3,7 +3,9 @@ phase: 128a-voice-01-pcm-feasibility-spike
 plan: 05
 subsystem: ops
 tags: [pre-spike-gates, bundle-exclusion, wallclock, OPENAI_API_KEY, g2-microphone, D-A3, C-1, C-2]
-status: "Partial — wallclock pending"
+status: "Complete — C-1 + C-2 cleared 2026-05-12"
+c1_resolved: "2026-05-12 — OPENAI_API_KEY set in Railway vigil-core; OpenAI added to project_secret_drift.md memory"
+c2_resolved: "2026-05-12 — v0.3.7 sideload triggered OS-level mic permission prompt on hardware (proves portal allowlist passed; BLOCK signal did NOT fire)"
 
 # Dependency graph
 requires:
@@ -47,7 +49,7 @@ completed: 2026-05-12 (Task 1); Tasks 2-3 PENDING operator action
 
 # Phase 128a Plan 05: Pre-hardware gates Summary
 
-**STATUS: Partial — wallclock pending. Task 1 (D-A3 bundle exclusion) PASSED autonomously. Tasks 2 (C-1 OPENAI_API_KEY) and 3 (C-2 g2-microphone portal allowlist) are operator wallclock checkpoints — Claude cannot execute them. See per-task sections below for the exact operator-side commands and the disposition-routing rules for Plan 06.**
+**STATUS: Complete (2026-05-12).** All three tasks resolved: Task 1 (D-A3 bundle exclusion) PASSED autonomously 2026-05-12T19:18Z; Task 2 (C-1 OPENAI_API_KEY) cleared by operator (Railway env set + OpenAI tracked in `[API key sprawl]` memory); Task 3 (C-2 g2-microphone portal allowlist) cleared by operator via v0.3.7 sideload — Even Hub portal accepted the new permission and iOS surfaced the standard mic-grant prompt on hardware, which is the empirical proof that the BLOCK signal did NOT fire. Phase 128a unblocked for the Plan 06 hardware spike run.
 
 ## Performance
 

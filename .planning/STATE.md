@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: executing
-stopped_at: "Plan 128a-05 partial: Task 1 D-A3 bundle-exclusion PASS; Tasks 2-3 (C-1 OPENAI_API_KEY + C-2 g2-microphone portal) pending operator wallclock — do NOT advance Current Plan past 5 until resume signals arrive"
-last_updated: "2026-05-12T19:18:18Z"
+status: completed
+stopped_at: Plan 128a-01 complete; smoke RED as designed
+last_updated: "2026-05-12T19:50:51.763Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 16
-  completed_plans: 14
-  percent: 88
+  completed_plans: 15
+  percent: 94
 ---
 
 # Project State
