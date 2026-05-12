@@ -1,31 +1,35 @@
 // PHASE 128a SPIKE — TOSSABLE. Phase 130 owns hardening; this file is spike-only and MUST be deleted or rewritten before Phase 130 lands.
 //
-// Wave 0 smoke test for /v1/voice/transcribe. Intentionally RED until Plan
-// 128a-02 lands voice-spike.ts (Nyquist test-first rail per 128A-VALIDATION.md).
+// Wave 0 smoke test for /v1/voice/transcribe. Was RED in Plan 128a-01 (route
+// did not exist); turns GREEN once Plan 128a-02 lands voice-spike.ts +
+// transcribe-spike.ts (Nyquist test-first rail per 128A-VALIDATION.md).
 // Drift-detector tests EXPLICITLY out of scope (CONTEXT line 132).
 //
 // JWT_SECRET preamble — mirrors agent-stream.test.ts:1-5 self-contained safety.
 process.env["JWT_SECRET"] = "test-secret-32-chars-minimum-value-xxxxxx";
 
-import { test, mock } from "node:test";
+import { test } from "node:test";
 import assert from "node:assert/strict";
 import { Hono } from "hono";
 
-// Stub the OpenAI-backed transcription service BEFORE the route imports it.
-// Plan 128a-02 will create transcribe-spike.ts exporting transcribeWav.
-const transcribeSpike = await import("../../ai/transcribe-spike.js");
-mock.method(transcribeSpike, "transcribeWav", async () => "hello world");
+// Lazy import after env is set (mirror agent-stream.test.ts:12-13).
+// Plan 128a-02 introduced the factory `createVoiceSpikeRoute(deps)` seam —
+// the canonical vigil-core test-injection precedent (agent-stream.ts /
+// quiet-mode.ts). ESM live-binding makes `mock.method` on the bare
+// `transcribeWav` export throw "Cannot redefine property"; factory injection
+// sidesteps the issue without touching production transcribe-spike.ts.
+const { createVoiceSpikeRoute } = await import("../voice-spike.js");
 
-// Lazy import after env + stub are set (mirror agent-stream.test.ts:12-13).
-const { voiceSpike } = await import("../voice-spike.js");
-
-function makeApp(opts: { userId: number }): Hono {
+function makeApp(opts: { userId: number; transcribeText?: string }): Hono {
   const app = new Hono();
   app.use("*", async (c, next) => {
     c.set("userId" as never, opts.userId as never);
     await next();
   });
-  app.route("/", voiceSpike);
+  const route = createVoiceSpikeRoute({
+    transcribeWav: async () => opts.transcribeText ?? "hello world",
+  });
+  app.route("/", route);
   return app;
 }
 

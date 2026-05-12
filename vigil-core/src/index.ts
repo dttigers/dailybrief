@@ -25,6 +25,7 @@ import { briefHistory } from "./routes/brief-history.js";
 import { exportRoute } from "./routes/export.js";
 import { chat } from "./routes/chat.js";
 import { processAudio } from "./routes/process-audio.js";
+import { voiceSpike } from "./routes/voice-spike.js"; // Phase 128a SPIKE — TOSSABLE
 import { chatSessionsRouter } from "./routes/chat-sessions.js";
 import { workOrdersRouter } from "./routes/work-orders.js";
 import { workOrderStatus } from "./routes/work-order-status.js";
@@ -219,6 +220,7 @@ app.route("/v1", changePassword);
 app.route("/v1", describeImage);
 app.route("/v1", processPhoto);
 app.route("/v1", processAudio);
+app.route("/v1", voiceSpike); // Phase 128a SPIKE — TOSSABLE. Phase 130 productionizes.
 app.route("/v1", therapy);
 app.route("/v1", briefHistory);
 app.route("/v1", exportRoute);
