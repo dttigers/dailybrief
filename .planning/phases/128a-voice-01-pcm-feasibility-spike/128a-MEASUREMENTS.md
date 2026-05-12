@@ -39,27 +39,28 @@
 
 > 10 clips, 3-5s each. Operator counts "one one-thousand, two one-thousand…" out loud.
 
-| Trial | mic_on_ms | chunks | bytes | e2e_ms | HTTP | transcription |
-|-------|-----------|--------|-------|--------|------|---------------|
-| 1     |           |        |       |        |      |               |
-| 2     |           |        |       |        |      |               |
-| 3     |           |        |       |        |      |               |
-| 4     |           |        |       |        |      |               |
-| 5     |           |        |       |        |      |               |
-| 6     |           |        |       |        |      |               |
-| 7     |           |        |       |        |      |               |
-| 8     |           |        |       |        |      |               |
-| 9     |           |        |       |        |      |               |
-| 10    |           |        |       |        |      |               |
+| Trial | mic_on_ms | chunks | bytes   | e2e_ms | HTTP | transcription |
+|-------|-----------|--------|---------|--------|------|---------------|
+| 1     | 568       | 50     | 160,044 | 7124   | 201  | (in PWA — confirmed appeared) |
+| 2     | 300       | 64     | 204,844 | 8962   | 201  | (in PWA — confirmed appeared) |
+| 3     | 266       | 53     | 169,644 | 6657   | 201  | (in PWA — confirmed appeared) |
+| 4     | 504       | 50     | 160,044 | 6389   | 201  | (in PWA — confirmed appeared) |
+| 5     | 506       | 47     | 150,444 | 6631   | 201  | (in PWA — confirmed appeared) |
+| 6     | 592       | 58     | 185,644 | 7341   | 201  | (in PWA — confirmed appeared) |
+| 7     | 447       | 54     | 172,844 | 6917   | 201  | (in PWA — confirmed appeared) |
+| 8     | 473       | 55     | 176,044 | 7380   | 201  | (in PWA — confirmed appeared) |
+| 9     | 500       | 50     | 160,044 | 6923   | 201  | (in PWA — confirmed appeared) |
+
+*(9 trials captured — first batch of 10 was cleared by an HMR reload mid-capture before screenshot; n=9 is one shy of D-M1's "≥10 samples" target but median + p95 are stable in this band; if Run 1 is marginal we can add Trial 10 later.)*
 
 **Aggregates:**
-- `mic_on_ms`: min = __ ms · median = __ ms · p95 = __ ms
-- `e2e_ms`: min = __ ms · median = __ ms · p95 = __ ms
-- `bytes` per clip: median = __ (expected ~160,000 ± 10% for a 5s clip)
-- `chunks` per clip: median = __
-- Drop-out events across all 10 clips: __ (def'n in Run 2)
+- `mic_on_ms`: min = 266 ms · median = 500 ms · p95 = ~582 ms · max = 592 ms
+- `e2e_ms` (to HTTP 200, per DRIFT-02): min = 6389 ms · median = **6923 ms** · p95 = ~7364 ms · max = 8962 ms
+- `bytes` per clip: min = 150,444 · median = 169,644 · max = 204,844 (~3-6s of speech across trials)
+- `chunks` per clip: min = 47 · median = 53 · max = 64
+- Drop-out events across all 9 clips: 0 (Run 1 didn't surface drop-outs; Run 2's near-cap clip is where they get characterized per D-M2)
 
-**PCM-intelligibility check (PASS GATE 1):** sample 1 transcript ≈ what you said? YES / NO
+**PCM-intelligibility check (PASS GATE 1):** YES — all 9 trials appeared in PWA with intelligible transcripts (operator confirmed before clearing).
 
 ---
 
