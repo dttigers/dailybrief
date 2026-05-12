@@ -90,4 +90,20 @@ describe('resolveApiError + ERROR_CODE_MAP — AUTH-126-05 / D-04', () => {
     expect(entry.ctaLabel).toBeUndefined()
     expect(entry.ctaHref).toBeUndefined()
   })
+
+  it('GUARD-127-CODE-MAP-BUDGET-EXTENSION: DAILY_AI_BUDGET_EXCEEDED present in EXTENSION block with locked copy + no CTA (D-03.5)', () => {
+    // CONTEXT D-03.5 verbatim copy lock — vigil-core throws DailyBudgetExceededError
+    // when usd_estimate >= VIGIL_DAILY_AI_BUDGET_USD; app.onError translates to
+    // HTTP 429 + {code: "DAILY_AI_BUDGET_EXCEEDED"}; PWA renders this string.
+    // Future copy tuning requires updating this test alongside the source.
+    expect(ERROR_CODE_MAP, 'ERROR_CODE_MAP must contain Phase 127 GUARD-03 key "DAILY_AI_BUDGET_EXCEEDED"').toHaveProperty('DAILY_AI_BUDGET_EXCEEDED')
+    const entry = ERROR_CODE_MAP['DAILY_AI_BUDGET_EXCEEDED']!
+    expect(entry.message).toBe("You've hit today's AI processing limit. Capture still works — AI features resume at midnight UTC.")
+    // CONTEXT D-03.5: no CTA — user can't act their way out of a daily-budget
+    // ceiling; the message itself communicates the workaround (capture still
+    // works) and the reset time (midnight UTC). T-127-03-H disposition: any
+    // future CTA addition surfaces here as a test failure.
+    expect(entry.ctaLabel).toBeUndefined()
+    expect(entry.ctaHref).toBeUndefined()
+  })
 })

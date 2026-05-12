@@ -145,6 +145,19 @@ export const ERROR_CODE_MAP: Record<string, ApiErrorUx> = {
   AUDIO_SESSION_TOO_LONG: {
     message: "Recording is too long. Voice clips must be 60 seconds or less.",
   },
+
+  // ── EXTENSION (Phase 127 GUARD-03 — D-04 additivity) ──
+  // vigil-core (Plan 05.1) throws DailyBudgetExceededError when the per-user
+  // daily AI usd_estimate accumulator (ai_usage_daily, PK (user_id, usage_date))
+  // hits VIGIL_DAILY_AI_BUDGET_USD (default 0.50). `app.onError` translates
+  // the throw to HTTP 429 + {code: "DAILY_AI_BUDGET_EXCEEDED"}. Verbatim copy
+  // pinned by GUARD-127-CODE-MAP-BUDGET-EXTENSION test (CONTEXT D-03.5).
+  // No CTA — the message itself communicates the workaround ("Capture still
+  // works") and the reset time ("midnight UTC"); a CTA would invite users to
+  // click their way through a cap they can't actually unlock from the PWA.
+  DAILY_AI_BUDGET_EXCEEDED: {
+    message: "You've hit today's AI processing limit. Capture still works — AI features resume at midnight UTC.",
+  },
 }
 
 /**
