@@ -395,10 +395,10 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
   2. The decision file resolves to exactly one of `PASS` (proceed full scope) / `DEGRADE` (push-to-record short clips only) / `BLOCK` (defer entire voice anchor to v3.10)
   3. A 60s portfolio Loom (`60s-demo.mp4`) demonstrates a working capture → transcription → PWA dashboard round-trip OR documents the failure mode that drove DEGRADE/BLOCK
   4. `audioControl(false)` cleanup is verified to fire on every documented exit path (no zombie microphone sessions after 5 force-quit cycles)
-**Plans:** 6 plans
+**Plans:** 1/6 plans executed
 Plans:
 **Wave 1**
-- [ ] 128a-01-PLAN.md — Wave 0 scaffolding: pin openai@^6.37.0 (DRIFT-03) + Wave 0 smoke test
+- [x] 128a-01-PLAN.md — Wave 0 scaffolding: pin openai@^6.37.0 (DRIFT-03) + Wave 0 smoke test
 - [ ] 128a-02-PLAN.md — Backend: transcribe-spike.ts + voice-spike.ts route + index.ts mount
 - [ ] 128a-03-PLAN.md — Plugin assets: app.json + constants + encoder + screen module
 
@@ -633,7 +633,7 @@ Plans:
 | 126. Wide-release auth hardening (mid-milestone insert) | v3.8 | 11/11 | Complete | 2026-05-11 |
 | 127. Pre-spike guardrails (audio redaction + audio caps + AI-cost watermark + schema reconcile) | v3.9 | 8/9 | In Progress|  |
 | 127.5. G2 input gesture audit (30-min code review; verdict shapes G2-ACTION + G2-REPLY) | v3.9 | 1/1 | Complete    | 2026-05-12 |
-| 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 0/TBD | Not started | - |
+| 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 1/6 | In Progress|  |
 | 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 0/TBD | Not started | - |
 | 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 0/TBD | Not started | - |
 | 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 0/TBD | Not started | - |

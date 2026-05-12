@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
-stopped_at: Phase 128a context gathered
-last_updated: "2026-05-12T18:08:34.488Z"
-last_activity: 2026-05-12 -- Phase 128a planning complete
+stopped_at: Plan 128a-01 complete; smoke RED as designed
+last_updated: "2026-05-12T18:15:19.175Z"
+last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 16
-  completed_plans: 10
-  percent: 63
+  completed_plans: 11
+  percent: 69
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 127 — Pre-spike guardrails
+**Current focus:** Phase 128a — voice-01-pcm-feasibility-spike
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
+Phase: 128a (voice-01-pcm-feasibility-spike) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-05-12 -- Phase 128a planning complete
+Last activity: 2026-05-12
 
 **v3.9 phase sequence:**
 
@@ -130,6 +130,7 @@ Last activity: 2026-05-12 -- Phase 128a planning complete
 | Phase 127 P05.1a | 8m | 3 tasks | 13 files |
 | Phase 127 P06 | 10m | 1 tasks | 2 files |
 | Phase 127 P07 | ~10 min | 2 tasks | 2 files |
+| Phase 128a P01 | 1m 32s | 2 tasks | 3 files |
 
 ## Deferred Items
 
@@ -383,6 +384,8 @@ Recent (v3.7 closeout):
 - [Phase ?]: GUARD-04 re-scoped: drift detector + STATE.md cleanup (no new migration)
 - [Phase ?]: Phase 127 Plan 07: No --dry flag (drizzle-kit generate --dry is fictional in 0.31.10 per RESEARCH §Pitfall 1); use plain generate + regex /No schema changes/i (emoji-tolerant §A2)
 - [Phase ?]: Phase 127 Plan 07: Phase 107.1 work_orders drift closed by 0013_work_orders_drift_repair.sql 2026-04-22 — not by Plan 07 (Plan 07 ships the structural drift detector + STATE.md closing note)
+- [Phase 128a]: Pinned openai@^6.37.0 per RESEARCH DRIFT-03; STACK.md ^4.79.0 is stale — DRIFT-03 supersedes STACK.md; npm view openai version confirms 6.37.0 latest
+- [Phase 128a]: Wave 0 smoke test left RED by design — Plan 128a-02 turns GREEN — Nyquist test-first rail: mocking route to green would hide route-contract drift Plan 128a-02 must surface
 
 ### Pending Todos
 
@@ -419,9 +422,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-12T17:19:37.887Z
-Stopped at: Phase 128a context gathered
-Resume file: .planning/phases/128a-voice-01-pcm-feasibility-spike/128a-CONTEXT.md
+Last session: 2026-05-12T18:15:19.165Z
+Stopped at: Plan 128a-01 complete; smoke RED as designed
+Resume file: None
 
 ## Operator Next Steps
 
