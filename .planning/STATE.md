@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
-stopped_at: Plan 128a-01 complete; smoke RED as designed
-last_updated: "2026-05-12T19:00:44.150Z"
+stopped_at: Plan 128a-03 complete; plugin scaffold landed (encoder + screen + manifest)
+last_updated: "2026-05-12T19:07:30.060Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 16
-  completed_plans: 12
-  percent: 75
+  completed_plans: 13
+  percent: 81
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 128a (voice-01-pcm-feasibility-spike) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-05-12
 
@@ -132,6 +132,7 @@ Last activity: 2026-05-12
 | Phase 127 P07 | ~10 min | 2 tasks | 2 files |
 | Phase 128a P01 | 1m 32s | 2 tasks | 3 files |
 | Phase 128a P02 | 50min | 2 tasks | 5 files |
+| Phase 128a PP03 | 3min | 3 tasks | 4 files |
 
 ## Deferred Items
 
@@ -389,6 +390,9 @@ Recent (v3.7 closeout):
 - [Phase 128a]: Wave 0 smoke test left RED by design — Plan 128a-02 turns GREEN — Nyquist test-first rail: mocking route to green would hide route-contract drift Plan 128a-02 must surface
 - [Phase ?]: 128a-02: Factory dep-injection for testable Hono routes — ESM live bindings make mock.method throw; pattern from agent-stream/quiet-mode analogs
 - [Phase ?]: 128a-02: AudioSessionTooLongError caught inline in voice-spike.ts (413); shared app.onError untouched until Phase 130 productionization to keep spike scope-pure
+- [Phase ?]: Bearer-fetch inlined; api.ts NOT modified (W3 lock)
+- [Phase ?]: 5-of-7 UI-SPEC states wired ([IDLE]/[REC]/[UPLOADING…]/[DONE]/[ERR]); permission-denied + budget-exceeded deferred to Phase 130
+- [Phase ?]: Per-chunk live-counter re-render deferred — appendPcmChunk is a pure push to preserve clean inter_chunk_latency measurement
 
 ### Pending Todos
 
@@ -425,7 +429,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-12T19:00:30.867Z
+Last session: 2026-05-12T19:07:16.865Z
 Stopped at: Plan 128a-01 complete; smoke RED as designed
 Resume file: None
 
