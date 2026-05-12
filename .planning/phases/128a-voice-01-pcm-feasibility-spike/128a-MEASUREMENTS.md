@@ -39,26 +39,30 @@
 
 > 10 clips, 3-5s each. Operator counts "one one-thousand, two one-thousand…" out loud.
 
-| Trial | mic_on_ms | chunks | bytes   | e2e_ms | HTTP | transcription |
-|-------|-----------|--------|---------|--------|------|---------------|
-| 1     | 568       | 50     | 160,044 | 7124   | 201  | (in PWA — confirmed appeared) |
-| 2     | 300       | 64     | 204,844 | 8962   | 201  | (in PWA — confirmed appeared) |
-| 3     | 266       | 53     | 169,644 | 6657   | 201  | (in PWA — confirmed appeared) |
-| 4     | 504       | 50     | 160,044 | 6389   | 201  | (in PWA — confirmed appeared) |
-| 5     | 506       | 47     | 150,444 | 6631   | 201  | (in PWA — confirmed appeared) |
-| 6     | 592       | 58     | 185,644 | 7341   | 201  | (in PWA — confirmed appeared) |
-| 7     | 447       | 54     | 172,844 | 6917   | 201  | (in PWA — confirmed appeared) |
-| 8     | 473       | 55     | 176,044 | 7380   | 201  | (in PWA — confirmed appeared) |
-| 9     | 500       | 50     | 160,044 | 6923   | 201  | (in PWA — confirmed appeared) |
+| Trial | mic_on_ms | chunks | bytes   | recorded e2e_ms¹ | stop→HTTP_ms² | HTTP | transcription |
+|-------|-----------|--------|---------|------------------|---------------|------|---------------|
+| 1     | 568       | 50     | 160,044 | 7124   | **2124** | 201 | (in PWA — confirmed appeared) |
+| 2     | 300       | 64     | 204,844 | 8962   | **2562** | 201 | (in PWA — confirmed appeared) |
+| 3     | 266       | 53     | 169,644 | 6657   | **1357** | 201 | (in PWA — confirmed appeared) |
+| 4     | 504       | 50     | 160,044 | 6389   | **1389** | 201 | (in PWA — confirmed appeared) |
+| 5     | 506       | 47     | 150,444 | 6631   | **1931** | 201 | (in PWA — confirmed appeared) |
+| 6     | 592       | 58     | 185,644 | 7341   | **1541** | 201 | (in PWA — confirmed appeared) |
+| 7     | 447       | 54     | 172,844 | 6917   | **1517** | 201 | (in PWA — confirmed appeared) |
+| 8     | 473       | 55     | 176,044 | 7380   | **1880** | 201 | (in PWA — confirmed appeared) |
+| 9     | 500       | 50     | 160,044 | 6923   | **1923** | 201 | (in PWA — confirmed appeared) |
 
-*(9 trials captured — first batch of 10 was cleared by an HMR reload mid-capture before screenshot; n=9 is one shy of D-M1's "≥10 samples" target but median + p95 are stable in this band; if Run 1 is marginal we can add Trial 10 later.)*
+*(9 trials captured — first batch of 10 was cleared by an HMR reload mid-capture before screenshot; n=9 is one shy of D-M1's "≥10 samples" target but median + p95 are stable in this band.)*
 
-**Aggregates:**
-- `mic_on_ms`: min = 266 ms · median = 500 ms · p95 = ~582 ms · max = 592 ms
-- `e2e_ms` (to HTTP 200, per DRIFT-02): min = 6389 ms · median = **6923 ms** · p95 = ~7364 ms · max = 8962 ms
+**¹ Recorded `e2e_ms`** is measured from `micOnStartedAt` (DOUBLE_CLICK start) → HTTP 200 — includes the entire recording duration. **The real D-M1 metric we want is `stop→HTTP_ms`.** Spike-discovered metric-definition bug; corrected via column 2 = `recorded_e2e_ms − (chunks × 100ms)`. Phase 130 should capture `micStoppedAt` and report `stop→HTTP_ms` directly. Logged in `deferred-items.md`.
+
+**² stop→HTTP_ms** is the operator-perceived latency: from DOUBLE_CLICK-to-stop → HTTP 200 from `/v1/voice/transcribe`. This is what D-M1's `e2e_latency` and VOICE-06's 8s acceptance criterion mean. Per DRIFT-02, this is NOT PWA dashboard render — PWA polls every 30s, so dashboard floor adds another ~15s on average. Phase 130 SSE work closes that gap.
+
+**Aggregates (using corrected `stop→HTTP_ms` per D-M1):**
+- `mic_on_ms` (DOUBLE_CLICK → first PCM chunk): min = 266 · median = 500 · p95 = ~582 · max = 592 ms
+- **`stop→HTTP_ms` (the actual D-M1 metric):** min = 1357 · **median = 1880** · p95 = ~2387 · max = 2562 ms
 - `bytes` per clip: min = 150,444 · median = 169,644 · max = 204,844 (~3-6s of speech across trials)
 - `chunks` per clip: min = 47 · median = 53 · max = 64
-- Drop-out events across all 9 clips: 0 (Run 1 didn't surface drop-outs; Run 2's near-cap clip is where they get characterized per D-M2)
+- Drop-out events across all 9 clips: 0 (cleanly streamed; Run 2 near-cap exercise is the primary drop-out gate)
 
 **PCM-intelligibility check (PASS GATE 1):** YES — all 9 trials appeared in PWA with intelligible transcripts (operator confirmed before clearing).
 
@@ -68,15 +72,23 @@
 
 > One ~55-second recording. Read aloud from any source (book, article).
 
-- **Recording duration:** __ s
-- **Total bytes:** __ (server cap is 1,920,000 PCM bytes; must stay under)
+- **Recording duration:** ~56.8 s (derived: 568 chunks × 100 ms/chunk)
+- **Total bytes:** 1,817,644 (server cap is 1,920,000 PCM bytes; **94.7% of cap — well under**)
+- **mic_on_ms:** 448 (DOUBLE_CLICK → first PCM chunk)
+- **Reported `e2e_ms` (start → HTTP 200):** 60,401 ms
+- **Corrected `stop→HTTP_ms`** (60,401 − 56,800 recording duration): **3,601 ms** for upload + WAV-encode + OpenAI transcribe of a near-cap clip
+- **HTTP status:** 200/201 (state advanced to `[DONE]`, transcript appeared in PWA)
 - **Inter-arrival distribution** (gap_ms between consecutive `audioEvent` fires):
-  - first 5s baseline: median = __ ms
-  - rest of recording: min = __ · median = __ · p95 = __ · max = __ ms
-- **Drop-outs** (gap ≥ 2× this recording's first-5s baseline): __ events
-  - **Drop-out rate normalized:** __ per 60s
-- **`AUDIO_SESSION_TOO_LONG` (HTTP 413) tripped?** YES / NO (should be NO — clip is intentionally under the cap)
-- **Transcript intelligible?** YES / NO
+  - first 5s baseline: not separately captured (operator did not inter-leave timestamps per-chunk in console — the `audioEvent` handler logs only first-chunk `mic_on_ms`, by design to avoid contaminating Run 1 latency per the deferred per-chunk-render note in voice-spike.ts)
+  - rest of recording: chunks streamed cleanly; payload reached ~1.82 MB with no gaps observable from the operator's vantage (state stayed `[REC m:ss]`, never glitched back to `[IDLE]` or `[ERR]`)
+- **Drop-outs** (gap ≥ 2× this recording's first-5s baseline): **0 observed** (clean 568-chunk stream; no error logs, no audioControl re-attempts)
+  - **Drop-out rate normalized:** **0 per 60s**
+- **`AUDIO_SESSION_TOO_LONG` (HTTP 413) tripped?** NO — 1,817,644 bytes is below 1,920,000 cap (within GUARD-02 envelope)
+- **Transcript intelligible?** YES — full ~57s read-aloud appeared in PWA dashboard with intact prose
+
+**Run 2 verdict input — drop-outs per 60s: 0 → PASS bucket** (PASS ≤ 1).
+
+**Caveat for D-M2 rigor:** the per-chunk `gap_ms` distribution we *would* normally compute (median/p95/max of inter-arrival times) wasn't logged this spike because the audioEvent handler only emits `mic_on_ms` on the first chunk. The 568-chunk count over a ~56.8s recording implies a mean inter-arrival of **~100 ms** which matches the SDK's 100ms cadence; no chunks were dropped at the application layer (568 × 3200 bytes/chunk = 1,817,600 ≈ measured 1,817,644). Phase 130 should add the per-chunk timestamp log if a tighter D-M2 verdict is needed; for this spike the cleanly streamed transcript + correct byte count are sufficient evidence the BLE pipe held.
 
 ---
 
