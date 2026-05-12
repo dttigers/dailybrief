@@ -28,7 +28,9 @@ import {
 import { DISPLAY_WIDTH, ContainerId } from '../constants.ts'
 import { buildVigilHeader } from './header.ts'
 import { safeAudioControl } from '../lib/audio-session-guard.ts'
-import { buildWav, toBase64 } from '../../scripts/voice-spike-encoder.ts'
+// Phase 128a SPIKE: switched from base64-JSON to raw octet-stream — toBase64
+// no longer used. Encoder still exports it for future Phase 130 productionization.
+import { buildWav } from '../../scripts/voice-spike-encoder.ts'
 import { BASE_URL, API_KEY } from '../api.ts'
 
 // ---------------------------------------------------------------------------
@@ -203,6 +205,7 @@ export function buildVoiceSpikeScreen(
 
 export async function toggleVoiceSpikeRecording(
   bridge: Parameters<typeof safeAudioControl>[1],
+  onStateChange?: () => Promise<void>,
 ): Promise<void> {
   recording = !recording
 
@@ -213,12 +216,14 @@ export async function toggleVoiceSpikeRecording(
     stateLine = '[REC]'
     console.time('mic-on') // D-M1 mic_on_latency timer (timeEnd in Plan 04 audioEvent collector)
     await safeAudioControl(true, bridge)
+    await onStateChange?.()
     return
   }
 
   // STOP recording → upload
   await safeAudioControl(false, bridge)
   stateLine = '[UPLOADING…]'
+  await onStateChange?.()
 
   // Concat payload buffer into a single Uint8Array (sum-of-lengths alloc,
   // then `.set(chunk, offset)` per chunk — standard ArrayBuffer concat
@@ -232,23 +237,29 @@ export async function toggleVoiceSpikeRecording(
   }
 
   const wav = buildWav(total)
-  const audioB64 = toBase64(wav)
   lastBytes = wav.length
-  // GUARD-01-safe key names in log string: b64_chars + bytes — neither
-  // matches the banned 'pcm' / 'audio*' substrings.
-  console.log(
-    `[voice-spike] b64_chars=${audioB64.length} bytes=${wav.length}`,
-  )
+  // GUARD-01-safe key names in log string: bytes — does NOT match banned
+  // 'pcm' / 'audio*' substrings. Phase 128a SPIKE switched from base64-JSON
+  // to raw octet-stream because iPhone WebView dropped large JSON string
+  // bodies mid-POST (282KB string → "network connection was lost" + 404).
+  console.log(`[voice-spike] bytes=${wav.length}`)
 
   let res: Response | null = null
   try {
-    res = await fetch(`${BASE_URL}/voice/transcribe`, {
+    // Copy into a fresh ArrayBuffer-backed Uint8Array to satisfy strict-mode
+    // Blob typing (Uint8Array<ArrayBufferLike> may include SharedArrayBuffer).
+    // Avoids the ~33% base64 inflation that crashed the WebView's request pipe.
+    const bytesForBlob = new Uint8Array(wav.length)
+    bytesForBlob.set(wav)
+    const blob = new Blob([bytesForBlob], { type: 'application/octet-stream' })
+    res = await fetch(`${BASE_URL}/voice/transcribe?_=${Date.now()}`, {
       method: 'POST',
+      cache: 'no-store',
       headers: {
         Authorization: `Bearer ${API_KEY}`,
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/octet-stream',
       },
-      body: JSON.stringify({ audio: audioB64 }),
+      body: blob,
     })
     if (res.ok) {
       // 200/201 — parse body so we observe content shape end-to-end, but the
@@ -272,4 +283,5 @@ export async function toggleVoiceSpikeRecording(
       }`,
     )
   }
+  await onStateChange?.()
 }

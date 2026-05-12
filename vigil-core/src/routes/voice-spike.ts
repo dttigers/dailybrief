@@ -64,40 +64,56 @@ export function createVoiceSpikeRoute(deps: VoiceSpikeDeps = {}): Hono {
     //    Throws DailyBudgetExceededError → 429 via app.onError (index.ts:277-282).
     await requireAiBudget(userId);
 
-    // 2. Parse JSON body { audio: string }
-    let body: { audio?: string };
-    try {
-      body = await c.req.json();
-    } catch {
-      return c.json({ error: "Invalid JSON body" }, 400);
-    }
-    if (!body.audio || typeof body.audio !== "string") {
-      return c.json(
-        { error: "audio is required and must be a base64 string" },
-        400,
-      );
-    }
-
-    // 3. Phase 127 GUARD-02 — 60s cap. Inline catch → 413 with locked code.
-    //    Shared app.onError currently only branches DailyBudgetExceededError;
-    //    keep AudioSessionTooLongError catch here per PATTERNS.md §6 (Phase 130
-    //    productionizes the shared branch).
-    try {
-      assertAudioSessionWithinCap(body.audio);
-    } catch (err) {
-      if (err instanceof Error && err.name === "AudioSessionTooLongError") {
+    // 2. Parse body — accept BOTH JSON+base64 (VOICE-04 spec / curl/test path)
+    //    AND raw binary octet-stream (Phase 128a SPIKE-discovered: iPhone WebView
+    //    fetch drops large JSON string bodies mid-flight, but accepts smaller
+    //    raw-binary POSTs reliably — base64 expansion takes a 166KB WAV to 282KB
+    //    of JSON string which exceeds whatever WebView body-size threshold
+    //    applies). Phase 130 should pick ONE shape; for the spike both work.
+    const contentType = c.req.header("content-type") || "";
+    let wav: Buffer;
+    if (contentType.startsWith("application/octet-stream")) {
+      const arr = await c.req.arrayBuffer();
+      wav = Buffer.from(arr);
+      if (wav.length > 1_920_000) {
         return c.json(
-          { error: err.message, code: "AUDIO_SESSION_TOO_LONG" },
+          {
+            error: `Audio exceeds 60s cap (got ${wav.length} bytes, max 1920000)`,
+            code: "AUDIO_SESSION_TOO_LONG",
+          },
           413,
         );
       }
-      throw err;
+    } else {
+      let body: { audio?: string };
+      try {
+        body = await c.req.json();
+      } catch {
+        return c.json({ error: "Invalid JSON body" }, 400);
+      }
+      if (!body.audio || typeof body.audio !== "string") {
+        return c.json(
+          { error: "audio is required and must be a base64 string" },
+          400,
+        );
+      }
+      try {
+        assertAudioSessionWithinCap(body.audio);
+      } catch (err) {
+        if (err instanceof Error && err.name === "AudioSessionTooLongError") {
+          return c.json(
+            { error: err.message, code: "AUDIO_SESSION_TOO_LONG" },
+            413,
+          );
+        }
+        throw err;
+      }
+      wav = Buffer.from(body.audio, "base64");
     }
 
-    // 4. Decode → transcribe via OpenAI gpt-4o-mini-transcribe
+    // 4. Transcribe via OpenAI gpt-4o-mini-transcribe
     let transcription: string;
     try {
-      const wav = Buffer.from(body.audio, "base64");
       transcription = await transcribe(wav);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown AI error";

@@ -21,3 +21,13 @@ Tracking out-of-scope issues discovered during execution.
 **Verification:** Same pre-existing state as the runtime failure above. The new `voice-spike.ts` and `transcribe-spike.ts` both compile cleanly under `npx tsc --noEmit -p tsconfig.json`.
 
 **Impact on Phase 128a:** None — `tsx --test` ignores the type error and runs the tests at runtime.
+
+## CORS regex too narrow for LAN dev (surfaced 2026-05-12 during Plan 06 pre-flight)
+
+**Issue:** `vigil-core/src/index.ts:109` `LOOPBACK_ORIGIN_RE` only auto-allows `127.0.0.1` / `localhost`. When developing the plugin via `vite dev --host 0.0.0.0` + Even Hub QR scan, the iPhone WebView loads from a LAN IP (e.g. `http://192.168.1.212:5173`), which is rejected by CORS even though the origin is RFC1918-private.
+
+**Workaround used in 128a:** added the specific LAN origin to Railway `CORS_ORIGINS` env var, removed post-spike.
+
+**Phase 130 fix:** widen the regex to also match RFC1918 ranges (`192.168.x.x`, `10.x.x.x`, `172.16-31.x.x`) when an `ALLOW_LAN_DEV=true` env flag is set. Keep production deploys without the flag so prod CORS stays tight.
+
+**Why deferred (not 128a scope):** Phase 130 productionizes voice path; CORS fix belongs there.

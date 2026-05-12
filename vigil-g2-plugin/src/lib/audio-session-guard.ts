@@ -125,14 +125,33 @@ export async function safeAudioControl(
     //
     // RESEARCH Pitfall-seven lock: snapshot returns a JSON-serializable plain
     // object — NO class instances, Maps, Sets, or Date instances.
-    bridge.setBackgroundState(BG_STATE_KEY, () => ({ audioActive }))
-    bridge.onBackgroundRestore(BG_STATE_KEY, (saved: unknown) => {
-      const s = saved as { audioActive?: boolean }
-      if (s.audioActive) {
-        bridge.audioControl(false).catch(() => {})
-        audioActive = false
-      }
-    })
+    //
+    // Phase 128a SPIKE-discovered gap: the vite-dev preview bridge (live-QR
+    // sideload via `evenhub qr`) does NOT expose setBackgroundState /
+    // onBackgroundRestore — the production iPhone Even Hub WebView DOES.
+    // Feature-detect so Hooks 1-3 still register; Hook 4 silently drops in
+    // dev preview. This does NOT weaken production: prod bridges expose the
+    // methods so registration still fires. Phase 130 hardens by typing the
+    // surface in the SDK .d.ts upstream.
+    if (
+      typeof (bridge as { setBackgroundState?: unknown }).setBackgroundState ===
+        'function' &&
+      typeof (bridge as { onBackgroundRestore?: unknown })
+        .onBackgroundRestore === 'function'
+    ) {
+      bridge.setBackgroundState(BG_STATE_KEY, () => ({ audioActive }))
+      bridge.onBackgroundRestore(BG_STATE_KEY, (saved: unknown) => {
+        const s = saved as { audioActive?: boolean }
+        if (s.audioActive) {
+          bridge.audioControl(false).catch(() => {})
+          audioActive = false
+        }
+      })
+    } else {
+      console.warn(
+        '[audio-session-guard] Hook 4 disabled — bridge missing setBackgroundState/onBackgroundRestore (dev preview SDK gap). Hooks 1-3 still active.',
+      )
+    }
   }
 
   audioActive = on

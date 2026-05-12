@@ -271,6 +271,7 @@ export async function handleNavEvent(
   ) {
     await toggleVoiceSpikeRecording(
       bridge as unknown as Parameters<typeof toggleVoiceSpikeRecording>[0],
+      () => refreshCurrentScreen(bridge),
     )
     return
   }
