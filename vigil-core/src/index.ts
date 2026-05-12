@@ -46,6 +46,7 @@ import { quietMode } from "./routes/quiet-mode.js"; // Phase 125 (AGENT-HUD-03 /
 import { requireVerifiedEmailWithGrace } from "./middleware/require-verified-email.js"; // Phase 126 (AUTH-126-03 / D-02) — 24h grace email-verify gate; mount comments live at the mount site below
 import { captureException, shutdownPosthog } from "./analytics/posthog.js";
 import { initSentry, captureToSentry } from "./lib/sentry.js"; // Phase 126 (AUTH-126-04 / Plan 06) — init position constraint documented at the call site below
+import { DailyBudgetExceededError } from "./lib/ai-budget.js"; // Phase 127 GUARD-03 (Plan 05.1b / D-03.4 / Pitfall 5) — app.onError 429 branch ordered BEFORE Sentry/PostHog sinks below
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
 import { testConnection, closeConnection, db as mainDb } from "./db/connection.js";
@@ -263,6 +264,23 @@ app.route("/v1", quietMode);
 // D-13 — single chokepoint for unhandled errors. Must be AFTER all app.route()
 // calls so Hono's handler-chain ordering routes thrown errors here (Pitfall 4).
 app.onError((err, c) => {
+  // Phase 127 GUARD-03 (Plan 05.1b / D-03.4 + RESEARCH §Pitfall 5):
+  // DailyBudgetExceededError is a DELIBERATE business-rule 429 — not a bug.
+  // The branch MUST appear BEFORE captureException/captureToSentry so that
+  // deliberate budget-exceeded rejections do not burn the 5k events/mo
+  // Sentry quota (Pitfall 5 — also creates dashboard noise that drowns out
+  // real errors). Response body shape `{error, code}` matches the
+  // ERROR_CODE_MAP lookup convention (PWA's `resolveApiError` reads body.code;
+  // Plan 06 lands the locked-enum key in api-error-codes.ts).
+  // app-on-error.test.ts (Plan 05.1b Task 2) pins both rails:
+  //   (1) 429 + locked code; (2) zero calls to either sink.
+  if (err instanceof DailyBudgetExceededError) {
+    return c.json(
+      { error: "Daily AI budget exceeded", code: "DAILY_AI_BUDGET_EXCEEDED" },
+      429,
+    );
+  }
+
   console.error("[vigil-core] unhandled error:", err);
   const userId = (c.get("userId") as number | undefined) ?? null;
   captureException(userId, err, {

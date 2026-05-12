@@ -3,6 +3,7 @@ import {
   callClaudeConversation,
   getAIClient,
 } from "../ai/client.js";
+import { requireAiBudget } from "../lib/ai-budget.js";
 import { db } from "../db/connection.js";
 import { thoughts as thoughtsTable } from "../db/schema.js";
 import { desc, ne, eq, and } from "drizzle-orm";
@@ -17,6 +18,18 @@ chat.post("/chat", async (c) => {
   }
 
   const userId = c.get("userId");
+  // Phase 127 GUARD-03 (D-03.4 + Plan 05.1b): pre-flight per-user daily AI
+  // spend gate. Throws DailyBudgetExceededError when today's accumulated
+  // usd_estimate ≥ VIGIL_DAILY_AI_BUDGET_USD; app.onError translates that to
+  // HTTP 429 with {code: "DAILY_AI_BUDGET_EXCEEDED"} BEFORE the Sentry/PostHog
+  // sinks (Pitfall 5 — deliberate 429s must not burn the 5k/mo Sentry quota).
+  // Order is locked: AFTER getAIClient() 503 check (no point checking budget
+  // if AI client is missing) and AFTER c.get("userId") (needs the value), and
+  // BEFORE any AI invocation. NEVER catch DailyBudgetExceededError locally —
+  // the local try/catch below MUST allow it to propagate (it wraps only the
+  // Claude call, which throws AFTER this gate; the gate's throw happens here,
+  // outside that try-block, so it reaches app.onError naturally).
+  await requireAiBudget(userId);
   // Parse and validate body
   let messages: Array<{ role: "user" | "assistant"; content: string }>;
   let includeContext = true;
