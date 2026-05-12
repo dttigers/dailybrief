@@ -6,9 +6,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "npm run denylist-parity:ci && vitest run",
     "test:watch": "vitest",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "denylist-parity:ci": "node scripts/denylist-parity-ci.mjs"
   },
   "dependencies": {
     "@marsidev/react-turnstile": "^1.5.2",
