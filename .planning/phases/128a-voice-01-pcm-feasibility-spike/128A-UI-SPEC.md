@@ -1,7 +1,8 @@
 ---
 phase: 128a
 slug: voice-01-pcm-feasibility-spike
-status: draft
+status: approved
+reviewed_at: 2026-05-12
 shadcn_initialized: false
 preset: not applicable
 created: 2026-05-12
