@@ -94,6 +94,7 @@ Return ONLY the JSON array, no other text.`;
       system,
       userMessage,
       maxTokens: 1024,
+      userId,
     });
 
     // Parse JSON response

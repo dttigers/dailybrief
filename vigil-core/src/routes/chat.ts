@@ -101,6 +101,7 @@ chat.post("/chat", async (c) => {
       system,
       messages,
       maxTokens: 1024,
+      userId,
     });
 
     // D-14 (Phase 105): chat_sent emits AFTER Claude returns successfully —

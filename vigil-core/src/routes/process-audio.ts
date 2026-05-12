@@ -4,6 +4,7 @@ import { callClaudeMultimodal, getAIClient, parseAIJson, callClaude } from "../a
 import { db } from "../db/connection.js";
 import { thoughts as thoughtsTable } from "../db/schema.js";
 import type { TriageResult } from "../ai/types.js";
+import { requireAiBudget, withBudgetTracking } from "../lib/ai-budget.js";
 
 export const processAudio = new Hono();
 
@@ -42,6 +43,15 @@ type AudioMediaType = (typeof VALID_MEDIA_TYPES)[number];
 // POST /process-audio — Transcribe audio via Claude, create thought, auto-triage.
 processAudio.post("/process-audio", async (c) => {
   const userId = c.get("userId");
+
+  // Phase 127 GUARD-03 (T-127-03 mitigation): pre-flight per-user daily AI
+  // budget gate. Throws DailyBudgetExceededError when today's accumulated
+  // spend for this user is >= the cap (default 0.50 USD; override via
+  // VIGIL_DAILY_AI_BUDGET_USD). Positioned BEFORE body parse / AI work so
+  // the throw propagates to app.onError (Plan 05.1b will branch on it and
+  // return 429). No-op when DATABASE_URL is unset (local-dev shape).
+  await requireAiBudget(userId);
+
   // 1. Parse JSON body
   let body: { audio?: string; mediaType?: string };
   try {
@@ -90,29 +100,37 @@ processAudio.post("/process-audio", async (c) => {
     const uploaded = await ai.beta.files.upload({ file });
 
     const model = process.env.CLAUDE_MODEL || "claude-sonnet-4-20250514";
-    const response = await ai.beta.messages.create({
-      model,
-      max_tokens: 4096,
-      betas: ["files-api-2025-04-14"],
-      messages: [
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: AUDIO_PROMPT,
-            },
-            {
-              type: "file",
-              source: {
-                type: "file",
-                file_id: uploaded.id,
+    // Phase 127 GUARD-03 (T-127-03-E2 mitigation): Pitfall 4 closure. The
+    // direct `ai.beta.messages.create` path bypasses the three callClaude*
+    // wrappers, so wrap it explicitly in withBudgetTracking(userId, ...) so
+    // the audio-transcription token spend accumulates in ai_usage_daily
+    // alongside text-completion spend. `ai.beta.files.upload` above is NOT
+    // wrapped — file upload is not token-billed (Anthropic billing surface).
+    const response = await withBudgetTracking(userId, () =>
+      ai.beta.messages.create({
+        model,
+        max_tokens: 4096,
+        betas: ["files-api-2025-04-14"],
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: AUDIO_PROMPT,
               },
-            } as never,
-          ],
-        },
-      ],
-    });
+              {
+                type: "file",
+                source: {
+                  type: "file",
+                  file_id: uploaded.id,
+                },
+              } as never,
+            ],
+          },
+        ],
+      })
+    );
 
     const block = response.content[0];
     if (block.type !== "text") {
@@ -157,6 +175,7 @@ processAudio.post("/process-audio", async (c) => {
         system: TRIAGE_SYSTEM_PROMPT,
         userMessage: transcription.trim(),
         maxTokens: 100,
+        userId,
       });
       const result = parseAIJson<TriageResult>(raw);
       await db!

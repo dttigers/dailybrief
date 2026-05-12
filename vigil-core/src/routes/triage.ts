@@ -24,6 +24,11 @@ Respond with ONLY a JSON object, no other text:
  * Same prompt + maxTokens contract as the POST /v1/triage route — if the prompt
  * or model parameters change, update BOTH the route and this helper together.
  *
+ * Phase 127 GUARD-03 (T-127-03 mitigation): `userId` is REQUIRED so callClaude
+ * can accumulate per-user spend in ai_usage_daily. The DI seam in
+ * process-photo.ts (`triageFn: typeof triageThought`) automatically picks up
+ * the widened shape via TypeScript — callers must supply userId.
+ *
  * Throws on:
  *  - Claude network/API errors (5xx, timeout, throttle)
  *  - parseAIJson failure (malformed JSON response)
@@ -31,17 +36,23 @@ Respond with ONLY a JSON object, no other text:
  * Callers handling CAP-02 D-07 graceful-null fallback wrap this in
  * Promise.allSettled and treat rejections as "keep the row, null category".
  */
-export async function triageThought(content: string): Promise<TriageResult> {
+export async function triageThought(content: string, userId: number): Promise<TriageResult> {
   const raw = await callClaude({
     system: TRIAGE_SYSTEM_PROMPT,
     userMessage: content,
     maxTokens: 100,
+    userId,
   });
   return parseAIJson<TriageResult>(raw);
 }
 
 // POST /triage — Categorize a thought via Claude
 triage.post("/triage", async (c) => {
+  // Phase 127 GUARD-03 (T-127-03 mitigation): callClaude now requires userId
+  // for per-user spend accumulation. Sourced from c.get("userId") per W-01
+  // lock — populated by bearerAuth dispatcher at index.ts.
+  const userId = c.get("userId");
+
   let body: { content?: string };
   try {
     body = await c.req.json();
@@ -65,6 +76,7 @@ triage.post("/triage", async (c) => {
       system: TRIAGE_SYSTEM_PROMPT,
       userMessage: body.content,
       maxTokens: 100,
+      userId,
     });
 
     let result: TriageResult;

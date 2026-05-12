@@ -60,6 +60,11 @@ Respond with ONLY a JSON object:
 
 // POST /therapy/classify — Classify a thought for therapy relevance
 therapy.post("/therapy/classify", async (c) => {
+  // Phase 127 GUARD-03 (T-127-03 mitigation): userId required by callClaude
+  // for per-user AI spend accumulation. Sourced from c.get("userId") per
+  // W-01 lock — populated by bearerAuth dispatcher at index.ts.
+  const userId = c.get("userId");
+
   let body: { content?: string };
   try {
     body = await c.req.json();
@@ -90,6 +95,7 @@ therapy.post("/therapy/classify", async (c) => {
       system: CLASSIFY_SYSTEM_PROMPT,
       userMessage: body.content,
       maxTokens: 150,
+      userId,
     });
 
     let result: TherapyClassificationResult;
@@ -175,6 +181,7 @@ therapy.post("/therapy/patterns", async (c) => {
       system: PATTERNS_SYSTEM_PROMPT,
       userMessage,
       maxTokens: 1024,
+      userId,
     });
 
     let parsed: Array<{
@@ -297,6 +304,7 @@ therapy.post("/therapy/prep", async (c) => {
       system: PREP_SYSTEM_PROMPT,
       userMessage,
       maxTokens: 1024,
+      userId,
     });
 
     let parsed: {

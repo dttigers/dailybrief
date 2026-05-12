@@ -14,6 +14,12 @@ type MediaType = (typeof VALID_MEDIA_TYPES)[number];
 
 // POST /describe-image — Describe a base64 image via Claude vision
 describeImage.post("/describe-image", async (c) => {
+  // Phase 127 GUARD-03 (T-127-03 mitigation): callClaudeMultimodal now
+  // requires userId on its options (one per-user spend accumulation).
+  // Sourced from c.get("userId") per W-01 / Phase 121 D-D2 lock — NEVER
+  // from body/query. The bearerAuth dispatcher at index.ts populates this
+  // before any /v1/* handler runs.
+  const userId = c.get("userId");
   let body: { image?: string; mediaType?: string };
   try {
     body = await c.req.json();
@@ -66,6 +72,7 @@ If the image contains only one subject, return a single-element array. If it's n
         },
       ],
       maxTokens: 1000,
+      userId,
     });
 
     // Parse multi-subject JSON response into descriptions array

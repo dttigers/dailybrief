@@ -97,6 +97,7 @@ prioritize.post("/prioritize", async (c) => {
       system: PRIORITIZE_SYSTEM_PROMPT,
       userMessage: formatWorkOrders(body.workOrders),
       maxTokens: 500,
+      userId,
     });
 
     let prioritized: string[];

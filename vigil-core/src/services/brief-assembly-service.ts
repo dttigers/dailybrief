@@ -34,7 +34,12 @@ export interface BriefAssemblyDeps {
   calendarService?: { fetchTodaysEvents: (userId: number) => Promise<CalendarEventsResponse> };
   pdfRenderer?: { renderBrief: (data: BriefRenderData, config?: PdfConfig) => Promise<Buffer> };
   dbClient?: PostgresJsDatabase<typeof schema> | null; // Drizzle db instance (null when DB unavailable)
-  callClaudeFn?: (opts: { system: string; userMessage: string; maxTokens: number }) => Promise<string>;
+  // Phase 127 GUARD-03 (T-127-03 mitigation): widen the DI seam to mirror
+  // the callClaude wrapper signature — `userId` is now REQUIRED on opts so
+  // withBudgetTracking can accumulate per-user spend. The caller (brief-
+  // generate.ts route handler / index.ts scheduler) supplies it through
+  // assembleAndRender's existing `userId` parameter.
+  callClaudeFn?: (opts: { system: string; userMessage: string; maxTokens: number; userId: number }) => Promise<string>;
   parseAIJsonFn?: <T>(raw: string) => T;
   getAIClientFn?: () => any;
   nowFn?: () => Date;
@@ -328,7 +333,11 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
 
   // ── Affirmation with filesystem cache ──────────────────────────────────
 
-  async function fetchAffirmation(recentThoughts: BriefThought[], dateStr: string): Promise<string> {
+  // Phase 127 GUARD-03 (T-127-03 mitigation): userId now plumbed through so
+  // the widened callClaudeFn signature is satisfied. The assembler receives
+  // userId via the existing assembleAndRender(dateStr, userId) parameter and
+  // forwards it to every AI helper that uses callClaudeFn.
+  async function fetchAffirmation(recentThoughts: BriefThought[], dateStr: string, userId: number): Promise<string> {
     // Check filesystem cache first
     const cacheFile = path.join(CACHE_DIR, `affirmation-${dateStr}.txt`);
     try {
@@ -358,6 +367,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
         system,
         userMessage: "Give me today's ADHD affirmation.",
         maxTokens: 200,
+        userId,
       });
 
       // Write cache
@@ -376,7 +386,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
 
   // ── Prioritization with filesystem cache ───────────────────────────────
 
-  async function fetchPrioritization(workOrders: BriefWorkOrder[], dateStr: string): Promise<string[] | undefined> {
+  async function fetchPrioritization(workOrders: BriefWorkOrder[], dateStr: string, userId: number): Promise<string[] | undefined> {
     if (workOrders.length === 0) return undefined;
 
     const getAIClientFn = deps.getAIClientFn;
@@ -408,6 +418,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
         system: "You are a facilities management assistant. Analyze these work orders and rank them by urgency. Respond with ONLY a JSON array of case numbers in priority order (highest urgency first).",
         userMessage: formatted,
         maxTokens: 500,
+        userId,
       });
 
       const prioritized = parseAIJsonFn<string[]>(raw);
@@ -428,7 +439,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
 
   // ── Insights generation ────────────────────────────────────────────────
 
-  async function fetchInsights(recentThoughts: BriefThought[]): Promise<BriefInsight[]> {
+  async function fetchInsights(recentThoughts: BriefThought[], userId: number): Promise<BriefInsight[]> {
     if (recentThoughts.length < 3) return [];
 
     const getAIClientFn = deps.getAIClientFn;
@@ -447,6 +458,7 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
         system: "You are a personal insight engine for someone with ADHD. Analyze their recent captured thoughts and surface useful patterns, connections, and actionable suggestions. Return a JSON array of insights.",
         userMessage: `Thoughts:\n${thoughtList}\n\nReturn JSON array: [{"type":"pattern|connection|actionPrompt|trend","title":"...","message":"..."}]`,
         maxTokens: 1024,
+        userId,
       });
 
       const parsed = parseAIJsonFn<Array<{ type: string; title: string; message: string }>>(raw);
@@ -633,11 +645,11 @@ export function createBriefAssemblyService(deps: BriefAssemblyDeps = {}) {
     }
 
     // 3. Post-allSettled: fetch affirmation (needs recent thoughts)
-    const affirmation = await fetchAffirmation(thoughtsData.recentThoughts, dateStr);
+    const affirmation = await fetchAffirmation(thoughtsData.recentThoughts, dateStr, userId);
 
     // 4. Post-allSettled conditional calls: prioritization and insights
-    const workOrderPriorityOrder = await fetchPrioritization(woData.workOrders, dateStr);
-    const insights = await fetchInsights(thoughtsData.recentThoughts);
+    const workOrderPriorityOrder = await fetchPrioritization(woData.workOrders, dateStr, userId);
+    const insights = await fetchInsights(thoughtsData.recentThoughts, userId);
 
     // 5. Assemble BriefRenderData
     const data: BriefRenderData = {

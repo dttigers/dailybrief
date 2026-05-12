@@ -336,6 +336,7 @@ thoughts.post("/thoughts", async (c) => {
             system: TRIAGE_SYSTEM_PROMPT,
             userMessage: thoughtContent,
             maxTokens: 200,
+            userId,
           });
           const result = parseAIJson<TriageResult>(raw);
           await db!

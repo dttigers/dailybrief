@@ -239,7 +239,10 @@ export interface ProcessPhotoDeps {
   /** CAP-01 D-01: HEIC/HEIF → JPEG buffer conversion. Called only when mediaType is heic/heif. */
   heicConvertFn: (buf: Buffer) => Promise<Buffer>;
   /** CAP-02 D-05/D-06: Per-thought triage. Called in parallel for each inserted row (commit mode only). */
-  triageFn: (content: string) => Promise<TriageResult>;
+  // Phase 127 GUARD-03 (T-127-03 mitigation): triageFn now takes userId so
+  // the underlying callClaude call can accumulate per-user spend. Mirrors
+  // the widened triageThought helper in routes/triage.ts.
+  triageFn: (content: string, userId: number) => Promise<TriageResult>;
   /** CAP-02 D-07: Post-triage DB update for per-thought category/confidence/tags. */
   dbUpdateTriageFn: (
     thoughtId: number,
@@ -404,6 +407,7 @@ export function createProcessPhotoRouter(
           { type: "text", text: PHOTO_PROMPT },
         ],
         maxTokens: 2000,
+        userId,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown AI error";
@@ -483,7 +487,7 @@ export function createProcessPhotoRouter(
     //     category null, report to PostHog via Plan 01 captureException wrapper.
     //     D-07: never lose the user's capture — always return 201.
     const triageOutcomes = await Promise.allSettled(
-      insertedRows.map((row) => deps.triageFn(row.content)),
+      insertedRows.map((row) => deps.triageFn(row.content, userId)),
     );
     const triagedRows: DrizzleThought[] = await Promise.all(
       insertedRows.map(async (row, i) => {

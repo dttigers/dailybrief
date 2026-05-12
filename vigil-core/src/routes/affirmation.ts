@@ -35,6 +35,11 @@ function writeCache(text: string): void {
 export const affirmation = new Hono();
 
 affirmation.post("/affirmation", async (c) => {
+  // Phase 127 GUARD-03 (T-127-03 mitigation): callClaude now requires userId
+  // for per-user spend accumulation. Sourced from c.get("userId") per W-01
+  // lock — populated by bearerAuth dispatcher at index.ts.
+  const userId = c.get("userId");
+
   // Check for cached affirmation first
   const cached = readCache();
   if (cached) {
@@ -79,6 +84,7 @@ affirmation.post("/affirmation", async (c) => {
       system,
       userMessage: "Give me today's ADHD affirmation.",
       maxTokens: 200,
+      userId,
     });
 
     writeCache(text);
