@@ -454,6 +454,76 @@ describe("cross-user isolation (AUTH-05)", () => {
     }
   });
 
+  // ── Phase 127 GUARD-03 (Plan 05.1b Task 3) — ai_usage_daily W-01 lock ────
+  // Two locks against cross-user reads of the per-user daily AI spend
+  // watermark (ai_usage_daily table, Plan 05 schema). The integration block
+  // mirrors the work-orders isolation lock above. The W-01-AI-BUDGET
+  // source-grep enforces that vigil-core/src/lib/ai-budget.ts literally
+  // contains `eq(aiUsageDaily.userId, userId)` (the Drizzle filter is the
+  // single defense; same convention as the W-01 grep used in prior phases —
+  // Phase 121 D-D2 / Phase 124 D-D2 carryforward).
+  it("ai-usage-daily isolation — userA's row never returned for userB's query", async (t) => {
+    if (!DB_READY) {
+      t.skip("DATABASE_URL required");
+      return;
+    }
+    const { db: d } = await import("../db/connection.js");
+    const { aiUsageDaily } = await import("../db/schema.js");
+    // Today's date as ISO-8601 yyyy-mm-dd (the column is `date` type — text
+    // form is what Drizzle expects on insert per the schema pattern).
+    const today = new Date().toISOString().slice(0, 10);
+    try {
+      await d!
+        .insert(aiUsageDaily)
+        .values({
+          userId: userA.id,
+          usageDate: today,
+          usdEstimate: "0.45",
+        })
+        // Composite PK (userId, usageDate) — onConflict update so re-runs
+        // against the same DB date don't trip the test setup.
+        .onConflictDoUpdate({
+          target: [aiUsageDaily.userId, aiUsageDaily.usageDate],
+          set: { usdEstimate: "0.45", updatedAt: new Date() },
+        });
+
+      // Read as userB — must return ZERO rows. If a future query drops the
+      // `.where(eq(aiUsageDaily.userId, userId))` filter, userA's spend
+      // becomes visible to userB and the assertion below fires with "LEAK:".
+      const rows = await d!
+        .select()
+        .from(aiUsageDaily)
+        .where(eq(aiUsageDaily.userId, userB.id));
+      assert.equal(
+        rows.length,
+        0,
+        "LEAK: ai_usage_daily query for userB returned userA's row — W-01 cross-user-isolation regressed",
+      );
+    } finally {
+      await d!.delete(aiUsageDaily).where(eq(aiUsageDaily.userId, userA.id));
+    }
+  });
+
+  // ── W-01-AI-BUDGET (source-grep) ──────────────────────────────────────────
+  // Pins the literal `eq(aiUsageDaily.userId, userId)` in
+  // vigil-core/src/lib/ai-budget.ts so every read on aiUsageDaily inside
+  // ai-budget.ts MUST filter by the caller's userId. Mirrors the W-01 grep
+  // style from prior phases (Phase 121 D-D2 lock). Runs WITHOUT DATABASE_URL
+  // so a CI-without-DB still catches a query-filter drop.
+  it("W-01-AI-BUDGET — ai-budget.ts reads aiUsageDaily with eq(aiUsageDaily.userId, userId) filter", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const url = await import("node:url");
+    const here = path.dirname(url.fileURLToPath(import.meta.url));
+    // ../lib/ai-budget.ts (the integration test sits in src/integration/)
+    const aiBudgetPath = path.resolve(here, "..", "lib", "ai-budget.ts");
+    const src = fs.readFileSync(aiBudgetPath, "utf8");
+    assert.ok(
+      src.includes("eq(aiUsageDaily.userId, userId)"),
+      "W-01-AI-BUDGET: vigil-core/src/lib/ai-budget.ts must contain the literal `eq(aiUsageDaily.userId, userId)` (W-01 cross-user-isolation pattern — Phase 121 D-D2 carryforward). If a future planner refactors the Drizzle filter shape, replace this assertion with the new literal and update the Phase 121 lock comment chain.",
+    );
+  });
+
   it("insights cache isolation — GET /v1/insights/cache does not serve userA's cache to userB (aiCache.userId)", async (t) => {
     if (!DB_READY) {
       t.skip("DATABASE_URL required");
