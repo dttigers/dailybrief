@@ -4,14 +4,14 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Plan 128a-01 complete; smoke RED as designed
-last_updated: "2026-05-12T18:15:19.175Z"
+last_updated: "2026-05-12T19:00:44.150Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 16
-  completed_plans: 11
-  percent: 69
+  completed_plans: 12
+  percent: 75
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 128a (voice-01-pcm-feasibility-spike) — EXECUTING
-Plan: 2 of 6
+Plan: 3 of 6
 Status: Ready to execute
 Last activity: 2026-05-12
 
@@ -131,6 +131,7 @@ Last activity: 2026-05-12
 | Phase 127 P06 | 10m | 1 tasks | 2 files |
 | Phase 127 P07 | ~10 min | 2 tasks | 2 files |
 | Phase 128a P01 | 1m 32s | 2 tasks | 3 files |
+| Phase 128a P02 | 50min | 2 tasks | 5 files |
 
 ## Deferred Items
 
@@ -386,6 +387,8 @@ Recent (v3.7 closeout):
 - [Phase ?]: Phase 127 Plan 07: Phase 107.1 work_orders drift closed by 0013_work_orders_drift_repair.sql 2026-04-22 — not by Plan 07 (Plan 07 ships the structural drift detector + STATE.md closing note)
 - [Phase 128a]: Pinned openai@^6.37.0 per RESEARCH DRIFT-03; STACK.md ^4.79.0 is stale — DRIFT-03 supersedes STACK.md; npm view openai version confirms 6.37.0 latest
 - [Phase 128a]: Wave 0 smoke test left RED by design — Plan 128a-02 turns GREEN — Nyquist test-first rail: mocking route to green would hide route-contract drift Plan 128a-02 must surface
+- [Phase ?]: 128a-02: Factory dep-injection for testable Hono routes — ESM live bindings make mock.method throw; pattern from agent-stream/quiet-mode analogs
+- [Phase ?]: 128a-02: AudioSessionTooLongError caught inline in voice-spike.ts (413); shared app.onError untouched until Phase 130 productionization to keep spike scope-pure
 
 ### Pending Todos
 
@@ -422,7 +425,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-12T18:15:19.165Z
+Last session: 2026-05-12T19:00:30.867Z
 Stopped at: Plan 128a-01 complete; smoke RED as designed
 Resume file: None
 
