@@ -401,7 +401,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 - ServiceNow API token still blocks Phase 80 (from v3.1)
 - Phase 85 (iOS Shortcut) held — Shortcuts.app bugs
-- Phase 107.1 work_orders schema drift — columns notes/archived_at/last_change_at/last_change_summary defined in schema.ts but never migrated
+- Phase 107.1 work_orders drift resolved by `vigil-core/drizzle/0013_work_orders_drift_repair.sql` 2026-04-22; rediscovered during Phase 127 scout (RESEARCH §Pitfall 2). GUARD-04 re-scoped to ship `migration-drift.test.ts` so a future schema-vs-migration divergence fails CI structurally
 - vigil-core npm test suite hang: integration tests import index.js which spawns generate-scheduler + gmail-workorders setInterval loops at module load. Workaround: run individual files via `npx tsx --test <file>`
 
 **Active for v3.8:**
