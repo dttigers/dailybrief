@@ -26,6 +26,7 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - ✅ **v3.6 Multi-User Completion, Auth UX & Safari Parity** — Phases 108-114 (shipped 2026-04-26)
 - ✅ **v3.7 Source Pickers, Verify-Email UX & Closeout Cleanup** — Phases 115-119 + insert 116.1 (shipped 2026-05-06; OPS-02 DMARC ramp closed via operator amendment, `p=none` accepted as steady state)
 - ✅ **v3.8 Claude Code Companion** — Phases 120-126 (shipped 2026-05-11; G2 glasses as ambient Claude Code HUD via vigil-watch daemon + 4 G2 polish riders + plugin v0.3.0 + wide-release auth hardening mid-milestone)
+- 🚧 **v3.9 Voice & Companion Polish** — Phases 127-133 (in planning; 53 requirements; anchors: G2 PCM voice capture + Claude Code write-back, gated by TWO spike-first phases — VOICE-01 (128a) and G2-REPLY-01 (128b); 30-min Phase 0 audit at 127.5 (AUDIT-G2-INPUT-01) shapes gesture grammar for G2-ACTION + G2-REPLY)
 
 ## Completed Milestones
 
@@ -328,6 +329,149 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
 <!-- v3.8 details inline section + per-phase blocks removed during milestone close 2026-05-11 — see milestones/v3.8-ROADMAP.md for full text -->
 
 
+## Active Milestone — v3.9 Voice & Companion Polish
+
+**Status:** in planning · **Opened:** 2026-05-11 · **Phase numbering continues:** 127 (no `--reset-phase-numbers` flag passed) · **Granularity:** fine
+
+**Goal:** Unlock G2 PCM voice capture as Vigil's first true ambient capture surface; extend capture reach to ServiceNow Polaris via an assisted-capture popup that ships around the IT-API-token blocker; tighten the Claude Code Companion HUD + freshness loops shipped in v3.8; close the ambient loop with in-glasses task-completion and quick-replies.
+
+**Two spike-first gates:**
+- **VOICE-01** (Phase 128a, 1-2 days) outputs `128a-SPIKE-DECISION.md` with `PASS / DEGRADE / BLOCK` — scope-locks **Phase 130** (VOICE-02..08).
+- **G2-REPLY-01** (Phase 128b, parallel-safe with 128a) outputs `128b-SPIKE-DECISION.md` — scope-locks Phase 133's G2-REPLY-02..05 (full reply UX) vs G2-REPLY-05 only (banner-ack degrade).
+
+**Phase 0 audit:** Phase 127.5 (AUDIT-G2-INPUT-01, 30 min) inspects `companion.ts` + `main.ts` event handlers, decides REACTIVATE / CONFIRM-DEFER on single-press gesture. Outcome shapes G2-ACTION + G2-REPLY gesture grammar in Phase 133.
+
+### Phases
+
+- [ ] **Phase 127: Pre-spike guardrails** — audio-redaction + audio-session caps + per-user daily AI-cost watermark + schema reconciliation before any feature code
+- [ ] **Phase 127.5: G2 input gesture audit** — 30-min code audit of single-press event plumbing; output verdict shapes downstream gesture grammar
+- [ ] **Phase 128a: VOICE-01 PCM feasibility spike** — measure chunk size / E2E latency / dropout / battery / `audioControl(false)` cleanup; output `128a-SPIKE-DECISION.md`
+- [ ] **Phase 128b: G2-REPLY-01 write-back path spike** — empirically prove or rule out programmatic Claude Code input injection across 3+ candidate paths; output `128b-SPIKE-DECISION.md`
+- [ ] **Phase 129: Lifecycle restore + ServiceNow popup** — parallel-safe wins during spike windows (G2-LIFECYCLE-01/02/03 + SVCNOW-01..05)
+- [ ] **Phase 130: Voice capture full implementation** — scope-locked by 128a; G2 PCM record→base64→`/v1/voice/transcribe`→thought row→PWA
+- [ ] **Phase 131: Insights freshness + chat context expansion** — INSIGHTS-FRESH-01/02/03 + CHAT-CTX-01..05 bundled for one PWA UAT pass
+- [ ] **Phase 132: Quiet Mode auto-detect** — iOS Focus → webhook → existing `/v1/quiet-mode` (QUIET-AUTO-01..04)
+- [ ] **Phase 133: G2 closeout bundle** — G2-ACTION-01..06 + G2-REPLY-02..05 (gated on 128b PASS) + WATCH-ENRICH-01..04 + HUD-CLARITY-01..05 (hardware UAT close-out)
+
+### Phase Details
+
+### Phase 127: Pre-spike guardrails
+**Goal:** Lock the three structural safety rails (audio-in-logs leakage prevention, runaway audio session caps, cross-feature AI-cost ceiling) before any feature code can introduce them as bugs, and reconcile the Phase 107.1 work_orders schema drift so the first v3.9 migration is clean.
+**Depends on:** v3.8 closeout (clean)
+**Requirements:** GUARD-01, GUARD-02, GUARD-03, GUARD-04
+**Success Criteria** (what must be TRUE):
+  1. Audio PCM payloads cannot reach any log sink — `console.*`, Sentry `beforeSend`, PostHog `BLOCKED_PROPERTY_NAMES` — and a drift-detector test fails if any new call site is added without the redact pattern
+  2. Server-side hard cap rejects any single G2 audio session longer than 60s, and `audioControl(false)` fires unconditionally on every plugin exit path (ABNORMAL_EXIT_EVENT, SYSTEM_EXIT_EVENT, `beforeunload`)
+  3. When a user crosses the per-day AI-cost watermark, ai_cache regenerate + chat + voice transcription all return `DAILY_AI_BUDGET_EXCEEDED` (locked-enum extension of Phase 126 `ERROR_CODE_MAP`) with operator-friendly copy in the PWA
+  4. `drizzle-kit generate --dry` produces zero pending changes against `schema.ts` — Phase 107.1 stale `work_orders` columns either land in a migration or are removed from the schema file
+**Plans:** TBD
+
+### Phase 127.5: G2 input gesture audit
+**Goal:** Resolve the open question from Phase 124 D-08 ("single-tap not reliably plumbed") with a 30-minute code review before committing G2-ACTION + G2-REPLY gesture grammar.
+**Depends on:** Phase 127 (so guardrails are in place if the audit triggers a quick companion.ts patch)
+**Requirements:** AUDIT-G2-INPUT-01
+**Success Criteria** (what must be TRUE):
+  1. A written verdict in `127.5-AUDIT.md` records either REACTIVATE (the `?? 0` nullish-coalesce fix is the cause and single-press is shipable) or CONFIRM-DEFER (single-press genuinely doesn't fire on hardware)
+  2. The verdict cites specific source lines in `vigil-g2-plugin/src/screens/companion.ts` and/or `main.ts` (no hand-wave conclusions)
+  3. Downstream Phase 133 G2-ACTION-01/02 gesture grammar choice is decidable from the verdict alone (no second audit needed at plan-authoring time)
+**Plans:** TBD
+**UI hint**: yes
+
+### Phase 128a: VOICE-01 PCM feasibility spike
+**Goal:** Empirically resolve whether G2 PCM capture can support the v3.9 voice anchor — and if so, in what scope. Format already locked (16kHz × 16-bit LE × mono = 32 KB/s); spike measures the operational envelope.
+**Depends on:** Phase 127 (guardrails block accidental log leakage during the spike)
+**Requirements:** VOICE-01
+**Success Criteria** (what must be TRUE):
+  1. `128a-SPIKE-DECISION.md` records measured numbers (not estimates) for chunk size, E2E latency from utterance end → thought row in PWA, observed drop-out modes, and battery delta (1h baseline vs 1h push-to-record)
+  2. The decision file resolves to exactly one of `PASS` (proceed full scope) / `DEGRADE` (push-to-record short clips only) / `BLOCK` (defer entire voice anchor to v3.10)
+  3. A 60s portfolio Loom (`60s-demo.mp4`) demonstrates a working capture → transcription → PWA dashboard round-trip OR documents the failure mode that drove DEGRADE/BLOCK
+  4. `audioControl(false)` cleanup is verified to fire on every documented exit path (no zombie microphone sessions after 5 force-quit cycles)
+**Plans:** TBD
+**UI hint**: yes
+
+### Phase 128b: G2-REPLY-01 write-back path spike
+**Goal:** Empirically prove or rule out a programmatic-input injection path into an active Claude Code session. Even SDK exposes zero write-back primitives — Vigil must invent the path.
+**Depends on:** Phase 127 (guardrails define `ERROR_CODE_MAP` extension surface)
+**Requirements:** G2-REPLY-01
+**Success Criteria** (what must be TRUE):
+  1. `128b-SPIKE-DECISION.md` records empirical results for at least 3 of: (a) JSONL append + IPC, (b) `@anthropic-ai/claude-code` SDK hook, (c) named-pipe to operator TTY, (d) MCP server hook
+  2. The decision file resolves to `PASS` (full reply UX downstream), `DEGRADE` (banner-ack-only G2-REPLY-05), or `BLOCK` (no G2 reply capability in v3.9)
+  3. If PASS, the spike includes a working proof-of-concept round-trip (`yes` reply from G2 reaches an active Claude Code session and the session continues) — not just feasibility analysis
+  4. Privilege model is sketched: writer process drops privileges before injection; prefab-allowlist is the only string surface that reaches the input channel
+**Plans:** TBD
+**UI hint**: yes
+
+### Phase 129: Lifecycle restore + ServiceNow popup
+**Goal:** Two independent small wins that ship in parallel with the spike phases — restore the last-viewed G2 screen across plugin re-launches, and extend the browser extension to capture ServiceNow Polaris work orders without an API token.
+**Depends on:** Phase 127 (guardrails) — parallel-safe with Phases 128a + 128b
+**Requirements:** G2-LIFECYCLE-01, G2-LIFECYCLE-02, G2-LIFECYCLE-03, SVCNOW-01, SVCNOW-02, SVCNOW-03, SVCNOW-04, SVCNOW-05
+**Success Criteria** (what must be TRUE):
+  1. After force-quitting the Even Hub iPhone app, re-opening returns the G2 plugin to the last-viewed screen (within a 30-min staleness TTL) — verified on hardware
+  2. After phone-background → foreground migration, the Companion HUD active-session / banner cache survives (no empty re-render)
+  3. Glasses-menu launches still land on the operator-picked screen (Phase 124 G2-POLISH-06 invariant preserved)
+  4. Operator on a `*.service-now.com/*` page clicks the extension icon → popup pre-fills CS# (regex `/^CS\d{7}$/` against `document.title`) → types description + priority → submit creates a work-order row, deduped via `client_capture_id` across multi-tab + corporate-VPN retries
+  5. Both Chrome and Safari extensions ship the popup (lock-step parity per Phase 114 EXT-02 pattern), with Vigil-brand-compliant styling
+**Plans:** TBD
+**UI hint**: yes
+
+### Phase 130: Voice capture full implementation (scope-locked by 128a)
+**Goal:** Ship the G2 voice anchor at whatever scope Phase 128a's spike PASS/DEGRADE verdict justified — full ambient capture if PASS, push-to-record short clips if DEGRADE.
+**Depends on:** Phase 128a (must be PASS or DEGRADE; BLOCK terminates this phase)
+**Requirements:** VOICE-02, VOICE-03, VOICE-04, VOICE-05, VOICE-06, VOICE-07, VOICE-08
+**Success Criteria** (what must be TRUE):
+  1. Operator presses the documented gesture (single-press OR DOUBLE_CLICK-cycle, per Phase 127.5 verdict) → G2 starts recording → visible LED-style "recording" indicator appears on the Companion HUD and survives screen changes
+  2. On utterance end, G2 plugin POSTs base64-WAV (16kHz mono 16-bit LE) to `POST /v1/voice/transcribe`; a thought row appears in the PWA dashboard within 8 seconds
+  3. Transcription failures surface as locked-enum codes (`VOICE_TRANSCRIBE_TIMEOUT` / `VOICE_TRANSCRIBE_PROVIDER_DOWN` / `VOICE_TRANSCRIBE_QUOTA`) — the user sees specific copy, not a generic error
+  4. With network disabled, the G2 plugin queues up to 10 utterances (exact `[1s, 2s, 4s, 8s, 16s, 30s]` backoff per Phase 124 D-11) and shows "syncing N voice captures" on the HUD; queue drains when network returns
+  5. Drift-detector tests structurally prevent any `audioPcm` reference from reaching `console.log` / `Sentry.captureException` / `posthog.capture`, and prevent any orphaned `audioControl(true)` without a matching `audioControl(false)`
+**Plans:** TBD
+**UI hint**: yes
+
+### Phase 131: Insights freshness + chat context expansion
+**Goal:** Close the "are these about *this week*?" trust gap and the "what was I thinking about last month?" recall gap in one PWA UAT pass.
+**Depends on:** Phase 127 (guardrails — chat-context-token-budget and AI-cost watermark must be enforceable)
+**Requirements:** INSIGHTS-FRESH-01, INSIGHTS-FRESH-02, INSIGHTS-FRESH-03, CHAT-CTX-01, CHAT-CTX-02, CHAT-CTX-03, CHAT-CTX-04, CHAT-CTX-05
+**Success Criteria** (what must be TRUE):
+  1. Creating a new thought (via PWA, voice, browser extension) invalidates the user's insights + therapy ai_cache rows BEFORE fire-and-forget triage; PWA shows a `regenerating…` placeholder until next cache rebuild
+  2. Bulk-importing N thoughts triggers exactly ONE coalesced regenerate per (userId, type) per 5-minute window — no N-stampede
+  3. `/v1/chat` retrieves recent (20) + FTS-relevant (10) thoughts, dedupes, hard-caps at 30, and wraps each in `<thought>` delimiters; the system prompt instructs Claude to treat thought content as data not instructions
+  4. Operator can raise `contextLimit` to 100 in PWA UI; requests beyond the pre-flight token budget abort with `CHAT_CONTEXT_TOKEN_BUDGET_EXCEEDED` (locked enum)
+  5. Drift-detector tests pin the `<thought>` delimiter format, the 30-thought hard cap, and the tag-breakout sanitization regex set
+**Plans:** TBD
+**UI hint**: yes
+
+### Phase 132: Quiet Mode auto-detect via iPhone Focus
+**Goal:** Follow on from v3.8 AGENT-HUD-03 manual toggle — make "iPhone Focus = quiet glasses" land via a verified-feasible iOS Shortcut webhook path.
+**Depends on:** Phase 127 (guardrails — scoped API-key issuance must satisfy the AUTH surface)
+**Requirements:** QUIET-AUTO-01, QUIET-AUTO-02, QUIET-AUTO-03, QUIET-AUTO-04
+**Success Criteria** (what must be TRUE):
+  1. A 30-min sub-spike confirms that iOS Focus filters CAN POST to a webhook AND that the `project_ios_shortcut_blocked` bug class does NOT apply to Focus filter automation (memory says Shortcuts.app bugs blocked deep-link launch — Focus filters are a different surface)
+  2. Operator can issue a `quiet_mode_write`-scoped API key from PWA Settings; the key survives operator password rotation and is used only by the iOS Shortcut
+  3. Toggling iPhone Focus on/off flips the user's `quiet_mode` flag with `quiet_mode_source='ios_focus'`; the G2 HUD reflects the change via existing Phase 125 SSE plumbing
+  4. PWA Settings shows a Download-Shortcut link/QR, a Quiet-Mode log of the last 10 toggles (timestamp + source), and a "Source: iOS Focus" badge when last set source was `ios_focus`
+**Plans:** TBD
+**UI hint**: yes
+
+### Phase 133: G2 closeout bundle (hardware UAT)
+**Goal:** Land all remaining G2-side features in one hardware UAT pass — task completion from glasses, simple replies to Claude Code (scope-locked by 128b), richer HUD payload, and the SEED-016 clarity gaps from v3.8 dogfooding.
+**Depends on:** Phase 127.5 (gesture grammar), Phase 128b (G2-REPLY scope), Phase 129 (G2-LIFECYCLE patterns), Phase 130 (voice-related HUD overlay)
+**Requirements:** G2-ACTION-01, G2-ACTION-02, G2-ACTION-03, G2-ACTION-04, G2-ACTION-05, G2-ACTION-06, G2-REPLY-02, G2-REPLY-03, G2-REPLY-04, G2-REPLY-05, WATCH-ENRICH-01, WATCH-ENRICH-02, WATCH-ENRICH-03, WATCH-ENRICH-04, HUD-CLARITY-01, HUD-CLARITY-02, HUD-CLARITY-03, HUD-CLARITY-04, HUD-CLARITY-05
+**Success Criteria** (what must be TRUE):
+  1. On the G2 WORK_ORDERS list, two consecutive single-presses on the same item within 1s mark it complete (with a "tap again to complete" hint between presses); reminders screen behaves identically; a 5s "tap to undo" banner reverts on a third press
+  2. Completing a task from G2 lands a row update server-side (deduped via `client_action_id` composite-unique) AND fires a `task_status_changed` SSE event that the PWA dashboard reflects within 1s
+  3. If 128b returned PASS: a `needs_input` Claude Code banner can be answered from G2 with one of 5 prefab replies (`yes`/`no`/`continue`/`abort`/`defer`), the reply reaches the active Claude Code session, and a watchdog auto-exits reply mode after 30s; if 128b returned DEGRADE: DOUBLE_CLICK dismisses the banner locally and posts an analytics event (no write-back to Claude Code)
+  4. The Companion HUD shows project name (from JSONL `cwd`), current tool name (`Edit` / `Bash` / `Read` / etc.), and a privacy-redacted ≤80-char prompt/message preview (operator-toggle, default ON)
+  5. SEED-016 clarity gaps closed: relative timestamp on every refresh tick (`last activity 4m ago`), `[POSSIBLY STUCK]` banner after N heartbeats without tool activity (allowlisted through Quiet Mode), and `🔋 73% · 👁` battery+wearing footer line at zero new SDK cost
+**Plans:** TBD
+**UI hint**: yes
+
+### Coverage
+
+✓ All 53 v3.9 requirements mapped to exactly one phase (see REQUIREMENTS.md Traceability)
+✓ No orphaned requirements
+✓ Phase 130 + Phase 133 scope-locked from Phase 128a / 128b spike outcomes (documented in phase Goals)
+
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -464,6 +608,15 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
 | 124. G2 Companion HUD + WebSocket fan-out + launch-source/home-overflow polish | v3.8 | 9/9 | Complete | 2026-05-10 |
 | 125. Quiet mode + remaining polish riders + plugin v0.3.0 ship + portfolio demo | v3.8 | 11/11 | Complete | 2026-05-11 |
 | 126. Wide-release auth hardening (mid-milestone insert) | v3.8 | 11/11 | Complete | 2026-05-11 |
+| 127. Pre-spike guardrails (audio redaction + audio caps + AI-cost watermark + schema reconcile) | v3.9 | 0/TBD | Not started | - |
+| 127.5. G2 input gesture audit (30-min code review; verdict shapes G2-ACTION + G2-REPLY) | v3.9 | 0/TBD | Not started | - |
+| 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 0/TBD | Not started | - |
+| 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 0/TBD | Not started | - |
+| 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 0/TBD | Not started | - |
+| 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 0/TBD | Not started | - |
+| 131. Insights freshness + chat context expansion (one PWA UAT pass) | v3.9 | 0/TBD | Not started | - |
+| 132. Quiet Mode auto-detect via iPhone Focus | v3.9 | 0/TBD | Not started | - |
+| 133. G2 closeout bundle (G2-ACTION + G2-REPLY + WATCH-ENRICH + HUD-CLARITY; hardware UAT) | v3.9 | 0/TBD | Not started | - |
 
 ## Backlog
 

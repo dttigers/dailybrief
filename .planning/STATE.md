@@ -2,11 +2,12 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: planning
-last_updated: "2026-05-12T00:05:59.394Z"
+status: roadmapped
+last_updated: "2026-05-12T01:30:00.000Z"
 last_activity: 2026-05-12
+next_phase: 127
 progress:
-  total_phases: 0
+  total_phases: 9
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -20,14 +21,41 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Planning next milestone (v3.9). Live backlog: SEED-009/010/011/013/014/015/016, 999.1/999.2.
+**Current focus:** v3.9 ROADMAPPED — 9 phases (127, 127.5, 128a, 128b, 129–133), 53 requirements mapped. Two spike-first gates (VOICE-01 + G2-REPLY-01) scope-lock downstream phases. Next: Phase 127 (pre-spike guardrails). Live backlog: 999.1/999.2.
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 127 (Pre-spike guardrails) — next to plan
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-12 — Milestone v3.9 started
+Status: Roadmapped, awaiting `/gsd-plan-phase 127`
+Last activity: 2026-05-12 — Roadmapper mapped 53 v3.9 requirements to phases 127–133
+
+**v3.9 phase sequence:**
+- 127 — Pre-spike guardrails (GUARD-01..04)
+- 127.5 — G2 input gesture audit (AUDIT-G2-INPUT-01)
+- 128a — VOICE-01 PCM feasibility spike (gates Phase 130)
+- 128b — G2-REPLY-01 write-back path spike (gates Phase 133 reply UX)
+- 129 — Lifecycle restore + ServiceNow popup (G2-LIFECYCLE-01..03 + SVCNOW-01..05; parallel-safe with 128a/128b)
+- 130 — Voice capture full implementation (VOICE-02..08; scope-locked by 128a)
+- 131 — Insights freshness + chat context expansion (INSIGHTS-FRESH-01..03 + CHAT-CTX-01..05)
+- 132 — Quiet Mode auto-detect via iPhone Focus (QUIET-AUTO-01..04)
+- 133 — G2 closeout bundle (G2-ACTION-01..06 + G2-REPLY-02..05 + WATCH-ENRICH-01..04 + HUD-CLARITY-01..05; hardware UAT)
+
+## v3.9 Phase Table
+
+| Phase | Goal | Requirements | UI |
+|-------|------|--------------|----|
+| 127. Pre-spike guardrails | Lock audio-redaction + audio-session caps + per-user daily AI-cost watermark + schema reconcile before feature code | GUARD-01, GUARD-02, GUARD-03, GUARD-04 | no |
+| 127.5. G2 input gesture audit | 30-min code audit of single-press event plumbing; verdict shapes G2-ACTION + G2-REPLY gesture grammar | AUDIT-G2-INPUT-01 | yes |
+| 128a. VOICE-01 PCM feasibility spike | Measure chunk size / E2E latency / dropout / battery / audioControl cleanup; output PASS/DEGRADE/BLOCK | VOICE-01 | yes |
+| 128b. G2-REPLY-01 write-back path spike | Empirically prove or rule out programmatic Claude Code input injection (3+ candidate paths); PASS/DEGRADE/BLOCK | G2-REPLY-01 | yes |
+| 129. Lifecycle restore + ServiceNow popup | G2 last-viewed restore (setLocalStorage + setBackgroundState) + browser-extension ServiceNow assisted-capture popup | G2-LIFECYCLE-01..03, SVCNOW-01..05 | yes |
+| 130. Voice capture full implementation | G2 PCM record → base64 → /v1/voice/transcribe → thought row → PWA (scope locked by 128a verdict) | VOICE-02..08 | yes |
+| 131. Insights freshness + chat context expansion | Auto-regenerate ai_cache on thought create + lift /v1/chat 20-thought cap with FTS pass + token budget | INSIGHTS-FRESH-01..03, CHAT-CTX-01..05 | yes |
+| 132. Quiet Mode auto-detect via iPhone Focus | iOS Shortcut Focus-filter webhook → scoped API key → /v1/quiet-mode source=ios_focus | QUIET-AUTO-01..04 | yes |
+| 133. G2 closeout bundle | Mark complete from G2 + quick replies (gated on 128b) + richer HUD payload + SEED-016 clarity gaps | G2-ACTION-01..06, G2-REPLY-02..05, WATCH-ENRICH-01..04, HUD-CLARITY-01..05 | yes |
+
+**Coverage:** 53/53 v3.9 requirements mapped · No orphans · Phase 130 + Phase 133 scope-locked from 128a/128b spike outcomes
 
 ## v3.8 Phase Table
 
@@ -372,10 +400,16 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-11T22:55:00Z
-Stopped at: v3.8 milestone closed. ROADMAP collapsed, REQUIREMENTS archived + `git rm`'d, PROJECT.md evolved, MILESTONES.md appended, tag v3.8 created, retrospective updated.
-Resume file: none — ready for `/gsd-new-milestone` to scope v3.9.
+Last session: 2026-05-12T01:30:00Z
+Stopped at: v3.9 ROADMAP authored — 9 phases (127, 127.5, 128a, 128b, 129–133) mapping all 53 requirements. Two spike-first gates (VOICE-01 at 128a, G2-REPLY-01 at 128b) scope-lock downstream Phase 130 + 133. STATE.md + REQUIREMENTS.md traceability synced.
+Resume file: none — ready for `/gsd-plan-phase 127` to begin guardrails phase.
 
 ## Operator Next Steps
 
-- Start the next milestone with /gsd-new-milestone
+- `/gsd-plan-phase 127` — plan the pre-spike guardrails phase (GUARD-01..04)
+- Or `/gsd-plan-phase 127.5` first if the gesture audit should land before guardrails (operator call — see Phase 127 vs 127.5 ordering note below)
+- Open decisions to resolve before Phase 130 plan-authoring (from research/SUMMARY.md): transcription provider (Anthropic beta.files vs OpenAI gpt-4o-mini-transcribe), whether to vendor everything-evenhub skill files locally, WATCH-ENRICH-03 prompt-preview privacy posture (default-on vs default-off)
+
+### Phase 127 vs 127.5 ordering note
+
+Roadmap places 127 (guardrails) before 127.5 (audit) because GUARD-01..04 are pre-feature-code structural rails the rest of the milestone depends on. 127.5 is a 30-min audit; if the audit reveals a quick companion.ts fix, the guardrails were already in place. Operator can swap if there's a reason to short-circuit (e.g., gesture verdict urgently shapes the Phase 128a spike harness).

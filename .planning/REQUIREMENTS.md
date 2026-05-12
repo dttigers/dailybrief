@@ -143,65 +143,66 @@ Empty initially. Populated by roadmapper during phase mapping.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| GUARD-01 | TBD | Pending |
-| GUARD-02 | TBD | Pending |
-| GUARD-03 | TBD | Pending |
-| GUARD-04 | TBD | Pending |
-| AUDIT-G2-INPUT-01 | TBD | Pending |
-| VOICE-01 | TBD | Pending |
-| VOICE-02 | TBD | Pending |
-| VOICE-03 | TBD | Pending |
-| VOICE-04 | TBD | Pending |
-| VOICE-05 | TBD | Pending |
-| VOICE-06 | TBD | Pending |
-| VOICE-07 | TBD | Pending |
-| VOICE-08 | TBD | Pending |
-| G2-ACTION-01 | TBD | Pending |
-| G2-ACTION-02 | TBD | Pending |
-| G2-ACTION-03 | TBD | Pending |
-| G2-ACTION-04 | TBD | Pending |
-| G2-ACTION-05 | TBD | Pending |
-| G2-ACTION-06 | TBD | Pending |
-| G2-REPLY-01 | TBD | Pending |
-| G2-REPLY-02 | TBD | Pending |
-| G2-REPLY-03 | TBD | Pending |
-| G2-REPLY-04 | TBD | Pending |
-| G2-REPLY-05 | TBD | Pending |
-| WATCH-ENRICH-01 | TBD | Pending |
-| WATCH-ENRICH-02 | TBD | Pending |
-| WATCH-ENRICH-03 | TBD | Pending |
-| WATCH-ENRICH-04 | TBD | Pending |
-| SVCNOW-01 | TBD | Pending |
-| SVCNOW-02 | TBD | Pending |
-| SVCNOW-03 | TBD | Pending |
-| SVCNOW-04 | TBD | Pending |
-| SVCNOW-05 | TBD | Pending |
-| G2-LIFECYCLE-01 | TBD | Pending |
-| G2-LIFECYCLE-02 | TBD | Pending |
-| G2-LIFECYCLE-03 | TBD | Pending |
-| INSIGHTS-FRESH-01 | TBD | Pending |
-| INSIGHTS-FRESH-02 | TBD | Pending |
-| INSIGHTS-FRESH-03 | TBD | Pending |
-| CHAT-CTX-01 | TBD | Pending |
-| CHAT-CTX-02 | TBD | Pending |
-| CHAT-CTX-03 | TBD | Pending |
-| CHAT-CTX-04 | TBD | Pending |
-| CHAT-CTX-05 | TBD | Pending |
-| QUIET-AUTO-01 | TBD | Pending |
-| QUIET-AUTO-02 | TBD | Pending |
-| QUIET-AUTO-03 | TBD | Pending |
-| QUIET-AUTO-04 | TBD | Pending |
-| HUD-CLARITY-01 | TBD | Pending |
-| HUD-CLARITY-02 | TBD | Pending |
-| HUD-CLARITY-03 | TBD | Pending |
-| HUD-CLARITY-04 | TBD | Pending |
-| HUD-CLARITY-05 | TBD | Pending |
+| GUARD-01 | 127 | Pending |
+| GUARD-02 | 127 | Pending |
+| GUARD-03 | 127 | Pending |
+| GUARD-04 | 127 | Pending |
+| AUDIT-G2-INPUT-01 | 127.5 | Pending |
+| VOICE-01 | 128a | Pending |
+| VOICE-02 | 130 | Pending |
+| VOICE-03 | 130 | Pending |
+| VOICE-04 | 130 | Pending |
+| VOICE-05 | 130 | Pending |
+| VOICE-06 | 130 | Pending |
+| VOICE-07 | 130 | Pending |
+| VOICE-08 | 130 | Pending |
+| G2-ACTION-01 | 133 | Pending |
+| G2-ACTION-02 | 133 | Pending |
+| G2-ACTION-03 | 133 | Pending |
+| G2-ACTION-04 | 133 | Pending |
+| G2-ACTION-05 | 133 | Pending |
+| G2-ACTION-06 | 133 | Pending |
+| G2-REPLY-01 | 128b | Pending |
+| G2-REPLY-02 | 133 | Pending |
+| G2-REPLY-03 | 133 | Pending |
+| G2-REPLY-04 | 133 | Pending |
+| G2-REPLY-05 | 133 | Pending |
+| WATCH-ENRICH-01 | 133 | Pending |
+| WATCH-ENRICH-02 | 133 | Pending |
+| WATCH-ENRICH-03 | 133 | Pending |
+| WATCH-ENRICH-04 | 133 | Pending |
+| SVCNOW-01 | 129 | Pending |
+| SVCNOW-02 | 129 | Pending |
+| SVCNOW-03 | 129 | Pending |
+| SVCNOW-04 | 129 | Pending |
+| SVCNOW-05 | 129 | Pending |
+| G2-LIFECYCLE-01 | 129 | Pending |
+| G2-LIFECYCLE-02 | 129 | Pending |
+| G2-LIFECYCLE-03 | 129 | Pending |
+| INSIGHTS-FRESH-01 | 131 | Pending |
+| INSIGHTS-FRESH-02 | 131 | Pending |
+| INSIGHTS-FRESH-03 | 131 | Pending |
+| CHAT-CTX-01 | 131 | Pending |
+| CHAT-CTX-02 | 131 | Pending |
+| CHAT-CTX-03 | 131 | Pending |
+| CHAT-CTX-04 | 131 | Pending |
+| CHAT-CTX-05 | 131 | Pending |
+| QUIET-AUTO-01 | 132 | Pending |
+| QUIET-AUTO-02 | 132 | Pending |
+| QUIET-AUTO-03 | 132 | Pending |
+| QUIET-AUTO-04 | 132 | Pending |
+| HUD-CLARITY-01 | 133 | Pending |
+| HUD-CLARITY-02 | 133 | Pending |
+| HUD-CLARITY-03 | 133 | Pending |
+| HUD-CLARITY-04 | 133 | Pending |
+| HUD-CLARITY-05 | 133 | Pending |
 
 **Coverage:**
 - v3.9 requirements: 53 total
-- Mapped to phases: 0 (roadmapper to fill)
-- Unmapped: 53 ⚠️ (expected pre-roadmap)
+- Mapped to phases: 53 ✓
+- Unmapped: 0
+- Phase distribution: 127 (4) · 127.5 (1) · 128a (1) · 128b (1) · 129 (8) · 130 (7) · 131 (8) · 132 (4) · 133 (19)
 
 ---
 *Requirements defined: 2026-05-11*
-*Last updated: 2026-05-11 after v3.9 scope lock + canonical Even SDK skill integration*
+*Last updated: 2026-05-12 — all 53 requirements mapped to phases 127–133 by roadmapper (continuing phase numbering from v3.8 Phase 126)*
