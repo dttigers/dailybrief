@@ -47,6 +47,8 @@
 //   fire-and-forget is the correct shape for captureException).
 
 import * as Sentry from "@sentry/node";
+import type { ErrorEvent, EventHint } from "@sentry/node";
+import { BLOCKED_PROPERTY_NAMES } from "../analytics/posthog.js";
 
 // Module-scope mutable state. Mirrors analytics/posthog.ts's `apiKey` + null
 // singleton pair, but inverted: PostHog uses an immutable null-or-client export
@@ -59,6 +61,79 @@ import * as Sentry from "@sentry/node";
 // of a crash). T-126-03-05 (Tampering of initialized flag) is `accept` —
 // module-scope mutable state is intentional for test-time reset semantics.
 let initialized = false;
+
+// ── Phase 127 GUARD-01.2 — Sentry beforeSend redactor (D-01.2 / RESEARCH §Pattern 1) ──
+//
+// Pure function registered as the Sentry.init beforeSend hook (see below).
+// Mirrors the PostHog redactEvent pattern in analytics/posthog.ts:54-64 —
+// runs INSIDE the SDK before any network I/O, strips Phase-127 audio PCM
+// property names + Phase-103 LOCKED keys from event.extra / event.contexts /
+// event.breadcrumbs[].data.
+//
+// Defensive shape (RESEARCH §Pitfall 3):
+//   1. null event passes through unchanged.
+//   2. Whole body wrapped in try/catch — on internal throw, returns the
+//      ORIGINAL event reference (never undefined). Better to ship a
+//      non-redacted event than to lose it entirely.
+//   3. Inner bag walker is type-guarded — primitive contexts (e.g.
+//      `event.contexts.os = "darwin"`) early-return instead of throwing.
+//
+// SOURCE OF TRUTH: BLOCKED_PROPERTY_NAMES is imported from
+// ../analytics/posthog (D-14 export exception — exported for tests and
+// to make the rule grep-visible; the same exception covers sibling
+// redactors). DO NOT fork the Set — drift detector
+// audio-log-redaction.test.ts Rail 1 pins membership.
+//
+// REGISTRATION FORM: the hook MUST be registered as a function reference,
+// NOT an inline arrow. The drift detector at audio-log-redaction.test.ts
+// Rail 2 greps for the literal `beforeSend` token + the function name
+// (joined by ':') inside the Sentry.init({...}) body.
+export function redactSentryEvent(
+  event: ErrorEvent | null,
+  _hint?: EventHint,
+): ErrorEvent | null {
+  if (event === null || event === undefined) return event;
+  try {
+    const stripFromBag = (bag: unknown): void => {
+      if (typeof bag !== "object" || bag === null) return;
+      const rec = bag as Record<string, unknown>;
+      for (const key of Object.keys(rec)) {
+        if (BLOCKED_PROPERTY_NAMES.has(key)) {
+          delete rec[key];
+        }
+      }
+    };
+
+    // event.extra
+    stripFromBag((event as { extra?: unknown }).extra);
+
+    // event.contexts — each named context object
+    const contexts = (event as { contexts?: unknown }).contexts;
+    if (typeof contexts === "object" && contexts !== null) {
+      for (const ctxName of Object.keys(contexts as Record<string, unknown>)) {
+        stripFromBag((contexts as Record<string, unknown>)[ctxName]);
+      }
+    }
+
+    // event.breadcrumbs[].data
+    const crumbs = (event as { breadcrumbs?: unknown }).breadcrumbs;
+    if (Array.isArray(crumbs)) {
+      for (const bc of crumbs) {
+        if (typeof bc === "object" && bc !== null) {
+          stripFromBag((bc as { data?: unknown }).data);
+        }
+      }
+    }
+
+    return event;
+  } catch {
+    // Internal throw (rogue getter, exotic proxy, etc.) — return the
+    // original event reference unchanged. NEVER return undefined: a
+    // beforeSend hook that returns undefined silently drops the event
+    // (RESEARCH §Pitfall 3 — "better to ship non-redacted than nothing").
+    return event;
+  }
+}
 
 /**
  * Initialize the Sentry SDK if `SENTRY_DSN` is set. Idempotent — safe to call
@@ -84,6 +159,9 @@ export function initSentry(): void {
     tracesSampleRate: 0,
     // sendDefaultPii defaults to false in v10 — DO NOT override to true
     // (T-126-03-01 Bearer-leak mitigation).
+    // Phase 127 GUARD-01.2 — last-in-process scrub before network I/O.
+    // Function reference (NOT inline arrow) — drift detector pins this form.
+    beforeSend: redactSentryEvent,
   });
   initialized = true;
 }
