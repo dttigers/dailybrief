@@ -230,10 +230,9 @@ async function init(): Promise<void> {
     // SDK ≥10x/s and contaminate the inter_chunk_latency measurement.
     if (event.audioEvent?.audioPcm) {
       const bytes = event.audioEvent.audioPcm.length
-      // First chunk per session ends the mic-on timer started by
-      // toggleVoiceSpikeRecording() in screens/voice-spike.ts; subsequent
-      // calls no-op (console.timeEnd is idempotent after first hit).
-      console.timeEnd('mic-on')
+      // mic_on_ms is logged inside appendPcmChunk on the first chunk per
+      // session (single-fire — no repeated "Timer 'mic-on' does not exist"
+      // warnings the old console.timeEnd path produced on every chunk).
       console.log(`[voice-spike] chunk bytes=${bytes}`)
       appendPcmChunk(event.audioEvent.audioPcm)
       return

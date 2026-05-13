@@ -66,6 +66,10 @@ export function getRecording(): boolean {
  * wires the audioEvent listener that calls this.
  */
 export function appendPcmChunk(chunk: Uint8Array): void {
+  if (pcmChunks.length === 0 && micOnStartedAt != null) {
+    // First chunk per recording session — log D-M1 mic_on_latency once.
+    console.log(`[voice-spike] mic_on_ms=${Date.now() - micOnStartedAt}`)
+  }
   pcmChunks.push(chunk)
 }
 
@@ -214,7 +218,7 @@ export async function toggleVoiceSpikeRecording(
     pcmChunks.length = 0
     micOnStartedAt = Date.now()
     stateLine = '[REC]'
-    console.time('mic-on') // D-M1 mic_on_latency timer (timeEnd in Plan 04 audioEvent collector)
+    // D-M1 mic_on_latency: appendPcmChunk logs it once on first chunk per session.
     await safeAudioControl(true, bridge)
     await onStateChange?.()
     return
