@@ -202,12 +202,20 @@
 
 | Metric                             | Measured           | Threshold buckets                                        | This run's bucket |
 |------------------------------------|--------------------|----------------------------------------------------------|-------------------|
-| `e2e_latency` median               | __ ms (from Run 1) | PASS ≤ 8000 · DEGRADE 8001-15000 · BLOCK > 15000         | …                 |
-| Drop-outs per 60s                  | __ (from Run 2)    | PASS ≤ 1 · DEGRADE 2-5 · BLOCK > 5                        | …                 |
-| Battery delta (incremental cost)   | __ pp/hr (Run 5)   | PASS ≤ 15 · DEGRADE 15-30 · BLOCK > 30                    | …                 |
-| Cleanup pass count                 | __ / 5 (Run 3) + permission probe documented (Run 4) | PASS 5/5 AND probe doc'd · DEGRADE 3-4/5 · BLOCK ≤ 2/5 | … |
-| PCM intelligible (PASS GATE 1)     | YES / NO (Run 1)   | NO → BLOCK regardless of other metrics                    | …                 |
-| Permission rejected at portal (C-2)| NO (cleared 2026-05-12) | YES → BLOCK regardless of other metrics              | NO                |
+| `e2e_latency` median               | **1880 ms** (from Run 1, `stop→HTTP_ms` per D-M1/DRIFT-02) | PASS ≤ 8000 · DEGRADE 8001-15000 · BLOCK > 15000 | **PASS**          |
+| Drop-outs per 60s                  | **0** (from Run 2 near-cap 55s + 0 across Run 1) | PASS ≤ 1 · DEGRADE 2-5 · BLOCK > 5            | **PASS**          |
+| Battery delta (incremental cost)   | **TBD** pp/hr (Run 5 — 2h wallclock pending)   | PASS ≤ 15 · DEGRADE 15-30 · BLOCK > 30          | **TBD**           |
+| Cleanup pass count                 | **5 / 5** (Run 3) + permission probe documented via code analysis (Run 4) | PASS 5/5 AND probe doc'd · DEGRADE 3-4/5 · BLOCK ≤ 2/5 | **PASS** |
+| PCM intelligible (PASS GATE 1)     | **YES** (Run 1 — 9/9 transcripts appeared in PWA) | NO → BLOCK regardless of other metrics       | PASS (no BLOCK trigger) |
+| Permission rejected at portal (C-2)| NO (cleared 2026-05-12) | YES → BLOCK regardless of other metrics              | NO (no BLOCK trigger) |
+
+**Provisional verdict shape** (mechanical, awaiting Run 5):
+- 4 of 6 inputs locked to PASS bucket; no BLOCK trigger active.
+- Final verdict gated on battery row only:
+  - Run 5 ≤ 15 pp/hr → **PASS** (Phase 130 = full VOICE-02..08)
+  - Run 5 15-30 pp/hr → **DEGRADE** (Phase 130 = push-to-record short clips only)
+  - Run 5 > 30 pp/hr → **BLOCK** (Phase 130 terminated; three reactivation conditions required)
+- Author SPIKE-DECISION.md only after Run 5 numbers land in this block per D-V1 (no provisional verdict — non-editable after commit).
 
 ---
 
