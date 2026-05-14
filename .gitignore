@@ -25,6 +25,7 @@ DerivedData/
 DailyBriefMonitor */
 DailyBriefMonitor.dSYM/
 *.dSYM/
+dist/
 .claude/
 .vercel
 .env*.local

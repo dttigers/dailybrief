@@ -13,6 +13,13 @@ MONITOR_PLIST="$LAUNCH_AGENTS_DIR/$MONITOR_LABEL.plist"
 OLD_CLI_LABEL="com.jamesonmorrill.dailybrief"
 OLD_CLI_PLIST="$LAUNCH_AGENTS_DIR/$OLD_CLI_LABEL.plist"
 
+# Safari extension (Xcode project — separate build system from swift build)
+SAFARI_PROJ_DIR="$REPO_DIR/vigil-safari-extension"
+SAFARI_PROJ="$SAFARI_PROJ_DIR/Vigil Capture.xcodeproj"
+SAFARI_SCHEME="Vigil Capture"
+SAFARI_APPEX_NAME="Vigil Capture Extension.appex"
+SAFARI_BUILD_DIR="$SAFARI_PROJ_DIR/build"
+
 echo "=== DailyBrief Installer ==="
 echo ""
 
@@ -142,6 +149,51 @@ fi
 cp -f "$REPO_DIR/brand/mac/AppIcon.icns" "$MONITOR_RESOURCES/AppIcon.icns"
 echo "  AppIcon.icns installed to bundle Resources."
 
+# 4.5 Build Safari Web Extension and embed it into DailyBriefMonitor.app
+#
+# The Safari extension lives in a separate Xcode project (vigil-safari-extension/).
+# We build the host scheme to produce the .appex as a byproduct, then embed only
+# the .appex into the monitor bundle's PlugIns/. The Xcode-produced host
+# ("Vigil Capture.app") is discarded — DailyBriefMonitor is now the host.
+# Must complete BEFORE the outer codesign --deep so its signature covers the .appex.
+echo "Building Safari extension..."
+if ! command -v xcodebuild >/dev/null 2>&1; then
+    echo "ERROR: xcodebuild not found. Install Xcode command-line tools." >&2
+    exit 1
+fi
+
+rm -rf "$SAFARI_BUILD_DIR"
+xcodebuild \
+    -project "$SAFARI_PROJ" \
+    -scheme "$SAFARI_SCHEME" \
+    -configuration Release \
+    -derivedDataPath "$SAFARI_BUILD_DIR" \
+    CODE_SIGN_IDENTITY="$IDENTITY" \
+    CODE_SIGN_STYLE=Manual \
+    DEVELOPMENT_TEAM="" \
+    build >/dev/null
+
+APPEX_SRC=$(find "$SAFARI_BUILD_DIR/Build/Products/Release" \
+            -name "$SAFARI_APPEX_NAME" -type d | head -1)
+if [[ -z "$APPEX_SRC" || ! -d "$APPEX_SRC" ]]; then
+    echo "ERROR: $SAFARI_APPEX_NAME not produced by xcodebuild." >&2
+    exit 1
+fi
+
+echo "Embedding $SAFARI_APPEX_NAME into DailyBriefMonitor.app/Contents/PlugIns/..."
+MONITOR_PLUGINS="$MONITOR_APP/Contents/PlugIns"
+mkdir -p "$MONITOR_PLUGINS"
+rm -rf "$MONITOR_PLUGINS/$SAFARI_APPEX_NAME"
+cp -R "$APPEX_SRC" "$MONITOR_PLUGINS/"
+
+# Re-sign the embedded .appex with our Developer ID. xcodebuild signed it
+# already, but the outer --deep below requires every nested bundle to be
+# signed by the same identity for the outer signature to validate.
+codesign --force \
+         --sign "$IDENTITY" \
+         --options runtime \
+         "$MONITOR_PLUGINS/$SAFARI_APPEX_NAME"
+
 # Sign the .app bundle (signs the entire bundle including binary).
 # --deep signs embedded frameworks/helpers if any exist in future.
 codesign --deep --force \
@@ -238,3 +290,4 @@ echo ""
 echo "The DailyBriefMonitor LaunchAgent is now loaded and will start at login."
 echo "  Inspect signature: codesign -dvv $INSTALL_DIR/DailyBrief"
 echo "To check status: launchctl list | grep dailybriefmonitor"
+echo "  Safari ext: enable in Safari → Settings → Extensions → Vigil Capture"
