@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
-stopped_at: Phase 128b context gathered
-last_updated: "2026-05-14T22:23:59.103Z"
+stopped_at: Completed 128b-03-PLAN.md
+last_updated: "2026-05-14T22:42:06.045Z"
 last_activity: 2026-05-14
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 24
-  completed_plans: 17
-  percent: 71
+  completed_plans: 18
+  percent: 75
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 128b (g2-reply-01-write-back-path-spike) — EXECUTING
-Plan: 3 of 8
+Plan: 4 of 8
 Status: Ready to execute
 Last activity: 2026-05-14
 
@@ -137,6 +137,7 @@ Last activity: 2026-05-14
 | Phase 128a P05 (partial — wallclock pending) | 1m 13s (Task 1 only) | 1 of 3 tasks (D-A3 PASS; C-1 + C-2 pending operator) | 1 file (SUMMARY.md only — vigil.ehpk and dist/ are gitignored) |
 | Phase 128b P01 | 4min | 2 tasks | 7 files |
 | Phase 128b P02 | 5min | 1 tasks | 4 files |
+| Phase 128b-g2-reply-01-write-back-path-spike P03 | 10min | 2 tasks | 5 files |
 
 ## Deferred Items
 
@@ -405,6 +406,9 @@ Recent (v3.7 closeout):
 - [Phase ?]: Path A (JSONL append + IPC) empirically FAILS — no mid-session JSONL re-read via SIGUSR1 confirmed (128b-02)
 - [Phase ?]: Forbidden-token paraphrase pattern: literal forbidden tokens in spike scripts must be referenced via descriptive English in comments to satisfy automated verification grep (128b-02)
 - [Phase ?]: Launch-error case for claude --resume probes naturally absorbed by mechanical FAIL code path; empty pane indicates early exit but verdict defensibility unaffected per D-V4 (128b-02)
+- [Phase 128b-g2-reply-01-write-back-path-spike]: Path D MCP probe ⇒ DEGRADE (inverted model — fresh-session-only via prompted tool-call); matches RESEARCH prediction; D-A1 isolation honored via mktemp scratch + stub-copy
+- [Phase 128b-g2-reply-01-write-back-path-spike]: Established scratch-dir SDK install + stub-copy pattern for ad-hoc npm packages: install into mktemp + copy consuming .mjs into the same dir; Node parent-walk finds the SDK without project-deps mutation; replaces NODE_PATH and npm-exec patterns which don't propagate to module resolution
+- [Phase 128b-g2-reply-01-write-back-path-spike]: Reused Plan 02 forbidden-token paraphrase pattern for --bare and ALLOWED_REPLIES literal-string verifier-grep targets; pattern now established as cross-plan convention
 
 ### Pending Todos
 
@@ -441,8 +445,8 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-14T22:23:08.427Z
-Stopped at: Phase 128b context gathered
+Last session: 2026-05-14T22:42:06.035Z
+Stopped at: Completed 128b-03-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
