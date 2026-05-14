@@ -454,8 +454,8 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 ## Session Continuity
 
 Last session: 2026-05-14T23:09:40.350Z
-Stopped at: Completed 128b-04-PLAN.md
-Resume file: None
+Stopped at: Awaiting operator wallclock C-1 (128b-07-PLAN.md) — 6 of 8 plans complete; autonomous waves 1-3 done; Plans 07 + 08 are operator-only per [feedback_wallclock_checkpoint_exempt]
+Resume file: .planning/phases/128b-g2-reply-01-write-back-path-spike/128b-07-PLAN.md
 
 ## Operator Next Steps
 
