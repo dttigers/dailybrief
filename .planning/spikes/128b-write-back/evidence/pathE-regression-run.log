@@ -1,0 +1,26 @@
+[L4] spawned claude session 'spike-128b-L4-404349' in /tmp/spike-128b-L4-xvIBF3
+[L4] tool-run marker: L4-TOOL-RAN-82538860
+[L4] dismissed workspace-trust dialog via tmux send-keys
+[L4] claude TUI ready
+[L4] sent tool-invoking prompt
+[L4] polling for permission dialog (needs_input pause)...
+[L4] permission dialog detected at +4s — dismissing via tmux send-keys
+[L4] polling for tool execution evidence (file with marker)...
+[L4] tool ran — marker file present after 1s polling (total 7s wallclock)
+[L4] tool ran. File contents: L4-TOOL-RAN-82538860
+[L4] waiting 60s for session-health probe...
+[L4] sent health probe; expected response: 221
+[L4] health probe answered with '221' at +3s
+
+=== L4 D-V1 FOUR-STEP PASS GATE RESULT ===
+Step 1 (writer is non-TTY)         : ✓  (bash script outside the tmux pane)
+Step 2 (input reaches pane)        : ✓  (permission dialog detected: 1 ; tool prompt sent OK)
+Step 3 (Claude processed it)       : ✓  (tool ran; marker file present)
+Step 4 (session healthy at +60s)   : ✓  (health probe answered)
+Total wallclock: 71s
+
+L4: PASS — D-V1 four-step round-trip verified
+    permission_dismissed_via_tmux=1
+    tool_ran=1
+    session_healthy_at_60s=1
+[L4] artifacts in: /tmp/spike-128b-L4-xvIBF3
