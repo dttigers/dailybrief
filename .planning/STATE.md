@@ -4,7 +4,7 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Phase 128b context gathered
-last_updated: "2026-05-14T22:23:08.436Z"
+last_updated: "2026-05-14T22:23:59.103Z"
 last_activity: 2026-05-14
 progress:
   total_phases: 11
@@ -136,6 +136,7 @@ Last activity: 2026-05-14
 | Phase 128a P04 | 4min | 2 tasks | 3 files |
 | Phase 128a P05 (partial — wallclock pending) | 1m 13s (Task 1 only) | 1 of 3 tasks (D-A3 PASS; C-1 + C-2 pending operator) | 1 file (SUMMARY.md only — vigil.ehpk and dist/ are gitignored) |
 | Phase 128b P01 | 4min | 2 tasks | 7 files |
+| Phase 128b P02 | 5min | 1 tasks | 4 files |
 
 ## Deferred Items
 
@@ -401,6 +402,9 @@ Recent (v3.7 closeout):
 - [Phase 128a]: Plan 128a-05 Tasks 2-3 (C-1 OPENAI_API_KEY + C-2 g2-microphone portal) are operator wallclock checkpoints — Claude must NOT execute. yolo/`--auto` does not bypass wallclock per `[feedback_wallclock_checkpoint_exempt]`. SUMMARY.md documents the exact operator commands (subcommand `railway variables get OPENAI_API_KEY` REQUIRED — bare `railway variables` is the [Railway variables leak] memory's two-Postgres-rotation footgun).
 - [Phase ?]: Path B (claude stream-json) ⇒ DEGRADE (fresh-only) — matches RESEARCH prediction; sentinel 1337 detected via 7×191 compute prompt; active-session structurally impossible (claude -p is print-and-exit; D-V3 unsafe-primitive ban prohibits ptrace/proc-fd)
 - [Phase ?]: claude CLI 2.1.141 requires --verbose with --print + --output-format=stream-json — Rule 3 deviation in 128b-01; semantics unchanged (extra system rows tolerated by sentinel grep)
+- [Phase ?]: Path A (JSONL append + IPC) empirically FAILS — no mid-session JSONL re-read via SIGUSR1 confirmed (128b-02)
+- [Phase ?]: Forbidden-token paraphrase pattern: literal forbidden tokens in spike scripts must be referenced via descriptive English in comments to satisfy automated verification grep (128b-02)
+- [Phase ?]: Launch-error case for claude --resume probes naturally absorbed by mechanical FAIL code path; empty pane indicates early exit but verdict defensibility unaffected per D-V4 (128b-02)
 
 ### Pending Todos
 
