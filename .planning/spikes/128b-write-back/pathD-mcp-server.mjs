@@ -4,15 +4,26 @@
 // Path D: minimal stdio MCP server exposing `vigil_external_reply` tool
 //   - returns process.env.VIGIL_BUFFERED_REPLY (or 'no-reply' if unset)
 //   - tests the Claude-pulls model (NOT Vigil-pushes — see CONTEXT D-O1 path (d))
+// DEVIATION FROM RESEARCH (Rule 3 — Blocking, auto-fix #3):
+//   RESEARCH §"Path D" lines 423-435 specifies setRequestHandler with a plain JSON
+//   `{ method: 'tools/list' }` literal. The 2026-05-14 MCP SDK rejects this with
+//   `Schema is missing a method literal` and requires the Zod Schema objects
+//   (`ListToolsRequestSchema`, `CallToolRequestSchema`) imported from `.../types.js`.
+//   This is purely an API-shape adaptation; the spike's question (does the round-trip
+//   work via MCP tool-call?) is unchanged.
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import {
+  ListToolsRequestSchema,
+  CallToolRequestSchema,
+} from '@modelcontextprotocol/sdk/types.js';
 
 const server = new Server(
   { name: 'vigil-spike', version: '0.0.0' },
   { capabilities: { tools: {} } },
 );
 
-server.setRequestHandler({ method: 'tools/list' }, async () => ({
+server.setRequestHandler(ListToolsRequestSchema, async () => ({
   tools: [
     {
       name: 'vigil_external_reply',
@@ -22,7 +33,7 @@ server.setRequestHandler({ method: 'tools/list' }, async () => ({
   ],
 }));
 
-server.setRequestHandler({ method: 'tools/call' }, async (_req) => ({
+server.setRequestHandler(CallToolRequestSchema, async (_req) => ({
   content: [{ type: 'text', text: process.env.VIGIL_BUFFERED_REPLY ?? 'no-reply' }],
 }));
 

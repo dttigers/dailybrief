@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "vigil-spike": {
+      "command": "node",
+      "args": ["/tmp/spike-128b-D-wFSnOi/sdk-install/pathD-mcp-server.mjs"],
+      "env": {"VIGIL_BUFFERED_REPLY": "VIGIL-SPIKE-OK-1337"}
+    }
+  }
+}
