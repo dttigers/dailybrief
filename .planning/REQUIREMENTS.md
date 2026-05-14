@@ -1,37 +1,7 @@
-# Requirements: Vigil — Ambient AI Life Assistant
+# Requirements: Jarvis — Personal AI Life Assistant
 
-**Defined:** 2026-03-31 (v1.0) — currently scoped: v2.3 Projects & Precision (2026-04-07)
+**Defined:** 2026-03-31
 **Core Value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-
-## v2.3 Requirements — Projects & Precision
-
-Active milestone. Each maps to roadmap phases 51+.
-
-### DEV — Developer / Update Flow
-
-- [ ] **DEV-01**: User can rebuild and reinstall DailyBrief CLI and DailyBriefMonitor binaries via a single menu bar action, with no terminal interaction
-- [ ] **DEV-02**: The update action reloads the DailyBriefMonitor LaunchAgent so the new binary takes effect immediately after install
-- [ ] **DEV-03**: User sees inline status feedback in the menu bar (in-progress, success, or error with reason) for each update attempt
-- [ ] **DEV-04**: Update action is idempotent — safe to click repeatedly; reports a no-op when no source changes are present
-
-### PROJ — Projects as First-Class Entities
-
-- [ ] **PROJ-01**: User can create a named personal project from the dashboard
-- [ ] **PROJ-02**: Each project has its own dashboard view showing only the thoughts assigned to it
-- [ ] **PROJ-03**: User can manually assign any thought to a project (or leave it unassigned) from the dashboard
-- [ ] **PROJ-04**: User can move a thought between projects or unassign it
-- [ ] **PROJ-05**: Each project has an optional status (active / archived / done) that filters dashboard views
-- [ ] **PROJ-06**: Thoughts currently sitting in the generic "project" triage category remain accessible and can be retroactively assigned to named projects
-- [ ] **PROJ-07**: Projects persist in Vigil Core PostgreSQL with full CRUD API endpoints under `/projects`
-
-### PHOTO — Smart Photo Upload
-
-- [ ] **PHOTO-01**: System detects whether an uploaded photo is lined paper or gridded paper before extracting content
-- [ ] **PHOTO-02**: Lined-paper photos are split into multiple separate thoughts, one per distinct line/bullet/paragraph
-- [ ] **PHOTO-03**: Gridded-paper photos are kept as a single thought, eligible for assignment to a project
-- [ ] **PHOTO-04**: Both modes produce verbatim transcriptions of the actual handwriting — no third-person paraphrase, no editorial summary
-- [ ] **PHOTO-05**: User can override the detected paper type before the thoughts are committed (force "lined" or "gridded")
-- [ ] **PHOTO-06**: If paper type can't be confidently detected, system falls back to a user-configurable default and surfaces the uncertainty in the UI
 
 ## v1 Requirements
 
@@ -141,29 +111,12 @@ Which phases cover which requirements. Updated by create-roadmap.
 | BRIEF-01 | Phase 6 | Complete |
 | BRIEF-02 | Phase 6 | Complete |
 | INTEG-01 | Phase 7 | Complete |
-| DEV-01 | Phase 51 | Pending |
-| DEV-02 | Phase 51 | Pending |
-| DEV-03 | Phase 51 | Pending |
-| DEV-04 | Phase 51 | Pending |
-| PROJ-01 | Phase 52 | Pending |
-| PROJ-06 | Phase 52 | Pending |
-| PROJ-07 | Phase 52 | Pending |
-| PROJ-02 | Phase 53 | Pending |
-| PROJ-03 | Phase 53 | Pending |
-| PROJ-04 | Phase 53 | Pending |
-| PROJ-05 | Phase 53 | Pending |
-| PHOTO-01 | Phase 54 | Pending |
-| PHOTO-02 | Phase 54 | Pending |
-| PHOTO-03 | Phase 54 | Pending |
-| PHOTO-04 | Phase 54 | Pending |
-| PHOTO-05 | Phase 54 | Pending |
-| PHOTO-06 | Phase 54 | Pending |
 
 **Coverage:**
-- v1 requirements: 15 total — mapped to phases 1-7, all Complete
-- v2.3 requirements: 17 total — mapped to phases 51-54, all Pending
+- v1 requirements: 15 total
+- Mapped to phases: 15
 - Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-31*
-*Last updated: 2026-04-07 — v2.3 requirements mapped to phases 51-54*
+*Last updated: 2026-04-03 — all v1 requirements complete*

@@ -13,13 +13,11 @@ final class StatusChecker: @unchecked Sendable {
     private let cliBinary: String
 
     init() {
-        // Search for CLI binary: installed path first, then dev build paths derived from RepoLocation (D-09)
-        let releaseDir = RepoLocation.releaseBuildDir
-        let debugDir = (RepoLocation.path as NSString).appendingPathComponent(".build/debug")
+        // Search for CLI binary: installed path first, then dev build paths as fallback
         let candidates = [
             NSString("~/.local/bin/DailyBrief").expandingTildeInPath,
-            (releaseDir as NSString).appendingPathComponent("DailyBrief"),
-            (debugDir as NSString).appendingPathComponent("DailyBrief"),
+            NSString("~/Desktop/Local AI/dailybrief/.build/release/DailyBrief").expandingTildeInPath,
+            NSString("~/Desktop/Local AI/dailybrief/.build/debug/DailyBrief").expandingTildeInPath,
         ]
         self.cliBinary = candidates.first(where: { FileManager.default.fileExists(atPath: $0) })
             ?? candidates[0] // Default to installed path even if not yet installed

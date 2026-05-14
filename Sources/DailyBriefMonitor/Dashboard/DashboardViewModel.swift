@@ -146,9 +146,6 @@ final class DashboardViewModel {
     private let therapyPatternService: (any TherapyPatternProviding)?
     private let therapyPrepService: (any TherapyPrepProviding)?
     private var searchTask: Task<Void, Never>?
-    /// In-flight loadThoughts task. Cancelled and replaced on every new invocation
-    /// so concurrent mutations don't race and clobber the visible list.
-    private var loadThoughtsTask: Task<Void, Never>?
 
     var canImportAudio: Bool { transcriptionService != nil && captureService != nil }
     var canImportImage: Bool { captureService != nil }
@@ -190,34 +187,11 @@ final class DashboardViewModel {
     }
 
     /// Reload thoughts based on current search query, category, source, and date filters.
-    ///
-    /// Reentrancy-safe: cancels any in-flight loadThoughts before starting a new one.
-    /// Rapid mutations (mark done / edit / delete) used to spawn concurrent loadThoughts
-    /// calls that interleaved at await points; if any one threw (transient Railway error,
-    /// timeout, cancellation), the catch block would wipe `thoughts` and blank the list.
-    /// Now: only the latest call survives, and on error the previous list is preserved.
     func loadThoughts() async {
-        loadThoughtsTask?.cancel()
-        let task = Task { @MainActor in
-            await self.performLoadThoughts()
-        }
-        loadThoughtsTask = task
-        await task.value
-    }
-
-    private func performLoadThoughts() async {
-        // Compute results in a local var. Only commit to `thoughts` at the end,
-        // and only if this Task hasn't been superseded by a newer loadThoughts call.
-        // URLSession does NOT reliably honor Task cancellation mid-flight — a cancelled
-        // task can complete its HTTP request and return data normally. Without an
-        // explicit cancellation check before assignment, the cancelled task would stomp
-        // the latest task's results with stale data (e.g. user clicks "Recent" but the
-        // still-in-flight "Tasks" load resumes after and overwrites with task data).
         do {
             let trimmed = searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
             let category = selectedFilter.category
             let afterDate = dateRangeFilter.startDate
-            let computed: [Thought]
 
             if trimmed.isEmpty {
                 // When viewing tasks with a status sub-filter, use fetchTasks
@@ -230,7 +204,7 @@ final class DashboardViewModel {
                     if let afterDate {
                         results = results.filter { $0.createdAt >= afterDate }
                     }
-                    computed = results
+                    thoughts = results
                 } else if category == .therapy, therapyFilter != .all {
                     // Therapy sub-filter active
                     var results: [Thought]
@@ -250,7 +224,7 @@ final class DashboardViewModel {
                     if let afterDate {
                         results = results.filter { $0.createdAt >= afterDate }
                     }
-                    computed = results
+                    thoughts = results
                 } else {
                     var results = try await store.fetchFiltered(
                         category: category,
@@ -263,7 +237,7 @@ final class DashboardViewModel {
                     if taskStatusFilter == nil {
                         results = results.filter { $0.taskStatus != .done }
                     }
-                    computed = results
+                    thoughts = results
                 }
             } else {
                 // FTS5 search — then client-side filter by category, source, and date
@@ -300,36 +274,20 @@ final class DashboardViewModel {
                         results = results.filter { $0.therapyClassification == nil }
                     }
                 }
-                computed = results
+                thoughts = results
             }
-
-            // Cancellation gate: if a newer loadThoughts call has cancelled us while
-            // URLSession was finishing, drop these results. The newer call's results
-            // are the source of truth.
-            guard !Task.isCancelled else { return }
-            thoughts = computed
-
-            // Compute link counts for the now-committed thoughts. loadLinkCounts also
-            // checks Task.isCancelled internally so a superseded call won't stomp.
+            // Compute link counts for displayed thoughts
             await loadLinkCounts()
-        } catch is CancellationError {
-            // Superseded by a newer loadThoughts call — leave state alone.
         } catch {
-            // Transient API failure (timeout, 5xx, decode hiccup). Log and leave the
-            // previously-displayed list intact rather than blanking the UI on the user.
-            // Pre-v2.1 this catch was unreachable (local GRDB never threw transiently);
-            // post-Railway it became the dominant path to a blank dashboard.
             NSLog("Dashboard: failed to load thoughts — \(error.localizedDescription)")
+            thoughts = []
         }
     }
 
     /// Load link counts for all currently displayed thoughts.
-    /// Bails out if the enclosing loadThoughts task has been superseded — otherwise a
-    /// long sequential network loop here would stomp linkCounts for the newer load.
     private func loadLinkCounts() async {
         var counts: [Int64: Int] = [:]
         for thought in thoughts {
-            if Task.isCancelled { return }
             guard let id = thought.id else { continue }
             do {
                 let count = try await store.countLinks(thoughtId: id)
@@ -340,7 +298,6 @@ final class DashboardViewModel {
                 // Silently skip — link counts are non-critical
             }
         }
-        if Task.isCancelled { return }
         linkCounts = counts
     }
 

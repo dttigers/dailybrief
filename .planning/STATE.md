@@ -1,40 +1,24 @@
----
-gsd_state_version: 1.0
-milestone: v2.3
-milestone_name: Projects & Precision
-status: planning
-stopped_at: Phase 51 context gathered
-last_updated: "2026-04-08T02:23:40.215Z"
-last_activity: 2026-04-07 — v2.3 roadmap created, 4 phases (51-54) covering 17 requirements
-progress:
-  total_phases: 4
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
----
-
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-04-07)
+See: .planning/PROJECT.md (updated 2026-04-05)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** v2.3 Projects & Precision — Phase 51: Menu Bar Update Action
+**Current focus:** Planning next milestone
 
 ## Current Position
 
-Phase: 51 of 54 (Menu Bar Update Action)
-Plan: 0 of TBD in current phase
-Status: Ready to plan
-Last activity: 2026-04-07 — v2.3 roadmap created, 4 phases (51-54) covering 17 requirements
+Phase: 50 of 50 — all milestones through v2.2 complete
+Plan: N/A
+Status: Ready to plan next milestone
+Last activity: 2026-04-07 — Quick task 260407-jem: PDF insights cutoff fixed (Task 3 awaits human verify)
 
-Progress: [██████████████████████████░░░░] 50/54 phases complete (prior milestones)
+Progress: ██████████ 100% (v1.0 through v2.2)
 
 ## Performance Metrics
 
 **Velocity:**
-
 - Total plans completed: 123
 - Total execution time: ~11 days
 - Average duration: ~5 min per plan
@@ -57,14 +41,14 @@ Progress: [███████████████████████
 ### Decisions
 
 All decisions logged in PROJECT.md Key Decisions table.
-Full decision history available in milestone archives under .planning/milestones/.
-
-Recent decisions affecting v2.3:
-
-- Manual assignment only for projects this milestone (no auto-routing from photo content)
-- Personal projects only — no work order linkage
-- G2 hardware testing deferred (glasses arriving ~1 week from 2026-04-07)
-- .app packaging remains out of scope
+Full decision history available in milestone archives:
+- .planning/milestones/v1.0-ROADMAP.md
+- .planning/milestones/v1.1-ROADMAP.md
+- .planning/milestones/v1.2-ROADMAP.md
+- .planning/milestones/v1.4-ROADMAP.md
+- .planning/milestones/v2.0-ROADMAP.md
+- .planning/milestones/v2.1-ROADMAP.md
+- .planning/milestones/v2.2-ROADMAP.md
 
 ### Pending Todos
 
@@ -79,15 +63,20 @@ None.
 | # | Description | Date | Commit | Directory |
 |---|-------------|------|--------|-----------|
 | 260407-jem | Fix PDF rendering (wrap all sections, spillover) + vigil-core AI JSON fence tolerance (7 endpoints) | 2026-04-07 | 8cac42d | [260407-jem-fix-pdf-insights-section-cutoff-bug-prin](./quick/260407-jem-fix-pdf-insights-section-cutoff-bug-prin/) |
-| 260407-q7d | Disable misleading folder watching UI in Settings (feature deleted in phase 46, UI remained) | 2026-04-08 | bda9943 | [260407-q7d-disable-misleading-folder-watching-ui-in](./quick/260407-q7d-disable-misleading-folder-watching-ui-in/) |
 
 ### Roadmap Evolution
 
-- v1.0–v2.2: 50 phases, 112+ plans shipped across 8 milestones
-- v2.3 Projects & Precision: Phases 51-54, 17 requirements across DEV / PROJ / PHOTO
+- v1.0 MVP shipped: 7 phases (1-7), 17 plans
+- v1.1 Always On shipped: 6 phases (8-13), 16 plans
+- v1.2 Daily Driver shipped: 5 phases (14-18), 14 plans
+- v1.3 Stability & Smarts shipped: 5 phases (19-23), 7 plans
+- v1.4 Intelligence & Organization shipped (early close): 5 phases (24-28), 11 plans
+- v2.0 Vigil Platform shipped: 8 phases (29-36), 22 plans — Core API, Even G2 plugin, Mac app migration
+- v2.1 Server Deployment shipped: 8 phases (37-44), 13 plans — PostgreSQL, auth, Railway deploy, client migration, hardening
+- v2.2 Polish & Power shipped: 6 phases (45-50), 12 plans — G2 UX, code cleanup, brief history, export, PDF config, AI chat
 
 ## Session Continuity
 
-Last session: 2026-04-08T02:23:39.976Z
-Stopped at: Phase 51 context gathered
-Resume file: .planning/phases/51-menu-bar-update-action/51-CONTEXT.md
+Last session: 2026-04-05
+Stopped at: v2.2 milestone complete — all 50 phases shipped
+Resume file: None

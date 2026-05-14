@@ -427,13 +427,6 @@ struct SettingsView: View {
 
     private var foldersTab: some View {
         Form {
-            Section {
-                Text("Temporarily unavailable — auto-import is being rebuilt for the API backend. Use Dashboard → Import Files in the meantime.")
-                    .font(.callout)
-                    .foregroundStyle(.orange)
-                    .padding(.vertical, 4)
-            }
-
             Toggle("Enable Folder Watching", isOn: $viewModel.folderWatchingEnabled)
 
             if viewModel.folderWatchingEnabled {
@@ -441,6 +434,10 @@ struct SettingsView: View {
                 Text("Removes audio and image files from watched folders after they've been successfully captured as thoughts.")
                     .font(.caption)
                     .foregroundColor(.secondary)
+
+                Text("Restart Jarvis to apply folder watching changes")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
             }
 
             Section("Audio Folder") {
@@ -475,7 +472,6 @@ struct SettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .disabled(true)
         .padding()
     }
 
