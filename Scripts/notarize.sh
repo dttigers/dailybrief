@@ -77,10 +77,29 @@ case "$EXT" in
 esac
 
 echo "  Submitting to Apple notary service (this can take 1–15 minutes)..."
-xcrun notarytool submit "$SUBMIT_PATH" "${NOTARY_AUTH[@]}" --wait
+# Capture output so we can parse status + submission id. notarytool exits 0
+# even when the verdict is Invalid (the submission "completed" — outcome just
+# happens to be rejection), so we must read status from the output ourselves.
+SUBMIT_LOG=$(mktemp -t vigil-notarize.XXXXXX)
+xcrun notarytool submit "$SUBMIT_PATH" "${NOTARY_AUTH[@]}" --wait | tee "$SUBMIT_LOG"
 
-# Notary success ≠ stapling success. Staple the ORIGINAL .app/.dmg so Gatekeeper
-# accepts it offline (notary-only is online-only verification).
+SUBMISSION_ID=$(awk '/^[[:space:]]*id:/ { print $2; exit }' "$SUBMIT_LOG")
+STATUS=$(awk '/^[[:space:]]*status:/ { print $2; exit }' "$SUBMIT_LOG")
+rm -f "$SUBMIT_LOG"
+
+if [[ "$STATUS" != "Accepted" ]]; then
+    echo "" >&2
+    echo "ERROR: notarization status is '$STATUS' (expected 'Accepted')." >&2
+    echo "Fetch the detailed reasons with:" >&2
+    echo "" >&2
+    echo "  xcrun notarytool log $SUBMISSION_ID ${NOTARY_AUTH[*]}" >&2
+    echo "" >&2
+    [[ -n "$CLEANUP_ZIP" ]] && rm -f "$CLEANUP_ZIP"
+    exit 1
+fi
+
+# Staple the ORIGINAL .app/.dmg so Gatekeeper accepts it offline (notary-only is
+# online-only verification).
 if [[ "$EXT" == "app" || "$EXT" == "dmg" || "$EXT" == "pkg" ]]; then
     echo "  Stapling notary ticket to $TARGET..."
     xcrun stapler staple "$TARGET"

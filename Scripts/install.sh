@@ -86,8 +86,10 @@ echo "Installing DailyBrief CLI to $INSTALL_DIR/DailyBrief..."
 cp -f "$REPO_DIR/.build/release/DailyBrief" "$INSTALL_DIR/DailyBrief"
 # Sign CLI in the install destination (NOT .build/release — cp would strip
 # the signature). Phase 58 D-05: install.sh is the canonical signing point.
+# --options runtime enables hardened runtime (required for notarization).
 codesign --force \
          --sign "$IDENTITY" \
+         --options runtime \
          --identifier "com.jamesonmorrill.dailybrief" \
          --entitlements "$REPO_DIR/Entitlements/DailyBrief.entitlements" \
          "$INSTALL_DIR/DailyBrief"
@@ -196,8 +198,12 @@ codesign --force \
 
 # Sign the .app bundle (signs the entire bundle including binary).
 # --deep signs embedded frameworks/helpers if any exist in future.
+# --options runtime enables the hardened runtime — REQUIRED for notarization.
+# Note: --deep re-signs nested bundles (including the .appex above) using
+# THESE options, so runtime must be on the outer call too.
 codesign --deep --force \
          --sign "$IDENTITY" \
+         --options runtime \
          --identifier "com.jamesonmorrill.dailybriefmonitor" \
          --entitlements "$REPO_DIR/Entitlements/DailyBriefMonitor.entitlements" \
          "$MONITOR_APP"
@@ -206,6 +212,7 @@ codesign --verify --verbose "$MONITOR_APP" 2>&1 \
 # Also sign the bare binary copy
 codesign --force \
          --sign "$IDENTITY" \
+         --options runtime \
          --identifier "com.jamesonmorrill.dailybriefmonitor" \
          --entitlements "$REPO_DIR/Entitlements/DailyBriefMonitor.entitlements" \
          "$INSTALL_DIR/DailyBriefMonitor"
