@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: completed
+status: executing
 stopped_at: Phase 128b context gathered
-last_updated: "2026-05-14T20:22:08.563Z"
-last_activity: 2026-05-12
+last_updated: "2026-05-14T22:05:35.829Z"
+last_activity: 2026-05-14 -- Phase 128b execution started
 progress:
   total_phases: 11
   completed_phases: 2
-  total_plans: 16
+  total_plans: 24
   completed_plans: 15
-  percent: 94
+  percent: 63
 ---
 
 # Project State
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 128a — voice-01-pcm-feasibility-spike
+**Current focus:** Phase 128b — g2-reply-01-write-back-path-spike
 
 ## Current Position
 
-Phase: 128a (voice-01-pcm-feasibility-spike) — EXECUTING
-Plan: 5 of 6 — **Partial — wallclock pending** (Task 1 D-A3 bundle-exclusion PASS 2026-05-12T19:18Z; Tasks 2-3 are C-1 / C-2 operator wallclock checkpoints — see `.planning/phases/128a-voice-01-pcm-feasibility-spike/128a-05-SUMMARY.md` for operator C-1/C-2 instructions and resume signals required before Plan 06)
-Status: Awaiting operator resume signals (c1-done / c1-blocked + c2-allowed / c2-rejected / c2-not-listed)
-Last activity: 2026-05-12
+Phase: 128b (g2-reply-01-write-back-path-spike) — EXECUTING
+Plan: 1 of 8
+Status: Executing Phase 128b
+Last activity: 2026-05-14 -- Phase 128b execution started
 
 **v3.9 phase sequence:**
 
