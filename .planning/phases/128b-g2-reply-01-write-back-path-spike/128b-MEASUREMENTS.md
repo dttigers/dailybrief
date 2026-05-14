@@ -173,3 +173,29 @@ Phase-local artifact set (per CONTEXT D-A4):
 - spike 001 README §Cost lines 234-239 + §Results lines 141-157
 - RESEARCH §"Per-Path Predicted-Verdict Summary" + §"Cost"
 - CONTEXT D-A4 (artifact list) + D-G1 (redaction) + D-G3 (budget) + D-O4 (wallclock cap)
+
+---
+
+## Operator C-1 wallclock (D-T1 — live `claude` interactive session)
+
+- **Wallclock date:** 2026-05-14T23:31:10Z
+- **Operator environment:** Ubuntu host (post 2026-05-14 SURFACE-MAP.md shift to Ubuntu confirmed; `morrillhouse` workstation)
+- **tmux version:** 3.4
+- **claude version:** 2.1.142 (Claude Code) — one patch ahead of plan's "expected 2.1.141"; behavior compatible
+- **Disposable tmux session:** vigil-claude-c1-spike-1778800583
+- **Live $CLAUDE_SESSION_ID at start:** unset (no D-T5 collision risk)
+- **Path tested live:** Path E (tmux send-keys) — primary recommendation per plan
+- **Step 3 prompt surfaced permission dialog:** yes — operator typed `Run the bash command: echo 'C1-MARKER' > /tmp/c1-test.out`; Bash permission dialog appeared as expected
+- **Step 4 tmux send-keys dismissed dialog:** yes — operator confirmed verbatim: "cleared the permissions on terminal 1" after `tmux send-keys -t vigil-claude-c1-spike-1778800583 Enter` from a separate shell
+- **Step 5 marker file content:** PASS (operator confirmed `/tmp/c1-test.out` contained the expected `C1-MARKER`)
+- **Step 6 health probe response:** PASS (operator confirmed `What is 13 multiplied by 17?` returned `221` within the spike 001 L4 reference window)
+- **Round-trip outcome (D-V1 four-step gate):** PASS — all 4 steps ✓ (permission dismissed → gated tool ran → marker written → 60s health probe answered correctly)
+- **Total wallclock duration:** ~7 min (env verify + tmux setup + drive + inject + verify + 60s wait + cleanup)
+- **Anthropic API spend:** ~$0.01 (haiku model; ~2 turns + 1 Bash tool call)
+- **Notes:**
+  - claude version drift +1 patch (2.1.142 vs plan's expected 2.1.141) — no behavior delta observed; the four-step gate held identically
+  - Workspace-trust dialog handling: the `sleep 5 + tmux send-keys Enter` pre-step in the runbook absorbed any startup dialog cleanly; no manual workspace-trust handling required
+  - Cleanup verified: `tmux ls | grep vigil-claude-c1-spike-` returned empty; `/tmp/c1-test.out` removed (operator-confirmed "cleanup ran clean")
+  - Resume signal: **c1-done**
+
+**Phase 133 relevance:** This C-1 wallclock confirms Path E works against an operator-driven live `claude` session on the same Ubuntu architecture that vigil-tmux-bridge will productionize against. The `tmux send-keys` primitive — driven by the operator's hand here — is the same primitive Phase 133 G2-REPLY-04 will drive from a launcher-wrapped writer process. The C-1 test exercises the same code path; the only delta is the trigger source.
