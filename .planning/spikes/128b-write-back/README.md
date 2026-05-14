@@ -3,7 +3,7 @@ spike: 128b-write-back
 name: 128b-write-back
 type: phase-spike
 validates: "Empirical record for G2-REPLY-01 enumerated paths (a) JSONL append, (b) stream-json, (d) MCP — completing the 3-of-4 success criterion. Path E (tmux send-keys) is owned by sibling spike 001-tmux-write-back-128b/."
-verdict: in-progress
+verdict: VALIDATED-PASS
 related: [phase-128b, spike-001-tmux-write-back-128b]
 tags: [128b, write-back, jsonl, stream-json, mcp, claude-code]
 ---

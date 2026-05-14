@@ -18,4 +18,4 @@ Validate a 5th write-back path (`tmux send-keys` — Path E) for Phase 128b G2-R
 | # | Name | Type | Validates | Verdict | Tags |
 |---|------|------|-----------|---------|------|
 | 001 | tmux-write-back-128b | standard | Given an active interactive `claude` session running inside tmux, when a separate non-TTY writer invokes `tmux send-keys`, then Claude processes the reply as the next user turn AND the session continues healthy ≥60s (128b D-V1 four-step PASS gate) | ✓ VALIDATED | 128b, write-back, tmux, claude-code, ipc, needs-input, g2-reply |
-| 128b-WB | 128b-write-back | phase-spike | Empirical record for G2-REPLY-01 enumerated paths (a) JSONL append, (b) stream-json, (d) MCP | 🚧 in-progress | 128b, write-back, jsonl, stream-json, mcp |
+| 128b-WB | 128b-write-back | phase-spike | Empirical record for G2-REPLY-01 enumerated paths (a) JSONL append, (b) stream-json, (d) MCP | ✓ VALIDATED-PASS | 128b, write-back, jsonl, stream-json, mcp |
