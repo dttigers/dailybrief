@@ -1,5 +1,6 @@
 import AppKit
 import Carbon
+import SafariServices
 import SwiftUI
 import JarvisCore
 
@@ -8,6 +9,9 @@ private struct PrintScheduleResponse: Decodable {
     let minute: Int
     let enabled: Bool
 }
+
+private let kSafariExtensionBundleID = "io.vigilhub.extension.Extension"
+private let kSafariNudgeShownKey = "vigil.safariExtensionNudgeShown"
 
 /// Application delegate that initializes the JarvisCore data stack and manages the capture panel.
 final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
@@ -164,6 +168,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
         }
 
         registerGlobalHotKey()
+        nudgeSafariExtensionOnce()
         NSLog("DailyBriefMonitor: startup complete")
     }
 
@@ -186,6 +191,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate, @unchecked Sendable {
     }
 
     // MARK: - Private
+
+    /// Opens Safari Settings → Extensions on first launch so the user can enable
+    /// the embedded Vigil Capture web extension. The .appex ships inside
+    /// DailyBriefMonitor.app/Contents/PlugIns/ but Safari won't surface it in
+    /// Settings until the host app has run at least once. Gated by UserDefaults
+    /// so subsequent launches don't re-pop the window.
+    private func nudgeSafariExtensionOnce() {
+        guard !UserDefaults.standard.bool(forKey: kSafariNudgeShownKey) else { return }
+        UserDefaults.standard.set(true, forKey: kSafariNudgeShownKey)
+        SFSafariApplication.showPreferencesForExtension(
+            withIdentifier: kSafariExtensionBundleID
+        ) { error in
+            if let error {
+                NSLog("DailyBriefMonitor: Safari extension nudge failed — %@", error.localizedDescription)
+            }
+        }
+    }
 
     @objc private func handleSystemWake() {
         NSLog("DailyBriefMonitor: system wake — re-fetching print schedule")
