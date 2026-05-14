@@ -4,14 +4,14 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Phase 128b context gathered
-last_updated: "2026-05-14T22:05:35.829Z"
-last_activity: 2026-05-14 -- Phase 128b execution started
+last_updated: "2026-05-14T22:13:15.761Z"
+last_activity: 2026-05-14
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 24
-  completed_plans: 15
-  percent: 63
+  completed_plans: 16
+  percent: 67
 ---
 
 # Project State
@@ -26,9 +26,9 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 128b (g2-reply-01-write-back-path-spike) — EXECUTING
-Plan: 1 of 8
-Status: Executing Phase 128b
-Last activity: 2026-05-14 -- Phase 128b execution started
+Plan: 2 of 8
+Status: Ready to execute
+Last activity: 2026-05-14
 
 **v3.9 phase sequence:**
 
@@ -135,6 +135,7 @@ Last activity: 2026-05-14 -- Phase 128b execution started
 | Phase 128a PP03 | 3min | 3 tasks | 4 files |
 | Phase 128a P04 | 4min | 2 tasks | 3 files |
 | Phase 128a P05 (partial — wallclock pending) | 1m 13s (Task 1 only) | 1 of 3 tasks (D-A3 PASS; C-1 + C-2 pending operator) | 1 file (SUMMARY.md only — vigil.ehpk and dist/ are gitignored) |
+| Phase 128b P01 | 4min | 2 tasks | 7 files |
 
 ## Deferred Items
 
@@ -398,6 +399,8 @@ Recent (v3.7 closeout):
 - [Phase ?]: Plan 128a-04: VOICE_SPIKE registered as carousel slot 4 via static imports; DOUBLE_CLICK carve-out routes to toggleVoiceSpikeRecording; audioEvent collector logs only GUARD-01 safe keys
 - [Phase 128a]: Plan 128a-05 Task 1 D-A3 verification — `unzip -l vigil.ehpk` does not work (EHPK is opaque custom format, not zip; magic 'EHPK', no `evenhub` unpack subcommand). Substituted `grep -rE '<spike-token>' dist/` (pack input) + `strings vigil.ehpk | grep -iE '<spike-token>'` (leak belt on opaque binary). All four greps returned 0 matches → D-A3 PASS. Rule 3 fix (blocking-issue substitution; same correctness assertion, method that works on this format).
 - [Phase 128a]: Plan 128a-05 Tasks 2-3 (C-1 OPENAI_API_KEY + C-2 g2-microphone portal) are operator wallclock checkpoints — Claude must NOT execute. yolo/`--auto` does not bypass wallclock per `[feedback_wallclock_checkpoint_exempt]`. SUMMARY.md documents the exact operator commands (subcommand `railway variables get OPENAI_API_KEY` REQUIRED — bare `railway variables` is the [Railway variables leak] memory's two-Postgres-rotation footgun).
+- [Phase ?]: Path B (claude stream-json) ⇒ DEGRADE (fresh-only) — matches RESEARCH prediction; sentinel 1337 detected via 7×191 compute prompt; active-session structurally impossible (claude -p is print-and-exit; D-V3 unsafe-primitive ban prohibits ptrace/proc-fd)
+- [Phase ?]: claude CLI 2.1.141 requires --verbose with --print + --output-format=stream-json — Rule 3 deviation in 128b-01; semantics unchanged (extra system rows tolerated by sentinel grep)
 
 ### Pending Todos
 
@@ -434,9 +437,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-14T20:22:08.550Z
+Last session: 2026-05-14T22:12:55.777Z
 Stopped at: Phase 128b context gathered
-Resume file: .planning/phases/128b-g2-reply-01-write-back-path-spike/128b-CONTEXT.md
+Resume file: None
 
 ## Operator Next Steps
 

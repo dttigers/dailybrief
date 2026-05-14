@@ -41,7 +41,7 @@
 
 ### G2-REPLY — Quick replies from glasses to Claude Code
 
-- [ ] **G2-REPLY-01**: Write-back path spike — empirically prove or rule out programmatic input injection into an active Claude Code session via at least 3 of: (a) JSONL append + IPC, (b) `@anthropic-ai/claude-code` SDK hook, (c) named-pipe to operator TTY, (d) MCP server hook. Output: `128b-SPIKE-DECISION.md` with PASS / DEGRADE / BLOCK verdict.
+- [x] **G2-REPLY-01**: Write-back path spike — empirically prove or rule out programmatic input injection into an active Claude Code session via at least 3 of: (a) JSONL append + IPC, (b) `@anthropic-ai/claude-code` SDK hook, (c) named-pipe to operator TTY, (d) MCP server hook. Output: `128b-SPIKE-DECISION.md` with PASS / DEGRADE / BLOCK verdict.
 - [ ] **G2-REPLY-02**: (If PASS) — When `needs_input` banner fires on Companion HUD, DOUBLE_CLICK enters reply mode; HUD shows the first of 5 prefab replies (`yes` / `no` / `continue` / `abort` / `defer`).
 - [ ] **G2-REPLY-03**: (If PASS) — Swipe up / swipe down (or list-style single-press cycling) navigates between the 5 prefabs; DOUBLE_CLICK confirms and POSTs to `/v1/agent-replies`; "Reply sent: yes" confirmation banner for 3s.
 - [ ] **G2-REPLY-04**: (If PASS) — Reply-mode watchdog auto-exits after 30s of no operator gesture; vigil-watch writer-process drops privileges before injection; allowlist enforces only the 5 prefab strings reach the input channel; drift-detector locks the allowlist at the source-of-truth call site.
@@ -162,7 +162,7 @@ Empty initially. Populated by roadmapper during phase mapping.
 | G2-ACTION-04 | 133 | Pending |
 | G2-ACTION-05 | 133 | Pending |
 | G2-ACTION-06 | 133 | Pending |
-| G2-REPLY-01 | 128b | Pending |
+| G2-REPLY-01 | 128b | Complete |
 | G2-REPLY-02 | 133 | Pending |
 | G2-REPLY-03 | 133 | Pending |
 | G2-REPLY-04 | 133 | Pending |
