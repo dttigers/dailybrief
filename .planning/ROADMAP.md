@@ -421,7 +421,15 @@ Plans:
   2. The decision file resolves to `PASS` (full reply UX downstream), `DEGRADE` (banner-ack-only G2-REPLY-05), or `BLOCK` (no G2 reply capability in v3.9)
   3. If PASS, the spike includes a working proof-of-concept round-trip (`yes` reply from G2 reaches an active Claude Code session and the session continues) — not just feasibility analysis
   4. Privilege model is sketched: writer process drops privileges before injection; prefab-allowlist is the only string surface that reaches the input channel
-**Plans:** TBD
+**Plans:** 8 plans (5 waves)
+- [ ] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
+- [ ] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
+- [ ] 128b-03-PLAN.md — Path D (MCP server hook) empirical probe; inverted-direction Claude-pulls model
+- [ ] 128b-04-PLAN.md — Path E (tmux send-keys) regression: rerun spike 001 L4 + copy evidence into phase artifacts
+- [ ] 128b-05-PLAN.md — Author 128b-SPIKE-DECISION.md: verdict at TOP + per-path table + privilege sketch reference + Phase 133 scope-lock
+- [ ] 128b-06-PLAN.md — Author 128b-MEASUREMENTS.md: consolidated per-path wallclock + cost + evidence inventory
+- [ ] 128b-07-PLAN.md — Operator wallclock C-1: live `claude` interactive session round-trip (Ubuntu dev box)
+- [ ] 128b-08-PLAN.md — Operator wallclock C-2: 60s portfolio Loom (success-criterion-3 proxy)
 **UI hint**: yes
 
 ### Phase 129: Lifecycle restore + ServiceNow popup
@@ -434,7 +442,15 @@ Plans:
   3. Glasses-menu launches still land on the operator-picked screen (Phase 124 G2-POLISH-06 invariant preserved)
   4. Operator on a `*.service-now.com/*` page clicks the extension icon → popup pre-fills CS# (regex `/^CS\d{7}$/` against `document.title`) → types description + priority → submit creates a work-order row, deduped via `client_capture_id` across multi-tab + corporate-VPN retries
   5. Both Chrome and Safari extensions ship the popup (lock-step parity per Phase 114 EXT-02 pattern), with Vigil-brand-compliant styling
-**Plans:** TBD
+**Plans:** 8 plans (5 waves)
+- [ ] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
+- [ ] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
+- [ ] 128b-03-PLAN.md — Path D (MCP server hook) empirical probe; inverted-direction Claude-pulls model
+- [ ] 128b-04-PLAN.md — Path E (tmux send-keys) regression: rerun spike 001 L4 + copy evidence into phase artifacts
+- [ ] 128b-05-PLAN.md — Author 128b-SPIKE-DECISION.md: verdict at TOP + per-path table + privilege sketch reference + Phase 133 scope-lock
+- [ ] 128b-06-PLAN.md — Author 128b-MEASUREMENTS.md: consolidated per-path wallclock + cost + evidence inventory
+- [ ] 128b-07-PLAN.md — Operator wallclock C-1: live `claude` interactive session round-trip (Ubuntu dev box)
+- [ ] 128b-08-PLAN.md — Operator wallclock C-2: 60s portfolio Loom (success-criterion-3 proxy)
 **UI hint**: yes
 
 ### Phase 130: Voice capture full implementation (scope-locked by 128a)
@@ -447,7 +463,15 @@ Plans:
   3. Transcription failures surface as locked-enum codes (`VOICE_TRANSCRIBE_TIMEOUT` / `VOICE_TRANSCRIBE_PROVIDER_DOWN` / `VOICE_TRANSCRIBE_QUOTA`) — the user sees specific copy, not a generic error
   4. With network disabled, the G2 plugin queues up to 10 utterances (exact `[1s, 2s, 4s, 8s, 16s, 30s]` backoff per Phase 124 D-11) and shows "syncing N voice captures" on the HUD; queue drains when network returns
   5. Drift-detector tests structurally prevent any `audioPcm` reference from reaching `console.log` / `Sentry.captureException` / `posthog.capture`, and prevent any orphaned `audioControl(true)` without a matching `audioControl(false)`
-**Plans:** TBD
+**Plans:** 8 plans (5 waves)
+- [ ] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
+- [ ] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
+- [ ] 128b-03-PLAN.md — Path D (MCP server hook) empirical probe; inverted-direction Claude-pulls model
+- [ ] 128b-04-PLAN.md — Path E (tmux send-keys) regression: rerun spike 001 L4 + copy evidence into phase artifacts
+- [ ] 128b-05-PLAN.md — Author 128b-SPIKE-DECISION.md: verdict at TOP + per-path table + privilege sketch reference + Phase 133 scope-lock
+- [ ] 128b-06-PLAN.md — Author 128b-MEASUREMENTS.md: consolidated per-path wallclock + cost + evidence inventory
+- [ ] 128b-07-PLAN.md — Operator wallclock C-1: live `claude` interactive session round-trip (Ubuntu dev box)
+- [ ] 128b-08-PLAN.md — Operator wallclock C-2: 60s portfolio Loom (success-criterion-3 proxy)
 **UI hint**: yes
 
 ### Phase 131: Insights freshness + chat context expansion
@@ -460,7 +484,15 @@ Plans:
   3. `/v1/chat` retrieves recent (20) + FTS-relevant (10) thoughts, dedupes, hard-caps at 30, and wraps each in `<thought>` delimiters; the system prompt instructs Claude to treat thought content as data not instructions
   4. Operator can raise `contextLimit` to 100 in PWA UI; requests beyond the pre-flight token budget abort with `CHAT_CONTEXT_TOKEN_BUDGET_EXCEEDED` (locked enum)
   5. Drift-detector tests pin the `<thought>` delimiter format, the 30-thought hard cap, and the tag-breakout sanitization regex set
-**Plans:** TBD
+**Plans:** 8 plans (5 waves)
+- [ ] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
+- [ ] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
+- [ ] 128b-03-PLAN.md — Path D (MCP server hook) empirical probe; inverted-direction Claude-pulls model
+- [ ] 128b-04-PLAN.md — Path E (tmux send-keys) regression: rerun spike 001 L4 + copy evidence into phase artifacts
+- [ ] 128b-05-PLAN.md — Author 128b-SPIKE-DECISION.md: verdict at TOP + per-path table + privilege sketch reference + Phase 133 scope-lock
+- [ ] 128b-06-PLAN.md — Author 128b-MEASUREMENTS.md: consolidated per-path wallclock + cost + evidence inventory
+- [ ] 128b-07-PLAN.md — Operator wallclock C-1: live `claude` interactive session round-trip (Ubuntu dev box)
+- [ ] 128b-08-PLAN.md — Operator wallclock C-2: 60s portfolio Loom (success-criterion-3 proxy)
 **UI hint**: yes
 
 ### Phase 132: Quiet Mode auto-detect via iPhone Focus
@@ -472,7 +504,15 @@ Plans:
   2. Operator can issue a `quiet_mode_write`-scoped API key from PWA Settings; the key survives operator password rotation and is used only by the iOS Shortcut
   3. Toggling iPhone Focus on/off flips the user's `quiet_mode` flag with `quiet_mode_source='ios_focus'`; the G2 HUD reflects the change via existing Phase 125 SSE plumbing
   4. PWA Settings shows a Download-Shortcut link/QR, a Quiet-Mode log of the last 10 toggles (timestamp + source), and a "Source: iOS Focus" badge when last set source was `ios_focus`
-**Plans:** TBD
+**Plans:** 8 plans (5 waves)
+- [ ] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
+- [ ] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
+- [ ] 128b-03-PLAN.md — Path D (MCP server hook) empirical probe; inverted-direction Claude-pulls model
+- [ ] 128b-04-PLAN.md — Path E (tmux send-keys) regression: rerun spike 001 L4 + copy evidence into phase artifacts
+- [ ] 128b-05-PLAN.md — Author 128b-SPIKE-DECISION.md: verdict at TOP + per-path table + privilege sketch reference + Phase 133 scope-lock
+- [ ] 128b-06-PLAN.md — Author 128b-MEASUREMENTS.md: consolidated per-path wallclock + cost + evidence inventory
+- [ ] 128b-07-PLAN.md — Operator wallclock C-1: live `claude` interactive session round-trip (Ubuntu dev box)
+- [ ] 128b-08-PLAN.md — Operator wallclock C-2: 60s portfolio Loom (success-criterion-3 proxy)
 **UI hint**: yes
 
 ### Phase 133: G2 closeout bundle (hardware UAT)
@@ -485,7 +525,15 @@ Plans:
   3. If 128b returned PASS: a `needs_input` Claude Code banner can be answered from G2 with one of 5 prefab replies (`yes`/`no`/`continue`/`abort`/`defer`), the reply reaches the active Claude Code session, and a watchdog auto-exits reply mode after 30s; if 128b returned DEGRADE: DOUBLE_CLICK dismisses the banner locally and posts an analytics event (no write-back to Claude Code)
   4. The Companion HUD shows project name (from JSONL `cwd`), current tool name (`Edit` / `Bash` / `Read` / etc.), and a privacy-redacted ≤80-char prompt/message preview (operator-toggle, default ON)
   5. SEED-016 clarity gaps closed: relative timestamp on every refresh tick (`last activity 4m ago`), `[POSSIBLY STUCK]` banner after N heartbeats without tool activity (allowlisted through Quiet Mode), and `🔋 73% · 👁` battery+wearing footer line at zero new SDK cost
-**Plans:** TBD
+**Plans:** 8 plans (5 waves)
+- [ ] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
+- [ ] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
+- [ ] 128b-03-PLAN.md — Path D (MCP server hook) empirical probe; inverted-direction Claude-pulls model
+- [ ] 128b-04-PLAN.md — Path E (tmux send-keys) regression: rerun spike 001 L4 + copy evidence into phase artifacts
+- [ ] 128b-05-PLAN.md — Author 128b-SPIKE-DECISION.md: verdict at TOP + per-path table + privilege sketch reference + Phase 133 scope-lock
+- [ ] 128b-06-PLAN.md — Author 128b-MEASUREMENTS.md: consolidated per-path wallclock + cost + evidence inventory
+- [ ] 128b-07-PLAN.md — Operator wallclock C-1: live `claude` interactive session round-trip (Ubuntu dev box)
+- [ ] 128b-08-PLAN.md — Operator wallclock C-2: 60s portfolio Loom (success-criterion-3 proxy)
 **UI hint**: yes
 
 ### Coverage
