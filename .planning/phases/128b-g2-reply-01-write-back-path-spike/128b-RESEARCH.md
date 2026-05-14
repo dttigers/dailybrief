@@ -481,7 +481,7 @@ grep -E "yes" "$SCRATCH/D-fresh-out.txt" && echo "D.fresh PASS" || echo "D.fresh
 
 **What it tests (analytically):** Whether `mkfifo` + launching `claude` with stdin redirected from the FIFO (c1), or writing to `/proc/<claude-pid>/fd/0` directly (c2), can deliver a reply to a running session.
 
-**Recommendation:** **Skip empirical testing. Document analytically as "structurally superseded by Path E."**
+**RESOLVED:** **Skip empirical testing. Document analytically as "structurally superseded by Path E."**
 
 **Rationale:**
 1. CONTEXT D-O3 short-circuits to overall BLOCK if first three paths all BLOCK. We expect A=FAIL, B=DEGRADE, D=DEGRADE — so the three-BLOCK short-circuit does NOT trigger, but Path C's expected verdict (DEGRADE c1 / FAIL c2) doesn't change the overall PASS verdict from Path E.
@@ -799,7 +799,7 @@ function inject(target: TmuxTarget, reply: Reply): void {
 
 **Most of these assumptions are LOW-risk because Path E's PASS verdict is mechanically dominant per D-V4.** Even if every A/B/C/D prediction is wrong, the overall verdict stays PASS. The assumptions matter for the per-path table's accuracy and the verdict's defensibility, not for the overall PASS/DEGRADE/BLOCK outcome.
 
-## Open Questions
+## Open Questions (RESOLVED)
 
 ### 1. Spike code directory — extend existing `001-tmux-write-back-128b/` or create new `128b-write-back/`?
 
@@ -809,7 +809,7 @@ function inject(target: TmuxTarget, reply: Reply): void {
 
 **What's unclear:** Should paths A/B/D probe scripts live in `001-tmux-write-back-128b/` (extending the existing dir) or in `128b-write-back/` (per CONTEXT D-A1)?
 
-**Recommendation:** **Create `.planning/spikes/128b-write-back/` per CONTEXT D-A1 and keep paths A/B/D probes there. Leave `001-tmux-write-back-128b/` untouched as the validated Path E reference.**
+**RESOLVED:** **Create `.planning/spikes/128b-write-back/` per CONTEXT D-A1 and keep paths A/B/D probes there. Leave `001-tmux-write-back-128b/` untouched as the validated Path E reference.**
 
 Rationale: (a) honors CONTEXT D-A1 verbatim; (b) the existing spike-001 directory follows the new MANIFEST convention (`001-`/`002-` numbered prefix) whereas D-A1's name follows the older `<phase>-<topic>/` convention — both can coexist; (c) the new dir has a clear purpose ("complete the A/B/D empirical record for the verdict") distinct from spike 001's purpose ("validate Path E"); (d) cross-link both from `128b-SPIKE-DECISION.md` per-path table.
 
@@ -823,7 +823,7 @@ Rationale: (a) honors CONTEXT D-A1 verbatim; (b) the existing spike-001 director
 
 **What's unclear:** Does the "3 of 4" success criterion benefit from a 30-min Path C c1-only probe (analogous to Path D's 30-min probe)?
 
-**Recommendation:** **No empirical probe for Path C.** A 30-min c1 probe would conclude "yes, you can launch `claude` with stdin from a FIFO and write to the FIFO" — but that's already obvious from Unix semantics and adds no information beyond what spike 001's Path E framing covers. The verdict's per-path table marks Path C as "INCONCLUSIVE — covered analytically by Path E (structural refinement)" with a citation. This satisfies the "3 of 4" criterion via A + B + D + E.
+**RESOLVED:** **No empirical probe for Path C.** A 30-min c1 probe would conclude "yes, you can launch `claude` with stdin from a FIFO and write to the FIFO" — but that's already obvious from Unix semantics and adds no information beyond what spike 001's Path E framing covers. The verdict's per-path table marks Path C as "INCONCLUSIVE — covered analytically by Path E (structural refinement)" with a citation. This satisfies the "3 of 4" criterion via A + B + D + E.
 
 **If planner disagrees,** budget 30 min for a c1 probe (mkfifo + `cat <FIFO> | claude -p ...`) and skip c2 entirely (ptrace = unsafe-primitive BLOCK per D-V3).
 
@@ -835,7 +835,7 @@ Rationale: (a) honors CONTEXT D-A1 verbatim; (b) the existing spike-001 director
 
 **What's unclear:** Should the operator re-record the Path E round-trip in a 60s Loom, or assemble the Loom from the existing terminal transcripts?
 
-**Recommendation:** **Re-record live.** The Phase 128a precedent treats the Loom as a portfolio artifact (5s gesture → 5s wide → 10s reaction → 15s session → 25s replay). Path E's round-trip is fast enough (77s wallclock) that a real-time recording fits cleanly. Operator-driven; cannot be `--auto`-executed (C-2 per CONTEXT).
+**RESOLVED:** **Re-record live.** The Phase 128a precedent treats the Loom as a portfolio artifact (5s gesture → 5s wide → 10s reaction → 15s session → 25s replay). Path E's round-trip is fast enough (77s wallclock) that a real-time recording fits cleanly. Operator-driven; cannot be `--auto`-executed (C-2 per CONTEXT).
 
 ## Environment Availability
 
