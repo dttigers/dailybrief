@@ -4,14 +4,14 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Completed 128b-03-PLAN.md
-last_updated: "2026-05-14T22:42:06.045Z"
+last_updated: "2026-05-14T22:51:23.887Z"
 last_activity: 2026-05-14
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 24
-  completed_plans: 18
-  percent: 75
+  completed_plans: 19
+  percent: 79
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 128b (g2-reply-01-write-back-path-spike) — EXECUTING
-Plan: 4 of 8
+Plan: 5 of 8
 Status: Ready to execute
 Last activity: 2026-05-14
 
@@ -138,6 +138,7 @@ Last activity: 2026-05-14
 | Phase 128b P01 | 4min | 2 tasks | 7 files |
 | Phase 128b P02 | 5min | 1 tasks | 4 files |
 | Phase 128b-g2-reply-01-write-back-path-spike P03 | 10min | 2 tasks | 5 files |
+| Phase 128b P04 | 3min | 1 tasks | 5 files |
 
 ## Deferred Items
 
@@ -409,6 +410,9 @@ Recent (v3.7 closeout):
 - [Phase 128b-g2-reply-01-write-back-path-spike]: Path D MCP probe ⇒ DEGRADE (inverted model — fresh-session-only via prompted tool-call); matches RESEARCH prediction; D-A1 isolation honored via mktemp scratch + stub-copy
 - [Phase 128b-g2-reply-01-write-back-path-spike]: Established scratch-dir SDK install + stub-copy pattern for ad-hoc npm packages: install into mktemp + copy consuming .mjs into the same dir; Node parent-walk finds the SDK without project-deps mutation; replaces NODE_PATH and npm-exec patterns which don't propagate to module resolution
 - [Phase 128b-g2-reply-01-write-back-path-spike]: Reused Plan 02 forbidden-token paraphrase pattern for --bare and ALLOWED_REPLIES literal-string verifier-grep targets; pattern now established as cross-plan convention
+- [Phase 128b]: Path E regression empirically re-confirmed PASS in 71s wallclock; D-V1 four-step round-trip verified; per D-V4 max aggregation Path E dominates per-path table for Plan 05 SPIKE-DECISION (overall verdict mechanically PASS)
+- [Phase 128b]: Spike 001's preserved L4 evidence COPIED (cp, NOT mv, NOT ln -s) into phase evidence dir; cmp confirms byte-for-byte equality on all 3 pairs; spike 001 originals' mtimes preserved at 2026-05-14 20:55:33
+- [Phase 128b]: Privilege & portability sketch is REFERENCED in pathE-TRANSCRIPT.md (cites spike 001 README lines 182-218), NOT re-derived; Plan 05 SPIKE-DECISION will cite same source directly per CONTEXT D-A2 + RESEARCH §Criteria Mapping criterion 4
 
 ### Pending Todos
 
@@ -445,7 +449,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-14T22:42:06.035Z
+Last session: 2026-05-14T22:50:38.810Z
 Stopped at: Completed 128b-03-PLAN.md
 Resume file: None
 
