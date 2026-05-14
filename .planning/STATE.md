@@ -4,14 +4,14 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Completed 128b-04-PLAN.md
-last_updated: "2026-05-14T22:52:10.996Z"
+last_updated: "2026-05-14T23:00:15.839Z"
 last_activity: 2026-05-14
 progress:
   total_phases: 11
   completed_phases: 2
   total_plans: 24
-  completed_plans: 19
-  percent: 79
+  completed_plans: 20
+  percent: 83
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 128b (g2-reply-01-write-back-path-spike) — EXECUTING
-Plan: 5 of 8
+Plan: 6 of 8
 Status: Ready to execute
 Last activity: 2026-05-14
 
@@ -139,6 +139,7 @@ Last activity: 2026-05-14
 | Phase 128b P02 | 5min | 1 tasks | 4 files |
 | Phase 128b-g2-reply-01-write-back-path-spike P03 | 10min | 2 tasks | 5 files |
 | Phase 128b P04 | 3min | 1 tasks | 5 files |
+| Phase 128b P06 | ~6min | 1 tasks | 1 files |
 
 ## Deferred Items
 
@@ -413,6 +414,7 @@ Recent (v3.7 closeout):
 - [Phase 128b]: Path E regression empirically re-confirmed PASS in 71s wallclock; D-V1 four-step round-trip verified; per D-V4 max aggregation Path E dominates per-path table for Plan 05 SPIKE-DECISION (overall verdict mechanically PASS)
 - [Phase 128b]: Spike 001's preserved L4 evidence COPIED (cp, NOT mv, NOT ln -s) into phase evidence dir; cmp confirms byte-for-byte equality on all 3 pairs; spike 001 originals' mtimes preserved at 2026-05-14 20:55:33
 - [Phase 128b]: Privilege & portability sketch is REFERENCED in pathE-TRANSCRIPT.md (cites spike 001 README lines 182-218), NOT re-derived; Plan 05 SPIKE-DECISION will cite same source directly per CONTEXT D-A2 + RESEARCH §Criteria Mapping criterion 4
+- [Phase ?]: Total empirical cost ~$0.131 (Plans 01-04 + spike 001) is UNDER RESEARCH §Cost ≤$0.20 ceiling; Path B first-invocation cache cost drove variance, re-runs amortize to ~$0.021 total
 
 ### Pending Todos
 
@@ -449,7 +451,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-14T22:52:10.986Z
+Last session: 2026-05-14T23:00:11.793Z
 Stopped at: Completed 128b-04-PLAN.md
 Resume file: None
 
