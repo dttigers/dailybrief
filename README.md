@@ -12,6 +12,52 @@ An ambient AI life assistant built for ADHD brains. Captures thoughts, tasks, an
 - **Daily PDF brief** — Printed summary with work orders, todos, sports scores, calendar events, AI insights, and an affirmation
 - **Projects** — Named projects with thought assignment, status tracking, and per-project views
 
+## Download
+
+**Latest:** [Vigil-2.4.dmg](https://github.com/dttigers/dailybrief/releases/latest)
+
+**Requirements:** macOS 13.0 (Ventura) or later · Apple Silicon or Intel · ~50 MB disk
+
+### Install
+
+1. Download the `.dmg` and double-click to mount it.
+2. Drag **Vigil** into your `/Applications` folder.
+3. Open **Vigil** from Applications (or Spotlight). It runs as a menu bar app — look for the icon in your top-right.
+4. Grant permissions when prompted:
+   - **Calendar** — for daily brief generation
+   - **Speech Recognition** — for voice note transcription from watched folders
+5. On first launch, Safari Settings will open automatically. Enable **Vigil Capture** under Extensions to capture web content directly into Vigil.
+
+### What gets installed
+
+| Component | Where |
+|---|---|
+| Menu bar app | `/Applications/Vigil.app` |
+| Login item | Auto-starts on login via LaunchAgent |
+| Safari extension | Embedded in the app — enable in Safari Settings |
+| Logs | `~/Library/Logs/DailyBrief/` |
+
+### Verifying the install
+
+Vigil is signed with an Apple Developer ID and notarized by Apple. To verify:
+
+```bash
+spctl --assess --type execute -v /Applications/Vigil.app
+# expected: accepted, source=Notarized Developer ID
+```
+
+### Uninstall
+
+```bash
+launchctl bootout gui/$(id -u)/com.jamesonmorrill.dailybriefmonitor
+rm -rf /Applications/Vigil.app
+rm ~/Library/LaunchAgents/com.jamesonmorrill.dailybriefmonitor.plist
+rm -rf ~/Library/Logs/DailyBrief
+defaults delete com.jamesonmorrill.dailybriefmonitor
+```
+
+> Building from source? See [Setup → Mac App](#mac-app) below.
+
 ## Architecture
 
 ```
