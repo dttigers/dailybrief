@@ -421,9 +421,9 @@ Plans:
   2. The decision file resolves to `PASS` (full reply UX downstream), `DEGRADE` (banner-ack-only G2-REPLY-05), or `BLOCK` (no G2 reply capability in v3.9)
   3. If PASS, the spike includes a working proof-of-concept round-trip (`yes` reply from G2 reaches an active Claude Code session and the session continues) — not just feasibility analysis
   4. Privilege model is sketched: writer process drops privileges before injection; prefab-allowlist is the only string surface that reaches the input channel
-**Plans:** 1/8 plans executed
+**Plans:** 2/8 plans executed
 - [x] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
-- [ ] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
+- [x] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
 - [ ] 128b-03-PLAN.md — Path D (MCP server hook) empirical probe; inverted-direction Claude-pulls model
 - [ ] 128b-04-PLAN.md — Path E (tmux send-keys) regression: rerun spike 001 L4 + copy evidence into phase artifacts
 - [ ] 128b-05-PLAN.md — Author 128b-SPIKE-DECISION.md: verdict at TOP + per-path table + privilege sketch reference + Phase 133 scope-lock
@@ -443,7 +443,7 @@ Plans:
   4. Operator on a `*.service-now.com/*` page clicks the extension icon → popup pre-fills CS# (regex `/^CS\d{7}$/` against `document.title`) → types description + priority → submit creates a work-order row, deduped via `client_capture_id` across multi-tab + corporate-VPN retries
   5. Both Chrome and Safari extensions ship the popup (lock-step parity per Phase 114 EXT-02 pattern), with Vigil-brand-compliant styling
 **Plans:** 8 plans (5 waves)
-- [ ] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
+- [x] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
 - [ ] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
 - [ ] 128b-03-PLAN.md — Path D (MCP server hook) empirical probe; inverted-direction Claude-pulls model
 - [ ] 128b-04-PLAN.md — Path E (tmux send-keys) regression: rerun spike 001 L4 + copy evidence into phase artifacts
@@ -682,7 +682,7 @@ Plans:
 | 127. Pre-spike guardrails (audio redaction + audio caps + AI-cost watermark + schema reconcile) | v3.9 | 8/9 | In Progress|  |
 | 127.5. G2 input gesture audit (30-min code review; verdict shapes G2-ACTION + G2-REPLY) | v3.9 | 1/1 | Complete    | 2026-05-12 |
 | 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 5/6 | In Progress|  |
-| 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 1/8 | In Progress|  |
+| 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 2/8 | In Progress|  |
 | 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 0/TBD | Not started | - |
 | 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 0/TBD | Not started | - |
 | 131. Insights freshness + chat context expansion (one PWA UAT pass) | v3.9 | 0/TBD | Not started | - |
