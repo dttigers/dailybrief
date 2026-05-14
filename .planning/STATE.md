@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: completed
-stopped_at: Plan 128a-01 complete; smoke RED as designed
-last_updated: "2026-05-12T19:50:51.763Z"
+stopped_at: Phase 128b context gathered
+last_updated: "2026-05-14T20:22:08.563Z"
 last_activity: 2026-05-12
 progress:
   total_phases: 11
@@ -434,9 +434,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-12T19:15:19.685Z
-Stopped at: Plan 128a-01 complete; smoke RED as designed
-Resume file: None
+Last session: 2026-05-14T20:22:08.550Z
+Stopped at: Phase 128b context gathered
+Resume file: .planning/phases/128b-g2-reply-01-write-back-path-spike/128b-CONTEXT.md
 
 ## Operator Next Steps
 
