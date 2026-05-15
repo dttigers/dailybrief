@@ -238,15 +238,21 @@ const navigationNoComments = stripComments(navigationSrc);
 
 test("D-129 drift: setBackgroundState registration at MODULE SCOPE (before init)", () => {
   // G2-LIFECYCLE-01: the registerBackgroundStateHandlers call (which internally
-  // calls bridge.setBackgroundState) MUST precede function init() in main.ts.
-  // Same ordering constraint as the D-07 onLaunchSource registration check above.
-  const bgIdx = mainNoComments.indexOf("setBackgroundState(");
+  // calls bridge.setBackgroundState via screen-state-restore.ts) MUST precede
+  // function init() in main.ts. Same ordering constraint as the D-07 onLaunchSource
+  // registration check above.
+  //
+  // We check for `registerBackgroundStateHandlers(` as the module-scope registration
+  // sentinel — this is the call that wires setBackgroundState/onBackgroundRestore
+  // at module scope (the literal calls live in screen-state-restore.ts, which is
+  // the correct abstraction boundary per Task 1's design).
+  const bgIdx = mainNoComments.indexOf("registerBackgroundStateHandlers(");
   const initIdx = mainNoComments.search(/(?:async\s+)?function\s+init\s*\(/);
-  assert.ok(bgIdx > 0, "setBackgroundState registration found in main.ts");
+  assert.ok(bgIdx > 0, "registerBackgroundStateHandlers call found in main.ts (wires setBackgroundState at module scope)");
   assert.ok(initIdx > 0, "init() declaration found");
   assert.ok(
     bgIdx < initIdx,
-    "setBackgroundState registration MUST precede function init() (G2-LIFECYCLE-01 module-scope constraint)",
+    "registerBackgroundStateHandlers MUST precede function init() (G2-LIFECYCLE-01 module-scope constraint)",
   );
 });
 

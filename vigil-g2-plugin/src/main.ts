@@ -35,6 +35,7 @@ import {
   setSseConnected,
   setQuietMode,
   hydrateActiveSessions,
+  getActiveSessions,
 } from './screens/companion.ts'
 import {
   Screen,
@@ -47,6 +48,7 @@ import {
 } from './navigation.ts'
 import {
   fetchSummary,
+  fetchBrief,
   fetchAgentSessions,
   BASE_URL,
   API_KEY,
@@ -55,6 +57,8 @@ import { createSseClient } from './lib/sse-client.ts'
 import { pickInitialScreen } from './lib/launch-source-helpers.ts'
 // Phase 128a SPIKE — TOSSABLE. PCM chunk collector for VOICE_SPIKE; Phase 130 owns removal.
 import { appendPcmChunk } from './screens/voice-spike.ts'
+// Phase 129 G2-LIFECYCLE-01: screen state restore module.
+import { registerBackgroundStateHandlers } from './lib/screen-state-restore.ts'
 
 // Re-export the testable launch-source helpers from main.ts so any future
 // caller importing them via './main.ts' still works (and so the plan's
@@ -83,6 +87,73 @@ const bridgeInstance = EvenAppBridge.getInstance()
 const launchSourcePromise: Promise<LaunchSource> = new Promise((resolve) => {
   bridgeInstance.onLaunchSource((source) => resolve(source))
 })
+
+// ── Phase 129 G2-LIFECYCLE-01: module-scope setBackgroundState registrations ──
+// MUST precede function init() — same ordering constraint as onLaunchSource
+// (D-07 drift test extended to also check setBackgroundState index < initIdx).
+//
+// registerBackgroundStateHandlers wires TWO background-state pairs:
+//   1. 'vigil-companion-state': companion HUD activeSessions + bannerState (D-11 fold)
+//   2. 'vigil-screen-state': last-viewed screen + optional args (G2-LIFECYCLE-01)
+//
+// restoreScreenFn implements D-07: for parameterized screens (TASK_DETAIL), re-fetch
+// the entity by id; on 404 (null/undefined), fall back to WORK_ORDERS parent list.
+// Do NOT fall back to HOME for 404 — D-07 mandates parent list for closest-to-intent UX.
+//
+// Cast rationale: EvenAppBridge@0.0.9 .d.ts does not type setBackgroundState/
+// onBackgroundRestore; cast through unknown per Phase 127 GUARD-02 pattern.
+const restoreScreenFn = async (
+  screen: string,
+  args: { id?: string | number } | undefined,
+  _bridge: unknown,
+): Promise<void> => {
+  if (!bridge) return
+  if (screen === Screen.TASK_DETAIL && args?.id != null) {
+    // D-07: re-fetch the task entity on restore. On 404 (task deleted/out-of-scope
+    // or completed since last session), navigate to WORK_ORDERS parent list — NOT HOME.
+    // The G2 task list is loaded by fetchBrief() → brief.openTasks; find by id.
+    try {
+      const brief = await fetchBrief()
+      const taskIdx = brief.openTasks.findIndex((t) => String(t.id) === String(args.id))
+      if (taskIdx < 0) {
+        // D-07: task not in current open list (404 equivalent) → parent list.
+        await navigateTo(Screen.WORK_ORDERS, bridge)
+        return
+      }
+      // Task found — navigate via navigateToTaskDetail to get the task-detail screen.
+      await navigateToTaskDetail(taskIdx, bridge)
+    } catch {
+      // Network error during re-fetch — fall back to WORK_ORDERS (safer than HOME per D-07).
+      await navigateTo(Screen.WORK_ORDERS, bridge)
+    }
+    return
+  }
+  // Non-parameterized screen: navigate directly.
+  if (screen && screen !== Screen.TASK_DETAIL) {
+    await navigateTo(screen as import('./navigation.ts').ScreenName, bridge)
+  }
+}
+
+registerBackgroundStateHandlers(
+  bridgeInstance as unknown as import('./lib/screen-state-restore.ts').ScreenRestoreBridge,
+  // getCompanionSnapshot: returns serializable companion HUD state (D-11).
+  // activeSessions from companion module-state (JSON-serializable rows).
+  () => ({
+    activeSessions: getActiveSessions(),
+    bannerState: null,
+  }),
+  // restoreCompanionSnapshot: hydrate companion from restored snapshot (D-11).
+  (saved: unknown) => {
+    const s = saved as { activeSessions?: Parameters<typeof hydrateActiveSessions>[0] }
+    if (s?.activeSessions) {
+      hydrateActiveSessions(s.activeSessions)
+    }
+  },
+  // getScreenSnapshot: returns current screen + args for bg-state snapshot.
+  () => ({ screen: getCurrentScreen() }),
+  // restoreScreenFn: re-fetch + D-07 404→WORK_ORDERS fallback (see above).
+  restoreScreenFn as never,
+)
 
 // ── SSE client setup (Phase 124 Plan 06 shim) ─────────────────────────
 // Bearer in Authorization header (api.ts authHeaders pattern) — never URL.
@@ -212,7 +283,9 @@ async function init(): Promise<void> {
   // activeSessions; without hydrate it would render empty state).
   const sessions = source === 'glassesMenu' ? await fetchAgentSessions() : []
   hydrateActiveSessions(sessions)
-  const initialScreen = await pickInitialScreen(source, async () => sessions)
+  // G2-LIFECYCLE-02: pass bridgeInstance as third arg so pickInitialScreen can
+  // attempt the TTL-gated last-screen restore for non-glassesMenu launches.
+  const initialScreen = await pickInitialScreen(source, async () => sessions, bridge)
   const container = await buildInitialContainer(initialScreen)
   await bridge.createStartUpPageContainer(container)
 

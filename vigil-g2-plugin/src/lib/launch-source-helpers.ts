@@ -23,6 +23,7 @@
 
 import type { LaunchSource } from '@evenrealities/even_hub_sdk'
 import type { AgentSessionRow } from '../types.ts'
+import { pickRestoredScreen, LAST_SCREEN_LS_KEY, TTL_MS } from './screen-state-restore.ts'
 // Screen names imported as TYPES only — the runtime `Screen` const object
 // from navigation.ts pulls in api.ts which depends on `import.meta.env`
 // (Vite-only). `node:test` runs without Vite, so the runtime cascade
@@ -108,12 +109,40 @@ export function hasActiveSession(
  * The hydrate-cache side effect (companion.ts `hydrateActiveSessions`) is
  * intentionally NOT performed here — main.ts owns that concern so this
  * helper has no module-level coupling to the Companion screen state.
+ *
+ * Phase 129 G2-LIFECYCLE-02: extended with optional `bridge` parameter for
+ * TTL-gated last-screen restore. When `source !== 'glassesMenu'` AND a bridge
+ * is provided with a fresh `vigil:v3:lastScreen` value (within TTL_MS), returns
+ * the stored screen instead of HOME. Malformed JSON falls through to HOME (D-05).
+ *
+ * D-10 invariant: the `source === 'glassesMenu'` branch is UNCHANGED — the
+ * existing fetchSessions path is used; the bridge restore lookup is NOT run.
  */
 export async function pickInitialScreen(
   source: LaunchSource,
   fetchSessions: () => Promise<AgentSessionRow[]>,
+  bridge?: { getLocalStorage: (key: string) => Promise<string | null> },
 ): Promise<ScreenName> {
-  if (source !== 'glassesMenu') return HOME
+  if (source !== 'glassesMenu') {
+    // G2-LIFECYCLE-02: attempt TTL-gated last-screen restore when bridge is provided.
+    // D-10 guard: this branch only runs for non-glassesMenu sources.
+    if (bridge) {
+      try {
+        const raw = await bridge.getLocalStorage(LAST_SCREEN_LS_KEY)
+        if (raw) {
+          const stored = JSON.parse(raw) as unknown
+          const restored = pickRestoredScreen(stored, Date.now())
+          if (restored !== HOME) {
+            return restored
+          }
+        }
+      } catch {
+        // Malformed localStorage JSON → fall through to HOME (D-05/T-129-05).
+      }
+    }
+    return HOME
+  }
+  // D-10: glassesMenu takes precedence — no restore lookup, use existing path.
   const sessions = await fetchSessions()
   return hasActiveSession(sessions) ? COMPANION : HOME
 }

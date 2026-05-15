@@ -29,6 +29,7 @@ import {
   toggleVoiceSpikeRecording,
 } from './screens/voice-spike.ts'
 import { fetchSummary, fetchBrief, fetchAffirmation, fetchAgentSessions } from './api.ts'
+import { LAST_SCREEN_LS_KEY } from './lib/screen-state-restore.ts'
 
 // Screen identifiers — const object pattern (erasableSyntaxOnly)
 export const Screen = {
@@ -143,6 +144,12 @@ export async function navigateTo(
   currentScreen = screen
   const container = await buildScreen(screen)
   await bridge.rebuildPageContainer(container)
+  // G2-LIFECYCLE-02: persist last-viewed screen for re-launch restore (D-05).
+  // Fire-and-forget — mirrors audio-session-guard.ts audioControl().catch(() => {}) pattern.
+  // setLocalStorage may be absent on dev-preview bridge — optional-chained safely.
+  ;(bridge as unknown as { setLocalStorage?: (k: string, v: string) => Promise<void> })
+    .setLocalStorage?.(LAST_SCREEN_LS_KEY, JSON.stringify({ screen, savedAt: Date.now() }))
+    ?.catch(() => {})
   console.log(`[vigil-g2] navigated to: ${screen}`)
 }
 
@@ -192,6 +199,18 @@ export async function navigateToTaskDetail(
   currentScreen = Screen.TASK_DETAIL
   const container = buildTaskDetailScreen(task)
   await bridge.rebuildPageContainer(container)
+  // G2-LIFECYCLE-02: persist task-detail restore args — id-only per D-08
+  // (never embed the full task entity snapshot; re-fetch on restore is source of truth).
+  // Note: openTasks items have `id: number` (not `caseNumber` — those are ServiceNow work
+  // orders, not G2 thought tasks). D-08 id-only shape: { screen, args: { id }, savedAt }.
+  // Fire-and-forget — setLocalStorage may be absent on dev-preview bridge.
+  ;(bridge as unknown as { setLocalStorage?: (k: string, v: string) => Promise<void> })
+    .setLocalStorage?.(LAST_SCREEN_LS_KEY, JSON.stringify({
+      screen: Screen.TASK_DETAIL,
+      args: { id: task.id },
+      savedAt: Date.now(),
+    }))
+    ?.catch(() => {})
   console.log(`[vigil-g2] navigated to: task-detail (index ${itemIndex})`)
 }
 
