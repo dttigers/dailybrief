@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- Keep in lockstep with ../vigil-safari-extension/Vigil Capture Extension/Resources/popup.html — Phase 114 (D-02) -->
+<!-- Keep in lockstep with ../vigil-safari-extension/Vigil Capture Extension/Resources/popup.html — Phase 129 (D-13) -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -8,40 +8,31 @@
   <title>Vigil Capture</title>
 </head>
 <body>
-  <!-- Setup View (first-run: no API key stored) -->
-  <div id="setup-view" class="view" hidden>
+  <!-- ServiceNow Case Capture form — replaces Phase 84 capture-the-page popup (D-02) -->
+  <div id="svcnow-view" class="view">
     <div class="header">
-      <h1>Vigil Capture</h1>
-      <p class="subtitle">Connect to your Vigil instance</p>
+      <h1 id="case-number-header" class="case-number">CS#</h1>
+    </div>
+    <div id="drift-banner" class="drift-banner" hidden>CS# changed — reopen popup</div>
+    <div class="form-group">
+      <label for="description-input">Description</label>
+      <textarea id="description-input" rows="4" maxlength="2000" autofocus></textarea>
     </div>
     <div class="form-group">
-      <label for="api-key-input">API Key</label>
-      <input type="password" id="api-key-input" placeholder="Paste your Vigil API key" autocomplete="off">
+      <label for="priority-select">Priority</label>
+      <select id="priority-select">
+        <option value="Low">Low</option>
+        <option value="Medium" selected>Medium</option>
+        <option value="High">High</option>
+        <option value="Critical">Critical</option>
+      </select>
     </div>
-    <button id="save-key-btn" class="btn btn-primary">Save Key</button>
-    <div id="setup-error" class="error-msg" hidden></div>
-    <div id="setup-loading" class="loading-msg" hidden>Validating...</div>
+    <button id="send-btn" class="btn btn-primary">Send</button>
+    <div class="shortcut-hint">Cmd+Enter to send</div>
+    <div id="send-error" class="error-msg" hidden></div>
   </div>
 
-  <!-- Capture View (API key stored) -->
-  <div id="capture-view" class="view" hidden>
-    <div class="header">
-      <h1>Capture Thought</h1>
-      <button id="settings-btn" class="btn-icon" title="Change API key">&#9881;</button>
-    </div>
-    <div class="form-group">
-      <label for="content-input">Content</label>
-      <textarea id="content-input" rows="6" placeholder="What's on your mind?"></textarea>
-    </div>
-    <label class="url-toggle"><input type="checkbox" id="include-url"> Include page URL</label>
-    <button id="capture-btn" class="btn btn-primary">Capture</button>
-    <div class="shortcut-hint">Cmd+Enter to capture</div>
-    <div id="capture-error" class="error-msg" hidden></div>
-    <div id="capture-success" class="success-msg" hidden>
-      <span id="success-text"></span>
-    </div>
-  </div>
-
+  <script src="popup-helpers.js"></script>
   <script src="popup.js"></script>
 </body>
 </html>
