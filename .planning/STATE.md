@@ -4,13 +4,13 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Phase 129 context gathered
-last_updated: "2026-05-15T18:37:06.192Z"
+last_updated: "2026-05-15T18:43:09.391Z"
 last_activity: 2026-05-15
 progress:
   total_phases: 11
   completed_phases: 3
   total_plans: 30
-  completed_plans: 27
+  completed_plans: 28
   percent: 27
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 129 (lifecycle-restore-servicenow-popup) — EXECUTING
-Plan: 5 of 6
+Plan: 6 of 6
 Status: Ready to execute
 Last activity: 2026-05-15
 
@@ -455,7 +455,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-15T18:37:06.181Z
+Last session: 2026-05-15T18:43:09.379Z
 Stopped at: Phase 129 context gathered
 Resume file: None
 

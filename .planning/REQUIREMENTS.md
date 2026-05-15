@@ -60,7 +60,7 @@
 - [x] **SVCNOW-02**: Popup state-machine — CS# snapshot frozen at open-time; `MutationObserver` on document.title shows a "CS# drifted to CS0XXXXXXX — reopen popup" banner if Polaris pushState navigation changes the case mid-flight.
 - [x] **SVCNOW-03**: Popup form — case# header (rendered LARGER than the description input), description textarea (autofocus), priority select (Low / Medium / High / Critical), Send button (⌘+Enter); on submit POST to existing `POST /v1/work-orders/sync` with single-element array `[{case_number, description, priority, client_capture_id}]`.
 - [x] **SVCNOW-04**: `client_capture_id` UUID + `(user_id, client_capture_id)` composite partial unique index on `work_orders` (mirror Phase 121 pattern) prevents duplicate submission across multi-tab races and corporate-VPN-latency retries.
-- [ ] **SVCNOW-05**: Safari extension lock-step port (mirror Phase 114 EXT-02 pattern); both manifests updated; both Send buttons render Vigil-brand-compliant styling.
+- [x] **SVCNOW-05**: Safari extension lock-step port (mirror Phase 114 EXT-02 pattern); both manifests updated; both Send buttons render Vigil-brand-compliant styling.
 
 ### G2-LIFECYCLE — Last-viewed screen restore
 
@@ -175,7 +175,7 @@ Empty initially. Populated by roadmapper during phase mapping.
 | SVCNOW-02 | 129 | Complete |
 | SVCNOW-03 | 129 | Complete |
 | SVCNOW-04 | 129 | Complete |
-| SVCNOW-05 | 129 | Pending |
+| SVCNOW-05 | 129 | Complete |
 | G2-LIFECYCLE-01 | 129 | Complete |
 | G2-LIFECYCLE-02 | 129 | Complete |
 | G2-LIFECYCLE-03 | 129 | Complete |

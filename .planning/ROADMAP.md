@@ -442,7 +442,7 @@ Plans:
   3. Glasses-menu launches still land on the operator-picked screen (Phase 124 G2-POLISH-06 invariant preserved)
   4. Operator on a `*.service-now.com/*` page clicks the extension icon → popup pre-fills CS# (regex `/^CS\d{7}$/` against `document.title`) → types description + priority → submit creates a work-order row, deduped via `client_capture_id` across multi-tab + corporate-VPN retries
   5. Both Chrome and Safari extensions ship the popup (lock-step parity per Phase 114 EXT-02 pattern), with Vigil-brand-compliant styling
-**Plans:** 4/6 plans executed
+**Plans:** 5/6 plans executed
 - [x] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
 - [x] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
 - [x] 128b-03-PLAN.md — Path D (MCP server hook) empirical probe; inverted-direction Claude-pulls model
@@ -683,7 +683,7 @@ Plans:
 | 127.5. G2 input gesture audit (30-min code review; verdict shapes G2-ACTION + G2-REPLY) | v3.9 | 1/1 | Complete    | 2026-05-12 |
 | 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 5/6 | In Progress|  |
 | 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 7/8 | In Progress|  |
-| 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 4/6 | In Progress|  |
+| 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 5/6 | In Progress|  |
 | 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 0/TBD | Not started | - |
 | 131. Insights freshness + chat context expansion (one PWA UAT pass) | v3.9 | 0/TBD | Not started | - |
 | 132. Quiet Mode auto-detect via iPhone Focus | v3.9 | 0/TBD | Not started | - |
