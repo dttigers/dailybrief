@@ -178,21 +178,74 @@
 
 > Both halves MUST start at the same battery percentage (100%). If second half can't start ≥ 70%, recharge and restart (non-linear discharge invalidates the delta).
 
+### Pre-flight (do once, before Half A)
+
+- [ ] G2 fully charged → 100% (verify in Hub before starting; do NOT eyeball — confirmed % only)
+- [ ] iPhone ≥ 90% (so you're not tethered to a charger during the run)
+- [ ] Even Hub app open, plugin sideloaded (v0.3.7 — same build as Runs 1-4 per build decision)
+- [ ] Voice Spike screen reachable via carousel (swipe to confirm; return to AFFIRMATION or whichever screen Half A starts on)
+- [ ] `OPENAI_API_KEY` verified set in Railway (C-1) — Half B's 10 clips need it; without it Half B's transcribe calls 401 and Half B's incremental cost is contaminated by retry storms
+- [ ] 2h+ quiet window confirmed — no interruptions that would have you breaking screen-on / foreground assumption
+
 ### Half A — Baseline (mic OFF, G2 worn, Hub foreground, screen visible)
+
+**Protocol (60 min):**
+1. Note start time + battery % below.
+2. Wear G2. Keep Even Hub app **foreground** on iPhone (don't background it; don't lock the phone).
+3. Screen on G2 should stay visible — i.e. the operator is normally interacting with the wearable (looking through it occasionally). The Voice Spike screen is fine but ANY non-mic plugin screen works; just stay consistent across both halves.
+4. **DO NOT** DOUBLE_CLICK on the Companion body during Half A. The whole point is "mic OFF baseline."
+5. After 60 min, note end time + battery %.
 
 - **Half A start:** 2026-05-__ __:__ MDT — G2 battery = __%
 - **Half A end:**   2026-05-__ __:__ MDT — G2 battery = __%
 - **Half A delta:** __ pp (over 60 min)
 
+### Recharge gap
+
+- [ ] Charge G2 back to 100% before starting Half B (charging time on G2 is ~30-45 min from 70%).
+- [ ] Same physical setup as Half A — same iPhone, same Hub foreground state, same screen-visible posture, same room/Wi-Fi.
+
 ### Half B — Push-to-record (10× 5s clips evenly spaced across the hour)
 
-- **Half B start:** 2026-05-__ __:__ MDT — G2 battery = __% (target ≥ 70% per D-M3)
+**Cadence:** clip every 6 min, on the minute. T=0, T=6, T=12, T=18, T=24, T=30, T=36, T=42, T=48, T=54. (Clip 10 finishes by T=54:05, leaving 5-min tail to end-of-hour.)
+
+**Per-clip protocol:**
+1. Swipe to Voice Spike screen on G2.
+2. DOUBLE_CLICK → body shows `[REC 0:00]`.
+3. Count "one one-thousand, two one-thousand, three one-thousand, four one-thousand, five one-thousand" out loud (~5s).
+4. DOUBLE_CLICK → body shows `[UPLOADING…]` → `[DONE]  thought saved`.
+5. Note the clip number completed in the table below. If `[ERR]` instead of `[DONE]`, log it and continue (don't retry — that contaminates timing).
+
+**Between clips:** keep Hub foreground, G2 worn, screen visible. Same posture as Half A.
+
+| Clip | T (mm:ss) | Outcome (`[DONE]` / `[ERR]` + status code if err) |
+|------|-----------|---------------------------------------------------|
+| 1    | 00:00     | … |
+| 2    | 06:00     | … |
+| 3    | 12:00     | … |
+| 4    | 18:00     | … |
+| 5    | 24:00     | … |
+| 6    | 30:00     | … |
+| 7    | 36:00     | … |
+| 8    | 42:00     | … |
+| 9    | 48:00     | … |
+| 10   | 54:00     | … |
+
+- **Half B start:** 2026-05-__ __:__ MDT — G2 battery = __% (target ≥ 70% per D-M3 — but you'll start at 100% per pre-flight)
 - **Half B end:**   2026-05-__ __:__ MDT — G2 battery = __%
 - **Half B delta:** __ pp (over 60 min)
 
 ### Incremental cost (the measurement that drives the battery bucket)
 
 - **Incremental cost** = Half B delta − Half A delta = __ pp/hr
+
+### Abort conditions (invalidate Run 5 + restart)
+
+- Either half starts at < 100% — non-linear discharge would skew the delta
+- Half B has > 2 `[ERR]` clips — retry storms confound the incremental cost
+- Hub app backgrounded > 30s during either half — mic-state ambiguity
+- G2 falls off / screen-off > 30s — power-draw posture differs from intended
+- BLE drops out for > 60s (G2 disconnects from phone) — neither mic nor idle baseline matches D-M3 spec
 
 ---
 
