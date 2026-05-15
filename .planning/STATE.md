@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: planning
+status: executing
 stopped_at: Phase 129 context gathered
-last_updated: "2026-05-15T17:08:13.653Z"
-last_activity: "2026-05-15T15:47:00Z"
+last_updated: "2026-05-15T17:59:24.053Z"
+last_activity: 2026-05-15 -- Phase 129 planning complete
 progress:
   total_phases: 11
   completed_phases: 3
-  total_plans: 24
+  total_plans: 30
   completed_plans: 23
   percent: 27
 ---
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 Phase: 128b (g2-reply-01-write-back-path-spike) — ✅ VERIFIED & COMPLETE
 Plan: 8 of 8 (all complete)
-Status: Ready for next phase — Phase 127 (pre-spike guardrails) planning
-Last activity: 2026-05-15T15:47:00Z
+Status: Ready to execute
+Last activity: 2026-05-15 -- Phase 129 planning complete
 
 **v3.9 phase sequence:**
 
