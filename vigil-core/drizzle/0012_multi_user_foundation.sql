@@ -59,7 +59,9 @@ ALTER TABLE "ai_cache"      ADD COLUMN IF NOT EXISTS "user_id" integer;
 --> statement-breakpoint
 ALTER TABLE "app_settings"  ADD COLUMN IF NOT EXISTS "user_id" integer;
 --> statement-breakpoint
-
+-- ── Local dev seed (not needed on Railway — migrate-102-seed.ts handles this) ──
+INSERT INTO "users" ("email", "password_hash") VALUES ('jamesonmorrill1@gmail.com', 'local-dev-placeholder') ON CONFLICT DO NOTHING;
+--> statement-breakpoint
 -- ── Step 4: backfill all NULL user_id to the seed user (inserted by migrate-102-seed.ts) ──
 -- Reads vigil.seed_email GUC set by migrate-102-seed.ts via ALTER DATABASE; falls back to default.
 DO $$
