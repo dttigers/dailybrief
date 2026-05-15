@@ -1,0 +1,51 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-05-15T14:39:45.417Z",
+  "phase": "128b",
+  "phase_name": "g2-reply-01-write-back-path-spike",
+  "phase_dir": ".planning/phases/128b-g2-reply-01-write-back-path-spike",
+  "plan": 8,
+  "task": 1,
+  "total_tasks": 1,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": "128b-01", "name": "Path B (stream-json) probe", "status": "done", "commit": "f3d4258", "verdict": "DEGRADE (fresh-only)"},
+    {"id": "128b-02", "name": "Path A (JSONL+IPC) probe", "status": "done", "commit": "7cc7346", "verdict": "FAIL (predicted, confirmed)"},
+    {"id": "128b-03", "name": "Path D (MCP server) probe", "status": "done", "commit": "dc9c306", "verdict": "DEGRADE (inverted, fresh-only)"},
+    {"id": "128b-04", "name": "Path E (spike 001 L4 regression)", "status": "done", "commit": "a3e041e", "verdict": "PASS (71s wallclock)"},
+    {"id": "128b-06", "name": "MEASUREMENTS.md consolidation", "status": "done", "commit": "5803f8d"},
+    {"id": "128b-05", "name": "SPIKE-DECISION.md authoring", "status": "done", "commit": "986747d", "verdict_at_top": "PASS"},
+    {"id": "128b-07", "name": "Operator C-1 wallclock (live claude round-trip on Ubuntu)", "status": "done", "commit": "3159325", "resume_signal": "c1-done"}
+  ],
+  "remaining_tasks": [
+    {"id": "128b-08", "name": "Operator C-2 wallclock — 60s portfolio Loom of Path E round-trip", "status": "awaiting_operator_decision", "blocking_question": "headless Ubuntu server cannot run OBS/peek/Loom-desktop directly — pick recording path"}
+  ],
+  "blockers": [
+    {
+      "description": "C-2 recording path unresolved — Ubuntu dev server is headless; original plan assumed a desktop OBS/peek/Loom recorder",
+      "type": "human_action",
+      "workaround": "Operator picks one of three options presented: (a) record local SSH terminal window on operator's laptop using laptop-OS recorder; (b) asciinema on the headless server producing a .cast file at .planning/phases/128b-.../60s-demo.cast; (c) defer with c2-blocked headless-server — verdict-at-TOP PASS stands regardless per CONTEXT D-V4"
+    }
+  ],
+  "human_actions_pending": [
+    {
+      "action": "Pick C-2 recording path: (a) local-laptop screen-record / (b) asciinema .cast on server / (c) c2-blocked defer",
+      "context": "Original plan listed 60s-demo.mp4 as the artifact; headless server constraint means either path (a) keeps the .mp4 deliverable, path (b) substitutes a .cast file (needs SUMMARY+SPIKE-DECISION wording adapted), path (c) records c2-blocked with rationale and closes the spike without the portfolio piece",
+      "blocking": true
+    },
+    {
+      "action": "Once recording exists OR defer signal given, the orchestrator will: write 128b-MEASUREMENTS.md C-2 appendix + 128b-08-SUMMARY.md + add ## C-2 Loom section to 128b-SPIKE-DECISION.md + commit + run phase verification (code-review → regression gate → gsd-verifier → phase.complete)",
+      "context": "Standard tail of the execute-phase workflow; resumes from /gsd-execute-phase 128b after the operator's signal lands",
+      "blocking": false
+    }
+  ],
+  "decisions": [
+    {"decision": "Phase 128b SPIKE-DECISION verdict-at-TOP locked: PASS", "rationale": "Path E PASS dominates per D-V4 max aggregation; Plans 01-04 produced empirical artifacts for all four enumerated paths (A=FAIL, B=DEGRADE, D=DEGRADE, E=PASS); 4-of-4 exceeds 3-of-4 G2-REPLY-01 success criterion", "phase": "128b"},
+    {"decision": "C-1 operator wallclock PASSed on Ubuntu workstation (live claude --model haiku in vigil-claude-c1-spike-1778800583 tmux session); D-V1 four-step gate held identically to Plan 04 autonomous regression", "rationale": "Path E primitive tmux send-keys Enter works against operator-driven sessions, not just probe-script-spawned disposable sessions; Phase 133 vigil-tmux-bridge inherits the same primitive validated on the same Ubuntu architecture", "phase": "128b"},
+    {"decision": "claude version drift +1 patch (2.1.142 vs plan-expected 2.1.141) noted in MEASUREMENTS appendix; no behavior delta observed", "rationale": "Phase 133 G2-REPLY-04 can pin claude >= 2.1.141 as validated lower bound without ceiling", "phase": "128b"},
+    {"decision": "If operator picks asciinema path for C-2, orchestrator will adapt SPIKE-DECISION + SUMMARY wording to reference .cast file instead of .mp4 with a one-line 'headless-server adaptation' note; the plan's files_modified .mp4 entry will be documented as substituted, not a verification failure", "rationale": "Plan 08 truths field treats the artifact form as flexible (Loom URL OR local file); the spirit is portfolio-readable visual demo, which asciinema satisfies", "phase": "128b"}
+  ],
+  "uncommitted_files": [],
+  "next_action": "On resume: re-invoke /gsd-execute-phase 128b. The orchestrator will detect 7/8 plans complete, surface the C-2 checkpoint, ask operator for the recording path decision (a/b/c), then complete Plan 08 + run phase verification + roadmap completion + next-phase routing.",
+  "context_notes": "Spike empirical answer is fully in — verdict PASS. Phase 133 (vigil-tmux-bridge productionization for G2-REPLY-02..04) is unlocked and scope-locked to FULL G2-REPLY-02..04 reply UX (not G2-REPLY-05 banner-ack fallback). Writer-process location: vigil-tmux-bridge on Ubuntu. 5-string allowlist for drift detector reproduced verbatim from spike 001 README lines 182-218: ['yes', 'no', 'continue', 'abort', 'defer']. INBOUND/OUTBOUND asymmetry documented (the <thought> delimiter pattern does NOT apply to OUTBOUND write-back). Only the C-2 portfolio artifact remains; verdict and Phase 133 handoff are already locked in committed artifacts."
+}
