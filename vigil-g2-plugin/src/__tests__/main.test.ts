@@ -227,3 +227,105 @@ test("hasActiveSession: now-injection — 5-min cutoff respects passed-in now", 
     "5-min cutoff is relative to passed-in now (cutoff = futureNow - 5min)",
   );
 });
+
+// ── Phase 129 D-129 drift tests + new behavioral tests ──────────────
+
+import { pickInitialScreen } from "../lib/launch-source-helpers.ts";
+
+const NAVIGATION_SRC = resolve(__dirname, "../navigation.ts");
+const navigationSrc = readFileSync(NAVIGATION_SRC, "utf-8");
+const navigationNoComments = stripComments(navigationSrc);
+
+test("D-129 drift: setBackgroundState registration at MODULE SCOPE (before init)", () => {
+  // G2-LIFECYCLE-01: the registerBackgroundStateHandlers call (which internally
+  // calls bridge.setBackgroundState) MUST precede function init() in main.ts.
+  // Same ordering constraint as the D-07 onLaunchSource registration check above.
+  const bgIdx = mainNoComments.indexOf("setBackgroundState(");
+  const initIdx = mainNoComments.search(/(?:async\s+)?function\s+init\s*\(/);
+  assert.ok(bgIdx > 0, "setBackgroundState registration found in main.ts");
+  assert.ok(initIdx > 0, "init() declaration found");
+  assert.ok(
+    bgIdx < initIdx,
+    "setBackgroundState registration MUST precede function init() (G2-LIFECYCLE-01 module-scope constraint)",
+  );
+});
+
+test("D-129 drift: TTL constant 30 * 60 * 1000 present in helpers (via screen-state-restore import)", () => {
+  // D-05: TTL is owned by screen-state-restore.ts; launch-source-helpers.ts
+  // either imports TTL_MS from screen-state-restore.ts or inlines the constant.
+  // Both forms are accepted by the drift detector.
+  assert.match(
+    helpersNoComments,
+    /(?:30\s*\*\s*60\s*\*\s*1000|TTL_MS)/,
+    "helpers references TTL as literal or imported TTL_MS constant",
+  );
+});
+
+test("D-129: pickInitialScreen with glassesMenu source bypasses restore (D-10)", async () => {
+  // D-10 invariant: when source=glassesMenu, the existing fetchSessions path
+  // is used; a populated bridge with a fresh lastScreen is IGNORED.
+  // Even if localStorage has a valid recent screen, glassesMenu takes priority.
+  const freshLastScreen = JSON.stringify({
+    screen: "work-orders",
+    savedAt: Date.now() - 1000, // 1 second ago — well within TTL
+  });
+  const fakeBridge = {
+    getLocalStorage: async (_key: string) => freshLastScreen,
+  };
+  // fetchSessions returns an active session → should land on COMPANION
+  const activeSession = fakeRow({ ageMs: 60 * 1000, event: "heartbeat" });
+  const result = await pickInitialScreen(
+    "glassesMenu",
+    async () => [activeSession] as never,
+    fakeBridge,
+  );
+  assert.equal(
+    result,
+    "companion",
+    "glassesMenu source lands on COMPANION via existing fetchSessions path — localStorage ignored (D-10)",
+  );
+});
+
+test("D-129 drift: main.ts restoreScreenFn routes 404 to WORK_ORDERS (D-07 source assertion)", () => {
+  // Source-level drift pin: main.ts must contain a Screen.WORK_ORDERS reference
+  // near the restoreScreenFn definition. The behavioral test lives in
+  // screen-state-restore.test.ts; this pins the source-level implementation.
+  assert.match(
+    mainNoComments,
+    /Screen\.WORK_ORDERS/,
+    "main.ts references Screen.WORK_ORDERS (D-07: 404 → parent list, not HOME)",
+  );
+  // Also assert restoreScreenFn is defined in main.ts
+  assert.match(
+    mainNoComments,
+    /restoreScreenFn/,
+    "main.ts defines restoreScreenFn (the D-07 fallback implementation)",
+  );
+  // Verify WORK_ORDERS appears within ~20 lines of restoreScreenFn
+  const restoreFnIdx = mainNoComments.indexOf("restoreScreenFn");
+  const workOrdersIdx = mainNoComments.indexOf("Screen.WORK_ORDERS");
+  assert.ok(restoreFnIdx > 0, "restoreScreenFn found in main.ts");
+  assert.ok(workOrdersIdx > 0, "Screen.WORK_ORDERS found in main.ts");
+  // 20 lines ≈ 20 * ~50 chars = 1000 chars windowed proximity check
+  const windowSize = 1000;
+  const minIdx = Math.min(restoreFnIdx, workOrdersIdx);
+  const maxIdx = Math.max(restoreFnIdx, workOrdersIdx);
+  assert.ok(
+    maxIdx - minIdx < windowSize,
+    `Screen.WORK_ORDERS appears within ~20 lines of restoreScreenFn (distance: ${maxIdx - minIdx} chars)`,
+  );
+});
+
+test("D-129 drift: navigation.ts writes setLocalStorage on navigateTo (G2-LIFECYCLE-02)", () => {
+  // Drift pin: navigation.ts must call setLocalStorage inside navigateTo.
+  assert.match(
+    navigationNoComments,
+    /setLocalStorage/,
+    "navigation.ts contains setLocalStorage write (G2-LIFECYCLE-02 fire-and-forget)",
+  );
+  assert.match(
+    navigationNoComments,
+    /LAST_SCREEN_LS_KEY/,
+    "navigation.ts imports LAST_SCREEN_LS_KEY from screen-state-restore",
+  );
+});
