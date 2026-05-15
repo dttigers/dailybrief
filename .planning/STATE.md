@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: planning
-stopped_at: context exhaustion at 75% (2026-05-15)
-last_updated: "2026-05-15T15:40:24.599Z"
+stopped_at: Phase 129 context gathered
+last_updated: "2026-05-15T17:08:13.653Z"
 last_activity: "2026-05-15T15:47:00Z"
 progress:
   total_phases: 11
@@ -453,9 +453,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-15T15:40:24.593Z
-Stopped at: context exhaustion at 75% (2026-05-15)
-Resume file: None
+Last session: 2026-05-15T17:08:13.640Z
+Stopped at: Phase 129 context gathered
+Resume file: .planning/phases/129-lifecycle-restore-servicenow-popup/129-CONTEXT.md
 
 ## Operator Next Steps
 
