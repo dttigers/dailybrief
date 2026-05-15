@@ -64,9 +64,9 @@
 
 ### G2-LIFECYCLE — Last-viewed screen restore
 
-- [ ] **G2-LIFECYCLE-01**: Plugin registers `setBackgroundState('vigil-companion-state', () => ({...}))` and `onBackgroundRestore('vigil-companion-state', ...)` at module init time for the existing Companion HUD active-session/banner cache; survives in-session phone-background → foreground migration via Headless WebView replay.
-- [ ] **G2-LIFECYCLE-02**: Plugin writes last-viewed screen identifier to `bridge.setLocalStorage('vigil:v3:lastScreen', ...)` on every screen change; on plugin re-launch, reads the value and routes to the saved screen (with 30min staleness TTL — older than 30min falls back to home).
-- [ ] **G2-LIFECYCLE-03**: `onLaunchSource('glassesMenu')` takes precedence over the restore — glasses-menu launches always land on the screen the operator picked from the menu (Phase 124 G2-POLISH-06 invariant preserved).
+- [x] **G2-LIFECYCLE-01**: Plugin registers `setBackgroundState('vigil-companion-state', () => ({...}))` and `onBackgroundRestore('vigil-companion-state', ...)` at module init time for the existing Companion HUD active-session/banner cache; survives in-session phone-background → foreground migration via Headless WebView replay.
+- [x] **G2-LIFECYCLE-02**: Plugin writes last-viewed screen identifier to `bridge.setLocalStorage('vigil:v3:lastScreen', ...)` on every screen change; on plugin re-launch, reads the value and routes to the saved screen (with 30min staleness TTL — older than 30min falls back to home).
+- [x] **G2-LIFECYCLE-03**: `onLaunchSource('glassesMenu')` takes precedence over the restore — glasses-menu launches always land on the screen the operator picked from the menu (Phase 124 G2-POLISH-06 invariant preserved).
 
 ### INSIGHTS-FRESH — Auto-regenerate insights/therapy cache
 
@@ -176,9 +176,9 @@ Empty initially. Populated by roadmapper during phase mapping.
 | SVCNOW-03 | 129 | Pending |
 | SVCNOW-04 | 129 | Complete |
 | SVCNOW-05 | 129 | Pending |
-| G2-LIFECYCLE-01 | 129 | Pending |
-| G2-LIFECYCLE-02 | 129 | Pending |
-| G2-LIFECYCLE-03 | 129 | Pending |
+| G2-LIFECYCLE-01 | 129 | Complete |
+| G2-LIFECYCLE-02 | 129 | Complete |
+| G2-LIFECYCLE-03 | 129 | Complete |
 | INSIGHTS-FRESH-01 | 131 | Pending |
 | INSIGHTS-FRESH-02 | 131 | Pending |
 | INSIGHTS-FRESH-03 | 131 | Pending |
