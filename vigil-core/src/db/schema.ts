@@ -325,6 +325,7 @@ export const workOrders = pgTable("work_orders", {
   lastChangeSummary: text("last_change_summary"),
   syncedAt: timestamp("synced_at", { withTimezone: true }).defaultNow().notNull(),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
+  clientCaptureId: text("client_capture_id"), // nullable; (user_id, client_capture_id) partial unique enforced in 0021 migration (SVCNOW-04)
 }, (table) => [
   index("idx_work_orders_user_id").on(table.userId),
 ]);
