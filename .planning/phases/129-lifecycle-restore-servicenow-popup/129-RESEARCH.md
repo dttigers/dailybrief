@@ -712,22 +712,20 @@ The REQUIREMENTS.md SVCNOW-03 spec says `description` but the route reads `short
 
 ---
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Polaris title format — operator should confirm before plan execution**
+1. **Polaris title format — RESOLVED (architecturally sound; empirical confirmation gated on 129-06 Scenario 4)**
    - What we know: Real case numbers are 7-digit `CS0XXXXXX`; Polaris tab title may include other text.
-   - What's unclear: Exact format of the operator's company's Polaris instance title (it's configurable per-instance via `sessionTabTitle`).
-   - Recommendation: Use extraction regex `/\bCS\d{7}\b/` (safe for both bare and compound titles). If wrong, one-line fix.
+   - What's unclear at plan-time: Exact format of the operator's company's Polaris instance title (it's configurable per-instance via `sessionTabTitle`).
+   - **RESOLVED:** Use extraction regex `/\bCS\d{7}\b/` (safe for both bare and compound titles per ServiceNow community evidence — see Sources). The 129-06 UAT runbook Scenario 4 captures the actual `document.title` on a live Polaris page and either confirms the regex or documents a one-line corrected regex as a follow-up plan. Plans 129-03 use the extraction form unconditionally.
 
-2. **`pickInitialScreen` signature change + D-07 drift tests**
+2. **`pickInitialScreen` signature change + D-07 drift tests — RESOLVED**
    - What we know: `pickInitialScreen` needs `bridge.getLocalStorage` for the restore path, but the current test stubs it as `() => Promise<AgentSessionRow[]>`.
-   - What's unclear: Whether to inject `bridge` as a parameter or read from a module-scoped ref.
-   - Recommendation: Accept `bridge` as a third optional parameter with null default for tests that don't exercise the restore path. The D-07 drift tests do not assert `pickInitialScreen` signature — safe to extend.
+   - **RESOLVED:** Accept `bridge` as a third optional parameter with `null` default for tests that don't exercise the restore path. The D-07 drift tests assert `onLaunchSource` ordering and `launchSourcePromise` declaration, NOT `pickInitialScreen` signature — extending the signature is safe (Assumption A4). Plan 129-02 task acceptance criteria pin this approach.
 
-3. **`setLocalStorage` write in `navigateToTaskDetail` — async concern**
+3. **`setLocalStorage` write in `navigateToTaskDetail` — RESOLVED**
    - What we know: `navigateToTaskDetail` is called from `onEvenHubEvent` which is fire-and-forget.
-   - What's unclear: Does `bridge.setLocalStorage` need to be awaited or can it be fire-and-forget?
-   - Recommendation: Fire-and-forget (`.catch(() => {})`) — same pattern as audio-session-guard. Lost write on crash is acceptable; next navigation will overwrite anyway.
+   - **RESOLVED:** Fire-and-forget (`bridge.setLocalStorage(...).catch(() => {})`) — same pattern as `audio-session-guard.ts`. Lost write on crash is acceptable per D-05/D-06 (operator wasn't actively using plugin during gap; next navigation will overwrite). Plan 129-02 task acceptance criteria pin this approach.
 
 ---
 
