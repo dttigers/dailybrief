@@ -148,6 +148,13 @@
       "when": 1778560010709,
       "tag": "0020_add_ai_usage_daily",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1778868305685,
+      "tag": "0021_add_work_orders_client_capture_id",
+      "breakpoints": true
     }
   ]
 }
