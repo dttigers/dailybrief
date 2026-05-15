@@ -1,0 +1,210 @@
+---
+phase: 129-lifecycle-restore-servicenow-popup
+runbook: 129-UAT-RUNBOOK.md
+operator: Jameson Morrill
+started: 2026-05-15
+paused: 2026-05-15
+status: partial
+resume_signal: gap-closure required — do NOT type "approved"
+---
+
+## Session Summary (paused 2026-05-15)
+
+| Scenario | Status | Blocking Gap |
+|----------|--------|--------------|
+| 4 — Polaris CS# extraction | PASS | (regex confirmed against `CS0361233 \| Case \| ServiceNow`) |
+| 4b — Multi-tab POST race | BLOCKED | GAP-129-C (prod missing migration 0021) |
+| 4c — Retry-storm idempotency | BLOCKED | GAP-129-C |
+| 6 — Title drift banner | FAIL | GAP-129-D (full-reload kills content-script state) |
+| 1 — G2 force-quit restore (degraded) | **FAIL** | GAP-129-G (restore broken at screen-name level on hardware) |
+| 1b — TTL boundary | DEFERRED | depends on GAP-129-G fix + 31-min wait |
+| 2 — HUD background cache | DEFERRED | session-end pause; different code path (`setBackgroundState`/`onBackgroundRestore`), worth re-testing fresh |
+| 3 — Glasses-menu precedence | DEFERRED | inconclusive while GAP-129-G keeps everything falling to HOME; revisit after fix |
+| 5 — Safari parity smoke | DEFERRED | Xcode Copy Bundle Resources step + Safari install pending |
+
+## Gaps Inventory (for `/gsd:plan-phase 129 --gaps`)
+
+| Gap | Severity | One-line |
+|-----|----------|----------|
+| GAP-129-A | medium | `__tests__` folder blocks Chrome unpacked load — move tests outside `vigil-extension/` |
+| GAP-129-B | high | API-key entry UI removed without replacement — restore inline setup view |
+| GAP-129-C | high | Production missing migration 0021 — `dbInsertOrGet` 500s on `client_capture_id` column absence |
+| GAP-129-D | medium | SVCNOW-02 drift detector loses state on full-reload — persist `lastCaseNumber` to `chrome.storage.session` |
+| GAP-129-E | medium | Runbook/RESEARCH conflate `work_orders` with thought-task `openTasks` — terminology + rename |
+| GAP-129-F | high | No hardware-validated entry gesture for TASK_DETAIL — wire context-sensitive DOUBLE_CLICK on WORK_ORDERS list |
+| GAP-129-G | high | G2-LIFECYCLE-02 broken on hardware (lands on HOME after force-quit) — diagnose write/read/source-detection |
+
+Cosmetic also-rans (not formal gaps, but worth noting):
+- PWA unarchive succeeds (HTTP 200) but UI doesn't refresh — `useWorkOrders.unarchive` only `console.error`s on failure, no optimistic update either. Surfaced as a usability irritant during Route A diagnosis.
+
+## Suggested Next Actions
+
+1. **`/gsd:plan-phase 129 --gaps`** — turns the 7 gaps above into a gap-closure plan set.
+2. Hardware re-engagement needed for scenarios 1b, 2, 3, 5 after at least GAP-129-G is fixed.
+3. Production deploy of migration 0021 should precede any retest of 4b / 4c.
+4. Safari side (Scenario 5) is independent of the G2 fixes — can be tested in parallel once the Xcode Copy Bundle Resources step is done.
+
+
+
+# Phase 129 UAT Results
+
+## Polaris `document.title` Empirical Capture (RESEARCH Open Question 1 / Assumption A1)
+
+**Observed string:** `"CS0361233 | Case | ServiceNow"`
+
+**Regex check:** `/\bCS\d{7}\b/` against the above → matches `CS0361233`. The assumed format holds on this ServiceNow instance — Polaris uses `<CS#> | Case | ServiceNow` with pipe separators. **No regex change needed.** Assumption A1 confirmed.
+
+---
+
+## Findings Captured During Setup (pre-Scenario gaps)
+
+These were discovered while preparing the iMac/Chrome environment for UAT — they apply to the Phase 129 extension build and need closure regardless of scenario pass/fail.
+
+### GAP-129-A: `__tests__` folder blocks Chrome unpacked-extension load
+
+**Severity:** medium (blocks first-time install on every Chrome instance until manually deleted)
+
+**Observed:** Chrome refused to load `vigil-extension/` as an unpacked extension because `vigil-extension/__tests__/` exists. Chrome reserves any file/folder name starting with `_` for system use and rejects the entire extension when one is present.
+
+**Root cause:** Plan 129-03 placed `popup-helpers.test.ts` at `vigil-extension/__tests__/popup-helpers.test.ts`. Plan 129-05 placed `parity.test.ts` at the same location. Both are inside the extension load root.
+
+**Workaround applied for UAT:** `rm -rf vigil-extension/__tests__` on the iMac working tree.
+
+**Proper fix (follow-up plan):** Move all extension tests to a sibling directory outside the loaded extension root — e.g. `vigil-extension-tests/` or `tests/extension/` at the repo root. Update vitest config and any imports accordingly. Lock-step the change with the Safari side (`vigil-safari-extension/...` does not have this problem because Safari's Web Extension build is driven by Xcode, not unpacked-load).
+
+### GAP-129-B: API key entry UI removed without replacement
+
+**Severity:** high (first-time-install regression — extension is unusable until the operator runs DevTools JS manually)
+
+**Observed:** New SVCNOW popup shows "No API key configured. Set your Vigil API key in extension storage." and the Send button is disabled. There is no UI to enter the key — the operator must open DevTools on the popup, run `chrome.storage.local.set({ vigil_api_key: '...' })`, then re-open the popup.
+
+**Root cause:** Phase 84's popup.js had an inline setup view (`api-key-input` field + `save-key-btn` button + `validateApiKey()` flow). Plan 129-03's "replace popup.html/css/js" wholesale removed that setup view when adopting the SVCNOW-only design (D-02 — capture-thought UI is gone).
+
+**Workaround applied for UAT:** Operator pasted the key via `chrome.storage.local.set(...)` in popup DevTools console.
+
+**Proper fix (follow-up plan):** Restore an inline setup view in the SVCNOW popup — same pattern as Phase 84: a setup `<div>` with an api-key input + save button shown when `vigil_api_key` is absent in storage, replaced by the SVCNOW form when the key is present. Lock-step into the Safari port. Storage key name stays `vigil_api_key` (unchanged).
+
+---
+
+## Scenarios
+
+### Scenario 4 — Polaris CS# Extraction and Popup Pre-Fill
+
+**Status:** PASS
+**Timestamp:** 2026-05-15 (UAT session, real-time)
+**Hardware:** Chrome on iMac, live ServiceNow Polaris case page
+
+**Observed behavior:** After loading the v1.1.0 extension and configuring `vigil_api_key`, the popup opens on a Polaris case page and shows `CS0361233` extracted from `document.title` (`"CS0361233 | Case | ServiceNow"`). CS# header renders at the larger header font, description textarea autofocuses on open, priority dropdown is present with a default selection, Send button is rendered.
+
+**Notes:**
+- Title format matches the assumed `/\bCS\d{7}\b/` regex — no extraction regex change needed.
+- Setup gaps GAP-129-A (`__tests__` folder) and GAP-129-B (no API-key entry UI) discovered during environment prep; both worked around for the UAT session. See "Findings Captured During Setup" above.
+
+### Scenario 4b — Multi-Tab POST Race
+
+**Status:** BLOCKED
+**Timestamp:** 2026-05-15
+**Blocked by:** GAP-129-C (production server returns HTTP 500 on `/v1/work-orders/sync`)
+
+**Observed behavior:** Popup fires the POST correctly (fetch reaches `https://api.vigilhub.io/v1/work-orders/sync` with `clientCaptureId`, `caseNumber`, `shortDescription`, `priority` in the payload), but server returns HTTP 500 with body `{"error":"Internal server error"}`. Popup correctly stays open and shows the inline error per D-04 — the client-side path works. Cannot validate cross-tab dedup behavior without a working server endpoint.
+
+### Scenario 4c — Retry-Storm Idempotency
+
+**Status:** BLOCKED
+**Timestamp:** 2026-05-15
+**Blocked by:** Same as 4b — GAP-129-C.
+
+### Scenario 1 — G2 Force-Quit-iPhone Restore (degraded, screen-name level only)
+
+**Status:** FAIL
+**Timestamp:** 2026-05-15
+**Hardware:** G2 glasses + iPhone Even Hub
+
+**What was tested (degraded vs. runbook):** Because GAP-129-F blocks reaching TASK_DETAIL on hardware, the test was downgraded to validate restore at the screen-name level only — operator stays on the WORK_ORDERS list (no entity), force-quits Even Hub, waits 30s, re-opens. Expected G2 to land on WORK_ORDERS list. Actual: G2 landed on HOME.
+
+**Observed behavior:** Plugin restored to HOME after force-quit + relaunch, not to the WORK_ORDERS list the operator was on before. Implementation of G2-LIFECYCLE-02 (screen state restore) does not work on real hardware even for non-parameterized screens.
+
+**Root-cause hypotheses (need follow-up investigation):**
+1. **Storage write hypothesis:** `bridge.setLocalStorage` writes to `vigil-screen-state` in `screen-state-restore.ts` may not actually persist across iOS app force-quit on Even Hub. RESEARCH likely assumed write-through to disk via the SDK; this may not hold. **Diagnostic:** attach Safari Web Inspector to the Even Hub WebView and inspect localStorage before and after a force-quit cycle.
+2. **Restore-read hypothesis:** Read returns null/undefined on relaunch (storage cleared, or wrong key) and the fallback path lands on HOME. **Diagnostic:** add temporary console.log in `restoreScreenFn` to print what `bridge.getLocalStorage('vigil-screen-state')` returns at startup.
+3. **Launch-source-misclassification hypothesis:** Per D-10, `source === 'glassesMenu'` precedence bypasses restore. If the iPhone-relaunch path is being classified as `glassesMenu` (rather than the "cold-start from iPhone" case the runbook implies), restore is intentionally skipped. **Diagnostic:** inspect the launch source string returned by the SDK at relaunch time.
+
+### GAP-129-G: G2-LIFECYCLE-02 screen-state restore does not work on hardware
+
+**Severity:** high (the primary deliverable of plan 129-02 — restoring last-viewed screen across force-quit — does not function on real Even Hub + G2 hardware, even for non-parameterized screens)
+
+**Observed:** See Scenario 1 (degraded) above.
+
+**Resolution plan (follow-up):**
+- Attach Safari Web Inspector to the Even Hub WebView on iPhone to instrument the actual storage and launch-source values at runtime.
+- Determine which of the three hypotheses is correct, then fix:
+  - Storage not persisting → use a different SDK API or move to a host-side persistence channel.
+  - Restore-read returning null → fix the read path (key mismatch, JSON parse failure, etc.).
+  - Launch-source misclassification → broaden the cold-start branch and tighten the glassesMenu precedence guard.
+- Re-run Scenarios 1, 1b at full fidelity after GAP-129-F is also closed (to validate entity rehydration path).
+
+### Scenario 6 — Title Drift Banner
+
+**Status:** FAIL
+**Timestamp:** 2026-05-15
+**Hardware:** Chrome on iMac, live ServiceNow Polaris case page
+
+**Observed behavior:** Popup was kept alive with DevTools attached (Chrome's persist-on-debug trick). With the popup open and showing `CS0361233`, the operator navigated to a different case in the SN tab. The popup's drift banner did NOT appear and the header CS# did NOT update. Only after closing and re-opening the popup did the new CS# appear in the header — confirming the popup-side `onMessage` listener / DOM-update path works fine, but the **content-script `TITLE_DRIFT` message never reached the popup**.
+
+**Root cause (confirmed via operator):** Polaris case-link navigation triggers a **full page reload**. The content-script is re-injected fresh on every page load, so the new instance's `lastCaseNumber` initializes from the new (already-changed) `document.title` — it never sees the prior case number, never detects drift, never fires `TITLE_DRIFT`. The RESEARCH assumption that Polaris is a pushState SPA does NOT hold for case-to-case navigation on this instance.
+
+**Fix (follow-up plan):** Persist `lastCaseNumber` to `chrome.storage.session` (volatile, per-browser-session, MV3-native) at every detected case-number change. On content-script init, before initializing `lastCaseNumber` from the current title, read the stored value first. If it exists AND differs from the current title's CS#, the new content-script instance immediately fires `TITLE_DRIFT { from: stored, to: current }` so any open popup gets the warning. Then update storage with the new value. Lock-step the change into the Safari port (`vigil-safari-extension/Vigil Capture Extension/Resources/content-script.js`).
+
+### GAP-129-D: SVCNOW-02 title-drift detection broken (Scenario 6 FAIL)
+
+**Severity:** medium (drift UX missing; popup never silently masks the drift — it just doesn't warn)
+
+**Observed:** See Scenario 6.
+
+**Resolution plan (follow-up):** Investigate the actual SN navigation pattern in DevTools (full reload vs. pushState, and whether `<title>` element is replaced). Then apply the appropriate fix from the hypotheses above. Lock-step the fix into the Safari port.
+
+### GAP-129-F: No hardware-validated G2 input gesture to enter TASK_DETAIL screen
+
+**Severity:** high (the restored screen path is correctly implemented but unreachable through normal user interaction on real G2 hardware — the entire G2-LIFECYCLE-02 restore-to-TASK_DETAIL acceptance can't be exercised by an operator)
+
+**Observed during Scenario 1 setup:** With G2 plugin showing the work-orders (open-tasks) list, operator reports the only available action is "exit from that list." No gesture on real G2 hardware enters a specific task's detail screen.
+
+**Code inspection confirmed:**
+- `vigil-g2-plugin/src/main.ts:316` wires `OsEventTypeList.CLICK_EVENT` on a list item to `navigateToTaskDetail()`.
+- `vigil-g2-plugin/src/navigation.ts:248-249` comments explicitly state "ONLY DOUBLE_CLICK_EVENT is plumbed reliably on G2 (CLICK_EVENT is sim-only per Phase 45 retro)". The Phase 45 wire was kept in the codebase for sim/test fidelity but never re-validated on hardware in a follow-up phase.
+- `handleNavEvent` for the WORK_ORDERS screen only handles SCROLL_TOP (prev), SCROLL_BOTTOM (next), DOUBLE_CLICK (HOME). No hardware gesture enters TASK_DETAIL.
+
+**Implication for Phase 129:** `restoreScreenFn` in `main.ts:99-130` correctly re-fetches the task entity and calls `navigateToTaskDetail(taskIdx, bridge)` during restore. That code IS correct. But because there's no entry gesture, the operator can never get into TASK_DETAIL in the first place to set up the precondition for the restore test. The first time `navigateToTaskDetail` could ever fire on hardware is during a restore — and there is no way to seed the storage state that triggers that restore.
+
+**Resolution plan (follow-up):**
+- Phase 127.5's G2-input gesture audit verdict needs to be revisited; if no single-press equivalent exists, a context-sensitive DOUBLE_CLICK on WORK_ORDERS list (similar to Phase 124 D-08 on COMPANION) should be added that opens the currently-focused (top-of-list or first-visible) task's detail screen. Phase 124's COMPANION D-08 pattern is the template.
+- After that gesture is wired and verified on hardware, re-run Scenario 1 (full restore-to-TASK_DETAIL flow).
+
+### GAP-129-E: Phase 129 runbook conflates ServiceNow work_orders with thought-task openTasks
+
+**Severity:** medium (terminology + scenario design issue; the implementation correctly uses thought-task IDs, but the runbook tells the operator to navigate to "WORK_ORDER_DETAIL" via case numbers — those screens are populated by thought-tasks, not work_orders)
+
+**Observed during UAT setup for Scenario 1:** Operator's account had no "active work orders" visible on G2. Investigation revealed that:
+- `/v1/brief` (the G2 plugin's data source) builds `openTasks` from `thoughts` table (taskStatus IN ('open','inProgress')) — NOT from `work_orders` table.
+- `vigil-g2-plugin/src/screens/work-orders.ts` and `navigation.ts` use `task.id` (thought ID), confirmed by 129-02 executor's flagged deviation.
+- `work_orders` rows (from Gmail import / extension `/sync`) appear in the PWA work-orders page but never in the G2 plugin.
+
+**Root cause:** Phase 129's RESEARCH.md and runbook Scenario 1 description use "WORK_ORDER_DETAIL" and "work order" language that implies the G2 screen shows ServiceNow work_orders. The G2 plugin actually shows thought-tasks. The implementation followed the data shape correctly; only the runbook copy is wrong.
+
+**Resolution plan (follow-up):**
+- Update 129-UAT-RUNBOOK.md Scenario 1, 1b descriptions to use "task" terminology that reflects what G2 actually displays (e.g. "task detail screen" not "WORK_ORDER_DETAIL").
+- Audit 129-CONTEXT.md, 129-RESEARCH.md for the same conflation and either correct, or add a clarifying note that "G2 work orders screen" is a misnomer for what is really an open-tasks view sourced from `thoughts`.
+- Consider renaming `vigil-g2-plugin/src/screens/work-orders.ts` to `tasks.ts` in a follow-up phase to remove the persistent naming confusion (the executor's flagged deviation called this out; we shipped without fixing the file name).
+
+### GAP-129-C: Production server returns HTTP 500 on `/v1/work-orders/sync`
+
+**Severity:** high (blocks server-side validation of SVCNOW-04 dedup behavior; production may be down entirely)
+
+**Observed:** From the iMac, Chrome popup POSTs to `https://api.vigilhub.io/v1/work-orders/sync` with a well-formed body (`clientCaptureId`, `caseNumber`, `shortDescription`, `priority`). Server returns HTTP 500, body `{"error":"Internal server error"}`. Client-side flow (D-04 inline error, popup stays open) works correctly.
+
+**Root cause (confirmed via DevTools probe during UAT):** Production has Phase 129's NEW `work-orders.ts` deployed (`createWorkOrdersRoute` DI factory with `dbInsertOrGet` for the clientCaptureId branch) but production DB has NOT had migration `0021_add_work_orders_client_capture_id.sql` applied. The new `dbInsertOrGet` query references the `client_capture_id` column which doesn't exist in production → throws → handler returns HTTP 500 with generic `{"error":"Internal server error"}`. Confirmed by POST-ing the same body without the `clientCaptureId` field — request returned HTTP 200 because the legacy `dbUpsertLegacy` path is reached and uses only existing columns.
+
+**Resolution plan (follow-up):**
+- Apply migration `0021_add_work_orders_client_capture_id.sql` to production DB.
+- Re-run Scenarios 4b and 4c post-migration to validate the new dedup behavior on the real server.
+- (Process gap: Plan 129-01 only specified migration of the local dev DB. Future schema-changing plans should explicitly include a "production deploy" task — or the deploy pipeline should gate code rollout on migration parity.)
