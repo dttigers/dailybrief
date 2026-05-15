@@ -4,13 +4,13 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Phase 129 context gathered
-last_updated: "2026-05-15T17:59:24.053Z"
-last_activity: 2026-05-15 -- Phase 129 planning complete
+last_updated: "2026-05-15T18:07:42.857Z"
+last_activity: 2026-05-15
 progress:
   total_phases: 11
   completed_phases: 3
   total_plans: 30
-  completed_plans: 23
+  completed_plans: 24
   percent: 27
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 128b — g2-reply-01-write-back-path-spike
+**Current focus:** Phase 129 — lifecycle-restore-servicenow-popup
 
 ## Current Position
 
-Phase: 128b (g2-reply-01-write-back-path-spike) — ✅ VERIFIED & COMPLETE
-Plan: 8 of 8 (all complete)
+Phase: 129 (lifecycle-restore-servicenow-popup) — EXECUTING
+Plan: 2 of 6
 Status: Ready to execute
-Last activity: 2026-05-15 -- Phase 129 planning complete
+Last activity: 2026-05-15
 
 **v3.9 phase sequence:**
 
@@ -453,9 +453,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-15T17:08:13.640Z
+Last session: 2026-05-15T18:07:42.847Z
 Stopped at: Phase 129 context gathered
-Resume file: .planning/phases/129-lifecycle-restore-servicenow-popup/129-CONTEXT.md
+Resume file: None
 
 ## Operator Next Steps
 
