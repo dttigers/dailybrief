@@ -56,9 +56,9 @@
 
 ### SVCNOW — ServiceNow assisted-capture popup
 
-- [ ] **SVCNOW-01**: Browser extension content-script registers on `*.service-now.com/*`; extracts CS# from `document.title` via strict regex `/^CS\d{7}$/`; the extension button opens a popup with CS# locked in.
-- [ ] **SVCNOW-02**: Popup state-machine — CS# snapshot frozen at open-time; `MutationObserver` on document.title shows a "CS# drifted to CS0XXXXXXX — reopen popup" banner if Polaris pushState navigation changes the case mid-flight.
-- [ ] **SVCNOW-03**: Popup form — case# header (rendered LARGER than the description input), description textarea (autofocus), priority select (Low / Medium / High / Critical), Send button (⌘+Enter); on submit POST to existing `POST /v1/work-orders/sync` with single-element array `[{case_number, description, priority, client_capture_id}]`.
+- [x] **SVCNOW-01**: Browser extension content-script registers on `*.service-now.com/*`; extracts CS# from `document.title` via strict regex `/^CS\d{7}$/`; the extension button opens a popup with CS# locked in.
+- [x] **SVCNOW-02**: Popup state-machine — CS# snapshot frozen at open-time; `MutationObserver` on document.title shows a "CS# drifted to CS0XXXXXXX — reopen popup" banner if Polaris pushState navigation changes the case mid-flight.
+- [x] **SVCNOW-03**: Popup form — case# header (rendered LARGER than the description input), description textarea (autofocus), priority select (Low / Medium / High / Critical), Send button (⌘+Enter); on submit POST to existing `POST /v1/work-orders/sync` with single-element array `[{case_number, description, priority, client_capture_id}]`.
 - [x] **SVCNOW-04**: `client_capture_id` UUID + `(user_id, client_capture_id)` composite partial unique index on `work_orders` (mirror Phase 121 pattern) prevents duplicate submission across multi-tab races and corporate-VPN-latency retries.
 - [ ] **SVCNOW-05**: Safari extension lock-step port (mirror Phase 114 EXT-02 pattern); both manifests updated; both Send buttons render Vigil-brand-compliant styling.
 
@@ -171,9 +171,9 @@ Empty initially. Populated by roadmapper during phase mapping.
 | WATCH-ENRICH-02 | 133 | Pending |
 | WATCH-ENRICH-03 | 133 | Pending |
 | WATCH-ENRICH-04 | 133 | Pending |
-| SVCNOW-01 | 129 | Pending |
-| SVCNOW-02 | 129 | Pending |
-| SVCNOW-03 | 129 | Pending |
+| SVCNOW-01 | 129 | Complete |
+| SVCNOW-02 | 129 | Complete |
+| SVCNOW-03 | 129 | Complete |
 | SVCNOW-04 | 129 | Complete |
 | SVCNOW-05 | 129 | Pending |
 | G2-LIFECYCLE-01 | 129 | Complete |
