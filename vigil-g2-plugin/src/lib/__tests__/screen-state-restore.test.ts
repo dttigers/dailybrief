@@ -119,9 +119,11 @@ test('pickRestoredScreen: 30min 01s elapsed → HOME (TTL expired, D-05)', () =>
   assert.equal(pickRestoredScreen(stored, Date.now()), 'home')
 })
 
-test('pickRestoredScreen: exact TTL boundary (exactly 30min elapsed) → HOME', () => {
+test('pickRestoredScreen: exact TTL boundary (exactly 30min elapsed) → restores (elapsed === TTL_MS is still within window per D-05)', () => {
+  // D-05: condition is (now - savedAt > TTL_MS) → HOME. At exactly TTL_MS elapsed,
+  // the condition is false, so the screen is still restored.
   const stored = { screen: 'work-orders', savedAt: Date.now() - 30 * 60 * 1000 }
-  assert.equal(pickRestoredScreen(stored, Date.now()), 'home')
+  assert.equal(pickRestoredScreen(stored, Date.now()), 'work-orders')
 })
 
 test('pickRestoredScreen: missing savedAt → HOME without throwing', () => {
