@@ -1,10 +1,23 @@
 {
   "manifest_version": 3,
   "name": "Vigil Capture",
-  "version": "1.0.0",
-  "description": "Capture the current page to Vigil",
-  "permissions": ["activeTab", "storage"],
-  "host_permissions": ["https://api.vigilhub.io/*"],
+  "version": "1.1.0",
+  "description": "Capture ServiceNow cases to Vigil",
+  "permissions": ["activeTab", "storage", "tabs"],
+  "host_permissions": [
+    "https://api.vigilhub.io/*",
+    "*://*.service-now.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.service-now.com/*"],
+      "js": ["popup-helpers.js", "content-script.js"],
+      "run_at": "document_idle"
+    }
+  ],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
