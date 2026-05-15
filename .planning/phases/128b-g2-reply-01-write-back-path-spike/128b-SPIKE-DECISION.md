@@ -87,6 +87,15 @@ Production hardening (Phase 133 G2-REPLY-04 scope, NOT this spike):
 - Audit log: append `{ts, session, reply, event_id}` to a redacted ledger.
 - macOS-specific (if Phase 133 ever ships a macOS variant): tmux must be installed (`brew install tmux`); operator-facing onboarding documents this.
 
+## C-2 Loom (success criterion 3 proxy)
+
+- **Recording date:** 2026-05-15T15:37:00Z
+- **Artifact form:** local MP4 at `.planning/phases/128b-g2-reply-01-write-back-path-spike/60s-demo.mp4`
+- **Recording duration:** ~90s (asciinema playback of full session with permission dialog + tool execution)
+- **Demo shape:** success demo (claude permission dialog → tool execution → marker file confirmation)
+- **Recording tool:** asciinema + agg MP4 converter
+- **Verdict at TOP confirmation:** PASS
+
 ## Phase 133 Scope-Lock Implications
 
 Per CONTEXT D-V1: "Active-session test passes AND fresh-session test passes ⇒ PASS. Scope-locks Phase 133 to full G2-REPLY-02..04 (DOUBLE_CLICK enter reply mode → cycle 5 prefabs → DOUBLE_CLICK send → reply lands)."
