@@ -3,9 +3,9 @@ phase: 129-lifecycle-restore-servicenow-popup
 plan: "08"
 closes_gap: GAP-129-C
 operator: Jameson Morrill
-started: <ISO timestamp — operator fills>
-completed: <ISO timestamp — operator fills>
-status: pending  # one of: pending | in_progress | completed | rolled_back | aborted
+started: 2026-05-16T17:50:00Z
+completed: 2026-05-16T17:57:00Z
+status: no-op  # one of: pending | in_progress | completed | rolled_back | aborted | no-op
 migration_file: vigil-core/drizzle/0021_add_work_orders_client_capture_id.sql
 migration_md5: 6576060561ec03301d9a2efef546f5eb
 production_target: Railway-hosted Postgres (vigil-core production deployment's DATABASE_URL)
@@ -41,11 +41,37 @@ psql "$PROD_DATABASE_URL" -c "\d work_orders"
 
 **Expected pre-deploy:** The column list does NOT include `client_capture_id`, and there is no `uq_work_orders_user_client_capture_id` index. (This matches the UAT GAP-129-C confirmation that the column was missing.)
 
-**Output:**
+**Output (captured 2026-05-16T17:50Z by operator from production):**
 
 ```
-<operator pastes psql output here>
+                           Table "public.work_orders"
+       Column        |           Type           | Collation | Nullable | Default
+---------------------+--------------------------+-----------+----------+----------
+ case_number         | text                     |           | not null |
+ store               | text                     |           | not null | ''::text
+ short_description   | text                     |           | not null | ''::text
+ trade               | text                     |           | not null | ''::text
+ location            | text                     |           | not null | ''::text
+ equipment           | text                     |           | not null | ''::text
+ priority            | text                     |           | not null | ''::text
+ contact             | text                     |           | not null | ''::text
+ state               | text                     |           | not null | ''::text
+ synced_at           | timestamp with time zone |           | not null | now()
+ notes               | text                     |           | not null | ''::text
+ last_change_at      | timestamp with time zone |           |          |
+ last_change_summary | text                     |           |          |
+ archived_at         | timestamp with time zone |           |          |
+ user_id             | integer                  |           | not null |
+ client_capture_id   | text                     |           |          |
+Indexes:
+    "work_orders_pkey" PRIMARY KEY, btree (case_number)
+    "idx_work_orders_user_id" btree (user_id)
+    "uq_work_orders_user_client_capture_id" UNIQUE, btree (user_id, client_capture_id) WHERE client_capture_id IS NOT NULL
+Foreign-key constraints:
+    "work_orders_user_id_users_id_fk" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
 ```
+
+**ACTUAL finding (deviation from expected pre-deploy):** Column `client_capture_id text` (nullable) is **already present**, and the `uq_work_orders_user_client_capture_id` partial unique index is **already present**. The migration was applied to production between UAT session 1 (2026-05-15) and this deploy attempt (2026-05-16) — most likely by a Railway autodeploy running `drizzle-kit migrate` automatically on a subsequent code push. This is the documented "no-op" edge case below.
 
 ### HTTP probe (proves the bug)
 
@@ -234,11 +260,14 @@ cat /tmp/probe-dedup-1.json
 
 **Expected (first call):** `HTTP 200` + `{"synced":1}`.
 
-**Output:**
+**Output (captured 2026-05-16T17:55Z):**
 
 ```
-<operator pastes status line + body here>
+HTTP 200
+{"synced":1}
 ```
+
+✅ Matches expected. New clientCaptureId, `isNew:true` path — `dbInsertOrGet` works on prod.
 
 **Second call (SAME body, SAME clientCaptureId):**
 
@@ -253,11 +282,14 @@ cat /tmp/probe-dedup-2.json
 
 **Expected (second call):** `HTTP 200` + `{"synced":0}` — the partial unique index caught the duplicate; `dbInsertOrGet` returned `isNew:false`.
 
-**Output:**
+**Output (captured 2026-05-16T17:55Z):**
 
 ```
-<operator pastes status line + body here>
+HTTP 200
+{"synced":0}
 ```
+
+✅ Matches expected. Same clientCaptureId → partial unique index `uq_work_orders_user_client_capture_id` caught the duplicate; `dbInsertOrGet` returned `isNew:false`. **SVCNOW-04 dedup contract verified on production.**
 
 ### Cleanup
 
@@ -272,11 +304,16 @@ psql "$PROD_DATABASE_URL" -c \
 
 **Expected output:** `DELETE n` where `n` is the number of test rows created above (typically 1 to 4 depending on how many probes were retried).
 
-**Output:**
+**Output (captured 2026-05-16T17:57Z):**
 
 ```
-<operator pastes psql DELETE output here>
+$ psql "$PROD_DATABASE_URL" -tAc "SELECT id FROM users WHERE email = 'jamesonmorrill1@gmail.com';"
+1
+$ psql "$PROD_DATABASE_URL" -c "DELETE FROM work_orders WHERE case_number = 'CS9999999' AND user_id = 1;"
+DELETE 1
 ```
+
+✅ Single probe row removed (matches the dedup probe set — both calls used the same clientCaptureId so only one row was ever written). Prod is clean.
 
 ---
 
@@ -332,19 +369,35 @@ This deploy log itself is the audit trail for the corrective action.
 ## Operator Sign-Off
 
 - **Operator:** Jameson Morrill
-- **Completion timestamp (ISO 8601 UTC):** `<operator fills>`
-- **Final status:** `<one of: completed | rolled_back | aborted | no-op>`
-  - `completed` = post-deploy probes both green (`{"synced":1}` then `{"synced":0}`).
-  - `rolled_back` = post-deploy probes failed AND the rollback SQL was applied.
-  - `aborted` = something else happened (describe in notes).
-  - `no-op` = pre-deploy probe already returned HTTP 200 (migration already applied via another path).
-- **Notes (free-form, optional):**
+- **Completion timestamp (ISO 8601 UTC):** `2026-05-16T17:57:00Z`
+- **Final status:** `no-op` — migration was already applied to production by an out-of-band path before this deploy attempt began. Post-deploy probes both green (synced:1 then synced:0), confirming the production state is correct without this plan having applied the migration itself.
+- **Notes:**
 
 ```
-<operator writes any anomalies, deviations, or context here>
+Pre-deploy schema snapshot showed `client_capture_id` column AND `uq_work_orders_user_client_capture_id`
+partial unique index already present at 2026-05-16T17:50Z. Most likely Railway autodeploy triggered
+`drizzle-kit migrate` during a subsequent code-push build between UAT session 1 (2026-05-15) and this
+deploy attempt (2026-05-16). The Apply Migration section was skipped entirely; we went straight to
+post-deploy verification.
+
+The pre-deploy HTTP 500 probe was also skipped — the schema snapshot already proved the bug surface
+(missing column) was gone. Running the probe would have returned HTTP 200 and added no new evidence.
+
+The dedup probe (the meaningful test) was run and both expected results landed:
+  - First call (new clientCaptureId)   → HTTP 200 + {"synced":1}
+  - Second call (same clientCaptureId) → HTTP 200 + {"synced":0}
+
+This confirms `dbInsertOrGet` works on prod AND the partial unique index correctly dedupes — the
+exact SVCNOW-04 contract the migration was designed to enforce. GAP-129-C is closed.
+
+UAT scenarios 4b (multi-tab POST race) and 4c (retry-storm idempotency) are now unblocked and can
+be re-run in plan 129-13's close-out UAT.
+
+Process gap follow-up (Lessons Learned section above): plan 129-12 already documents the rule that
+schema-changing plans must include an explicit production-deploy task. This no-op outcome doesn't
+change that — it just means the implicit Railway autodeploy happened to do the right thing this
+time, which is exactly the kind of "lucky" outcome the process change is designed to prevent
+relying on.
 ```
 
-**Resume signal back to /gsd-execute-phase orchestrator:**
-- On full success: type `approved`.
-- On no-op: type `approved (no-op)`.
-- On rollback or investigation: do NOT type `approved`; describe the failure mode (e.g. `blocked: drizzle-kit migrate threw auth error`, `investigating: HTTP 500 persists post-deploy`).
+**Resume signal back to /gsd-execute-phase orchestrator:** `approved (no-op)`
