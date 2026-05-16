@@ -55,7 +55,7 @@ interface BannerState {
   expiresAt?: number // for toast types only
 }
 
-// ── Module-level state cache (work-orders.ts:14-20 precedent) ─────────
+// ── Module-level state cache (tasks.ts:14-20 precedent — renamed from work-orders.ts in 129-11) ─────────
 let activeSessions: AgentSessionRow[] = []
 let currentSessionIndex = 0
 let bannerState: BannerState | null = null

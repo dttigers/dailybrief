@@ -10,7 +10,7 @@ import type { EvenAppBridge } from '@evenrealities/even_hub_sdk'
 import { DISPLAY_WIDTH, ContainerId } from './constants.ts'
 
 import { rebuildHomeScreen } from './screens/home.ts'
-import { buildWorkOrdersScreen, getLastFetchedTasks } from './screens/work-orders.ts'
+import { buildWorkOrdersScreen, getLastFetchedTasks } from './screens/tasks.ts'
 import { buildAffirmationScreen } from './screens/affirmation.ts'
 import { buildTaskDetailScreen } from './screens/task-detail.ts'
 import {
