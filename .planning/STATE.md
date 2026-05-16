@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: executing
+status: verifying
 stopped_at: Phase 129 context gathered
-last_updated: "2026-05-15T18:43:09.391Z"
-last_activity: 2026-05-15
+last_updated: "2026-05-16T17:09:39.164Z"
+last_activity: 2026-05-16
 progress:
   total_phases: 11
   completed_phases: 3
-  total_plans: 30
-  completed_plans: 28
+  total_plans: 37
+  completed_plans: 30
   percent: 27
 ---
 
@@ -27,8 +27,8 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 Phase: 129 (lifecycle-restore-servicenow-popup) — EXECUTING
 Plan: 6 of 6
-Status: Ready to execute
-Last activity: 2026-05-15
+Status: Phase complete — ready for verification
+Last activity: 2026-05-16
 
 **v3.9 phase sequence:**
 
@@ -143,6 +143,7 @@ Last activity: 2026-05-15
 | Phase 128b P05 | 12min | 2 tasks | 3 files |
 | Phase 129 P03 | 25 | 3 tasks | 8 files |
 | Phase 129-lifecycle-restore-servicenow-popup P04 | 25 | 1 tasks | 2 files |
+| Phase 129 P07 | 8 min | 4 tasks | 12 files |
 
 ## Deferred Items
 
@@ -459,7 +460,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-15T18:43:09.379Z
+Last session: 2026-05-16T17:09:36.042Z
 Stopped at: Phase 129 context gathered
 Resume file: None
 
