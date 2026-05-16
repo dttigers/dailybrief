@@ -33,6 +33,7 @@ resume_signal: gap-closure required — do NOT type "approved"
 | GAP-129-E | medium | Runbook/RESEARCH conflate `work_orders` with thought-task `openTasks` — terminology + rename |
 | GAP-129-F | high | No hardware-validated entry gesture for TASK_DETAIL — wire context-sensitive DOUBLE_CLICK on WORK_ORDERS list |
 | GAP-129-G | high | G2-LIFECYCLE-02 broken on hardware (lands on HOME after force-quit) — diagnose write/read/source-detection |
+| GAP-129-H | high | Plan 129-02 build-breakers — `main.ts` called `navigateTo` without importing it (3 call sites in `restoreScreenFn`), `launch-source-helpers.ts` imported unused `TTL_MS`. Executor's test suite didn't exercise the restore code path so `tsc` failures were invisible. Fixed in-session 2026-05-16 during dev-sideload setup on morrillhouse. **Process gap:** plan must require a clean `npm run build` (full tsc) before SUMMARY.md, not just plan-scoped tests. |
 
 Cosmetic also-rans (not formal gaps, but worth noting):
 - PWA unarchive succeeds (HTTP 200) but UI doesn't refresh — `useWorkOrders.unarchive` only `console.error`s on failure, no optimistic update either. Surfaced as a usability irritant during Route A diagnosis.

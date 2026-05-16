@@ -23,7 +23,7 @@
 
 import type { LaunchSource } from '@evenrealities/even_hub_sdk'
 import type { AgentSessionRow } from '../types.ts'
-import { pickRestoredScreen, LAST_SCREEN_LS_KEY, TTL_MS } from './screen-state-restore.ts'
+import { pickRestoredScreen, LAST_SCREEN_LS_KEY } from './screen-state-restore.ts'
 // Screen names imported as TYPES only — the runtime `Screen` const object
 // from navigation.ts pulls in api.ts which depends on `import.meta.env`
 // (Vite-only). `node:test` runs without Vite, so the runtime cascade
