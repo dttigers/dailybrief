@@ -16,7 +16,7 @@
 - **D-04:** On non-200, popup stays open + inline error. Operator retries or abandons manually.
 - **D-05:** TTL is wall-clock from last screen-change save. Shape: `{screen, args?, savedAt: Date.now()}` at key `vigil:v3:lastScreen`. `Date.now() - savedAt > 30*60*1000` → fall back to home.
 - **D-06:** Pocket gap falling back to home is intentional.
-- **D-07:** On restore of a parameterized screen: re-fetch the entity. On 404, fall back to the parent list screen (e.g. WORK_ORDERS), not home.
+- **D-07:** On restore of a parameterized screen: re-fetch the entity. On 404, fall back to the parent list screen (e.g. WORK_ORDERS — the G2 list screen that displays thought-tasks from /v1/brief openTasks; NOT the ServiceNow work_orders table — see Probe 7 below), not home.
 - **D-08:** Stored args shape MUST be small (id-only — never embedded entity snapshots).
 - **D-09:** Both `setBackgroundState`/`onBackgroundRestore` AND `setLocalStorage`/`getLocalStorage` required.
 - **D-10:** `onLaunchSource('glassesMenu')` takes precedence over restore (Phase 124 G2-POLISH-06 invariant preserved).
@@ -341,6 +341,32 @@ CREATE UNIQUE INDEX IF NOT EXISTS "uq_work_orders_user_client_capture_id"
 ```typescript
 clientCaptureId: text("client_capture_id"),  // nullable; partial unique in 0021 migration
 ```
+
+### Probe 7: G2 openTasks data source — VERIFIED [code]
+
+The G2 plugin's task list (rendered on the `WORK_ORDERS` screen) is populated by `fetchBrief()` →
+`brief.openTasks`. The `/v1/brief` endpoint sources `openTasks` from the **`thoughts` table** (where
+`taskStatus IN ('open', 'inProgress')`) — **NOT** from the `work_orders` table. The G2 plugin's
+`screens/work-orders.ts` and `navigation.ts` correctly use `task.id` (number — thought ID),
+confirmed by 129-02 SUMMARY's D-AUTO-01 deviation note.
+
+The SVCNOW popup (plans 129-03, 129-04, 129-05) operates on `work_orders` rows — these are
+ServiceNow tickets imported via Gmail or captured via the popup. They appear in the PWA
+work-orders page but **never** in the G2 plugin's task list.
+
+The `WORK_ORDERS` Screen enum identifier is a historical naming artifact: the screen literally
+renders thought-tasks, not ServiceNow work orders. The file `vigil-g2-plugin/src/screens/work-orders.ts`
+matches the enum name but contains thought-task rendering code (verified by inspecting
+`buildWorkOrdersScreen()` consumer of `getLastFetchedTasks()` which returns the openTasks array).
+
+**Audit trail:**
+- GAP-129-E in `.planning/phases/129-lifecycle-restore-servicenow-popup/129-UAT-RESULTS.md` — operator-discovered confusion during Scenario 1 setup
+- 129-02-SUMMARY.md D-AUTO-01 — executor's flagged deviation note about `task.id` vs `task.caseNumber`
+- This clarification drove Phase 129-11 (terminology cleanup plan).
+
+When this document or other Phase 129 docs say "WORK_ORDERS list" or `Screen.WORK_ORDERS`, the
+referenced screen displays thought-tasks. When they say `work_orders` table or `/v1/work-orders/sync`,
+the referenced entity is the ServiceNow work order. Future phases should not blend the two.
 
 ### Probe 6: Polaris document.title format — UNCONFIRMED [MEDIUM confidence]
 
@@ -692,7 +718,7 @@ test("missing savedAt → falls back to home", () => {
 
 **Problem:** `navigateToTaskDetail()` in `navigation.ts` sets `currentScreen = Screen.TASK_DETAIL` but uses an `itemIndex` into `getLastFetchedTasks()` rather than a stable task ID. The task's `caseNumber` (not list index) is the correct stored arg for restore.
 
-**Resolution:** The `setLocalStorage` write should happen inside `navigateToTaskDetail()` with `{ screen: Screen.TASK_DETAIL, args: { id: task.caseNumber }, savedAt: Date.now() }`. The existing `buildScreen(Screen.TASK_DETAIL)` path already re-fetches via `fetchBrief()` and falls back to the work-orders list — this is the correct D-07 behavior (fallback to WORK_ORDERS list, not HOME).
+**Resolution:** The `setLocalStorage` write should happen inside `navigateToTaskDetail()` with `{ screen: Screen.TASK_DETAIL, args: { id: task.id }, savedAt: Date.now() }` — `task.id` (thought ID, number), NOT `task.caseNumber` (the openTasks come from the `thoughts` table per Probe 7, so id is the canonical key). The existing `buildScreen(Screen.TASK_DETAIL)` path already re-fetches via `fetchBrief()` and falls back to the G2 WORK_ORDERS list screen (which renders thought-tasks) — this is the correct D-07 behavior (fallback to the WORK_ORDERS list screen, not HOME).
 
 ### Q3: SVCNOW popup must send `shortDescription`, not `description` — require explicit spec clarification
 
