@@ -195,6 +195,10 @@ Carried forward from v3.8 milestone close (2026-05-11):
 
 All decisions logged in PROJECT.md Key Decisions table. Phase-specific decisions logged in their respective `phases/<N>/<N>-CONTEXT.md` files (preserved in archive `.planning/milestones/v3.7-phases/` after v3.7 close).
 
+Recent (v3.9 in-flight):
+
+- [Phase 129 / GAP-129-H]: BLOCKING full-workspace `npm run build` is now required as the final task of any PLAN.md producing TypeScript source changes, before SUMMARY.md is authored. Origin: plan 129-02's missing `navigateTo` import (3 call sites in `restoreScreenFn`) + unused `TTL_MS` import shipped because plan-scoped tests (`tsx --test` on the test files) did not exercise full `tsc`. Fix commits `ca91f60` (missing import + dropped unused import) and `57d7996` (qrcode-terminal devDep + dev-sideload script that surfaced the breakage). Canonical rule: `.planning/conventions/build-gate.md`. Reusable task template: `.planning/templates/build-gate-task.md` (also referenced by the convention doc's Section "Task Template"). Phase 129 gap-closure plans 129-07, 129-08, 129-09, 129-10, and 129-13 walk the talk by including the `[BLOCKING] full workspace build` task as their final task before SUMMARY.
+
 Recent (v3.8 in-flight):
 
 - [Phase 122 / Plan 00]: Sources/VigilWatch/VigilWatch.swift placeholder enum required — SPM build fails if a target directory contains only non-Swift files
