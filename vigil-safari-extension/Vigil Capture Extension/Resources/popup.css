@@ -33,6 +33,11 @@ body {
   gap: 12px;
 }
 
+/* Native HTML5 [hidden] semantics — defensive in case any earlier rule clobbers it. */
+.view[hidden] {
+  display: none;
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -42,6 +47,14 @@ body {
 /* CS# header — SVCNOW-03: must be larger than the description textarea font-size */
 .case-number {
   font-size: 28px;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.5px;
+}
+
+/* Setup-view title — same scale as .case-number so the two views feel like one popup */
+.setup-title {
+  font-size: 24px;
   font-weight: 700;
   color: #FFFFFF;
   letter-spacing: -0.5px;
@@ -75,7 +88,8 @@ label {
 }
 
 textarea,
-select {
+select,
+#api-key-input {
   background: var(--vigil-input-bg);
   border: 1px solid var(--vigil-input-border);
   border-radius: 6px;
@@ -85,10 +99,12 @@ select {
   font-size: 13px;
   outline: none;
   transition: border-color 0.15s;
+  width: 100%;
 }
 
 textarea:focus,
-select:focus {
+select:focus,
+#api-key-input:focus {
   border-color: var(--vigil-primary);
 }
 
