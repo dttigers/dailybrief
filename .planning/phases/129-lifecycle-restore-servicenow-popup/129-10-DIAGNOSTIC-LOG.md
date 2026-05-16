@@ -4,9 +4,9 @@ plan: 10
 closes_gap: GAP-129-G
 operator: Jameson Morrill
 started: 2026-05-16
-completed:
-status: phase-1-instrumented-awaiting-hardware-run
-identified_hypothesis: # H1 | H2 | H3 | NONE_OF_ABOVE — operator fills after hardware run
+completed: 2026-05-16
+status: closed
+identified_hypothesis: H4-NONE_OF_ABOVE  # buildInitialContainer dispatch table incomplete
 ---
 
 # Phase 129 Plan 10 — GAP-129-G Diagnostic Log
@@ -148,47 +148,48 @@ Paste the verbatim Web Inspector console lines into the fenced blocks below.
 ### Pre-force-quit — H1-write
 
 ```
-# Paste the [diag GAP-129-G H1-write] line here.
-# Example shape:
-# [diag GAP-129-G H1-write] vigil:v3:lastScreen {"screen":"work-orders","savedAt":1736864123456}
+[diag GAP-129-G H1-write] – "vigil:v3:lastScreen" – "{\"screen\":\"work-orders\",\"savedAt\":1778959457279}"
 ```
+
+Write fires as expected; payload shape correct.
 
 ### Post-force-quit relaunch — H3-source
 
 ```
-# Paste the [diag GAP-129-G H3-source] line here.
-# Example shape:
-# [diag GAP-129-G H3-source] appMenu
+[diag GAP-129-G H3-source] – "appMenu"
 ```
+
+Source is `appMenu` — non-glassesMenu, so D-10 guard does NOT short-circuit. H3 ruled out.
 
 ### Post-force-quit relaunch — H2-read
 
 ```
-# Paste the [diag GAP-129-G H2-read] line(s) here.
-# Example shapes:
-# [diag GAP-129-G H2-read] {source: 'appMenu', raw: '{"screen":"work-orders","savedAt":1736864123456}', parsed: {screen: 'work-orders', savedAt: 1736864123456}}
-# [diag GAP-129-G H2-read] resolved restore: work-orders
-#
-# OR (the null case):
-# [diag GAP-129-G H2-read] {source: 'appMenu', raw: null, parsed: null}
-#
-# OR (the parse-error case):
-# [diag GAP-129-G H2-read parse-error] {source: 'appMenu', raw: 'garbage', error: 'SyntaxError: Unexpected token g in JSON at position 0'}
-#
-# OR (the outer-error case — bridge.getLocalStorage itself threw):
-# [diag GAP-129-G H2-read outer-error] {source: 'appMenu', error: '...'}
-#
-# OR (no H2-read line at all, because source === 'glassesMenu' bypassed the branch):
-# (no line — record this as "absent — D-10 short-circuit fired")
+[diag GAP-129-G H2-read] – {source: "appMenu", raw: "{\"screen\":\"work-orders\",\"savedAt\":1778959823191}", windowRaw: null, parsed: {screen: "work-orders", savedAt: 1778959823191}}
+[diag GAP-129-G H2-read] resolved restore: – "work-orders"
 ```
+
+All three downstream conditions PASS:
+- `raw` is non-null → `bridge.getLocalStorage` correctly returned the persisted value across force-quit (H1 ruled out — the bridge persistence WORKS).
+- `parsed.screen` is `"work-orders"` → JSON shape correct (no parse error).
+- `resolved restore: "work-orders"` → `pickRestoredScreen` accepted the payload (TTL still fresh, screen string passes the type guard) and returned the expected screen.
+
+H2 sub-causes A/B/C all ruled out. **`pickInitialScreen` returns `"work-orders"` correctly.**
+
+The `windowRaw: null` field (added as control channel) confirms prototype mode has separate bridge storage vs. WebView's `window.localStorage`. Not load-bearing for the bug; just a structural observation about the prototype runtime.
 
 ### Final landing
 
 ```
-# Where the plugin actually landed (HOME / WORK_ORDERS / TASK_DETAIL / other).
-# Example:
-# Landed on: home  ← the bug (should have been work-orders given the pre-force-quit nav)
+Landed on: home  ← the bug (should have been work-orders given pickInitialScreen returned "work-orders" — but the plugin still painted HOME)
 ```
+
+This is the smoking gun for hypothesis **H4 (none of H1/H2/H3 — buildInitialContainer dispatch table is incomplete)**:
+- `pickInitialScreen` returned the right screen.
+- The bridge persisted the value across force-quit.
+- The launch source was classified correctly.
+- BUT the plugin still rendered HOME.
+
+The bug must live BETWEEN `pickInitialScreen`'s return and the WebView paint — specifically in `main.ts:buildInitialContainer`, whose switch statement only handled `HOME` + `COMPANION` and silently fell through to HOME for every other screen via `default: buildHomeScreen(...)`.
 
 ## Identified Hypothesis
 
@@ -229,27 +230,86 @@ Match the evidence above against the criteria below; set the
 
 ## Fix Plan
 
-Operator (or Claude post-checkpoint) fills this in based on the identified
-hypothesis. Reference the H1/H2/H3 sub-options in the Plan 129-10 PLAN.md
-`<interfaces>` block.
+**Identified Hypothesis: H4 — incomplete dispatch table in `buildInitialContainer`** (Plan 129-10 PLAN.md `<interfaces>` block called this case `NONE_OF_ABOVE`; we name it H4 here for clarity).
 
-(empty until Phase 1 sign-off)
+Pre-fix `main.ts:buildInitialContainer` (lines 261-278):
+
+```typescript
+async function buildInitialContainer(screen: ScreenName): Promise<...> {
+  switch (screen) {
+    case Screen.COMPANION: { return buildCompanionScreen() }
+    case Screen.HOME:
+    default: {                        // ← every other screen falls through here
+      const summary = await fetchSummary()
+      return buildHomeScreen(summary)   //    ALWAYS builds HOME
+    }
+  }
+}
+```
+
+`pickInitialScreen` returns the correct screen name (e.g. `"work-orders"`) on cold-start restore, but the cold-start render path's switch only handled `HOME` + `COMPANION`. Every other screen (WORK_ORDERS, AFFIRMATION, VOICE_SPIKE, TASK_DETAIL) hit the `default:` and built HOME — silently dropping the restore choice.
+
+**Fix:** Reuse navigation.ts's `buildScreen` dispatch (which already handles every screen for in-session `navigateTo`). Export `buildScreen`; have `buildInitialContainer` call it for non-HOME/non-COMPANION screens and convert the resulting `RebuildPageContainer` → `CreateStartUpPageContainer` (identical field shape — `containerTotalNum`, `textObject`, `listObject`, `imageObject`).
+
+Post-fix:
+
+```typescript
+async function buildInitialContainer(screen: ScreenName): Promise<CreateStartUpPageContainer> {
+  if (screen === Screen.COMPANION) return buildCompanionScreen()
+  if (screen === Screen.HOME) {
+    const summary = await fetchSummary()
+    return buildHomeScreen(summary)
+  }
+  // Phase 129 GAP-129-G fix: route every other screen through buildScreen
+  const rebuild = await buildScreen(screen)
+  return new CreateStartUpPageContainer({
+    containerTotalNum: rebuild.containerTotalNum,
+    textObject: rebuild.textObject,
+    listObject: rebuild.listObject,
+    imageObject: rebuild.imageObject,
+  })
+}
+```
+
+**TASK_DETAIL cold-start note:** `pickInitialScreen` returns only the screen name; args (the task id) aren't threaded through. `buildScreen(TASK_DETAIL)` renders the empty TASK_DETAIL frame (`getLastFetchedTasks()` is empty on cold start). A follow-up plan can thread args for full-fidelity TASK_DETAIL cold-start restore (D-07 fetch-by-id + 404 → parent), but the in-session restore path (`restoreScreenFn` via `onBackgroundRestore`) handles this correctly.
+
+**Regression coverage:** 3 source-level drift tests in `vigil-g2-plugin/src/__tests__/main.test.ts`:
+1. `buildInitialContainer` calls `buildScreen(screen)` + wraps as `CreateStartUpPageContainer`.
+2. No `default: buildHomeScreen(...)` fallthrough (the pre-fix anti-pattern).
+3. `navigation.ts` exports `buildScreen`; `main.ts` imports it.
 
 ## Phase 1 Sign-Off
 
 | Field | Value |
 |-------|-------|
-| Operator | |
-| Timestamp (Phase 1 complete) | |
-| Identified hypothesis | |
-| Ready for Phase 2? | |
+| Operator | Jameson Morrill |
+| Timestamp (Phase 1 complete) | 2026-05-16T19:32Z |
+| Identified hypothesis | H4 — `buildInitialContainer` dispatch table incomplete (classified as NONE_OF_ABOVE per plan; named H4 retroactively) |
+| Ready for Phase 2? | yes — fix identified, scope is small (one switch → if/if/buildScreen-dispatch) |
 
 ## Phase 3 Validation
 
-(empty until after Phase 2 fix lands; operator re-runs the diagnostic with
-the fix in place)
+**Hardware-validated 2026-05-16T19:35Z (after Phase 2 fix shipped via Vite hot-reload).**
+
+Procedure: operator navigated to WORK_ORDERS, force-quit Even Hub, re-opened. Observed:
+- `pickInitialScreen` returned `"work-orders"` (confirmed via H2-read log line — same as pre-fix evidence).
+- Plugin landed on **WORK_ORDERS list** (not HOME).
+- First event after init was `containerID: 5, containerName: "wo-list"` — the WORK_ORDERS list container.
+
+Operator quoted confirmation: "it landed on work-orders".
+
+**PASS.** GAP-129-G closed.
 
 ## Phase 4 Cleanup
 
-(empty until after Phase 3 validates the fix; cleanup task removes the
-diagnostic console.logs)
+**Completed 2026-05-16T19:40Z.**
+
+Removed in cleanup commit:
+- `vigil-g2-plugin/src/lib/diag-persist.ts` (entire file deleted)
+- `main.ts`: `import { appendDiagTrail, dumpDiagTrail }` + `dumpDiagTrail()` + `appendDiagTrail('MODULE-LOAD', ...)` + `appendDiagTrail('H3-source', ...)` + `console.log('[diag GAP-129-G H3-source]', source)`
+- `navigation.ts`: `import { appendDiagTrail }` + `appendDiagTrail('H1-write (...)', ...)` calls + `console.log('[diag GAP-129-G H1-write]', ...)` calls + `window.localStorage.setItem(...)` control-channel writes (× 2 sites)
+- `launch-source-helpers.ts`: `import { appendDiagTrail }` + all H2-read `console.log` + `appendDiagTrail` calls + the `windowRaw` capture + the `no-bridge` / `parse-error` / `outer-error` log variants
+
+Cleanup verification: `grep -rn 'diag GAP-129-G\|appendDiagTrail\|dumpDiagTrail\|diag-persist' vigil-g2-plugin/src/` returns zero matches. `tsc --noEmit` passes. The 3 GAP-129-G regression tests in `main.test.ts` still pass.
+
+The actual FIX (the `buildInitialContainer` change + `buildScreen` export) is preserved — only the temporary diagnostic instrumentation was removed.

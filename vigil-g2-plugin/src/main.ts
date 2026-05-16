@@ -86,24 +86,9 @@ const REFRESH_INTERVAL_MS = 60_000
 // Module-scope registration captures the push regardless of when init()
 // runs — registering inside init() races the push and the value can be
 // missed. RESEARCH §"Pattern 4" / CONTEXT D-07.
-// [diag GAP-129-G TRAIL] — TEMPORARY (Plan 129-10 Task 1). Removed in Task 5.
-// Dump previous-session diagnostic trail to console BEFORE init() runs, so the
-// operator sees historical evidence as soon as Safari Web Inspector re-attaches
-// (which can be several seconds after WebView creation, missing live H3-source
-// / H2-read logs).
-import { appendDiagTrail, dumpDiagTrail } from './lib/diag-persist.ts'
-dumpDiagTrail()
-appendDiagTrail('MODULE-LOAD', { ts: Date.now(), userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a' })
-
 const bridgeInstance = EvenAppBridge.getInstance()
 const launchSourcePromise: Promise<LaunchSource> = new Promise((resolve) => {
   bridgeInstance.onLaunchSource((source) => {
-    // [diag GAP-129-G H3-source] — TEMPORARY diagnostic (Plan 129-10 Task 1). Removed in Task 5.
-    // Captures the launch-source string at relaunch so operator can determine whether
-    // the iPhone-relaunch path is being misclassified as 'glassesMenu' (D-10 bypass)
-    // vs. correctly identified as 'appMenu' / cold-start.
-    console.log('[diag GAP-129-G H3-source]', source)
-    appendDiagTrail('H3-source', { source })
     resolve(source)
   })
 })
