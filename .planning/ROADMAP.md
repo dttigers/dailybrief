@@ -442,15 +442,20 @@ Plans:
   3. Glasses-menu launches still land on the operator-picked screen (Phase 124 G2-POLISH-06 invariant preserved)
   4. Operator on a `*.service-now.com/*` page clicks the extension icon → popup pre-fills CS# (regex `/^CS\d{7}$/` against `document.title`) → types description + priority → submit creates a work-order row, deduped via `client_capture_id` across multi-tab + corporate-VPN retries
   5. Both Chrome and Safari extensions ship the popup (lock-step parity per Phase 114 EXT-02 pattern), with Vigil-brand-compliant styling
-**Plans:** 5/6 plans executed
-- [x] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
-- [x] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
-- [x] 128b-03-PLAN.md — Path D (MCP server hook) empirical probe; inverted-direction Claude-pulls model
-- [x] 128b-04-PLAN.md — Path E (tmux send-keys) regression: rerun spike 001 L4 + copy evidence into phase artifacts
-- [x] 128b-05-PLAN.md — Author 128b-SPIKE-DECISION.md: verdict at TOP + per-path table + privilege sketch reference + Phase 133 scope-lock
-- [x] 128b-06-PLAN.md — Author 128b-MEASUREMENTS.md: consolidated per-path wallclock + cost + evidence inventory
-- [ ] 128b-07-PLAN.md — Operator wallclock C-1: live `claude` interactive session round-trip (Ubuntu dev box)
-- [ ] 128b-08-PLAN.md — Operator wallclock C-2: 60s portfolio Loom (success-criterion-3 proxy)
+**Plans:** 13 plans (5 original + 1 UAT + 7 gap-closure)
+- [x] 129-01-PLAN.md — Drizzle migration 0021_add_work_orders_client_capture_id.sql + schema.ts update (dev-DB applied)
+- [x] 129-02-PLAN.md — G2 screen-state-restore module + navigation + launch-source-helpers + main.ts module-scope registration
+- [x] 129-03-PLAN.md — Chrome MV3 extension: service worker, content script, popup-helpers, popup.html/css/js replacement (D-02 retires Phase 84 UI)
+- [x] 129-04-PLAN.md — vigil-core /v1/work-orders/sync DI refactor + clientCaptureId dedup guard + integration tests
+- [x] 129-05-PLAN.md — Safari extension lock-step port + parity drift detector
+- [x] 129-06-PLAN.md — Author 129-UAT-RUNBOOK.md + operator session-1 UAT run (partial: 1 PASS, 1 FAIL, 2 BLOCKED, 1 FAIL, 4 DEFERRED → 8 gaps captured)
+- [ ] 129-07-PLAN.md — Gap closure: GAP-129-A (__tests__ move) + GAP-129-B (api-key setup view) + GAP-129-D (chrome.storage.session lastCaseNumber) — Chrome + Safari lock-step
+- [ ] 129-08-PLAN.md — Gap closure: GAP-129-C (production deploy of migration 0021 + HTTP 200/dedup probes) — operator-run psql against prod
+- [ ] 129-09-PLAN.md — Gap closure: GAP-129-F (DOUBLE_CLICK entry gesture on WORK_ORDERS list — Phase 124 D-08 carve-out template)
+- [ ] 129-10-PLAN.md — Gap closure: GAP-129-G (G2 lifecycle restore diagnostic + H1/H2/H3-branched fix + hardware re-validation + cleanup) — operator-run on iPhone Even Hub WebView with Safari Web Inspector
+- [ ] 129-11-PLAN.md — Gap closure: GAP-129-E (terminology cleanup — WORK_ORDER_DETAIL → TASK_DETAIL in CONTEXT/RESEARCH/RUNBOOK + optional file rename screens/work-orders.ts → tasks.ts)
+- [ ] 129-12-PLAN.md — Gap closure: GAP-129-H (build-gate convention doc + reusable task template + STATE.md lessons-learned entry)
+- [ ] 129-13-PLAN.md — Session-2 closing-out UAT (re-run scenarios 1, 1b, 2, 3, 4b, 4c, 5, 6 + new Scenarios 7 + 8 for gap-closure confirmations; final GAP closing-status table)
 **UI hint**: yes
 
 ### Phase 130: Voice capture full implementation (scope-locked by 128a)
