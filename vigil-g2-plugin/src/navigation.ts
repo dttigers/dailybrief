@@ -147,8 +147,11 @@ export async function navigateTo(
   // G2-LIFECYCLE-02: persist last-viewed screen for re-launch restore (D-05).
   // Fire-and-forget — mirrors audio-session-guard.ts audioControl().catch(() => {}) pattern.
   // setLocalStorage may be absent on dev-preview bridge — optional-chained safely.
+  const _h1WritePayload = JSON.stringify({ screen, savedAt: Date.now() })
+  // [diag GAP-129-G H1-write] — TEMPORARY diagnostic (Plan 129-10 Task 1). Removed in Task 5.
+  console.log('[diag GAP-129-G H1-write]', LAST_SCREEN_LS_KEY, _h1WritePayload)
   ;(bridge as unknown as { setLocalStorage?: (k: string, v: string) => Promise<void> })
-    .setLocalStorage?.(LAST_SCREEN_LS_KEY, JSON.stringify({ screen, savedAt: Date.now() }))
+    .setLocalStorage?.(LAST_SCREEN_LS_KEY, _h1WritePayload)
     ?.catch(() => {})
   console.log(`[vigil-g2] navigated to: ${screen}`)
 }
@@ -204,12 +207,15 @@ export async function navigateToTaskDetail(
   // Note: openTasks items have `id: number` (not `caseNumber` — those are ServiceNow work
   // orders, not G2 thought tasks). D-08 id-only shape: { screen, args: { id }, savedAt }.
   // Fire-and-forget — setLocalStorage may be absent on dev-preview bridge.
+  const _h1WriteTaskDetailPayload = JSON.stringify({
+    screen: Screen.TASK_DETAIL,
+    args: { id: task.id },
+    savedAt: Date.now(),
+  })
+  // [diag GAP-129-G H1-write] — TEMPORARY diagnostic (Plan 129-10 Task 1). Removed in Task 5.
+  console.log('[diag GAP-129-G H1-write]', LAST_SCREEN_LS_KEY, _h1WriteTaskDetailPayload)
   ;(bridge as unknown as { setLocalStorage?: (k: string, v: string) => Promise<void> })
-    .setLocalStorage?.(LAST_SCREEN_LS_KEY, JSON.stringify({
-      screen: Screen.TASK_DETAIL,
-      args: { id: task.id },
-      savedAt: Date.now(),
-    }))
+    .setLocalStorage?.(LAST_SCREEN_LS_KEY, _h1WriteTaskDetailPayload)
     ?.catch(() => {})
   console.log(`[vigil-g2] navigated to: task-detail (index ${itemIndex})`)
 }

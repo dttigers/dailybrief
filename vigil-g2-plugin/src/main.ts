@@ -86,7 +86,14 @@ const REFRESH_INTERVAL_MS = 60_000
 // missed. RESEARCH §"Pattern 4" / CONTEXT D-07.
 const bridgeInstance = EvenAppBridge.getInstance()
 const launchSourcePromise: Promise<LaunchSource> = new Promise((resolve) => {
-  bridgeInstance.onLaunchSource((source) => resolve(source))
+  bridgeInstance.onLaunchSource((source) => {
+    // [diag GAP-129-G H3-source] — TEMPORARY diagnostic (Plan 129-10 Task 1). Removed in Task 5.
+    // Captures the launch-source string at relaunch so operator can determine whether
+    // the iPhone-relaunch path is being misclassified as 'glassesMenu' (D-10 bypass)
+    // vs. correctly identified as 'appMenu' / cold-start.
+    console.log('[diag GAP-129-G H3-source]', source)
+    resolve(source)
+  })
 })
 
 // ── Phase 129 G2-LIFECYCLE-01: module-scope setBackgroundState registrations ──

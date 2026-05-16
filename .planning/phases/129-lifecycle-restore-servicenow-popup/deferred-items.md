@@ -26,3 +26,9 @@ plan with their own scope.
 - **Issue:** Test asserts `launch-source-helpers.ts` source content contains `TTL_MS` or `30 * 60 * 1000`. After `ca91f60` (fix for 129-02's build-breaker) the `TTL_MS` import was correctly dropped from `launch-source-helpers.ts` (the TTL logic lives in `pickRestoredScreen` inside `screen-state-restore.ts` instead). The drift test was not updated; it still inspects the helpers source for a literal that no longer needs to be there.
 - **Status:** PRE-EXISTING — NOT caused by Plan 129-11. Confirmed by inspecting `ca91f60` (2026-05-16, pre-129-11) and re-running the test before any 129-11 edits.
 - **Suggested follow-up:** Update the drift test to assert `pickRestoredScreen` is imported from `screen-state-restore.ts` in `launch-source-helpers.ts` (which already is the case), and inspect `screen-state-restore.ts` for the TTL literal — or delete the drift test entirely if redundant with `screen-state-restore.test.ts`'s direct TTL boundary tests. Out of scope for 129-11 (terminology cleanup).
+
+## 129-10 Task 1 — pre-existing TTL_MS drift test failure (third encounter)
+
+- **Discovered during:** Task 1 (diagnostic instrumentation pass)
+- **Same root cause** as the two entries above (the `ca91f60` `TTL_MS` drop). Re-confirmed pre-existing via `git stash && npx tsx --test src/__tests__/main.test.ts` on clean HEAD — 20/21 pass, same single drift test fails.
+- **Suggested ownership escalation:** since this is now the third plan to encounter and defer the same failure, it should be picked up by a small standalone follow-up plan (e.g., `129-FIX-TTL-DRIFT-TEST`) rather than waiting on the next G2-lifecycle plan to inherit it. Plan 129-10's Task 3 (the conditional fix landing after operator diagnosis) is the natural opportunistic moment IF the fix happens to touch `screen-state-restore.ts` or `launch-source-helpers.ts` anyway — Task 3 can fix the drift test in the same commit. Out of scope for Task 1 (instrumentation only).

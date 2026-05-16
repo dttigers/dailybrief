@@ -129,16 +129,34 @@ export async function pickInitialScreen(
     if (bridge) {
       try {
         const raw = await bridge.getLocalStorage(LAST_SCREEN_LS_KEY)
+        // [diag GAP-129-G H2-read] — TEMPORARY diagnostic (Plan 129-10 Task 1). Removed in Task 5.
+        // Logs raw + parsed shape so operator can distinguish: null/undefined storage
+        // (storage cleared / key mismatch) vs. successful read + downstream control-flow bug.
+        try {
+          console.log('[diag GAP-129-G H2-read]', { source, raw, parsed: JSON.parse(raw ?? 'null') })
+        } catch (e) {
+          console.log('[diag GAP-129-G H2-read parse-error]', { source, raw, error: String(e) })
+        }
         if (raw) {
           const stored = JSON.parse(raw) as unknown
           const restored = pickRestoredScreen(stored, Date.now())
+          // [diag GAP-129-G H2-read] — log the resolved restore result so operator
+          // sees whether pickRestoredScreen returned HOME (TTL expired / malformed shape)
+          // vs. a real screen that should have taken effect.
+          console.log('[diag GAP-129-G H2-read] resolved restore:', restored)
           if (restored !== HOME) {
             return restored
           }
         }
-      } catch {
+      } catch (e) {
         // Malformed localStorage JSON → fall through to HOME (D-05/T-129-05).
+        // [diag GAP-129-G H2-read] — log the outer-catch so operator can see if
+        // bridge.getLocalStorage itself threw (vs. JSON.parse failing inside).
+        console.log('[diag GAP-129-G H2-read outer-error]', { source, error: String(e) })
       }
+    } else {
+      // [diag GAP-129-G H2-read] — bridge is undefined (test path or pre-init); no read attempted.
+      console.log('[diag GAP-129-G H2-read] no-bridge', { source })
     }
     return HOME
   }
