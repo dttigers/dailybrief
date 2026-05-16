@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: verifying
-stopped_at: Phase 129 context gathered
-last_updated: "2026-05-16T17:19:08.409Z"
+status: partial-complete
+stopped_at: Phase 129 PARTIAL-COMPLETE 2026-05-16 — pivot to 129.1 (screenshot pipeline + PWA manual-create)
+last_updated: "2026-05-16T20:40:00.000Z"
 last_activity: 2026-05-16
 progress:
-  total_phases: 11
-  completed_phases: 3
-  total_plans: 37
-  completed_plans: 31
-  percent: 27
+  total_phases: 12
+  completed_phases: 4
+  total_plans: 51
+  completed_plans: 44
+  percent: 32
 ---
 
 # Project State
@@ -21,13 +21,22 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 129 — lifecycle-restore-servicenow-popup
+**Current focus:** Phase 129.1 — SVCNOW revert + screenshot pipeline + PWA manual-create
 
 ## Current Position
 
-Phase: 129 (lifecycle-restore-servicenow-popup) — EXECUTING
-Plan: 6 of 6
-Status: Phase complete — ready for verification
+Phase: 129.1 (svcnow-revert-screenshot-pipeline) — NOT STARTED
+Plan: 0 of TBD (estimated 4)
+Status: Awaiting discuss-phase — design questions in `.planning/phases/129.1-svcnow-revert-screenshot-pipeline/README.md`
+Last activity: 2026-05-16
+
+## Phase 129 Closure (2026-05-16) — PARTIAL-COMPLETE
+
+Phase 129 closed PARTIAL-COMPLETE after Session 2 UAT triggered a strategic pivot:
+  - **Completed + validated:** G2 lifecycle restore (GAP-129-G hardware-validated), production migration 0021, build-gate convention, terminology cleanup, dedup primitive (SVCNOW-04).
+  - **Superseded by 129.1:** SVCNOW assisted-capture popup workflow (SVCNOW-01/02/03/05). Chrome + Safari extension reverts back to Phase 84 thought-capture; new operator-specific screenshot pipeline + non-operator PWA manual-create UI ship in 129.1.
+  - **ROADMAP Success Criteria disposition:** 1 hardware-PASS, 2 DEFERRED-NOT-BLOCKING (sim-side covered), 2 SUPERSEDED.
+  - **Audit trail:** `.planning/phases/129-lifecycle-restore-servicenow-popup/129-UAT-RESULTS.md` (Session 2 + Pivot Decision sections), `129-13-SUMMARY.md` (final disposition).
 Last activity: 2026-05-16
 
 **v3.9 phase sequence:**

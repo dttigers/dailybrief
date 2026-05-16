@@ -54,13 +54,18 @@
 - [ ] **WATCH-ENRICH-03**: vigil-watch parser captures truncated preview (≤80 chars) of current user prompt OR last assistant message text; privacy-redacted (regex strips `api[_-]?key`, `bearer`, `password`, `vk_`, `ey...` JWT prefix, long base64-like strings); HUD optionally surfaces preview as a third body line (operator-toggle in PWA Settings, default ON).
 - [ ] **WATCH-ENRICH-04**: Drift-detector tests pin (a) the redaction regex set verbatim, (b) the 80-char truncation invariant, (c) no `prompt_preview` reference in `console.log`/`Sentry.captureException`/`posthog.capture` call sites.
 
-### SVCNOW — ServiceNow assisted-capture popup
+### SVCNOW — ServiceNow assisted-capture popup (SUPERSEDED 2026-05-16)
 
-- [x] **SVCNOW-01**: Browser extension content-script registers on `*.service-now.com/*`; extracts CS# from `document.title` via strict regex `/^CS\d{7}$/`; the extension button opens a popup with CS# locked in.
-- [x] **SVCNOW-02**: Popup state-machine — CS# snapshot frozen at open-time; `MutationObserver` on document.title shows a "CS# drifted to CS0XXXXXXX — reopen popup" banner if Polaris pushState navigation changes the case mid-flight.
-- [x] **SVCNOW-03**: Popup form — case# header (rendered LARGER than the description input), description textarea (autofocus), priority select (Low / Medium / High / Critical), Send button (⌘+Enter); on submit POST to existing `POST /v1/work-orders/sync` with single-element array `[{case_number, description, priority, client_capture_id}]`.
-- [x] **SVCNOW-04**: `client_capture_id` UUID + `(user_id, client_capture_id)` composite partial unique index on `work_orders` (mirror Phase 121 pattern) prevents duplicate submission across multi-tab races and corporate-VPN-latency retries.
-- [x] **SVCNOW-05**: Safari extension lock-step port (mirror Phase 114 EXT-02 pattern); both manifests updated; both Send buttons render Vigil-brand-compliant styling.
+> **Status:** SUPERSEDED by Phase 129.1's screenshot-pipeline + PWA manual-create direction.
+> Phase 129 mid-Session-2 UAT (`129-UAT-RESULTS.md` Pivot Decision) replaced the assisted-capture popup with: (a) operator-specific screenshot ingestion via vigil-core endpoint + Claude API extraction, and (b) PWA manual-create UI for all non-operator users. SVCNOW-01..05 implementation shipped in 129-03/05/07 but is being reverted in Phase 129.1.
+>
+> The literal SVCNOW-* requirement text is preserved below for historical record. Re-mapping to NEW requirement IDs (SCAP-* for screenshot capture, WO-MANUAL-* for PWA manual create) happens in Phase 129.1's discuss-phase / spec-phase pass.
+
+- [~] **SVCNOW-01** (SUPERSEDED): Browser extension content-script registers on `*.service-now.com/*`; extracts CS# from `document.title` via strict regex `/^CS\d{7}$/`; the extension button opens a popup with CS# locked in.
+- [~] **SVCNOW-02** (SUPERSEDED): Popup state-machine — CS# snapshot frozen at open-time; `MutationObserver` on document.title shows a "CS# drifted to CS0XXXXXXX — reopen popup" banner if Polaris pushState navigation changes the case mid-flight.
+- [~] **SVCNOW-03** (SUPERSEDED): Popup form — case# header (rendered LARGER than the description input), description textarea (autofocus), priority select (Low / Medium / High / Critical), Send button (⌘+Enter); on submit POST to existing `POST /v1/work-orders/sync` with single-element array `[{case_number, description, priority, client_capture_id}]`.
+- [x] **SVCNOW-04** (PRESERVED): `client_capture_id` UUID + `(user_id, client_capture_id)` composite partial unique index on `work_orders` (mirror Phase 121 pattern) prevents duplicate submission across multi-tab races and corporate-VPN-latency retries. **Still in use by the new screenshot pipeline** — dedup primitive is independent of capture mechanism. Migration 0021 is deployed to prod (verified by 129-08-DEPLOY-LOG.md dedup probe: `synced:1` then `synced:0`).
+- [~] **SVCNOW-05** (SUPERSEDED): Safari extension lock-step port (mirror Phase 114 EXT-02 pattern); both manifests updated; both Send buttons render Vigil-brand-compliant styling.
 
 ### G2-LIFECYCLE — Last-viewed screen restore
 
@@ -171,11 +176,11 @@ Empty initially. Populated by roadmapper during phase mapping.
 | WATCH-ENRICH-02 | 133 | Pending |
 | WATCH-ENRICH-03 | 133 | Pending |
 | WATCH-ENRICH-04 | 133 | Pending |
-| SVCNOW-01 | 129 | Complete |
-| SVCNOW-02 | 129 | Complete |
-| SVCNOW-03 | 129 | Complete |
-| SVCNOW-04 | 129 | Complete |
-| SVCNOW-05 | 129 | Complete |
+| SVCNOW-01 | 129 → 129.1 | Superseded (revert pending) |
+| SVCNOW-02 | 129 → 129.1 | Superseded (revert pending) |
+| SVCNOW-03 | 129 → 129.1 | Superseded (revert pending) |
+| SVCNOW-04 | 129 | Complete (preserved — used by new screenshot pipeline) |
+| SVCNOW-05 | 129 → 129.1 | Superseded (revert pending) |
 | G2-LIFECYCLE-01 | 129 | Complete |
 | G2-LIFECYCLE-02 | 129 | Complete |
 | G2-LIFECYCLE-03 | 129 | Complete |

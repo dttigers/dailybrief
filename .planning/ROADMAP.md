@@ -347,7 +347,8 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
 - [x] **Phase 127.5: G2 input gesture audit** — 30-min code audit of single-press event plumbing; output verdict shapes downstream gesture grammar (completed 2026-05-12)
 - [ ] **Phase 128a: VOICE-01 PCM feasibility spike** — measure chunk size / E2E latency / dropout / battery / `audioControl(false)` cleanup; output `128a-SPIKE-DECISION.md`
 - [ ] **Phase 128b: G2-REPLY-01 write-back path spike** — empirically prove or rule out programmatic Claude Code input injection across 3+ candidate paths; output `128b-SPIKE-DECISION.md`
-- [ ] **Phase 129: Lifecycle restore + ServiceNow popup** — parallel-safe wins during spike windows (G2-LIFECYCLE-01/02/03 + SVCNOW-01..05)
+- [x] **Phase 129: Lifecycle restore + ServiceNow popup** — PARTIAL-COMPLETE 2026-05-16 (G2-LIFECYCLE-01/02/03 + SVCNOW-04 shipped; SVCNOW-01/02/03/05 SUPERSEDED → 129.1)
+- [ ] **Phase 129.1: SVCNOW revert + screenshot pipeline + PWA manual-create** — operator screenshot ingestion via Claude Sonnet vision + non-operator PWA manual-create form (replaces SVCNOW-01/02/03/05)
 - [ ] **Phase 130: Voice capture full implementation** — scope-locked by 128a; G2 PCM record→base64→`/v1/voice/transcribe`→thought row→PWA
 - [ ] **Phase 131: Insights freshness + chat context expansion** — INSIGHTS-FRESH-01/02/03 + CHAT-CTX-01..05 bundled for one PWA UAT pass
 - [ ] **Phase 132: Quiet Mode auto-detect** — iOS Focus → webhook → existing `/v1/quiet-mode` (QUIET-AUTO-01..04)
@@ -432,30 +433,44 @@ Plans:
 - [ ] 128b-08-PLAN.md — Operator wallclock C-2: 60s portfolio Loom (success-criterion-3 proxy)
 **UI hint**: yes
 
-### Phase 129: Lifecycle restore + ServiceNow popup
-**Goal:** Two independent small wins that ship in parallel with the spike phases — restore the last-viewed G2 screen across plugin re-launches, and extend the browser extension to capture ServiceNow Polaris work orders without an API token.
+### Phase 129: Lifecycle restore + ServiceNow popup (PARTIAL-COMPLETE 2026-05-16)
+**Status:** PARTIAL-COMPLETE — G2 + infra work shipped + hardware-validated; SVCNOW assisted-capture popup work SUPERSEDED by Phase 129.1 pivot.
+**Goal (as-shipped):** Restore the last-viewed G2 screen across plugin re-launches; production-deploy the dedup primitive (migration 0021); ship the build-gate convention; cleanup terminology. The SVCNOW popup deliverable was reverted scope (see Phase 129.1).
 **Depends on:** Phase 127 (guardrails) — parallel-safe with Phases 128a + 128b
-**Requirements:** G2-LIFECYCLE-01, G2-LIFECYCLE-02, G2-LIFECYCLE-03, SVCNOW-01, SVCNOW-02, SVCNOW-03, SVCNOW-04, SVCNOW-05
-**Success Criteria** (what must be TRUE):
-  1. After force-quitting the Even Hub iPhone app, re-opening returns the G2 plugin to the last-viewed screen (within a 30-min staleness TTL) — verified on hardware
-  2. After phone-background → foreground migration, the Companion HUD active-session / banner cache survives (no empty re-render)
-  3. Glasses-menu launches still land on the operator-picked screen (Phase 124 G2-POLISH-06 invariant preserved)
-  4. Operator on a `*.service-now.com/*` page clicks the extension icon → popup pre-fills CS# (regex `/^CS\d{7}$/` against `document.title`) → types description + priority → submit creates a work-order row, deduped via `client_capture_id` across multi-tab + corporate-VPN retries
-  5. Both Chrome and Safari extensions ship the popup (lock-step parity per Phase 114 EXT-02 pattern), with Vigil-brand-compliant styling
-**Plans:** 12/13 plans executed
+**Requirements:** G2-LIFECYCLE-01, G2-LIFECYCLE-02, G2-LIFECYCLE-03 (Complete); SVCNOW-04 (Complete, dedup primitive preserved); SVCNOW-01, SVCNOW-02, SVCNOW-03, SVCNOW-05 (SUPERSEDED → 129.1)
+**Success Criteria** (what is TRUE):
+  1. **PASS** (hardware-validated 2026-05-16) — After force-quitting the Even Hub iPhone app, re-opening returns the G2 plugin to the last-viewed screen.
+  2. **DEFERRED-NOT-BLOCKING** — Phone-background → foreground HUD cache survives migration; covered by sim-side D-11 tests, prototype-mode bridge disables the SDK methods needed for hardware re-test.
+  3. **DEFERRED-NOT-BLOCKING** — Glasses-menu launches land on the operator-picked screen; covered by sim-side `pickInitialScreen` D-10 test.
+  4. **SUPERSEDED** — Operator ServiceNow popup capture path is being replaced by Phase 129.1's screenshot pipeline + PWA manual-create UI.
+  5. **SUPERSEDED** — Chrome + Safari lock-step parity (popup) is being reverted in Phase 129.1.
+**Plans:** 13/13 plans executed (SUMMARY.md present for each)
 - [x] 129-01-PLAN.md — Drizzle migration 0021_add_work_orders_client_capture_id.sql + schema.ts update (dev-DB applied)
 - [x] 129-02-PLAN.md — G2 screen-state-restore module + navigation + launch-source-helpers + main.ts module-scope registration
-- [x] 129-03-PLAN.md — Chrome MV3 extension: service worker, content script, popup-helpers, popup.html/css/js replacement (D-02 retires Phase 84 UI)
+- [x] 129-03-PLAN.md — Chrome MV3 extension: service worker, content script, popup-helpers, popup.html/css/js replacement (D-02 retires Phase 84 UI) — REVERT-PENDING in 129.1
 - [x] 129-04-PLAN.md — vigil-core /v1/work-orders/sync DI refactor + clientCaptureId dedup guard + integration tests
-- [x] 129-05-PLAN.md — Safari extension lock-step port + parity drift detector
+- [x] 129-05-PLAN.md — Safari extension lock-step port + parity drift detector — REVERT-PENDING in 129.1
 - [x] 129-06-PLAN.md — Author 129-UAT-RUNBOOK.md + operator session-1 UAT run (partial: 1 PASS, 1 FAIL, 2 BLOCKED, 1 FAIL, 4 DEFERRED → 8 gaps captured)
-- [x] 129-07-PLAN.md — Gap closure: GAP-129-A (__tests__ move) + GAP-129-B (api-key setup view) + GAP-129-D (chrome.storage.session lastCaseNumber) — Chrome + Safari lock-step
+- [x] 129-07-PLAN.md — Gap closure: GAP-129-A (__tests__ move) + GAP-129-B (api-key setup view) + GAP-129-D (chrome.storage.session lastCaseNumber) — REVERT-PENDING in 129.1
 - [x] 129-08-PLAN.md — Gap closure: GAP-129-C (production deploy of migration 0021 + HTTP 200/dedup probes) — operator-run psql against prod
 - [x] 129-09-PLAN.md — Gap closure: GAP-129-F (DOUBLE_CLICK entry gesture on WORK_ORDERS list — Phase 124 D-08 carve-out template)
-- [x] 129-10-PLAN.md — Gap closure: GAP-129-G (G2 lifecycle restore diagnostic + H1/H2/H3-branched fix + hardware re-validation + cleanup) — operator-run on iPhone Even Hub WebView with Safari Web Inspector
+- [x] 129-10-PLAN.md — Gap closure: GAP-129-G (G2 lifecycle restore diagnostic + H4 dispatch-table fix + hardware re-validation + cleanup) — hardware-validated 2026-05-16
 - [x] 129-11-PLAN.md — Gap closure: GAP-129-E (terminology cleanup — WORK_ORDER_DETAIL → TASK_DETAIL in CONTEXT/RESEARCH/RUNBOOK + optional file rename screens/work-orders.ts → tasks.ts)
 - [x] 129-12-PLAN.md — Gap closure: GAP-129-H (build-gate convention doc + reusable task template + STATE.md lessons-learned entry)
-- [ ] 129-13-PLAN.md — Session-2 closing-out UAT (re-run scenarios 1, 1b, 2, 3, 4b, 4c, 5, 6 + new Scenarios 7 + 8 for gap-closure confirmations; final GAP closing-status table)
+- [x] 129-13-PLAN.md — Session-2 closing-out UAT (5 PASS / 2 DEFERRED-NOT-BLOCKING / 4 SUPERSEDED-by-pivot; full GAP closing-status table; pivot decision captured)
+**UI hint**: yes
+
+### Phase 129.1: SVCNOW revert + screenshot pipeline + PWA manual-create (NEW 2026-05-16)
+**Status:** Not started — pivot direction captured 2026-05-16T20:30Z via 129-13-SUMMARY.md.
+**Goal:** Replace the SVCNOW assisted-capture popup workflow with (a) an operator-specific screenshot pipeline (vigil-core endpoint receives Polaris screenshot, calls Claude API for structured field extraction, writes to work_orders) and (b) a PWA manual-create UI in the work-orders list for all non-operator users. Revert the Chrome + Safari extension changes to the Phase 84 generic thought-capture baseline.
+**Depends on:** Phase 129 (PARTIAL-COMPLETE; preserves migration 0021 + `dbInsertOrGet` route)
+**Requirements:** SCAP-01..N (screenshot capture pipeline — TBD in discuss-phase); WO-MANUAL-01..N (PWA manual-create — TBD in discuss-phase); SUPERSEDES SVCNOW-01, SVCNOW-02, SVCNOW-03, SVCNOW-05
+**Success Criteria** (placeholder — finalize in discuss-phase):
+  1. Operator screenshots a Polaris case page → drops into `~/vigil-captures/` (or triggers a macOS Shortcut) → macOS launchd watcher uploads to `POST /v1/captures/screenshot` → vigil-core extracts 12+ structured fields via Claude Sonnet vision → writes to work_orders deduped by `client_capture_id`.
+  2. Non-operator users see a "Create work order" button in the PWA work-orders list → fills a manual form (case#, store, description, priority, etc.) → POSTs to /v1/work-orders/sync → row appears in their list.
+  3. Chrome + Safari extensions revert to Phase 84 generic thought-capture (the `*.service-now.com/*`-restricted popup is removed); no SVCNOW-specific UI in either extension.
+  4. End-to-end test: operator screenshots CS0363817 → ~5 sec later the work order appears in the PWA with correctly extracted fields (Number, Store Account, Location, Assigned to, Equipment, Priority, Short Description).
+**Plans:** TBD (estimated 4 plans — revert, vigil-core endpoint, macOS watcher, PWA manual-create UI)
 **UI hint**: yes
 
 ### Phase 130: Voice capture full implementation (scope-locked by 128a)
@@ -688,7 +703,8 @@ Plans:
 | 127.5. G2 input gesture audit (30-min code review; verdict shapes G2-ACTION + G2-REPLY) | v3.9 | 1/1 | Complete    | 2026-05-12 |
 | 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 5/6 | In Progress|  |
 | 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 7/8 | In Progress|  |
-| 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 12/13 | In Progress|  |
+| 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 13/13 | Partial-complete (SVCNOW-01/02/03/05 superseded → 129.1) | 2026-05-16 |
+| 129.1. SVCNOW revert + screenshot pipeline + PWA manual-create | v3.9 | 0/TBD | Not started | - |
 | 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 0/TBD | Not started | - |
 | 131. Insights freshness + chat context expansion (one PWA UAT pass) | v3.9 | 0/TBD | Not started | - |
 | 132. Quiet Mode auto-detect via iPhone Focus | v3.9 | 0/TBD | Not started | - |
