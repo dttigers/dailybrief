@@ -295,6 +295,52 @@ export async function handleNavEvent(
     return
   }
 
+  // Phase 129 Plan 09 / GAP-129-F — context-sensitive DOUBLE_CLICK on the
+  // WORK_ORDERS list screen enters TASK_DETAIL for the top-of-list (index 0)
+  // task. This is the hardware-reliable entry gesture; closes the gap
+  // identified in Phase 129 UAT-RESULTS where the operator had no way to
+  // reach TASK_DETAIL on real G2 hardware.
+  //
+  // Structural template: Phase 124 D-08 COMPANION carve-out above (lines
+  // 252-271). The pattern is "if currentScreen === <ScreenX> &&
+  // DOUBLE_CLICK_EVENT → context-specific action; return".
+  //
+  // Why DOUBLE_CLICK and not CLICK_EVENT: the existing main.ts:316-322
+  // CLICK_EVENT wiring is SIM-ONLY per Phase 45 retro — CLICK_EVENT is not
+  // reliably plumbed on G2 hardware. DOUBLE_CLICK_EVENT IS reliably plumbed
+  // (Phase 124 D-08 + Phase 127.5 AUDIT-G2-INPUT-01 verdict CONFIRM-DEFER
+  // for single-press). The sim CLICK_EVENT wiring stays untouched for sim
+  // test fidelity; this DOUBLE_CLICK path is the hardware-reliable
+  // complement. Both paths converge on navigateToTaskDetail.
+  //
+  // Empty-list fall-through: when getLastFetchedTasks() returns [],
+  // execution falls past this carve-out to the default switch below, which
+  // routes DOUBLE_CLICK → Screen.HOME. This preserves the operator's
+  // exit-to-Home affordance on an empty WORK_ORDERS screen (no tasks to
+  // drill into) AND avoids calling navigateToTaskDetail(0, ...) with an
+  // out-of-bounds index. navigateToTaskDetail itself also guards via
+  // `if (!task) return` at navigation.ts:198 (defense-in-depth).
+  //
+  // DOUBLE_CLICK conflict resolution: previously DOUBLE_CLICK on
+  // WORK_ORDERS jumped to HOME via the default switch. The new behavior:
+  // non-empty list → enter TASK_DETAIL (the primary use case); empty list
+  // → still jumps to HOME (preserving the exit path when there's nothing
+  // to drill into). Operators on a non-empty WORK_ORDERS list reach HOME
+  // via swipe-up-past-top through the SCREEN_ORDER carousel, which is the
+  // same affordance every other carousel screen provides.
+  if (
+    currentScreen === Screen.WORK_ORDERS &&
+    eventType === OsEventTypeList.DOUBLE_CLICK_EVENT
+  ) {
+    const tasks = getLastFetchedTasks()
+    if (tasks.length >= 1) {
+      await navigateToTaskDetail(0, bridge)
+      return
+    }
+    // Empty list: fall through to the default switch below, which routes
+    // DOUBLE_CLICK → Screen.HOME. Do NOT `return` here.
+  }
+
   let target: ScreenName
 
   switch (eventType) {

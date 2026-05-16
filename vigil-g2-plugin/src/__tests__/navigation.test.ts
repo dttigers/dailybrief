@@ -247,8 +247,10 @@ test("GAP-129-F: WORK_ORDERS carve-out comment block references Phase 124 D-08, 
   // reference elsewhere in the file cannot satisfy this check.
   const guardIdx = src.indexOf("currentScreen === Screen.WORK_ORDERS");
   assert.ok(guardIdx >= 0, "WORK_ORDERS DOUBLE_CLICK guard present in raw source");
-  // Comment block is the ~1000 chars BEFORE the guard.
-  const commentWindow = src.slice(Math.max(0, guardIdx - 1500), guardIdx);
+  // Comment block is the ~2500 chars BEFORE the guard. Width is empirical:
+  // the new carve-out's comment header runs ~50 lines and the GAP-129-F
+  // literal sits at the top, so a tighter window misses the gap reference.
+  const commentWindow = src.slice(Math.max(0, guardIdx - 2500), guardIdx);
   assert.ok(
     commentWindow.includes("Phase 124 D-08"),
     "Comment block above WORK_ORDERS carve-out references Phase 124 D-08 (the structural template)",
