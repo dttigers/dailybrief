@@ -3,6 +3,28 @@
 **Gathered:** 2026-05-15
 **Status:** Ready for planning
 
+<terminology_note>
+## Terminology — G2 task vs ServiceNow work order
+
+Phase 129 touches two distinct domain entities that earlier copy conflated:
+
+- **G2 task (TASK_DETAIL screen)** — populated by the G2 plugin's `/v1/brief` openTasks list,
+  sourced from the `thoughts` table (taskStatus IN ('open', 'inProgress')). These are user-captured
+  thought-tasks. Implementation uses `task.id` (number). The G2 list screen is named `WORK_ORDERS`
+  in the Screen enum (a historical naming artifact — see GAP-129-E in 129-UAT-RESULTS.md);
+  the file `vigil-g2-plugin/src/screens/work-orders.ts` contains its rendering code.
+
+- **ServiceNow work order (`work_orders` table + `/v1/work-orders/sync`)** — populated by Gmail
+  import and the SVCNOW extension popup authored in this phase. These are tickets from ServiceNow
+  Polaris, identified by `caseNumber` (e.g., `CS0353598`) and stored in the PostgreSQL `work_orders`
+  table. The popup + route + migration in plans 129-01, 129-03, 129-04, 129-05 are ALL correctly
+  about this entity.
+
+When the runbook says "operator navigates to TASK_DETAIL" it means a G2 thought-task screen.
+When the runbook says "extension popup POSTs to /v1/work-orders/sync" it means a ServiceNow work order.
+These are different concepts; future phases should not blend them.
+</terminology_note>
+
 <domain>
 ## Phase Boundary
 
@@ -31,8 +53,8 @@ Two distinct sub-features in one phase because both are small, parallel-safe wit
 - **D-05:** TTL is **wall-clock from last screen-change save**. Stored shape: `{screen, args?, savedAt: Date.now()}` in localStorage at key `vigil:v3:lastScreen`. On launch: `Date.now() - savedAt > 30*60*1000` → fall back to home.
 - **D-06:** Edge case acknowledged: phone-in-pocket gap (e.g. 25 min idle, plugin reopens 6 min later = 31 min from save) falls back to home. This is intentional — operator wasn't actively using the plugin during the gap; "natural state" (home) is the right landing.
 
-### Parameterized screen restore (WORK_ORDER_DETAIL, TASK_DETAIL, etc.)
-- **D-07:** On restore of a screen that takes an id arg: **re-fetch the entity**. On 404 (deleted / completed / out-of-scope after restore), fall back to the **parent list screen** (e.g. WORK_ORDERS) — not all the way to home. Closest to operator intent without leaving them stranded on an error state.
+### Parameterized screen restore (TASK_DETAIL, etc.)
+- **D-07:** On restore of a screen that takes an id arg: **re-fetch the entity**. On 404 (deleted / completed / out-of-scope after restore), fall back to the **parent list screen** (e.g. WORK_ORDERS — the G2 list screen that displays thought-tasks from /v1/brief; see <terminology_note>) — not all the way to home. Closest to operator intent without leaving them stranded on an error state.
 - **D-08:** Stored args shape MUST be small (id-only — never embedded entity snapshots). The re-fetch on restore is the source of truth.
 
 ### Locked by spec (no discussion needed — restated for the planner)
@@ -109,7 +131,7 @@ Two distinct sub-features in one phase because both are small, parallel-safe wit
 ## Specific Ideas
 
 - Operator scenario for SVCNOW: on a Polaris case page (e.g. `https://acme.service-now.com/now/cwf/agent/record/sn_customerservice_case/<sysid>`), `document.title` = `CS1234567 - Some description` or similar. Regex `/^CS\d{7}$/` against the title pulls `CS1234567`. **Empirical confirmation that document.title actually matches this shape is NOT in the planning artifacts** — researcher should verify against a live Polaris page before committing the regex (10-min probe; if title shape is different, regex needs adjustment).
-- Operator scenario for G2 lifecycle: operator is on WORK_ORDERS detail screen for WO #1234 → swipes G2 to read affirmation → 15 min later swipes back → expects WORK_ORDERS detail #1234 to be where they left. (D-07: re-fetch #1234; if 404, drop them on WORK_ORDERS list.)
+- Operator scenario for G2 lifecycle: operator is on TASK_DETAIL screen for one of their thought-tasks (e.g., task id 1234, sourced from /v1/brief openTasks → thoughts table) → swipes G2 to read affirmation → 15 min later swipes back → expects TASK_DETAIL for task #1234 to be where they left. (D-07: re-fetch task #1234; if 404, drop them on the WORK_ORDERS list — the G2 list screen that renders thought-tasks; see <terminology_note>.)
 
 </specifics>
 
@@ -117,7 +139,7 @@ Two distinct sub-features in one phase because both are small, parallel-safe wit
 ## Deferred Ideas
 
 - **SVCNOW two-way sync** (push Vigil status changes back to ServiceNow) — already captured as SVCNOW-FUTURE-01 in REQUIREMENTS.md. Blocked on IT API token (which was denied 2026-05-15, so this is now permanently blocked unless IT policy changes).
-- **G2 popup "open description with summary of last visit"** (e.g., re-open WORK_ORDER_DETAIL with a "you were last here X min ago" toast) — not in spec, would be a follow-up polish.
+- **G2 popup "open description with summary of last visit"** (e.g., re-open TASK_DETAIL with a "you were last here X min ago" toast) — not in spec, would be a follow-up polish.
 - **Polaris Shadow-DOM scrape retry** — explicitly out of scope. If Polaris ever drops Shadow DOM, revisit in a future phase. Spec assumes this stays blocked.
 - **Capture-the-page popup feature** (Phase 84 functionality) — being retired in Phase 129 per D-02. If a generic page-capture flow is needed in the future, ship it as a separate extension or a separate popup mode behind a feature flag.
 
