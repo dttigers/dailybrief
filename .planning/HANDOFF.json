@@ -1,51 +1,105 @@
 {
   "version": "1.0",
-  "timestamp": "2026-05-15T14:39:45.417Z",
-  "phase": "128b",
-  "phase_name": "g2-reply-01-write-back-path-spike",
-  "phase_dir": ".planning/phases/128b-g2-reply-01-write-back-path-spike",
-  "plan": 8,
-  "task": 1,
-  "total_tasks": 1,
-  "status": "paused",
+  "timestamp": "2026-05-16T21:19:01Z",
+  "phase": "129.1",
+  "phase_name": "svcnow-revert-screenshot-pipeline",
+  "phase_dir": ".planning/phases/129.1-svcnow-revert-screenshot-pipeline",
+  "plan": 0,
+  "task": 0,
+  "total_tasks": 0,
+  "status": "context_complete_awaiting_plan_phase",
   "completed_tasks": [
-    {"id": "128b-01", "name": "Path B (stream-json) probe", "status": "done", "commit": "f3d4258", "verdict": "DEGRADE (fresh-only)"},
-    {"id": "128b-02", "name": "Path A (JSONL+IPC) probe", "status": "done", "commit": "7cc7346", "verdict": "FAIL (predicted, confirmed)"},
-    {"id": "128b-03", "name": "Path D (MCP server) probe", "status": "done", "commit": "dc9c306", "verdict": "DEGRADE (inverted, fresh-only)"},
-    {"id": "128b-04", "name": "Path E (spike 001 L4 regression)", "status": "done", "commit": "a3e041e", "verdict": "PASS (71s wallclock)"},
-    {"id": "128b-06", "name": "MEASUREMENTS.md consolidation", "status": "done", "commit": "5803f8d"},
-    {"id": "128b-05", "name": "SPIKE-DECISION.md authoring", "status": "done", "commit": "986747d", "verdict_at_top": "PASS"},
-    {"id": "128b-07", "name": "Operator C-1 wallclock (live claude round-trip on Ubuntu)", "status": "done", "commit": "3159325", "resume_signal": "c1-done"}
-  ],
-  "remaining_tasks": [
-    {"id": "128b-08", "name": "Operator C-2 wallclock — 60s portfolio Loom of Path E round-trip", "status": "awaiting_operator_decision", "blocking_question": "headless Ubuntu server cannot run OBS/peek/Loom-desktop directly — pick recording path"}
-  ],
-  "blockers": [
     {
-      "description": "C-2 recording path unresolved — Ubuntu dev server is headless; original plan assumed a desktop OBS/peek/Loom recorder",
-      "type": "human_action",
-      "workaround": "Operator picks one of three options presented: (a) record local SSH terminal window on operator's laptop using laptop-OS recorder; (b) asciinema on the headless server producing a .cast file at .planning/phases/128b-.../60s-demo.cast; (c) defer with c2-blocked headless-server — verdict-at-TOP PASS stands regardless per CONTEXT D-V4"
+      "session_segment": "phase-129-execution",
+      "items": [
+        {"task": "129-08 deploy log + SUMMARY (operator no-op close — migration 0021 was already on prod via Railway autodeploy)", "commit": "3e0e0ba"},
+        {"task": "129-06 SUMMARY (Session 1 discovery cycle handoff to 129-13)", "commit": "8998bc4"},
+        {"task": "129-13 Task 1 (Scenarios 7 + 8 added to UAT runbook)", "commit": "4449b39"},
+        {"task": "129-10 G2-LIFECYCLE-02 hardware diagnostic — instrumentation already on HEAD as 5a95c0b", "commit": "5a95c0b"},
+        {"task": "npm run prototype script + vite.config.ts allowedHosts (G2 prototype-mode hot-reload infra)", "commit": "6f6a6bf"},
+        {"task": "129-10 fix: buildInitialContainer routes via buildScreen for all restore screens (H4 dispatch-table bug fixed; 3 regression tests added)", "commit": "3a42fd7"},
+        {"task": "129-10 Task 5 cleanup: remove diagnostic instrumentation + complete diag log + SUMMARY", "commit": "a362f8c"},
+        {"task": "Session 2 UAT progress recorded: 1, 1b, 2, 3, 4, 7, 8 (5 PASS / 2 DEFERRED-NOT-BLOCKING)", "commit": "aab2089"},
+        {"task": "Strategic pivot decision captured mid-Session-2", "commit": "cfe5a1b"},
+        {"task": "Phase 129 PARTIAL-COMPLETE closure + 129.1 scaffold (REQUIREMENTS, ROADMAP, STATE, 129-13 SUMMARY, 129.1 README)", "commit": "0308df7"}
+      ]
+    },
+    {
+      "session_segment": "phase-129.1-discuss-phase",
+      "items": [
+        {"task": "Phase 129.1 CONTEXT.md authored with 6 locked decisions (DECISION-A through DECISION-F)", "commit": "a4c535d"},
+        {"task": "Phase 129.1 DISCUSSION-LOG.md captured", "commit": "a4c535d"},
+        {"task": "STATE.md session-stop recorded", "commit": "170b7c7"}
+      ]
     }
   ],
+  "remaining_tasks": [
+    {"id": 1, "name": "/gsd:plan-phase 129.1 — author ~6 plans per plan_outline in CONTEXT.md", "status": "not_started"},
+    {"id": 2, "name": "Execute Phase 129.1 plans (~14 tasks across 4 waves)", "status": "not_started"},
+    {"id": 3, "name": "Operator UAT of 129.1 (screenshot pipeline end-to-end + manual-create flow + revert verification)", "status": "not_started"}
+  ],
+  "blockers": [],
   "human_actions_pending": [
     {
-      "action": "Pick C-2 recording path: (a) local-laptop screen-record / (b) asciinema .cast on server / (c) c2-blocked defer",
-      "context": "Original plan listed 60s-demo.mp4 as the artifact; headless server constraint means either path (a) keeps the .mp4 deliverable, path (b) substitutes a .cast file (needs SUMMARY+SPIKE-DECISION wording adapted), path (c) records c2-blocked with rationale and closes the spike without the portfolio piece",
+      "action": "Operator confirms `department` Polaris-field mapping at plan-phase time",
+      "context": "DECISION-A added 2 columns (maintenance_problem + department). `department` could map to Polaris's Assignment Group (e.g., 'MT-Maintenance'), Maintenance Location (e.g., 'Bakery'), or Service (e.g., 'MT-Trades'). Planner asks operator before writing migration 0022.",
       "blocking": true
     },
     {
-      "action": "Once recording exists OR defer signal given, the orchestrator will: write 128b-MEASUREMENTS.md C-2 appendix + 128b-08-SUMMARY.md + add ## C-2 Loom section to 128b-SPIKE-DECISION.md + commit + run phase verification (code-review → regression gate → gsd-verifier → phase.complete)",
-      "context": "Standard tail of the execute-phase workflow; resumes from /gsd-execute-phase 128b after the operator's signal lands",
+      "action": "Operator's Mac may have 1 ahead commit (delete-user.ts) — confirm `git push origin main` was run on Mac",
+      "context": "During the Mac/Linux sync earlier in session, the Mac had 1 local commit (1926dabb feat(scripts): add general-purpose delete-user.ts) ahead of origin. The user did `git pull --rebase origin main` to bring down 30 Linux commits. They may or may not have done `git push origin main` to send delete-user.ts back up. If origin is still behind by 1, the next Linux git fetch will see a divergence.",
       "blocking": false
     }
   ],
   "decisions": [
-    {"decision": "Phase 128b SPIKE-DECISION verdict-at-TOP locked: PASS", "rationale": "Path E PASS dominates per D-V4 max aggregation; Plans 01-04 produced empirical artifacts for all four enumerated paths (A=FAIL, B=DEGRADE, D=DEGRADE, E=PASS); 4-of-4 exceeds 3-of-4 G2-REPLY-01 success criterion", "phase": "128b"},
-    {"decision": "C-1 operator wallclock PASSed on Ubuntu workstation (live claude --model haiku in vigil-claude-c1-spike-1778800583 tmux session); D-V1 four-step gate held identically to Plan 04 autonomous regression", "rationale": "Path E primitive tmux send-keys Enter works against operator-driven sessions, not just probe-script-spawned disposable sessions; Phase 133 vigil-tmux-bridge inherits the same primitive validated on the same Ubuntu architecture", "phase": "128b"},
-    {"decision": "claude version drift +1 patch (2.1.142 vs plan-expected 2.1.141) noted in MEASUREMENTS appendix; no behavior delta observed", "rationale": "Phase 133 G2-REPLY-04 can pin claude >= 2.1.141 as validated lower bound without ceiling", "phase": "128b"},
-    {"decision": "If operator picks asciinema path for C-2, orchestrator will adapt SPIKE-DECISION + SUMMARY wording to reference .cast file instead of .mp4 with a one-line 'headless-server adaptation' note; the plan's files_modified .mp4 entry will be documented as substituted, not a verification failure", "rationale": "Plan 08 truths field treats the artifact form as flexible (Loom URL OR local file); the spirit is portfolio-readable visual demo, which asciinema satisfies", "phase": "128b"}
+    {"decision": "129-10 GAP-129-G root cause = H4 (buildInitialContainer dispatch table incomplete; not H1/H2/H3)", "rationale": "Diagnostic evidence cleanly ruled out H1/H2/H3: storage write persists, read returns correct value, source classified as 'appMenu' (non-glassesMenu). Bug lived between pickInitialScreen returning 'work-orders' and the WebView paint — in main.ts buildInitialContainer's switch which only handled HOME+COMPANION.", "phase": "129"},
+    {"decision": "129-10 fix: export buildScreen from navigation.ts; buildInitialContainer routes via buildScreen + converts RebuildPageContainer → CreateStartUpPageContainer for non-HOME/non-COMPANION", "rationale": "Single dispatch table for cold-start AND in-session rendering. Future screen additions only need to update navigation.ts buildScreen, eliminating the class of bug.", "phase": "129"},
+    {"decision": "Strategic pivot: revert SVCNOW assisted-capture popup; build screenshot pipeline (operator-only) + PWA manual-create (all users)", "rationale": "Popup workflow too high-friction in real ServiceNow usage. Operator-specific screenshot pipeline + non-operator PWA manual-create is lower-friction and captures richer data (16+ Polaris fields vs popup's 3).", "phase": "129 → 129.1"},
+    {"decision": "Phase 129 closes PARTIAL-COMPLETE; new Phase 129.1 inserted between 129 and 130", "rationale": "Phase 129 ships real durable G2 + infra value (lifecycle restore, prod migration, build-gate, terminology). SVCNOW-01/02/03/05 SUPERSEDED; SVCNOW-04 (dedup primitive) preserved.", "phase": "129"},
+    {"decision": "Phase 129.1 schema scope: 2 new columns on work_orders (maintenance_problem + department)", "rationale": "Operator's stated need is 'CS#, description, location, department + maintenance_problem'. CS#, description, location already exist as case_number, short_description, location. Tight scope.", "phase": "129.1"},
+    {"decision": "Phase 129.1 feedback loop: preview-before-commit in PWA via state: 'pending_review'", "rationale": "Screenshot → vigil-core extraction → work_orders row with state='pending_review' → operator reviews in PWA → Commit (state→open) or Discard. Trades one extra click for accuracy.", "phase": "129.1"},
+    {"decision": "Phase 129.1 macOS trigger: launchd watcher on ~/vigil-captures/", "rationale": "Ambient capture (drop file into folder, drop activates upload). No hotkey to remember. Pairs naturally with Cmd+Shift+4's 'save to location' option.", "phase": "129.1"}
   ],
   "uncommitted_files": [],
-  "next_action": "On resume: re-invoke /gsd-execute-phase 128b. The orchestrator will detect 7/8 plans complete, surface the C-2 checkpoint, ask operator for the recording path decision (a/b/c), then complete Plan 08 + run phase verification + roadmap completion + next-phase routing.",
-  "context_notes": "Spike empirical answer is fully in — verdict PASS. Phase 133 (vigil-tmux-bridge productionization for G2-REPLY-02..04) is unlocked and scope-locked to FULL G2-REPLY-02..04 reply UX (not G2-REPLY-05 banner-ack fallback). Writer-process location: vigil-tmux-bridge on Ubuntu. 5-string allowlist for drift detector reproduced verbatim from spike 001 README lines 182-218: ['yes', 'no', 'continue', 'abort', 'defer']. INBOUND/OUTBOUND asymmetry documented (the <thought> delimiter pattern does NOT apply to OUTBOUND write-back). Only the C-2 portfolio artifact remains; verdict and Phase 133 handoff are already locked in committed artifacts."
+  "background_processes": [
+    {
+      "name": "Vite dev server (vigil-g2-plugin prototype mode)",
+      "pid": 596302,
+      "port": 5174,
+      "url": "http://morrillhouse:5174/",
+      "started_by": "npm run prototype during 129-10 hardware diagnostic",
+      "status": "still running",
+      "note": "Not needed for Phase 129.1 (which is mostly extension + PWA + vigil-core work, not G2). Operator can safely kill via `kill 596302` or leave running."
+    },
+    {
+      "name": "Vite dev server (vigil-pwa)",
+      "pid": 45172,
+      "port": 5173,
+      "started_by": "operator before this session",
+      "status": "still running",
+      "note": "Unrelated to 129-10 work; pre-existing dev server for vigil-pwa. Likely useful for 129.1 PWA development. Leave running."
+    }
+  ],
+  "anti_patterns_encountered": [
+    {
+      "name": "Hypothesis space too narrow on planned diagnostics",
+      "severity": "advisory",
+      "description": "Plan 129-10 enumerated 3 hypotheses (H1 storage-write, H2 restore-read, H3 source-misclassification) for GAP-129-G. The actual root cause (H4 dispatch-table incomplete) was outside the planned hypothesis space. Diagnostic instrumentation correctly captured evidence that ruled out H1/H2/H3, but I had to read main.ts:buildInitialContainer directly to spot the actual bug — between the last successful checkpoint (pickInitialScreen returned 'work-orders') and the failing observation (plugin painted HOME).",
+      "mitigation": "When diagnostic evidence rules out all planned hypotheses, immediately read the code path between the last-successful-checkpoint and the failing-observation. The 'between' is often the unsuspected place. Plan 129-10's PLAN.md included NONE_OF_ABOVE branch explicitly — use it."
+    },
+    {
+      "name": "Cross-machine git divergence during multi-day UAT",
+      "severity": "advisory",
+      "description": "Operator's Mac (~/Desktop/Local AI/dailybrief) was 30 commits behind origin/main while Linux (morrillhouse) was 30 commits ahead. Scenario 8's setup-view never rendered on Mac because Mac had pre-129-07 popup.html. Diagnosis took ~15 minutes of console-spelunking before discovering the stale-checkout issue.",
+      "mitigation": "Before starting hardware UAT on a different machine than where code was authored, explicitly verify `git log origin/main..HEAD` and `git rev-parse HEAD` match between machines. Add this as a Session 0 step in future cross-machine UAT runbooks."
+    },
+    {
+      "name": "Auto-mode classifier blocks git push to main",
+      "severity": "advisory",
+      "description": "Claude Code's auto-mode classifier intercepts `git push origin main` and blocks it even when AskUserQuestion has approved the action. Required operator to set bypass permissions before push could proceed.",
+      "mitigation": "Either set permission rules upfront in .claude/settings.json (`Bash(git push origin main)`), or accept that pushes-to-default-branch require explicit user step. Don't burn time re-trying the same command."
+    }
+  ],
+  "next_action": "/gsd:plan-phase 129.1 — author ~6 plans per the plan_outline in 129.1-CONTEXT.md. Plans cover: schema migration + revert prep, extension revert (Chrome + Safari lock-step), POST /v1/captures/screenshot endpoint, macOS launchd watcher, PWA manual-create + draft-review UI, REQUIREMENTS update + UAT runbook + operator UAT.",
+  "context_notes": "Phase 129 was a long arc (13 plans + 2 UAT sessions + a mid-session pivot). Phase 129.1's CONTEXT.md is unusually tight because the discuss-phase happened immediately after the pivot decision with all the architectural context fresh. Operator made a clean strategic call (popup → screenshot pipeline). 6 decisions locked. One open question (department field mapping) flagged for planner to ask. Phase 130 (Voice capture) unaffected; sequence preserved."
 }
