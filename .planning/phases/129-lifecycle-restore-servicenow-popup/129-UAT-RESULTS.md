@@ -5,8 +5,64 @@ operator: Jameson Morrill
 started: 2026-05-15
 paused: 2026-05-15
 session_2_started: 2026-05-16
-status: session-2-in-progress
-resume_signal: in progress — see Session 2 section
+session_2_paused: 2026-05-16
+status: session-2-paused-strategic-pivot
+resume_signal: do NOT resume — pivot decision pending (see Pivot Decision section)
+---
+
+## Pivot Decision — 2026-05-16 (mid-Session-2)
+
+**Operator triggered a strategic re-direction during Scenario 6** of the Session 2 close-out UAT.
+
+### What's changing
+
+1. **The ServiceNow assisted-capture extension (Chrome + Safari) reverts to Phase 84 thought-capture (generic page capture).** The popup-with-CS#-prefill, CS# extraction regex, drift detection, MV3 service worker, content-script — all of it gets reverted. Single-product extension for all users, not ServiceNow-specific.
+
+2. **A new operator-specific screenshot pipeline replaces the popup for Jameson's ServiceNow workflow:**
+   - Operator screenshots a Polaris case page.
+   - Mac-side capture (or vigil-core endpoint) routes the screenshot to Claude API for structured field extraction.
+   - Extracted fields (Number, Store Account, Location, Assigned to, Equipment, Priority, Short Description, ...) POST to `/v1/work-orders/sync` (same backend; reuses migration 0021 + `dbInsertOrGet` dedup).
+   - Higher-fidelity capture (16+ fields vs. popup's 3) at the cost of one extra tool-bar click (the screenshot trigger).
+
+3. **A manual-create UI in the PWA work-orders list** lets all non-operator users create work orders by hand. Replaces the popup's role for everyone else (most of them don't use ServiceNow anyway).
+
+### What stays from Phase 129 (independent of the pivot)
+
+- Plan 129-08 production migration 0021 (`client_capture_id` column + partial unique index) — harmless either way; still used by the new pipeline for dedup.
+- Plan 129-09 G2 DOUBLE_CLICK entry gesture — operator's G2 workflow, unaffected.
+- Plan 129-10 G2 lifecycle restore fix (GAP-129-G) — operator's G2 workflow, unaffected. Hardware-validated.
+- Plan 129-11 terminology cleanup — pure docs; the G2 task vs. ServiceNow work order distinction is still relevant.
+- Plan 129-12 build-gate convention — pure process; still useful.
+
+### What gets reverted in a new phase
+
+- Plan 129-03 (SVCNOW popup + service worker + content-script).
+- Plan 129-05 (Safari lock-step mirror of the above).
+- Plan 129-07 (extension housekeeping: __tests__ relocation, setup-view restore, drift detection persistence).
+
+### Session 2 progress retained (not lost)
+
+- Scenario 1 — PASS (WORK_ORDERS restore; hardware-validated via 129-10). Closes ROADMAP Success Criterion 1.
+- Scenario 1b — DEFERRED-LONG-WAIT (31-min TTL, sim-side covered).
+- Scenario 2 — DEFERRED-NOT-BLOCKING (prototype-mode bridge limitation; sim-side covered).
+- Scenario 3 — DEFERRED-NOT-BLOCKING (sim-side covered).
+- Scenario 4 — PASS (CS# extraction; re-confirmed via Scenario 8).
+- Scenario 7 — PASS (GAP-129-A confirmed closed: Chrome unpacked load succeeds).
+- Scenario 8 — PASS (GAP-129-B confirmed closed: setup-view + Save + D-03 close).
+- Scenario 4b, 4c, 5, 6 — UNTESTED, but **superseded by the pivot**: the extension changes that 4b/4c/6 were designed to validate are about to be reverted; Scenario 5 (Safari parity smoke) becomes moot when the parity target reverts.
+
+### Decisions captured
+
+- **Motivation:** Popup workflow is too high-friction in real ServiceNow usage. Typing description + priority + Send for every case is slower than screenshot.
+- **Architecture:** vigil-core endpoint receives the screenshot, calls Claude API, writes to `work_orders`. Operator-specific pipeline. Manual-create UI in PWA covers all other users.
+- **Scope:** Single-user pipeline for Jameson; manual-create UI for everyone. NOT a multi-tenant generalized screenshot system.
+
+### Next steps (in priority order)
+
+1. Close Phase 129 as PARTIAL-COMPLETE with the G2-side and infrastructure work captured (5 plans complete; 4 extension plans get superseded).
+2. Spin up a new phase covering: (a) revert the SVCNOW extension changes, (b) build the screenshot pipeline endpoint, (c) build the PWA manual-create UI.
+3. Mark SVCNOW-01..05 requirements as superseded; new requirements for the screenshot pipeline + manual-create UI need authoring.
+
 ---
 
 ## Session 2 — 2026-05-16 (Gap Closure Re-run)
@@ -15,8 +71,8 @@ resume_signal: in progress — see Session 2 section
 
 | Gap       | Resolution Plan | Session-2 Status | Notes                                                              |
 |-----------|-----------------|------------------|--------------------------------------------------------------------|
-| GAP-129-A | 129-07 Task 1   | (pending)        | Verified by Scenario 7                                             |
-| GAP-129-B | 129-07 Task 2   | (pending)        | Verified by Scenario 8                                             |
+| GAP-129-A | 129-07 Task 1   | CLOSED           | Scenario 7 PASS — Chrome unpacked load succeeds without __tests__ error |
+| GAP-129-B | 129-07 Task 2   | CLOSED           | Scenario 8 PASS — setup-view + save → svcnow-view + D-03 close (with DevTools detached) |
 | GAP-129-C | 129-08          | CLOSED           | 129-08-DEPLOY-LOG.md status: no-op + dedup probe pair synced:1/synced:0 confirms SVCNOW-04 on prod |
 | GAP-129-D | 129-07 Task 3   | (pending)        | Verified by Scenario 6                                             |
 | GAP-129-E | 129-11          | CLOSED           | Doc-only fix; 129-11 SUMMARY documents the CONTEXT/RESEARCH/RUNBOOK terminology cleanup |
@@ -56,6 +112,23 @@ resume_signal: in progress — see Session 2 section
 - **Timestamp:** 2026-05-16T19:40:00Z
 - **Observed behavior:** Chrome accepted Load unpacked of `vigil-extension/` directory. Extension card appears in `chrome://extensions`; action icon visible in toolbar. No reserved-prefix dialog (the pre-129-07 `Cannot load extension with file or directory name __tests__` error did NOT fire).
 - **Notes:** GAP-129-A closed by 129-07 Task 1 (moved `__tests__/` directory outside the extension bundle). Operator confirmation: "pass".
+
+#### Scenario 8: PASS (GAP-129-B confirmed closed)
+
+- **Timestamp:** 2026-05-16T20:15:00Z
+- **Observed behavior:**
+  - **Action 1 (setup-view rendering):** With `chrome.storage.local` empty (confirmed via console `chrome.storage.local.get(null)` → `{}`), clicking the Vigil extension icon on a ServiceNow Polaris page rendered the setup-view (password-style input + Save button). Operator quote: "pop up waiting for api".
+  - **Action 2 (save → svcnow-view transition):** Operator typed Vigil API key, clicked Save. Setup-view disappeared, svcnow-view appeared with the page's CS# in the header and description textarea focused.
+  - **Action 3 (send → HTTP 200 → D-03 close + PWA row):** Operator typed test description, clicked Send. Work order arrived in PWA work-orders list (confirms HTTP 200 server-side). Popup auto-closed (D-03) on the SECOND attempt after closing DevTools — the first Send while DevTools was attached did NOT close the popup (Chrome behavior — DevTools attached suppresses `window.close()`). After closing DevTools, repeat Send auto-closed correctly.
+- **Notes:** GAP-129-B closed by 129-07 Task 2 (inline setup-view + Save handler + svcnow-view transition). D-03 close-on-200 behavior also confirmed (with DevTools detached). Operator confirmation: "it auto-closed".
+- **DevTools D-03 caveat:** When DevTools is attached to the popup, `window.close()` is silently suppressed by Chrome. Documented here for future debug sessions — if D-03 ever appears to fail, check DevTools attachment first.
+- **Sync prerequisite resolved:** Initial test on Mac showed pre-129-07 popup.html (no setup-view, "logged out" degraded state). Mac checkout `~/Desktop/Local AI/dailybrey` was stale — `git pull --rebase origin main` brought it up to date with the 30 commits pushed from morrillhouse. Reload extension picked up the post-129-07 `popup.html` + `popup.js`.
+
+#### Scenario 4: PASS (re-confirmed, implicitly verified by Scenario 8)
+
+- **Timestamp:** 2026-05-16T20:15:30Z
+- **Observed behavior:** Scenario 8 Action 2 confirmed CS# extraction works end-to-end: svcnow-view rendered with the Polaris page's CS# in the header (which is exactly Scenario 4's PASS rule). Session 1 (2026-05-15) had already PASS'd Scenario 4 with `CS0361233 | Case | ServiceNow` title-shape verification; that finding stands.
+- **Notes:** ROADMAP Open Question 1 / RESEARCH Assumption A1 resolved — the `/\bCS\d{7}\b/` extraction regex correctly handles the live Polaris title format. SVCNOW-01 confirmed on hardware in two distinct sessions.
 
 #### Scenario 3: DEFERRED-NOT-BLOCKING (sim-side covered)
 
