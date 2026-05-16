@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: partial-complete
-stopped_at: Phase 129 PARTIAL-COMPLETE 2026-05-16 — pivot to 129.1 (screenshot pipeline + PWA manual-create)
-last_updated: "2026-05-16T20:40:00.000Z"
+status: planning
+stopped_at: Phase 129.1 context gathered
+last_updated: "2026-05-16T21:16:03.070Z"
 last_activity: 2026-05-16
 progress:
   total_phases: 12
   completed_phases: 4
-  total_plans: 51
-  completed_plans: 44
-  percent: 32
+  total_plans: 37
+  completed_plans: 36
+  percent: 33
 ---
 
 # Project State
@@ -33,10 +33,12 @@ Last activity: 2026-05-16
 ## Phase 129 Closure (2026-05-16) — PARTIAL-COMPLETE
 
 Phase 129 closed PARTIAL-COMPLETE after Session 2 UAT triggered a strategic pivot:
+
   - **Completed + validated:** G2 lifecycle restore (GAP-129-G hardware-validated), production migration 0021, build-gate convention, terminology cleanup, dedup primitive (SVCNOW-04).
   - **Superseded by 129.1:** SVCNOW assisted-capture popup workflow (SVCNOW-01/02/03/05). Chrome + Safari extension reverts back to Phase 84 thought-capture; new operator-specific screenshot pipeline + non-operator PWA manual-create UI ship in 129.1.
   - **ROADMAP Success Criteria disposition:** 1 hardware-PASS, 2 DEFERRED-NOT-BLOCKING (sim-side covered), 2 SUPERSEDED.
   - **Audit trail:** `.planning/phases/129-lifecycle-restore-servicenow-popup/129-UAT-RESULTS.md` (Session 2 + Pivot Decision sections), `129-13-SUMMARY.md` (final disposition).
+
 Last activity: 2026-05-16
 
 **v3.9 phase sequence:**
@@ -470,9 +472,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-16T17:19:05.194Z
-Stopped at: Phase 129 context gathered
-Resume file: None
+Last session: 2026-05-16T21:16:03.058Z
+Stopped at: Phase 129.1 context gathered
+Resume file: .planning/phases/129.1-svcnow-revert-screenshot-pipeline/129.1-CONTEXT.md
 
 ## Operator Next Steps
 
