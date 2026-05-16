@@ -12,14 +12,20 @@
 // The 129-06 UAT runbook Scenario 4 confirms or corrects this against the operator's
 // live Polaris instance. A regex correction is < 10 LOC if needed.
 //
-// Runner: npx tsx --test "__tests__/popup-helpers.test.ts"
+// LOCATION NOTE (Phase 129 Plan 07 / GAP-129-A):
+// Relocated from `vigil-extension/__tests__/` (which Chrome's unpacked-extension load
+// rejects because folder names starting with `_` are reserved by the extension system)
+// to this sibling directory at the repo root. The import path below was updated to
+// reach back to vigil-extension/popup-helpers.js from the new location.
+//
+// Runner: npx tsx --test "vigil-extension-tests/popup-helpers.test.ts" (from repo root)
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { createRequire } from 'node:module'
 
 const require = createRequire(import.meta.url)
-const { extractCaseNumber } = require('../popup-helpers.js')
+const { extractCaseNumber } = require('../vigil-extension/popup-helpers.js')
 
 // --- Compound title (real Polaris shape) ---
 test('extractCaseNumber: compound title with dash separator returns CS#', () => {

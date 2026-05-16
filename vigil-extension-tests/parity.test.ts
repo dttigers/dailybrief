@@ -18,7 +18,14 @@
 // Do NOT pre-emptively add the shim — D-13 strict lock-step is the policy until UAT proves
 // otherwise.
 //
-// Runner: npx tsx --test "__tests__/parity.test.ts" (from vigil-extension/ directory)
+// LOCATION NOTE (Phase 129 Plan 07 / GAP-129-A):
+// Relocated from `vigil-extension/__tests__/` (which Chrome's unpacked-extension load
+// rejects because folder names starting with `_` are reserved by the extension system)
+// to this sibling directory at the repo root. All readFileSync paths were re-anchored
+// to reach into vigil-extension/ and vigil-safari-extension/.../Resources/ from the new
+// location.
+//
+// Runner: npx tsx --test "vigil-extension-tests/parity.test.ts" (from repo root)
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
@@ -29,8 +36,8 @@ import { dirname, resolve } from 'node:path'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 // Chrome source files (source of truth — authored in 129-03)
-const chromeDir = resolve(__dirname, '..')
-const safariDir = resolve(__dirname, '../../vigil-safari-extension/Vigil Capture Extension/Resources')
+const chromeDir = resolve(__dirname, '../vigil-extension')
+const safariDir = resolve(__dirname, '../vigil-safari-extension/Vigil Capture Extension/Resources')
 
 // Manifests (parsed for structured comparison)
 const chromeManifest = JSON.parse(readFileSync(resolve(chromeDir, 'manifest.json'), 'utf-8'))

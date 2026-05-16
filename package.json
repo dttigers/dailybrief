@@ -3,7 +3,8 @@
   "private": true,
   "description": "Vigil monorepo orchestrator (NOT a workspaces monorepo per Phase 107.1 D-13 — thin orchestrator only)",
   "scripts": {
-    "dev": "bash scripts/preflight-check.sh && concurrently --kill-others --names 'core,pwa' --prefix-colors 'blue,magenta' 'npm --prefix vigil-core run dev' 'npm --prefix vigil-pwa run dev'"
+    "dev": "bash scripts/preflight-check.sh && concurrently --kill-others --names 'core,pwa' --prefix-colors 'blue,magenta' 'npm --prefix vigil-core run dev' 'npm --prefix vigil-pwa run dev'",
+    "test:extension": "tsx --test \"vigil-extension-tests/popup-helpers.test.ts\" \"vigil-extension-tests/parity.test.ts\""
   },
   "devDependencies": {
     "concurrently": "^9.2.1"
