@@ -335,6 +335,71 @@ A yellow drift banner appears in the popup reading approximately "CS# changed �
 
 ---
 
+## Scenario 7 — GAP-129-A Confirmation (Chrome Unpacked Load Succeeds)
+
+**Requirements:** None directly — closes GAP-129-A. Pre-requisite for re-running every Chrome-side scenario (4, 4b, 4c, 6) in Session 2.
+
+**Hardware:** Mac with Chrome browser (the same iMac used in Session 1)
+
+### Prerequisite state
+- `vigil-extension/` directory contains the post-129-07 build: `__tests__/` has been moved to `vigil-extension-tests/` (outside the extension bundle), the popup setup-view markup is present, and the content-script `lastCaseNumber` persistence uses `chrome.storage.session`.
+- Chrome already has any prior Vigil extension load removed (chrome://extensions → click Remove on the existing Vigil card) so we test a fresh load.
+
+### Steps
+1. Open Chrome → `chrome://extensions` → toggle **Developer mode** ON (top-right).
+2. Click **Load unpacked**.
+3. In the file picker, select the `vigil-extension/` directory from the project checkout (`/Users/<you>/dev/dailybrief/vigil-extension/`).
+4. Observe the result.
+
+### Expected behavior
+Chrome accepts the load. A new "Vigil Capture" (or equivalent name from manifest.json) card appears in chrome://extensions with the action icon active. **No** error dialog appears matching `Could not load extension. Cannot load extension with file or directory name __tests__. Filenames starting with "_" are reserved for use by the system.`
+
+### Pass rule
+**PASS:** Extension loads cleanly; action icon appears in the Chrome toolbar; no reserved-prefix dialog.
+
+**FAIL:** The reserved-prefix dialog fires — GAP-129-A regressed (most likely a `__tests__/` directory or other `_`-prefixed entry was re-added under `vigil-extension/`). Record the exact error text + the offending path.
+
+---
+
+## Scenario 8 — GAP-129-B Confirmation (Inline Setup View + Key Save Flow)
+
+**Requirements:** None directly — closes GAP-129-B. Pre-requisite for re-running every popup-driven scenario (4, 4b, 4c, 6) in Session 2 from a fresh-storage state.
+
+**Hardware:** Mac with Chrome browser + a live `*.service-now.com/*` Polaris case page
+
+### Prerequisite state
+- Vigil extension is loaded (Scenario 7 PASS).
+- The extension's `chrome.storage.local` is EMPTY. Two ways to achieve this:
+  - **Option A (preferred):** chrome://extensions → click "Details" on the Vigil card → "Inspect views: service worker" → in DevTools Console run `chrome.storage.local.clear()` → close DevTools.
+  - **Option B (heavier):** Remove the extension entirely from chrome://extensions and Load unpacked again (Scenario 7's flow). Fresh extension state guarantees empty storage.
+
+### Steps
+1. Open a `*.service-now.com/*` Polaris case page (any case, any instance). Confirm the action icon is enabled on the toolbar (D-01 — action enabled only on SN pages).
+2. **Action 1:** Click the Vigil extension icon.
+3. Observe what renders in the popup.
+4. **Action 2:** Type a valid Vigil API key into the password-style input field; click Save (or press Enter).
+5. Observe the popup's response.
+6. **Action 3:** With the popup now in svcnow-view, type a short test description in the description textarea, optionally adjust priority, then either click Send or press ⌘+Enter.
+7. Observe the popup's response + check the PWA work-orders list (cleanup the test row after).
+
+### Expected behavior
+- **Action 1:** Popup opens to the **setup-view** (NOT the svcnow form). The setup-view shows a password-style input for the API key + a Save button. The CS# of the current page is NOT shown yet (svcnow-view hasn't activated).
+- **Action 2:** On Save, the setup-view disappears; the **svcnow-view** appears. The current Polaris page's CS# is extracted and shown in the header. The description textarea is focused (cursor ready for typing).
+- **Action 3:** On Send, the POST returns HTTP 200 and the popup closes (D-03 close-on-200 behavior). A new row appears in the PWA work-orders list with the matching CS#.
+
+### Pass rule
+**PASS:** All three actions produce expected results. Setup-view → save → svcnow-view → send succeeds.
+
+**FAIL:** Any action diverges. Record:
+- If Action 1 shows svcnow-view directly (storage wasn't actually empty), redo the prerequisite and re-try.
+- If Action 2's save doesn't transition to svcnow-view (or shows an error), record the popup state + any DevTools console errors.
+- If Action 3's send fails (HTTP non-200 or popup doesn't close), record the response code + body.
+
+### Cleanup
+After PASS, delete the test row: open the PWA work-orders list → archive (or delete via the operator's normal flow) the row created by this test. The popup-stored API key can stay (it's the operator's real key — no need to clear).
+
+---
+
 ## After Running All Scenarios
 
 Fill in `129-UAT-RESULTS.md` with the following for each scenario:
@@ -353,6 +418,42 @@ Fill in `129-UAT-RESULTS.md` with the following for each scenario:
 - **Scenario 5 — Xcode Copy Bundle Resources:** Note whether the manual Xcode step was required (files missing from build phase) or not.
 - **If any FAIL:** Do NOT type "approved". Type the specific scenario number(s) that failed and a one-line description. The orchestrator will route failing scenarios through `/gsd:plan-phase --gaps` for closure.
 - **If ALL PASS:** Type "approved".
+
+### Session 2 results location (post-gap-closure re-run)
+
+When re-running this runbook after plans 129-07 through 129-12 have shipped (per plan 129-13), record results under a new top-level section in `129-UAT-RESULTS.md` named:
+
+```
+## Session 2 — YYYY-MM-DD (Gap Closure Re-run)
+```
+
+Place this section ABOVE the existing Session 1 results (most-recent-first ordering). Augment, do NOT overwrite — Session 1's findings remain as the historical record.
+
+At the top of the Session 2 section, populate the **GAP Closure Status table**:
+
+```markdown
+## GAP Closure Status (post-session-2)
+
+| Gap       | Resolution Plan | Session-2 Status | Notes                                                                            |
+|-----------|-----------------|------------------|----------------------------------------------------------------------------------|
+| GAP-129-A | 129-07 Task 1   | CLOSED           | Scenario 7 PASS — Chrome load succeeds without __tests__ error                   |
+| GAP-129-B | 129-07 Task 2   | CLOSED           | Scenario 8 PASS — setup-view + save flow + svcnow transition                     |
+| GAP-129-C | 129-08          | CLOSED           | 129-08 deploy log shows post-deploy HTTP 200 + dedup synced:0                    |
+| GAP-129-D | 129-07 Task 3   | CLOSED           | Scenario 6 PASS — drift banner fires on full-reload Polaris nav                  |
+| GAP-129-E | 129-11          | CLOSED           | Doc-only; verified by reading post-129-11 CONTEXT/RESEARCH/RUNBOOK               |
+| GAP-129-F | 129-09          | CLOSED           | Scenario 1 setup PASS — DOUBLE_CLICK enters TASK_DETAIL on hardware              |
+| GAP-129-G | 129-10          | CLOSED           | 129-10 diagnostic log shows Phase 3 validation PASS                              |
+| GAP-129-H | 129-12          | CLOSED           | Build-gate convention shipped; future plans inherit the rule                     |
+```
+
+Replace each row's Status with the actual outcome (`CLOSED`, `RE-OPENED`, `DEFERRED`, or `BLOCKED`) once the corresponding scenario runs. Append a one-line note with the run-time observation.
+
+After the GAP table, list per-scenario results using the `## Scenario N: [PASS | FAIL | DEFERRED]` block format above. Cover Scenarios 1, 1b, 2, 3, 4, 4b, 4c, 5, 6, 7, 8 in that order (Scenarios 7 and 8 are the new gap-closure confirmations; the rest are the original Session 1 set, re-run from a known-fixed state).
+
+**Resume signal at end of Session 2:**
+- If ALL scenarios PASS (or are mark-DEFERRED for the long-wait case) AND every GAP table row says `CLOSED`: type "approved: phase 129 closed".
+- If any scenario FAILS: type "regression: scenario N failed — <one-liner>".
+- If any scenario remains BLOCKED on something beyond the operator's control: type "blocked: scenario N — <reason>".
 
 ### Edge-case policy
 
