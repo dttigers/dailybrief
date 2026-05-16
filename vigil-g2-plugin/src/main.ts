@@ -46,7 +46,9 @@ import {
   refreshCurrentScreen,
   getCurrentScreen,
   rebuildCurrentScreen,
+  buildScreen,
 } from './navigation.ts'
+import { CreateStartUpPageContainer } from '@evenrealities/even_hub_sdk'
 import {
   fetchSummary,
   fetchBrief,
@@ -84,6 +86,15 @@ const REFRESH_INTERVAL_MS = 60_000
 // Module-scope registration captures the push regardless of when init()
 // runs — registering inside init() races the push and the value can be
 // missed. RESEARCH §"Pattern 4" / CONTEXT D-07.
+// [diag GAP-129-G TRAIL] — TEMPORARY (Plan 129-10 Task 1). Removed in Task 5.
+// Dump previous-session diagnostic trail to console BEFORE init() runs, so the
+// operator sees historical evidence as soon as Safari Web Inspector re-attaches
+// (which can be several seconds after WebView creation, missing live H3-source
+// / H2-read logs).
+import { appendDiagTrail, dumpDiagTrail } from './lib/diag-persist.ts'
+dumpDiagTrail()
+appendDiagTrail('MODULE-LOAD', { ts: Date.now(), userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'n/a' })
+
 const bridgeInstance = EvenAppBridge.getInstance()
 const launchSourcePromise: Promise<LaunchSource> = new Promise((resolve) => {
   bridgeInstance.onLaunchSource((source) => {
@@ -92,6 +103,7 @@ const launchSourcePromise: Promise<LaunchSource> = new Promise((resolve) => {
     // the iPhone-relaunch path is being misclassified as 'glassesMenu' (D-10 bypass)
     // vs. correctly identified as 'appMenu' / cold-start.
     console.log('[diag GAP-129-G H3-source]', source)
+    appendDiagTrail('H3-source', { source })
     resolve(source)
   })
 })
@@ -250,21 +262,46 @@ const sseClient = createSseClient({
 
 async function buildInitialContainer(
   screen: ScreenName,
-): Promise<Awaited<ReturnType<typeof buildHomeScreen>>> {
-  switch (screen) {
-    case Screen.COMPANION: {
-      // Already hydrated by init() before this call — buildCompanionScreen
-      // reads the in-memory cache.
-      return buildCompanionScreen()
-    }
-    case Screen.HOME:
-    default: {
-      // Phase 124 D-12 (G2-POLISH-07): Home no longer renders affirmation
-      // inline; fetchAffirmation() is dropped from this path.
-      const summary = await fetchSummary()
-      return buildHomeScreen(summary)
-    }
+): Promise<CreateStartUpPageContainer> {
+  // Direct first-paint builders for HOME and COMPANION — they each have a
+  // dedicated `build*Screen` that returns CreateStartUpPageContainer.
+  if (screen === Screen.COMPANION) {
+    // Already hydrated by init() before this call — buildCompanionScreen reads
+    // the in-memory cache.
+    return buildCompanionScreen()
   }
+  if (screen === Screen.HOME) {
+    // Phase 124 D-12 (G2-POLISH-07): Home no longer renders affirmation inline;
+    // fetchAffirmation() is dropped from this path.
+    const summary = await fetchSummary()
+    return buildHomeScreen(summary)
+  }
+  // Phase 129 GAP-129-G fix: every other screen (WORK_ORDERS, AFFIRMATION,
+  // VOICE_SPIKE, TASK_DETAIL, ...) routes through navigation.ts's `buildScreen`
+  // dispatch (the same one used by in-session navigateTo) so cold-start restore
+  // can land on ANY screen the operator was last viewing — not just HOME /
+  // COMPANION. The pre-fix switch had `default → HOME`, which silently
+  // discarded every non-HOME/COMPANION restore (root cause of GAP-129-G).
+  //
+  // RebuildPageContainer and CreateStartUpPageContainer share the same field
+  // shape (containerTotalNum + textObject + listObject + imageObject); we
+  // build via buildScreen() (rebuild flavor) and re-wrap as CreateStartUpPageContainer
+  // so bridge.createStartUpPageContainer() receives the expected class instance.
+  //
+  // TASK_DETAIL cold-start note: pickInitialScreen returns only the screen name,
+  // not the args (the stored args = { id } are read from localStorage but
+  // dropped by pickRestoredScreen). buildScreen(TASK_DETAIL) reads
+  // `getLastFetchedTasks()` which is empty on cold start → renders empty.
+  // For now this is acceptable (falls back to the empty TASK_DETAIL frame, not
+  // HOME). A follow-up plan can thread args through pickInitialScreen to
+  // achieve full-fidelity TASK_DETAIL restore (D-07 fetch-by-id + 404 → parent).
+  const rebuild = await buildScreen(screen)
+  return new CreateStartUpPageContainer({
+    containerTotalNum: rebuild.containerTotalNum,
+    textObject: rebuild.textObject,
+    listObject: rebuild.listObject,
+    imageObject: rebuild.imageObject,
+  })
 }
 
 async function init(): Promise<void> {

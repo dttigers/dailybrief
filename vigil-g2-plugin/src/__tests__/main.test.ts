@@ -335,3 +335,77 @@ test("D-129 drift: navigation.ts writes setLocalStorage on navigateTo (G2-LIFECY
     "navigation.ts imports LAST_SCREEN_LS_KEY from screen-state-restore",
   );
 });
+
+// ── GAP-129-G regression coverage (Plan 129-10 Task 3) ─────────────
+//
+// Bug: buildInitialContainer's switch only handled HOME + COMPANION; every
+// other screen fell through to `default: HOME`. pickInitialScreen returned the
+// correct screen name (e.g. "work-orders") from localStorage restore, but the
+// cold-start render path silently dropped it. Plugin always landed on HOME
+// after force-quit + relaunch, regardless of what was stored.
+//
+// Hardware-validated 2026-05-16: with the fix in place, pickInitialScreen
+// returns "work-orders" → buildInitialContainer routes through buildScreen →
+// plugin lands on WORK_ORDERS list.
+//
+// These drift detectors lock in the fix at the source-content level. They run
+// under node:test without importing main.ts (which has SDK side effects).
+
+test("GAP-129-G regression: buildInitialContainer dispatches via buildScreen for non-HOME/COMPANION screens", () => {
+  // The cold-start builder MUST route screens other than HOME + COMPANION
+  // through navigation.ts's buildScreen dispatch. Pre-fix code had a `default`
+  // case that returned `buildHomeScreen(summary)` — the regression we're
+  // guarding against. Post-fix the builder calls `buildScreen(screen)` and
+  // wraps the result as CreateStartUpPageContainer.
+  const buildInitialIdx = mainNoComments.indexOf("buildInitialContainer");
+  assert.ok(buildInitialIdx > 0, "main.ts defines buildInitialContainer");
+
+  // Find the function body window (allow ~3KB for the full function body +
+  // surrounding doc-comments-now-stripped).
+  const fnWindow = mainNoComments.slice(buildInitialIdx, buildInitialIdx + 3000);
+
+  assert.match(
+    fnWindow,
+    /buildScreen\s*\(\s*screen\s*\)/,
+    "buildInitialContainer calls buildScreen(screen) for non-HOME/COMPANION dispatch (GAP-129-G fix)",
+  );
+  assert.match(
+    fnWindow,
+    /CreateStartUpPageContainer/,
+    "buildInitialContainer wraps the result as CreateStartUpPageContainer (RebuildPageContainer → CreateStartUpPageContainer conversion)",
+  );
+
+  // Guard against regression: the function body must NOT fall through to
+  // buildHomeScreen for every non-HOME/COMPANION case. A pre-fix `default`
+  // case that calls buildHomeScreen for any non-HOME screen would re-introduce
+  // the bug. Search for the specific pre-fix anti-pattern: a `default:` case
+  // followed by `buildHomeScreen` BEFORE a buildScreen(screen) call. Note:
+  // post-fix HOME path still calls buildHomeScreen — guarded by an explicit
+  // `if (screen === Screen.HOME)` check, not by `default`.
+  const hasDefaultFallthrough = /default\s*:\s*{[^}]*?buildHomeScreen/s.test(fnWindow);
+  assert.ok(
+    !hasDefaultFallthrough,
+    "buildInitialContainer must NOT use `default: buildHomeScreen(...)` fallthrough (GAP-129-G anti-pattern)",
+  );
+});
+
+test("GAP-129-G regression: navigation.ts exports buildScreen so main.ts can reuse the dispatch", () => {
+  // The fix requires buildScreen to be exported from navigation.ts so
+  // main.ts's buildInitialContainer can call it. Pre-fix it was private
+  // (`async function buildScreen(...)`); post-fix it's `export async function
+  // buildScreen(...)`. Lock the export in.
+  assert.match(
+    navigationNoComments,
+    /export\s+async\s+function\s+buildScreen\s*\(/,
+    "navigation.ts exports buildScreen (GAP-129-G fix prerequisite)",
+  );
+});
+
+test("GAP-129-G regression: main.ts imports buildScreen from navigation.ts", () => {
+  // The import statement is the wire that lets the fix actually work.
+  assert.match(
+    mainNoComments,
+    /import\s*{[^}]*\bbuildScreen\b[^}]*}\s*from\s*['"]\.\/navigation\.ts['"]/s,
+    "main.ts imports buildScreen from ./navigation.ts (GAP-129-G fix prerequisite)",
+  );
+});

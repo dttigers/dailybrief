@@ -30,6 +30,9 @@ import {
 } from './screens/voice-spike.ts'
 import { fetchSummary, fetchBrief, fetchAffirmation, fetchAgentSessions } from './api.ts'
 import { LAST_SCREEN_LS_KEY } from './lib/screen-state-restore.ts'
+// [diag GAP-129-G] TEMPORARY (Plan 129-10 Task 1) — persistent trail captures
+// diagnostic events across Web Inspector re-attach gaps. Removed in Task 5.
+import { appendDiagTrail } from './lib/diag-persist.ts'
 
 // Screen identifiers — const object pattern (erasableSyntaxOnly)
 export const Screen = {
@@ -64,8 +67,12 @@ export function getPrevScreen(current: ScreenName): ScreenName {
   return SCREEN_ORDER[(idx - 1 + SCREEN_ORDER.length) % SCREEN_ORDER.length]
 }
 
-/** Build the screen container for a given screen name, fetching live data */
-async function buildScreen(screen: ScreenName): Promise<RebuildPageContainer> {
+/** Build the screen container for a given screen name, fetching live data.
+ * Exported so main.ts's cold-start `buildInitialContainer` can reuse the same
+ * dispatch (Phase 129 GAP-129-G fix: restore picked the right screen name but
+ * the cold-start builder only handled HOME + COMPANION, falling everything
+ * else through to HOME). */
+export async function buildScreen(screen: ScreenName): Promise<RebuildPageContainer> {
   switch (screen) {
     case Screen.HOME: {
       // Phase 124 D-12 (G2-POLISH-07): Home no longer renders affirmation
@@ -149,7 +156,16 @@ export async function navigateTo(
   // setLocalStorage may be absent on dev-preview bridge — optional-chained safely.
   const _h1WritePayload = JSON.stringify({ screen, savedAt: Date.now() })
   // [diag GAP-129-G H1-write] — TEMPORARY diagnostic (Plan 129-10 Task 1). Removed in Task 5.
+  // Mirror the same payload to window.localStorage (control channel — separate from
+  // bridge.setLocalStorage). If on relaunch the window-localStorage value persists but
+  // the bridge.getLocalStorage value doesn't, that's H1 evidence (bridge layer broken).
   console.log('[diag GAP-129-G H1-write]', LAST_SCREEN_LS_KEY, _h1WritePayload)
+  appendDiagTrail('H1-write (navigateTo)', { key: LAST_SCREEN_LS_KEY, payload: _h1WritePayload })
+  try {
+    if (typeof window !== 'undefined') window.localStorage.setItem(LAST_SCREEN_LS_KEY, _h1WritePayload)
+  } catch {
+    // localStorage quota / disabled — silent.
+  }
   ;(bridge as unknown as { setLocalStorage?: (k: string, v: string) => Promise<void> })
     .setLocalStorage?.(LAST_SCREEN_LS_KEY, _h1WritePayload)
     ?.catch(() => {})
@@ -214,6 +230,12 @@ export async function navigateToTaskDetail(
   })
   // [diag GAP-129-G H1-write] — TEMPORARY diagnostic (Plan 129-10 Task 1). Removed in Task 5.
   console.log('[diag GAP-129-G H1-write]', LAST_SCREEN_LS_KEY, _h1WriteTaskDetailPayload)
+  appendDiagTrail('H1-write (navigateToTaskDetail)', { key: LAST_SCREEN_LS_KEY, payload: _h1WriteTaskDetailPayload })
+  try {
+    if (typeof window !== 'undefined') window.localStorage.setItem(LAST_SCREEN_LS_KEY, _h1WriteTaskDetailPayload)
+  } catch {
+    // localStorage quota / disabled — silent.
+  }
   ;(bridge as unknown as { setLocalStorage?: (k: string, v: string) => Promise<void> })
     .setLocalStorage?.(LAST_SCREEN_LS_KEY, _h1WriteTaskDetailPayload)
     ?.catch(() => {})
