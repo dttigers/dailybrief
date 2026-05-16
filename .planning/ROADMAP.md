@@ -442,7 +442,7 @@ Plans:
   3. Glasses-menu launches still land on the operator-picked screen (Phase 124 G2-POLISH-06 invariant preserved)
   4. Operator on a `*.service-now.com/*` page clicks the extension icon → popup pre-fills CS# (regex `/^CS\d{7}$/` against `document.title`) → types description + priority → submit creates a work-order row, deduped via `client_capture_id` across multi-tab + corporate-VPN retries
   5. Both Chrome and Safari extensions ship the popup (lock-step parity per Phase 114 EXT-02 pattern), with Vigil-brand-compliant styling
-**Plans:** 7/13 plans executed
+**Plans:** 8/13 plans executed
 - [x] 129-01-PLAN.md — Drizzle migration 0021_add_work_orders_client_capture_id.sql + schema.ts update (dev-DB applied)
 - [x] 129-02-PLAN.md — G2 screen-state-restore module + navigation + launch-source-helpers + main.ts module-scope registration
 - [x] 129-03-PLAN.md — Chrome MV3 extension: service worker, content script, popup-helpers, popup.html/css/js replacement (D-02 retires Phase 84 UI)
@@ -451,7 +451,7 @@ Plans:
 - [x] 129-06-PLAN.md — Author 129-UAT-RUNBOOK.md + operator session-1 UAT run (partial: 1 PASS, 1 FAIL, 2 BLOCKED, 1 FAIL, 4 DEFERRED → 8 gaps captured)
 - [x] 129-07-PLAN.md — Gap closure: GAP-129-A (__tests__ move) + GAP-129-B (api-key setup view) + GAP-129-D (chrome.storage.session lastCaseNumber) — Chrome + Safari lock-step
 - [ ] 129-08-PLAN.md — Gap closure: GAP-129-C (production deploy of migration 0021 + HTTP 200/dedup probes) — operator-run psql against prod
-- [ ] 129-09-PLAN.md — Gap closure: GAP-129-F (DOUBLE_CLICK entry gesture on WORK_ORDERS list — Phase 124 D-08 carve-out template)
+- [x] 129-09-PLAN.md — Gap closure: GAP-129-F (DOUBLE_CLICK entry gesture on WORK_ORDERS list — Phase 124 D-08 carve-out template)
 - [ ] 129-10-PLAN.md — Gap closure: GAP-129-G (G2 lifecycle restore diagnostic + H1/H2/H3-branched fix + hardware re-validation + cleanup) — operator-run on iPhone Even Hub WebView with Safari Web Inspector
 - [ ] 129-11-PLAN.md — Gap closure: GAP-129-E (terminology cleanup — WORK_ORDER_DETAIL → TASK_DETAIL in CONTEXT/RESEARCH/RUNBOOK + optional file rename screens/work-orders.ts → tasks.ts)
 - [x] 129-12-PLAN.md — Gap closure: GAP-129-H (build-gate convention doc + reusable task template + STATE.md lessons-learned entry)
@@ -688,7 +688,7 @@ Plans:
 | 127.5. G2 input gesture audit (30-min code review; verdict shapes G2-ACTION + G2-REPLY) | v3.9 | 1/1 | Complete    | 2026-05-12 |
 | 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 5/6 | In Progress|  |
 | 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 7/8 | In Progress|  |
-| 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 7/13 | In Progress|  |
+| 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 8/13 | In Progress|  |
 | 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 0/TBD | Not started | - |
 | 131. Insights freshness + chat context expansion (one PWA UAT pass) | v3.9 | 0/TBD | Not started | - |
 | 132. Quiet Mode auto-detect via iPhone Focus | v3.9 | 0/TBD | Not started | - |
