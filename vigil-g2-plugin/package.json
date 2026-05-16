@@ -12,7 +12,8 @@
     "preview": "vite preview",
     "package:ehpk": "node scripts/check-verified.mjs && npm run release",
     "test": "tsx --test \"src/**/*.test.ts\"",
-    "sideload": "node scripts/dev-sideload.mjs"
+    "sideload": "node scripts/dev-sideload.mjs",
+    "prototype": "node scripts/dev-prototype.mjs"
   },
   "devDependencies": {
     "qrcode-terminal": "^0.12.0",
