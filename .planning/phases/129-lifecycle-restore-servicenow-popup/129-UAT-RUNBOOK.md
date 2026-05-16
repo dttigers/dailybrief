@@ -23,6 +23,26 @@ Prerequisites to verify before starting:
 
 ---
 
+## Pre-condition for Scenarios 1, 1b, 2, 3 — G2 task entities + entry gesture
+
+**Note on G2 task entities:** The G2 plugin's `WORK_ORDERS` list screen displays your open
+thought-tasks (sourced from `/v1/brief` → `openTasks` → the `thoughts` table where
+`taskStatus IN ('open', 'inProgress')`). These are user-captured thought-tasks like
+"review the Q3 report", **NOT** the ServiceNow work_orders captured via the extension popup.
+If you have no open thought-tasks, create one via PWA capture before running Scenarios 1, 1b.
+See 129-CONTEXT.md `<terminology_note>` and 129-RESEARCH.md Probe 7 for the full distinction.
+
+**Note on G2 entry gestures:** On real G2 hardware, the temple-touchpad DOUBLE_CLICK is the
+only reliably-plumbed input gesture for entering TASK_DETAIL from the WORK_ORDERS list
+(per plan 129-09's gap-closure wiring; the WORK_ORDERS-list DOUBLE_CLICK carve-out routes to
+TASK_DETAIL instead of the default HOME). CLICK_EVENT is sim-only per the Phase 45 retro.
+
+**Reminder:** Scenarios 4, 4b, 4c, 5, 6 are SVCNOW-side and operate on real ServiceNow
+work_orders rows (the Drizzle `work_orders` table) via the extension popup → `/v1/work-orders/sync`
+route. They are unaffected by the G2 task vs work-order distinction above.
+
+---
+
 ## Scenario 1 — G2 Force-Quit-iPhone Restore
 
 **Requirements:** G2-LIFECYCLE-02 | ROADMAP Success Criterion 1
@@ -31,10 +51,10 @@ Prerequisites to verify before starting:
 
 ### Prerequisite state
 - Even Hub is open and connected to G2 glasses.
-- Navigate to a specific WORK_ORDER_DETAIL screen for any existing work order. Confirm the work order ID / title is visible on the G2 glasses display.
+- Navigate to a specific TASK_DETAIL screen for any of your open thought-tasks (the entries on the WORK_ORDERS list are sourced from your `/v1/brief` openTasks — thought-tasks, NOT ServiceNow work orders). To enter TASK_DETAIL on hardware, focus the WORK_ORDERS list, then DOUBLE_CLICK the temple touchpad (per plan 129-09's gesture wiring). Confirm the task title / id is visible on the G2 glasses display.
 
 ### Steps
-1. On the G2 glasses display, confirm you are on the WORK_ORDER_DETAIL screen for work order WO-XXXX (note the ID).
+1. On the G2 glasses display, confirm you are on the TASK_DETAIL screen for task id N (note the id).
 2. On iPhone, open the iOS app switcher (swipe up from bottom or double-press home button depending on iPhone model).
 3. Find the Even Hub app card in the app switcher and swipe it upward to force-quit it completely.
 4. Wait 30 seconds.
@@ -43,12 +63,12 @@ Prerequisites to verify before starting:
 7. Observe which screen appears on the G2 glasses display.
 
 ### Expected behavior
-The G2 plugin lands on WORK_ORDER_DETAIL for the SAME work order (same WO ID) you were on before force-quitting.
+The G2 plugin lands on TASK_DETAIL for the SAME thought-task (same task id) you were on before force-quitting.
 
 ### Pass rule
-**PASS:** G2 display shows WORK_ORDER_DETAIL for the original work order ID (correct screen + correct entity).
+**PASS:** G2 display shows TASK_DETAIL for the original task id (correct screen + correct entity).
 
-**FAIL:** G2 display shows HOME screen, a different work order, or an error state.
+**FAIL:** G2 display shows HOME screen, a different task, or an error state.
 
 ---
 
@@ -62,10 +82,10 @@ The G2 plugin lands on WORK_ORDER_DETAIL for the SAME work order (same WO ID) yo
 
 ### Prerequisite state
 - Even Hub is open and connected to G2 glasses.
-- Navigate to any WORK_ORDER_DETAIL screen on G2.
+- Navigate to any TASK_DETAIL screen on G2 (DOUBLE_CLICK on the WORK_ORDERS list to enter the focused thought-task's detail screen — see the pre-condition section above).
 
 ### Steps
-1. On G2 display, confirm you are on WORK_ORDER_DETAIL for some work order.
+1. On G2 display, confirm you are on TASK_DETAIL for some thought-task.
 2. Force-quit Even Hub on iPhone (same as Scenario 1 steps 2–3).
 3. Wait **31 minutes** (1 minute past the 30-minute TTL).
 4. Re-open Even Hub from the iPhone home screen.
@@ -78,7 +98,7 @@ The G2 plugin lands on HOME screen. The 30-minute TTL has expired (per D-05), so
 ### Pass rule
 **PASS:** G2 display shows HOME screen (TTL expired correctly).
 
-**FAIL:** G2 display shows the restored WORK_ORDER_DETAIL (TTL was not enforced — stored state survived past its expiry).
+**FAIL:** G2 display shows the restored TASK_DETAIL (TTL was not enforced — stored state survived past its expiry).
 
 ---
 
@@ -118,7 +138,7 @@ The SAME session card appears immediately when Even Hub returns to the foregroun
 
 ### Prerequisite state
 - G2 glasses have the Vigil plugin installed.
-- Even Hub is running but you have previously been on a non-HOME screen (e.g., WORK_ORDER_DETAIL) so that a restore could theoretically fire.
+- Even Hub is running but you have previously been on a non-HOME screen (e.g., TASK_DETAIL for one of your thought-tasks) so that a restore could theoretically fire.
 - You know which screen the glasses-menu is configured to launch (typically HOME; note it if it has been customized).
 
 ### Steps
@@ -132,7 +152,7 @@ The plugin launches to the screen configured in the glasses-menu selection (HOME
 ### Pass rule
 **PASS:** Plugin opens to the glasses-menu-selected screen (HOME or operator-configured screen), NOT the last-viewed screen from before.
 
-**FAIL:** Plugin opens to the previously stored screen (WORK_ORDER_DETAIL or similar), bypassing the glasses-menu launch intent. This indicates the `source === 'glassesMenu'` precedence guard is broken.
+**FAIL:** Plugin opens to the previously stored screen (TASK_DETAIL or similar), bypassing the glasses-menu launch intent. This indicates the `source === 'glassesMenu'` precedence guard is broken.
 
 ---
 
