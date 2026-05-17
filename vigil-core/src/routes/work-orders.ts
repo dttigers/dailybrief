@@ -12,7 +12,7 @@ import type { InferSelectModel } from "drizzle-orm";
 // Load-bearing invariants:
 // 1. userId resolved from c.get("userId") set by bearerAuth dispatcher — NEVER from body.
 // 2. clientCaptureId dedup key is (user_id, client_capture_id) composite — NOT global.
-// 3. sanitizer destructures EXACTLY 10 known fields; unknown fields silently dropped (T-129-15).
+// 3. sanitizer destructures EXACTLY 12 known fields; unknown fields silently dropped (T-129-15).
 // 4. dbInsertOrGet SELECT-by-(userId,clientCaptureId) guard is the app-layer mirror of the
 //    (user_id, client_capture_id) partial unique index from migration 0021 (T-129-14, T-129-20).
 
@@ -31,6 +31,8 @@ export interface SanitizedWorkOrder {
   contact: string;
   state: string;
   clientCaptureId: string | null;
+  maintenanceProblem: string | null;
+  department: string | null;
   syncedAt: Date;
 }
 
@@ -78,10 +80,12 @@ export function createWorkOrdersRoute(deps: WorkOrdersDeps): Hono {
       return c.json({ error: "workOrders must not exceed 100 items" }, 400);
     }
 
-    // Mass-assignment defense: destructure exactly the 10 known fields (T-129-15 / T-66-02)
+    // Mass-assignment defense: destructure exactly the 12 known fields (T-129-15 / T-66-02)
     // Phase 102: Every row carries userId from middleware context, NOT from body.
     // SVCNOW-04: clientCaptureId is the 10th allowlisted field (camelCase preferred,
     // snake_case fallback per RESEARCH Probe 4 + Pitfall 5).
+    // WO-MANUAL-03 (Phase 129.1): maintenanceProblem (11th) + department (12th)
+    // added so screenshot + PWA manual-create payloads survive the whitelist.
     const sanitized: SanitizedWorkOrder[] = inputOrders.map((wo: Record<string, unknown>) => ({
       userId,
       caseNumber: String(wo.caseNumber ?? ""),
@@ -100,6 +104,10 @@ export function createWorkOrdersRoute(deps: WorkOrdersDeps): Hono {
           : wo.client_capture_id != null
           ? String(wo.client_capture_id)
           : null,
+      // WO-MANUAL-03 (Phase 129.1): coerce-or-null pattern; preserves whitelist
+      // discipline (null when omitted, never undefined; never raw user object).
+      maintenanceProblem: wo.maintenanceProblem != null ? String(wo.maintenanceProblem) : null,
+      department: wo.department != null ? String(wo.department) : null,
       syncedAt: new Date(), // always server-generated, never from body
     }));
 
@@ -349,6 +357,11 @@ export const workOrdersRouter = createWorkOrdersRoute({
           priority: input.priority,
           contact: input.contact,
           state: input.state,
+          // WO-MANUAL-03 (Phase 129.1): SET clause is an explicit field list —
+          // adding here keeps dbUpsertLegacy's update path in sync with the
+          // extended SanitizedWorkOrder (dbInsertOrGet inherits via values(input)).
+          maintenanceProblem: input.maintenanceProblem,
+          department: input.department,
           syncedAt: input.syncedAt,
         },
       })
