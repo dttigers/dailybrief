@@ -470,7 +470,13 @@ Plans:
   2. Non-operator users see a "Create work order" button in the PWA work-orders list → fills a manual form (case#, store, description, priority, etc.) → POSTs to /v1/work-orders/sync → row appears in their list.
   3. Chrome + Safari extensions revert to Phase 84 generic thought-capture (the `*.service-now.com/*`-restricted popup is removed); no SVCNOW-specific UI in either extension.
   4. End-to-end test: operator screenshots CS0363817 → ~5 sec later the work order appears in the PWA with correctly extracted fields (Number, Store Account, Location, Assigned to, Equipment, Priority, Short Description).
-**Plans:** TBD (estimated 4 plans — revert, vigil-core endpoint, macOS watcher, PWA manual-create UI)
+**Plans:** 6 plans (4 waves)
+- [ ] 129.1-01-PLAN.md — Drizzle migration 0022 + schema.ts + sanitizer extension (maintenance_problem + department) — WO-MANUAL-03
+- [ ] 129.1-02-PLAN.md — Chrome + Safari extension revert to Phase 84 baseline + parity.test.ts relaxed + Xcode bundle update — SVCNOW-01/02/03/05 revert
+- [ ] 129.1-03-PLAN.md — POST /v1/captures/screenshot endpoint (Anthropic vision + dedup + pending_review write) + tests — SCAP-01, SCAP-02
+- [ ] 129.1-04-PLAN.md — macOS LaunchAgent + chokidar daemon + install/uninstall/status/tail CLI + operator runbook — SCAP-03, SCAP-04
+- [ ] 129.1-05-PLAN.md — PWA CreateWorkOrderModal + ReviewWorkOrderModal + WorkOrdersPage CTA + WorkOrderRow pending_review badge + useWorkOrders mutations + 2 new vigil-core routes — SCAP-05, WO-MANUAL-01/02
+- [ ] 129.1-06-PLAN.md — Author SCAP-* + WO-MANUAL-* in REQUIREMENTS.md + finalize SVCNOW supersession + UAT runbook + operator UAT execution
 **UI hint**: yes
 
 ### Phase 130: Voice capture full implementation (scope-locked by 128a)
