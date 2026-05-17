@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: planning
+status: executing
 stopped_at: Phase 129.1 context gathered
-last_updated: "2026-05-16T21:16:03.070Z"
-last_activity: 2026-05-16
+last_updated: "2026-05-17T18:59:47.137Z"
+last_activity: 2026-05-17 -- Phase 129.1 execution started
 progress:
   total_phases: 12
   completed_phases: 4
-  total_plans: 37
+  total_plans: 43
   completed_plans: 36
   percent: 33
 ---
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 129.1 — SVCNOW revert + screenshot pipeline + PWA manual-create
+**Current focus:** Phase 129.1 — svcnow-revert-screenshot-pipeline
 
 ## Current Position
 
-Phase: 129.1 (svcnow-revert-screenshot-pipeline) — NOT STARTED
-Plan: 0 of TBD (estimated 4)
-Status: Awaiting discuss-phase — design questions in `.planning/phases/129.1-svcnow-revert-screenshot-pipeline/README.md`
-Last activity: 2026-05-16
+Phase: 129.1 (svcnow-revert-screenshot-pipeline) — EXECUTING
+Plan: 1 of 6
+Status: Executing Phase 129.1
+Last activity: 2026-05-17 -- Phase 129.1 execution started
 
 ## Phase 129 Closure (2026-05-16) — PARTIAL-COMPLETE
 
