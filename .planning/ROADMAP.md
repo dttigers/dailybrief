@@ -348,7 +348,7 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
 - [ ] **Phase 128a: VOICE-01 PCM feasibility spike** — measure chunk size / E2E latency / dropout / battery / `audioControl(false)` cleanup; output `128a-SPIKE-DECISION.md`
 - [ ] **Phase 128b: G2-REPLY-01 write-back path spike** — empirically prove or rule out programmatic Claude Code input injection across 3+ candidate paths; output `128b-SPIKE-DECISION.md`
 - [x] **Phase 129: Lifecycle restore + ServiceNow popup** — PARTIAL-COMPLETE 2026-05-16 (G2-LIFECYCLE-01/02/03 + SVCNOW-04 shipped; SVCNOW-01/02/03/05 SUPERSEDED → 129.1)
-- [ ] **Phase 129.1: SVCNOW revert + screenshot pipeline + PWA manual-create** — operator screenshot ingestion via Claude Sonnet vision + non-operator PWA manual-create form (replaces SVCNOW-01/02/03/05)
+- [x] **Phase 129.1: SVCNOW revert + screenshot pipeline + PWA manual-create** — operator screenshot ingestion via Claude Sonnet vision + non-operator PWA manual-create form (replaces SVCNOW-01/02/03/05) (completed 2026-05-17)
 - [ ] **Phase 130: Voice capture full implementation** — scope-locked by 128a; G2 PCM record→base64→`/v1/voice/transcribe`→thought row→PWA
 - [ ] **Phase 131: Insights freshness + chat context expansion** — INSIGHTS-FRESH-01/02/03 + CHAT-CTX-01..05 bundled for one PWA UAT pass
 - [ ] **Phase 132: Quiet Mode auto-detect** — iOS Focus → webhook → existing `/v1/quiet-mode` (QUIET-AUTO-01..04)
@@ -470,13 +470,13 @@ Plans:
   2. Non-operator users see a "Create work order" button in the PWA work-orders list → fills a manual form (case#, store, description, priority, etc.) → POSTs to /v1/work-orders/sync → row appears in their list.
   3. Chrome + Safari extensions revert to Phase 84 generic thought-capture (the `*.service-now.com/*`-restricted popup is removed); no SVCNOW-specific UI in either extension.
   4. End-to-end test: operator screenshots CS0363817 → ~5 sec later the work order appears in the PWA with correctly extracted fields (Number, Store Account, Location, Assigned to, Equipment, Priority, Short Description).
-**Plans:** 6 plans (4 waves)
-- [ ] 129.1-01-PLAN.md — Drizzle migration 0022 + schema.ts + sanitizer extension (maintenance_problem + department) — WO-MANUAL-03
-- [ ] 129.1-02-PLAN.md — Chrome + Safari extension revert to Phase 84 baseline + parity.test.ts relaxed + Xcode bundle update — SVCNOW-01/02/03/05 revert
-- [ ] 129.1-03-PLAN.md — POST /v1/captures/screenshot endpoint (Anthropic vision + dedup + pending_review write) + tests — SCAP-01, SCAP-02
-- [ ] 129.1-04-PLAN.md — macOS LaunchAgent + chokidar daemon + install/uninstall/status/tail CLI + operator runbook — SCAP-03, SCAP-04
-- [ ] 129.1-05-PLAN.md — PWA CreateWorkOrderModal + ReviewWorkOrderModal + WorkOrdersPage CTA + WorkOrderRow pending_review badge + useWorkOrders mutations + 2 new vigil-core routes — SCAP-05, WO-MANUAL-01/02
-- [ ] 129.1-06-PLAN.md — Author SCAP-* + WO-MANUAL-* in REQUIREMENTS.md + finalize SVCNOW supersession + UAT runbook + operator UAT execution
+**Plans:** 6/6 plans complete
+- [x] 129.1-01-PLAN.md — Drizzle migration 0022 + schema.ts + sanitizer extension (maintenance_problem + department) — WO-MANUAL-03
+- [x] 129.1-02-PLAN.md — Chrome + Safari extension revert to Phase 84 baseline + parity.test.ts relaxed + Xcode bundle update — SVCNOW-01/02/03/05 revert
+- [x] 129.1-03-PLAN.md — POST /v1/captures/screenshot endpoint (Anthropic vision + dedup + pending_review write) + tests — SCAP-01, SCAP-02
+- [x] 129.1-04-PLAN.md — macOS LaunchAgent + chokidar daemon + install/uninstall/status/tail CLI + operator runbook — SCAP-03, SCAP-04
+- [x] 129.1-05-PLAN.md — PWA CreateWorkOrderModal + ReviewWorkOrderModal + WorkOrdersPage CTA + WorkOrderRow pending_review badge + useWorkOrders mutations + 2 new vigil-core routes — SCAP-05, WO-MANUAL-01/02
+- [x] 129.1-06-PLAN.md — Author SCAP-* + WO-MANUAL-* in REQUIREMENTS.md + finalize SVCNOW supersession + UAT runbook + operator UAT execution
 **UI hint**: yes
 
 ### Phase 130: Voice capture full implementation (scope-locked by 128a)
@@ -710,7 +710,7 @@ Plans:
 | 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 5/6 | In Progress|  |
 | 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 7/8 | In Progress|  |
 | 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 13/13 | Partial-complete (SVCNOW-01/02/03/05 superseded → 129.1) | 2026-05-16 |
-| 129.1. SVCNOW revert + screenshot pipeline + PWA manual-create | v3.9 | 0/TBD | Not started | - |
+| 129.1. SVCNOW revert + screenshot pipeline + PWA manual-create | v3.9 | 6/6 | Complete    | 2026-05-17 |
 | 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 0/TBD | Not started | - |
 | 131. Insights freshness + chat context expansion (one PWA UAT pass) | v3.9 | 0/TBD | Not started | - |
 | 132. Quiet Mode auto-detect via iPhone Focus | v3.9 | 0/TBD | Not started | - |

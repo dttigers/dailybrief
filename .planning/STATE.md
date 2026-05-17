@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: executing
-stopped_at: Phase 129.1 context gathered
-last_updated: "2026-05-17T18:59:47.137Z"
+status: ready_to_plan
+stopped_at: Phase 129.1 complete (6/6) — ready to discuss Phase 999.1
+last_updated: 2026-05-17T21:37:32.261Z
 last_activity: 2026-05-17 -- Phase 129.1 execution started
 progress:
   total_phases: 12
   completed_phases: 4
   total_plans: 43
-  completed_plans: 36
+  completed_plans: 42
   percent: 33
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 129.1 — svcnow-revert-screenshot-pipeline
+**Current focus:** Phase 999.1 — restore ubiquity entitlement for icloud download
 
 ## Current Position
 
-Phase: 129.1 (svcnow-revert-screenshot-pipeline) — EXECUTING
-Plan: 1 of 6
-Status: Executing Phase 129.1
-Last activity: 2026-05-17 -- Phase 129.1 execution started
+Phase: 999.1
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-05-17
 
 ## Phase 129 Closure (2026-05-16) — PARTIAL-COMPLETE
 
