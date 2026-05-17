@@ -48,12 +48,13 @@ export const UUID_V4_REGEX =
 // per-image limit. T-129.1-10 DoS mitigation per RESEARCH §479.
 export const MAX_IMAGE_BASE64_LENGTH = 7_000_000;
 
-// Operator decision (Phase 129.1 Plan 03 Task 1): `department` maps to the
-// Polaris "Maintenance Location" field (e.g. "Bakery", "Front Counter").
-// Captures the store area where the issue physically is — useful for
-// in-store filtering. Operator acknowledged overlap with `location` column.
-// The prompt below uses the human-readable field name "Maintenance Location"
-// so the vision model targets the correct row on the Polaris case page.
+// Operator decision (Phase 129.1 Plan 03 Task 1, refined post-UAT 2026-05-17):
+//   Polaris "Location" field          → work_orders.store    (e.g. "LINS (CEDAR)")
+//   Polaris "Maintenance Location"    → work_orders.location (e.g. "Bakery")
+//   The `department` column added in Plan 01 is left empty by extraction —
+//   redundant after this remap; queued for removal in a 129.2 follow-up.
+// The prompt uses the human-readable Polaris field labels so the vision model
+// targets the correct rows on the case page.
 export const EXTRACTION_PROMPT = `You are extracting structured fields from a screenshot of a ServiceNow Polaris case page.
 
 Return a JSON object with EXACTLY this shape (no markdown fences, no preamble):
@@ -62,8 +63,8 @@ Return a JSON object with EXACTLY this shape (no markdown fences, no preamble):
   "required": {
     "case_number": "CS<7-digit number>",
     "short_description": "string",
+    "store": "string",
     "location": "string",
-    "department": "string",
     "maintenance_problem": "string"
   },
   "extras": {
@@ -86,8 +87,8 @@ Return a JSON object with EXACTLY this shape (no markdown fences, no preamble):
 Field guide:
 - case_number: the case number shown at top of the page (e.g. "CS0363817").
 - short_description: the "Short description" field.
-- location: the "Location" field (e.g. "Bakery", "Front Counter").
-- department: the "Maintenance Location" field on the Polaris case page (operator-locked field mapping; e.g. "Bakery", "Deli", "Front End").
+- store: the Polaris "Location" field — this is the store identifier (e.g. "LINS (CEDAR)", "DOLN (DOWNTOWN)"), NOT a building area.
+- location: the Polaris "Maintenance Location" field — this is the building area where the issue physically is (e.g. "Bakery", "Front Counter", "Deli").
 - maintenance_problem: the "Maintenance Problem" field (e.g. "Other", "Plumbing", "HVAC").
 - extras.service: the "Service" field (e.g. "MT-Trades").
 - extras.assignment_group: the "Assignment Group" field (e.g. "MT-Maintenance").
@@ -115,8 +116,8 @@ Rules:
 export interface RequiredExtracted {
   case_number: string;
   short_description: string;
+  store: string;
   location: string;
-  department: string;
   maintenance_problem: string;
 }
 
@@ -269,8 +270,8 @@ export function createCapturesScreenshotRoute(
       const echoed: RequiredExtracted = {
         case_number: row.caseNumber,
         short_description: row.shortDescription,
+        store: row.store ?? "",
         location: row.location,
-        department: row.department ?? "",
         maintenance_problem: row.maintenanceProblem ?? "",
       };
       return c.json(
@@ -330,8 +331,8 @@ export function createCapturesScreenshotRoute(
     const required: RequiredExtracted = {
       case_number: String(extracted.required.case_number),
       short_description: String(extracted.required.short_description ?? ""),
+      store: String(extracted.required.store ?? ""),
       location: String(extracted.required.location ?? ""),
-      department: String(extracted.required.department ?? ""),
       maintenance_problem: String(
         extracted.required.maintenance_problem ?? "",
       ),
@@ -342,12 +343,14 @@ export function createCapturesScreenshotRoute(
     // case_number PK collision → onConflictDoUpdate (latest screenshot wins
     // per RESEARCH Risk 1 / T-129.1-14 accepted risk; operator's review
     // step is the safety net).
+    // `department` column left empty post-UAT remap (2026-05-17) — queued
+    // for removal in 129.2 follow-up.
     const inserted = await dbRef
       .insert(workOrders)
       .values({
         caseNumber: required.case_number,
         userId,
-        store: "",
+        store: required.store,
         shortDescription: required.short_description,
         trade: extras.trade ?? "",
         location: required.location,
@@ -359,11 +362,12 @@ export function createCapturesScreenshotRoute(
         syncedAt: new Date(),
         clientCaptureId,
         maintenanceProblem: required.maintenance_problem,
-        department: required.department,
+        department: "",
       })
       .onConflictDoUpdate({
         target: workOrders.caseNumber,
         set: {
+          store: required.store,
           shortDescription: required.short_description,
           trade: extras.trade ?? "",
           location: required.location,
@@ -375,7 +379,7 @@ export function createCapturesScreenshotRoute(
           syncedAt: new Date(),
           clientCaptureId,
           maintenanceProblem: required.maintenance_problem,
-          department: required.department,
+          department: "",
         },
       })
       .returning();

@@ -28,8 +28,8 @@ const VALID_BASE64_PNG = Buffer.from("fake-png-bytes").toString("base64");
 function makeExtractedJSON(overrides: {
   case_number?: string;
   short_description?: string;
+  store?: string;
   location?: string;
-  department?: string;
   maintenance_problem?: string;
   extras?: Record<string, string>;
 } = {}): string {
@@ -37,8 +37,8 @@ function makeExtractedJSON(overrides: {
     required: {
       case_number: overrides.case_number ?? "CS0363817",
       short_description: overrides.short_description ?? "Leaky faucet in bakery sink",
+      store: overrides.store ?? "LINS (CEDAR)",
       location: overrides.location ?? "Bakery",
-      department: overrides.department ?? "Bakery",
       maintenance_problem: overrides.maintenance_problem ?? "Plumbing",
     },
     extras: overrides.extras ?? {
@@ -181,13 +181,14 @@ test("SCAP-01/T1 (happy path): valid request → 200 with workOrderId + duplicat
   const body = (await res.json()) as {
     workOrderId: string;
     duplicate: boolean;
-    extractedFields: { case_number: string; department: string; maintenance_problem: string };
+    extractedFields: { case_number: string; store: string; location: string; maintenance_problem: string };
     extraExtractedFields: Record<string, string>;
   };
   assert.equal(body.duplicate, false); // expects { duplicate: false } in response
   assert.equal(body.workOrderId, "CS0363817");
   assert.equal(body.extractedFields.case_number, "CS0363817");
-  assert.equal(body.extractedFields.department, "Bakery");
+  assert.equal(body.extractedFields.store, "LINS (CEDAR)");
+  assert.equal(body.extractedFields.location, "Bakery");
   assert.equal(body.extractedFields.maintenance_problem, "Plumbing");
   assert.equal(body.extraExtractedFields.service, "MT-Trades");
 
@@ -195,7 +196,9 @@ test("SCAP-01/T1 (happy path): valid request → 200 with workOrderId + duplicat
   assert.ok(captures.insertValues, "INSERT VALUES were captured");
   assert.equal(captures.insertValues!.state, "pending_review");
   assert.equal(captures.insertValues!.maintenanceProblem, "Plumbing");
-  assert.equal(captures.insertValues!.department, "Bakery");
+  assert.equal(captures.insertValues!.store, "LINS (CEDAR)");
+  assert.equal(captures.insertValues!.location, "Bakery");
+  assert.equal(captures.insertValues!.department, "");
   assert.equal(captures.insertValues!.caseNumber, "CS0363817");
   assert.equal(captures.insertValues!.userId, 1, "userId must come from middleware, not body");
   assert.equal(captures.insertValues!.clientCaptureId, VALID_UUID);
@@ -334,8 +337,9 @@ test("SCAP-02/T7 (dedup short-circuit): existing (userId, clientCaptureId) row �
     userId: 1,
     clientCaptureId: VALID_UUID,
     shortDescription: "existing description",
+    store: "DOLN (DOWNTOWN)",
     location: "Front End",
-    department: "Front End",
+    department: "",
     maintenanceProblem: "Electrical",
     notes: JSON.stringify({ priority: "High", trade: "Electrician" }),
     state: "pending_review",
@@ -360,13 +364,14 @@ test("SCAP-02/T7 (dedup short-circuit): existing (userId, clientCaptureId) row �
   const body = (await res.json()) as {
     workOrderId: string;
     duplicate: boolean;
-    extractedFields: { case_number: string; department: string };
+    extractedFields: { case_number: string; store: string; location: string };
     extraExtractedFields: Record<string, string>;
   };
   assert.equal(body.duplicate, true); // expects { duplicate: true } in response
   assert.equal(body.workOrderId, "CS0111111");
   assert.equal(body.extractedFields.case_number, "CS0111111");
-  assert.equal(body.extractedFields.department, "Front End");
+  assert.equal(body.extractedFields.store, "DOLN (DOWNTOWN)");
+  assert.equal(body.extractedFields.location, "Front End");
   // notes JSON parsed and surfaced
   assert.equal(body.extraExtractedFields.priority, "High");
 
@@ -395,8 +400,8 @@ test("SCAP-02/T8 (case_number PK collision → onConflictDoUpdate): second POST 
       return makeExtractedJSON({
         case_number: "CS0000001",
         short_description: "updated short_description (latest screenshot wins)",
+        store: "DOLN (DOWNTOWN)",
         location: "Deli",
-        department: "Deli",
         maintenance_problem: "Refrigeration",
         extras: { priority: "Critical", trade: "Refrigeration Tech" },
       });
@@ -418,9 +423,10 @@ test("SCAP-02/T8 (case_number PK collision → onConflictDoUpdate): second POST 
   // onConflictDoUpdate path is wired and the update payload is non-empty.
   assert.ok(captures.conflictSet, "onConflictDoUpdate SET was captured");
   assert.equal(captures.conflictSet!.shortDescription, "updated short_description (latest screenshot wins)");
+  assert.equal(captures.conflictSet!.store, "DOLN (DOWNTOWN)");
   assert.equal(captures.conflictSet!.location, "Deli");
   assert.equal(captures.conflictSet!.maintenanceProblem, "Refrigeration");
-  assert.equal(captures.conflictSet!.department, "Deli");
+  assert.equal(captures.conflictSet!.department, "");
   assert.equal(captures.conflictSet!.state, "pending_review");
   assert.equal(captures.conflictSet!.clientCaptureId, VALID_UUID_2, "clientCaptureId updated to latest");
   assert.ok(captures.conflictSet!.syncedAt instanceof Date);
