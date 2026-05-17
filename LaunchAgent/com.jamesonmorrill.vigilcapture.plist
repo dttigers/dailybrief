@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.jamesonmorrill.vigilcapture</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/node</string>
+        <string>/Users/jamesonmorrill/Desktop/Local AI/dailybrief/scripts/vigil-capture/dist/watcher.js</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>/Users/jamesonmorrill/vigil-captures</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <dict>
+        <key>SuccessfulExit</key>
+        <false/>
+    </dict>
+    <key>LimitLoadToSessionType</key>
+    <string>Aqua</string>
+    <key>ProcessType</key>
+    <string>Background</string>
+    <key>StandardOutPath</key>
+    <string>/Users/jamesonmorrill/Library/Logs/vigil-capture.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/jamesonmorrill/Library/Logs/vigil-capture.error.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+        <key>VIGIL_API_BASE</key>
+        <string>https://api.vigilhub.io</string>
+        <key>VIGIL_CAPTURE_DIR</key>
+        <string>/Users/jamesonmorrill/vigil-captures</string>
+    </dict>
+</dict>
+</plist>
