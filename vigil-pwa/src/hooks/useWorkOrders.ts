@@ -1,5 +1,23 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getWorkOrders, prioritizeWorkOrders, unarchiveWorkOrder, deleteArchivedWorkOrders, type WorkOrderApiResponse } from '../api/client'
+import { getWorkOrders, prioritizeWorkOrders, unarchiveWorkOrder, deleteArchivedWorkOrders, vigilFetch, type WorkOrderApiResponse } from '../api/client'
+
+// Phase 129.1-05 (WO-MANUAL-01/02) — payload shape for manual-create + commit
+// edits. Mirrors CreateWorkOrderModal's ManualCreateInput; copied here to keep
+// the hook decoupled from any single modal component (commit edits use the
+// same 11-field whitelist).
+export interface ManualCreateInput {
+  caseNumber: string
+  store: string
+  shortDescription: string
+  trade: string
+  location: string
+  equipment: string
+  priority: string
+  contact: string
+  notes: string
+  maintenanceProblem: string
+  department: string
+}
 
 export type WorkOrderFilter = 'active' | 'archived' | 'all'
 
@@ -133,5 +151,78 @@ export function useWorkOrders(filter: WorkOrderFilter = 'active') {
     }
   }, [])
 
-  return { workOrders, isLoading, error, updateLocalStatus, unarchive, deleteAllArchived }
+  // Phase 129.1-05 / WO-MANUAL-01 — manual-create flow.
+  // Generates clientCaptureId via crypto.randomUUID(); POSTs to existing
+  // /v1/work-orders/sync (sanitizer extended in plan 129.1-01 to cover the
+  // 12 fields). On success, bumps fetchTick to trigger a refetch.
+  const createWorkOrder = useCallback(async (input: ManualCreateInput) => {
+    const clientCaptureId =
+      typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : `cc-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const res = await vigilFetch('/v1/work-orders/sync', {
+      method: 'POST',
+      body: JSON.stringify({
+        workOrders: [
+          {
+            ...input,
+            state: 'open',
+            clientCaptureId,
+          },
+        ],
+      }),
+    })
+    if (!res.ok) {
+      throw new Error(`Failed to create work order: ${res.status}`)
+    }
+    setFetchTick((n) => n + 1)
+  }, [])
+
+  // Phase 129.1-05 / WO-MANUAL-02 — review-modal Commit button.
+  // Sends operator edits as Partial<ManualCreateInput> body to the new
+  // POST /v1/work-orders/:caseNumber/commit route (server applies edits +
+  // transitions state pending_review → open). On success, refetches.
+  const commitDraft = useCallback(
+    async (caseNumber: string, edits: Partial<ManualCreateInput>) => {
+      const res = await vigilFetch(
+        `/v1/work-orders/${encodeURIComponent(caseNumber)}/commit`,
+        {
+          method: 'POST',
+          body: JSON.stringify(edits),
+        },
+      )
+      if (!res.ok) {
+        throw new Error(`Failed to commit work order: ${res.status}`)
+      }
+      setFetchTick((n) => n + 1)
+    },
+    [],
+  )
+
+  // Phase 129.1-05 / WO-MANUAL-02 — review-modal Discard button.
+  // Hard-deletes the pending_review draft via DELETE /v1/work-orders/:caseNumber.
+  const discardDraft = useCallback(async (caseNumber: string) => {
+    const res = await vigilFetch(
+      `/v1/work-orders/${encodeURIComponent(caseNumber)}`,
+      {
+        method: 'DELETE',
+      },
+    )
+    if (!res.ok) {
+      throw new Error(`Failed to discard work order: ${res.status}`)
+    }
+    setFetchTick((n) => n + 1)
+  }, [])
+
+  return {
+    workOrders,
+    isLoading,
+    error,
+    updateLocalStatus,
+    unarchive,
+    deleteAllArchived,
+    createWorkOrder,
+    commitDraft,
+    discardDraft,
+  }
 }

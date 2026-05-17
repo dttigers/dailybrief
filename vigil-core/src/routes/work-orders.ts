@@ -261,6 +261,85 @@ export function createWorkOrdersRoute(deps: WorkOrdersDeps): Hono {
     return c.json({ caseNumber, archivedAt: null });
   });
 
+  // POST /work-orders/:caseNumber/commit — operator commits a pending_review draft
+  // (WO-MANUAL-02 / Phase 129.1-05). Applies operator edits + transitions state
+  // from "pending_review" → "open". 12-field editable whitelist mirrors the sync
+  // sanitizer (T-129.1-24 mass-assignment defense). userId-scoped; 404 if not
+  // owned by caller; 409 if existing state !== "pending_review" (T-129.1-25
+  // state-transition gate).
+  router.post("/work-orders/:caseNumber/commit", async (c) => {
+    if (!deps.dbAvailable || !deps.db) return c.json({ error: "Database not available" }, 503);
+    const localDb = deps.db;
+
+    const userId = c.get("userId");
+    const caseNumber = c.req.param("caseNumber");
+
+    // Allow empty body — operator may commit with no edits. JSON parse failure
+    // is non-fatal (treat as empty {}).
+    let edits: Record<string, unknown> = {};
+    try {
+      edits = (await c.req.json()) as Record<string, unknown>;
+    } catch {
+      edits = {};
+    }
+
+    // SELECT-by-(caseNumber, userId) — userId scoping is T-129.1-23 spoofing defense.
+    const rows = await localDb
+      .select()
+      .from(workOrders)
+      .where(and(eq(workOrders.caseNumber, caseNumber), eq(workOrders.userId, userId)));
+
+    if (rows.length === 0) {
+      return c.json({ error: "Work order not found" }, 404);
+    }
+
+    const row = rows[0]!;
+    if (row.state !== "pending_review") {
+      return c.json({ error: "Work order is not a pending_review draft" }, 409);
+    }
+
+    // Build SET object: state transition + lastChange* metadata, plus any
+    // operator edits from the 11 editable-field whitelist. Coerce-or-skip
+    // mirrors the sync sanitizer (T-129.1-24): for nullable fields, accept
+    // null explicitly via `field in edits` guard; for required string fields,
+    // coerce via String() when present.
+    const patch: Record<string, unknown> = {
+      state: "open",
+      lastChangeAt: new Date(),
+      lastChangeSummary: "Committed from review",
+    };
+    // Required-string fields (default "" in schema — must coerce to string)
+    const requiredFields = [
+      "store",
+      "shortDescription",
+      "trade",
+      "location",
+      "equipment",
+      "priority",
+      "contact",
+      "notes",
+    ] as const;
+    for (const f of requiredFields) {
+      if (edits[f] != null) patch[f] = String(edits[f]);
+    }
+    // Nullable text fields (maintenanceProblem, department) — coerce-or-null
+    if ("maintenanceProblem" in edits) {
+      patch.maintenanceProblem =
+        edits.maintenanceProblem != null ? String(edits.maintenanceProblem) : null;
+    }
+    if ("department" in edits) {
+      patch.department = edits.department != null ? String(edits.department) : null;
+    }
+
+    const updated = await localDb
+      .update(workOrders)
+      .set(patch)
+      .where(and(eq(workOrders.caseNumber, caseNumber), eq(workOrders.userId, userId)))
+      .returning();
+
+    return c.json(updated[0], 200);
+  });
+
   // DELETE /work-orders/archived — hard-delete all archived orders (scoped by userId)
   router.delete("/work-orders/archived", async (c) => {
     if (!deps.dbAvailable || !deps.db) return c.json({ error: "Database not available" }, 503);
@@ -298,6 +377,57 @@ export function createWorkOrdersRoute(deps: WorkOrdersDeps): Hono {
       .where(and(eq(workOrders.userId, userId), isNotNull(workOrders.archivedAt)));
 
     return c.json({ deleted: archived.length });
+  });
+
+  // DELETE /work-orders/:caseNumber — hard-delete a draft (WO-MANUAL-02 Discard).
+  // Operator confirms via window.confirm() on the PWA before this fires (T-129.1-27).
+  // Cleans up matching workOrderStatuses row defense-in-depth. userId-scoped
+  // (T-129.1-23). MUST be registered AFTER DELETE /work-orders/archived so the
+  // static segment wins for that literal path; Hono's trie generally prefers
+  // literals over params, but registration order is also a defense-in-depth
+  // tiebreaker. The explicit `caseNumber === "archived"` guard inside is the
+  // final safety net.
+  router.delete("/work-orders/:caseNumber", async (c) => {
+    if (!deps.dbAvailable || !deps.db) return c.json({ error: "Database not available" }, 503);
+    const localDb = deps.db;
+
+    const userId = c.get("userId");
+    const caseNumber = c.req.param("caseNumber");
+
+    // Guard: never match the static /archived path under any router variant.
+    // caseNumbers are uppercase alphanumeric per the form-level regex, so this
+    // should never fire in practice — defense-in-depth.
+    if (caseNumber === "archived") {
+      return c.json({ error: "Work order not found" }, 404);
+    }
+
+    // SELECT-by-(caseNumber, userId)
+    const rows = await localDb
+      .select()
+      .from(workOrders)
+      .where(and(eq(workOrders.caseNumber, caseNumber), eq(workOrders.userId, userId)));
+
+    if (rows.length === 0) {
+      return c.json({ error: "Work order not found" }, 404);
+    }
+
+    // Hard-delete: clean up workOrderStatuses first (defense-in-depth — the
+    // FK has ON DELETE RESTRICT, so leaving a status row would block the
+    // workOrders delete). Then delete the workOrders row.
+    await localDb
+      .delete(workOrderStatuses)
+      .where(
+        and(
+          eq(workOrderStatuses.userId, userId),
+          eq(workOrderStatuses.caseNumber, caseNumber),
+        ),
+      );
+
+    await localDb
+      .delete(workOrders)
+      .where(and(eq(workOrders.caseNumber, caseNumber), eq(workOrders.userId, userId)));
+
+    return c.body(null, 204);
   });
 
   return router;

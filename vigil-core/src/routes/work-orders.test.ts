@@ -15,6 +15,9 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Lazy import after env is set (safety net for transitive jwt imports).
 const { createWorkOrdersRoute } = await import("./work-orders.js");
+const { workOrders: workOrdersSchema, workOrderStatuses: workOrderStatusesSchema } = await import(
+  "../db/schema.js"
+);
 
 // ── Types (mirrors agent-events.test.ts shape) ─────────────────────────────
 
@@ -472,6 +475,394 @@ test("WO-MANUAL-03/T3: omitted maintenance_problem + department land as null (no
     null,
     "omitted department must land as null, not undefined"
   );
+});
+
+// ── WO-MANUAL-05: POST /:caseNumber/commit + DELETE /:caseNumber (Phase 129.1-05) ──
+//
+// Mock-db builder for the commit + delete routes. Both routes use deps.db directly
+// (not dbInsertOrGet/dbUpsertLegacy), so we need a Drizzle-shape stub that supports:
+//   - .select().from(table).where(...)              — return matching rows array
+//   - .update(table).set(obj).where(...).returning() — apply patch + return updated rows
+//   - .delete(table).where(...)                     — remove matching rows
+//
+// The mock keeps a single in-memory `rows` map keyed by caseNumber. The chain stubs
+// ignore the actual SQL where-condition; tests assert on captured args + final state.
+
+interface StoredRow {
+  caseNumber: string;
+  userId: number;
+  state: string;
+  shortDescription: string;
+  store: string;
+  trade: string;
+  location: string;
+  equipment: string;
+  priority: string;
+  contact: string;
+  notes: string;
+  maintenanceProblem: string | null;
+  department: string | null;
+  lastChangeAt: Date | null;
+  lastChangeSummary: string | null;
+  syncedAt: Date;
+  archivedAt: Date | null;
+  clientCaptureId: string | null;
+}
+
+interface MockDb {
+  rows: StoredRow[];
+  statuses: Array<{ caseNumber: string; userId: number; status: string }>;
+  selectCalls: number;
+  updateCalls: Array<{ table: string; set: Record<string, unknown> }>;
+  deleteCalls: Array<{ table: string }>;
+  select: () => {
+    from: (table: unknown) => {
+      where: (..._cond: unknown[]) => Promise<StoredRow[]>;
+    };
+  };
+  update: (table: unknown) => {
+    set: (patch: Record<string, unknown>) => {
+      where: (..._cond: unknown[]) => {
+        returning: () => Promise<StoredRow[]>;
+      };
+    };
+  };
+  delete: (table: unknown) => {
+    where: (..._cond: unknown[]) => Promise<void>;
+  };
+}
+
+// Identify a drizzle table reference by its embedded `caseNumber` symbol shape so the
+// mock can dispatch SELECT/UPDATE/DELETE to the workOrders row store vs the
+// workOrderStatuses store. Drizzle pgTable objects expose column references; we just
+// reference-compare against the schema imports.
+function isWorkOrdersTable(table: unknown, workOrdersRef: unknown): boolean {
+  return table === workOrdersRef;
+}
+
+function makeMockDb(initialRows: Partial<StoredRow>[] = []): MockDb {
+  const rows: StoredRow[] = initialRows.map((r) => ({
+    caseNumber: r.caseNumber ?? "DEFAULT-CS",
+    userId: r.userId ?? 1,
+    state: r.state ?? "open",
+    shortDescription: r.shortDescription ?? "",
+    store: r.store ?? "",
+    trade: r.trade ?? "",
+    location: r.location ?? "",
+    equipment: r.equipment ?? "",
+    priority: r.priority ?? "",
+    contact: r.contact ?? "",
+    notes: r.notes ?? "",
+    maintenanceProblem: r.maintenanceProblem ?? null,
+    department: r.department ?? null,
+    lastChangeAt: r.lastChangeAt ?? null,
+    lastChangeSummary: r.lastChangeSummary ?? null,
+    syncedAt: r.syncedAt ?? new Date(),
+    archivedAt: r.archivedAt ?? null,
+    clientCaptureId: r.clientCaptureId ?? null,
+  }));
+  const statuses: Array<{ caseNumber: string; userId: number; status: string }> = [];
+  const updateCalls: Array<{ table: string; set: Record<string, unknown> }> = [];
+  const deleteCalls: Array<{ table: string }> = [];
+
+  // The mock dispatches by inspecting the captured filter args, BUT since drizzle
+  // builds opaque SQL objects, we use a simpler strategy: stash the most-recent
+  // `from(table)` reference on a closure variable and let the where-callback
+  // filter the appropriate store. This is fragile but matches the test surface
+  // we need (select then where returning rows).
+  let lastSelectTable: unknown = null;
+  let lastUpdateTable: unknown = null;
+  let lastDeleteTable: unknown = null;
+  let lastUpdatePatch: Record<string, unknown> | null = null;
+
+  // We expose .rows + .statuses for assertion, and dispatch by inspecting
+  // the `lastXTable` closure variables (workOrdersSchema imported at module top).
+
+  return {
+    rows,
+    statuses,
+    selectCalls: 0,
+    updateCalls,
+    deleteCalls,
+    select() {
+      const self = this;
+      self.selectCalls++;
+      return {
+        from(table: unknown) {
+          lastSelectTable = table;
+          return {
+            async where(..._cond: unknown[]): Promise<StoredRow[]> {
+              // SELECT returns rows matching the userId+caseNumber filter encoded in args.
+              // We can't introspect drizzle's opaque SQL objects, so we have to
+              // approximate. Tests only ever filter on (caseNumber, userId) for
+              // these routes, so we return the full store for now and let the
+              // route code (not the test) do the in-row filtering. For
+              // workOrders this matches the production query shape — the route
+              // SELECTs by (caseNumber, userId) and gets exactly 1 or 0 rows.
+              //
+              // To make this work without introspection, we expose a `filter`
+              // helper through a side channel: tests can override the rows array
+              // before invoking the route. The route's own equality checks will
+              // surface 404 / state-mismatch correctly.
+              if (isWorkOrdersTable(lastSelectTable, workOrdersSchema)) {
+                return self.rows as unknown as StoredRow[];
+              }
+              return [] as StoredRow[];
+            },
+          };
+        },
+      };
+    },
+    update(table: unknown) {
+      const self = this;
+      lastUpdateTable = table;
+      return {
+        set(patch: Record<string, unknown>) {
+          lastUpdatePatch = patch;
+          self.updateCalls.push({
+            table: isWorkOrdersTable(lastUpdateTable, workOrdersSchema)
+              ? "workOrders"
+              : "workOrderStatuses",
+            set: patch,
+          });
+          return {
+            where(..._cond: unknown[]) {
+              return {
+                async returning(): Promise<StoredRow[]> {
+                  // Apply patch to all matching rows in the store (caller passed
+                  // userId+caseNumber filter — but again we can't introspect, so
+                  // we patch the first row).
+                  if (
+                    isWorkOrdersTable(lastUpdateTable, workOrdersSchema) &&
+                    self.rows.length > 0
+                  ) {
+                    const row = self.rows[0]!;
+                    for (const [k, v] of Object.entries(lastUpdatePatch ?? {})) {
+                      (row as unknown as Record<string, unknown>)[k] = v;
+                    }
+                    return [row];
+                  }
+                  return [];
+                },
+              };
+            },
+          };
+        },
+      };
+    },
+    delete(table: unknown) {
+      const self = this;
+      lastDeleteTable = table;
+      self.deleteCalls.push({
+        table: isWorkOrdersTable(lastDeleteTable, workOrdersSchema)
+          ? "workOrders"
+          : "workOrderStatuses",
+      });
+      return {
+        async where(..._cond: unknown[]): Promise<void> {
+          if (isWorkOrdersTable(lastDeleteTable, workOrdersSchema)) {
+            // Remove all rows (test passes a single-row store).
+            self.rows.splice(0, self.rows.length);
+          } else {
+            // workOrderStatuses delete — clear statuses.
+            self.statuses.splice(0, self.statuses.length);
+          }
+        },
+      };
+    },
+  };
+}
+
+async function postCommit(
+  app: Hono,
+  caseNumber: string,
+  body: unknown,
+): Promise<Response> {
+  return app.request(`/work-orders/${caseNumber}/commit`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: typeof body === "string" ? body : JSON.stringify(body),
+  });
+}
+
+async function deleteWorkOrder(app: Hono, caseNumber: string): Promise<Response> {
+  return app.request(`/work-orders/${caseNumber}`, {
+    method: "DELETE",
+  });
+}
+
+// WO-MANUAL-05/T1 — POST /:caseNumber/commit happy path: pending_review → open with edits applied
+test("WO-MANUAL-05/T1: POST /:caseNumber/commit happy path — pending_review → open with edits applied", async () => {
+  const mockDb = makeMockDb([
+    {
+      caseNumber: "CS5000001",
+      userId: 1,
+      state: "pending_review",
+      shortDescription: "old description",
+      maintenanceProblem: "HVAC",
+      department: "Bakery",
+    },
+  ]);
+  const deps = makeDeps({ db: mockDb as unknown });
+  const app = makeApp(deps, 1);
+
+  const res = await postCommit(app, "CS5000001", {
+    shortDescription: "operator-edited",
+    priority: "High",
+  });
+
+  assert.equal(res.status, 200, "commit should return 200");
+  const body = (await res.json()) as { state: string; shortDescription: string; priority: string };
+  assert.equal(body.state, "open", "state must transition to open");
+  assert.equal(body.shortDescription, "operator-edited", "operator edit must propagate");
+  assert.equal(body.priority, "High", "operator edit must propagate");
+  // Captured UPDATE patch: should include state=open + lastChangeAt + lastChangeSummary
+  const upd = mockDb.updateCalls.find((c) => c.table === "workOrders");
+  assert.ok(upd, "UPDATE on workOrders must have been called");
+  assert.equal(upd!.set.state, "open", "UPDATE SET must transition state to open");
+  assert.ok(upd!.set.lastChangeAt instanceof Date, "UPDATE SET must include lastChangeAt");
+  assert.equal(
+    upd!.set.lastChangeSummary,
+    "Committed from review",
+    "UPDATE SET must include lastChangeSummary",
+  );
+});
+
+// WO-MANUAL-05/T2 — POST /:caseNumber/commit 404 when not owned by user
+test("WO-MANUAL-05/T2: POST /:caseNumber/commit returns 404 when no row matches (caseNumber, userId)", async () => {
+  const mockDb = makeMockDb([]); // empty store — no rows
+  const deps = makeDeps({ db: mockDb as unknown });
+  const app = makeApp(deps, 1);
+
+  const res = await postCommit(app, "CS-DOES-NOT-EXIST", {
+    shortDescription: "edit",
+  });
+
+  assert.equal(res.status, 404, "commit on missing row must return 404");
+  const body = (await res.json()) as { error: string };
+  assert.match(body.error, /not found/i, "error must indicate work order not found");
+});
+
+// WO-MANUAL-05/T3 — POST /:caseNumber/commit 409 when state !== "pending_review"
+test("WO-MANUAL-05/T3: POST /:caseNumber/commit returns 409 when row state !== 'pending_review'", async () => {
+  const mockDb = makeMockDb([
+    {
+      caseNumber: "CS5000002",
+      userId: 1,
+      state: "open", // NOT pending_review
+      shortDescription: "already open",
+    },
+  ]);
+  const deps = makeDeps({ db: mockDb as unknown });
+  const app = makeApp(deps, 1);
+
+  const res = await postCommit(app, "CS5000002", { shortDescription: "edit" });
+
+  assert.equal(res.status, 409, "commit on non-pending_review row must return 409");
+  const body = (await res.json()) as { error: string };
+  assert.match(body.error, /pending_review|draft/i, "error must mention pending_review/draft");
+  // No UPDATE should have happened
+  assert.equal(
+    mockDb.updateCalls.length,
+    0,
+    "UPDATE must NOT have been called for 409 path",
+  );
+});
+
+// WO-MANUAL-05/T4 — POST /:caseNumber/commit propagates maintenanceProblem + department edits
+test("WO-MANUAL-05/T4: POST /:caseNumber/commit edits to maintenanceProblem + department propagate to UPDATE SET", async () => {
+  const mockDb = makeMockDb([
+    {
+      caseNumber: "CS5000003",
+      userId: 1,
+      state: "pending_review",
+      maintenanceProblem: "OLD-PROBLEM",
+      department: "OLD-DEPT",
+    },
+  ]);
+  const deps = makeDeps({ db: mockDb as unknown });
+  const app = makeApp(deps, 1);
+
+  const res = await postCommit(app, "CS5000003", {
+    maintenanceProblem: "Electrical",
+    department: "Produce",
+  });
+
+  assert.equal(res.status, 200);
+  const upd = mockDb.updateCalls.find((c) => c.table === "workOrders");
+  assert.ok(upd, "UPDATE on workOrders must have been called");
+  assert.equal(
+    upd!.set.maintenanceProblem,
+    "Electrical",
+    "maintenanceProblem edit must reach UPDATE SET",
+  );
+  assert.equal(
+    upd!.set.department,
+    "Produce",
+    "department edit must reach UPDATE SET",
+  );
+});
+
+// WO-MANUAL-05/T5 — DELETE /:caseNumber happy path returns 204
+test("WO-MANUAL-05/T5: DELETE /:caseNumber happy path — returns 204 (no body)", async () => {
+  const mockDb = makeMockDb([
+    {
+      caseNumber: "CS5000004",
+      userId: 1,
+      state: "pending_review",
+    },
+  ]);
+  const deps = makeDeps({ db: mockDb as unknown });
+  const app = makeApp(deps, 1);
+
+  const res = await deleteWorkOrder(app, "CS5000004");
+
+  assert.equal(res.status, 204, "DELETE must return 204");
+  // 204 responses have no body
+  const text = await res.text();
+  assert.equal(text, "", "204 must have empty body");
+});
+
+// WO-MANUAL-05/T6 — DELETE /:caseNumber returns 404 when not owned
+test("WO-MANUAL-05/T6: DELETE /:caseNumber returns 404 when no row matches (caseNumber, userId)", async () => {
+  const mockDb = makeMockDb([]); // empty store
+  const deps = makeDeps({ db: mockDb as unknown });
+  const app = makeApp(deps, 1);
+
+  const res = await deleteWorkOrder(app, "CS-NOT-FOUND");
+
+  assert.equal(res.status, 404, "DELETE on missing row must return 404");
+});
+
+// WO-MANUAL-05/T7 — DELETE /:caseNumber is hard-delete (mock captures DELETE call on workOrders table)
+test("WO-MANUAL-05/T7: DELETE /:caseNumber hard-deletes the row (mock captures DELETE on workOrders, not soft-update)", async () => {
+  const mockDb = makeMockDb([
+    {
+      caseNumber: "CS5000005",
+      userId: 1,
+      state: "pending_review",
+    },
+  ]);
+  const deps = makeDeps({ db: mockDb as unknown });
+  const app = makeApp(deps, 1);
+
+  const res = await deleteWorkOrder(app, "CS5000005");
+
+  assert.equal(res.status, 204);
+  // Hard-delete invariant: a delete() call against workOrders must be captured.
+  // An UPDATE (e.g. setting archivedAt) would NOT satisfy this — the test pins
+  // hard-delete via "DELETE on workOrders" presence.
+  const delOnWorkOrders = mockDb.deleteCalls.find((c) => c.table === "workOrders");
+  assert.ok(delOnWorkOrders, "DELETE on workOrders must have been called (hard-delete)");
+  // Defense-in-depth: NO UPDATE on workOrders (would indicate soft-archive instead of hard-delete)
+  const updOnWorkOrders = mockDb.updateCalls.find((c) => c.table === "workOrders");
+  assert.equal(
+    updOnWorkOrders,
+    undefined,
+    "UPDATE on workOrders must NOT have been called (hard-delete, not soft-update)",
+  );
+  // And the in-memory row store should now be empty.
+  assert.equal(mockDb.rows.length, 0, "row should be removed from store after DELETE");
 });
 
 // ── Drift detectors ────────────────────────────────────────────────────────────

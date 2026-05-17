@@ -1,6 +1,8 @@
 import { useState } from 'react'
-import { updateWorkOrderStatus } from '../api/client'
+import { updateWorkOrderStatus, type WorkOrderApiResponse } from '../api/client'
 import WorkOrderRow from '../components/WorkOrderRow'
+import CreateWorkOrderModal from '../components/CreateWorkOrderModal'
+import ReviewWorkOrderModal from '../components/ReviewWorkOrderModal'
 import { useWorkOrders, type WorkOrderFilter } from '../hooks/useWorkOrders'
 
 const ARCHIVE_FILTERS: { label: string; value: WorkOrderFilter }[] = [
@@ -11,7 +13,20 @@ const ARCHIVE_FILTERS: { label: string; value: WorkOrderFilter }[] = [
 
 export default function WorkOrdersPage() {
   const [filter, setFilter] = useState<WorkOrderFilter>('active')
-  const { workOrders, isLoading, error, updateLocalStatus, unarchive, deleteAllArchived } = useWorkOrders(filter)
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [reviewingWorkOrder, setReviewingWorkOrder] =
+    useState<WorkOrderApiResponse | null>(null)
+  const {
+    workOrders,
+    isLoading,
+    error,
+    updateLocalStatus,
+    unarchive,
+    deleteAllArchived,
+    createWorkOrder,
+    commitDraft,
+    discardDraft,
+  } = useWorkOrders(filter)
 
   async function handleStatusChange(caseNumber: string, status: string) {
     // Optimistic update first
@@ -59,24 +74,32 @@ export default function WorkOrdersPage() {
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-10rem)]">
-      {/* Archive filter tabs */}
-      <div className="flex gap-2 pb-1 mb-3">
-        {ARCHIVE_FILTERS.map((f) => {
-          const isActive = f.value === filter
-          return (
-            <button
-              key={f.value}
-              onClick={() => setFilter(f.value)}
-              className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                isActive
-                  ? 'bg-teal-600 text-white'
-                  : 'bg-gray-900/80 text-gray-100 hover:bg-gray-400/30'
-              }`}
-            >
-              {f.label}
-            </button>
-          )
-        })}
+      {/* Archive filter tabs + Create CTA (Phase 129.1-05 WO-MANUAL-01) */}
+      <div className="flex items-center justify-between pb-1 mb-3">
+        <div className="flex gap-2">
+          {ARCHIVE_FILTERS.map((f) => {
+            const isActive = f.value === filter
+            return (
+              <button
+                key={f.value}
+                onClick={() => setFilter(f.value)}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  isActive
+                    ? 'bg-teal-600 text-white'
+                    : 'bg-gray-900/80 text-gray-100 hover:bg-gray-400/30'
+                }`}
+              >
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="bg-teal-600 text-white hover:bg-teal-700 rounded-full px-3 py-1.5 text-sm font-medium whitespace-nowrap transition-colors"
+        >
+          + Create work order
+        </button>
       </div>
 
       {/* Summary line + Clear Archived button */}
@@ -117,10 +140,27 @@ export default function WorkOrdersPage() {
                 onStatusChange={handleStatusChange}
                 isArchived={isArchived}
                 onUnarchive={() => unarchive(wo.caseNumber)}
+                onReview={setReviewingWorkOrder}
               />
             )
           })}
         </div>
+      )}
+
+      {showCreateModal && (
+        <CreateWorkOrderModal
+          onClose={() => setShowCreateModal(false)}
+          onCreate={createWorkOrder}
+        />
+      )}
+
+      {reviewingWorkOrder && (
+        <ReviewWorkOrderModal
+          workOrder={reviewingWorkOrder}
+          onClose={() => setReviewingWorkOrder(null)}
+          onCommit={commitDraft}
+          onDiscard={discardDraft}
+        />
       )}
     </div>
   )
