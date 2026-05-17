@@ -1,0 +1,24 @@
+{
+  "name": "@dailybrief/vigil-capture",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "macOS LaunchAgent daemon that watches ~/vigil-captures/ and POSTs Polaris screenshots to vigil-core (Phase 129.1 Plan 04 — SCAP-03 + SCAP-04).",
+  "bin": {
+    "vigil-capture": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "tsx src/watcher.ts",
+    "test": "tsx --test src/**/*.test.ts"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}
