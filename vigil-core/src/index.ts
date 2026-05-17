@@ -19,6 +19,7 @@ import { affirmation } from "./routes/affirmation.js";
 import { insights } from "./routes/insights.js";
 import { prioritize } from "./routes/prioritize.js";
 import { describeImage } from "./routes/describe-image.js";
+import { capturesScreenshot } from "./routes/captures-screenshot.js"; // Phase 129.1 Plan 03 (SCAP-01/02) — bearerAuth required; mount AFTER dispatcher
 import { processPhoto } from "./routes/process-photo.js";
 import { therapy } from "./routes/therapy.js";
 import { briefHistory } from "./routes/brief-history.js";
@@ -218,6 +219,14 @@ app.route("/v1", prioritize);
 // a silent auth bypass (see WR-02 mount-order comment at lines 124-130).
 app.route("/v1", changePassword);
 app.route("/v1", describeImage);
+// Phase 129.1 Plan 03 (SCAP-01 + SCAP-02): captures-screenshot is a NEW
+// protected router. Mount AFTER the bearerAuth dispatcher at line ~168 AND
+// AFTER the metricsMiddleware at line ~196. The handler does
+// `c.get("userId") as number` and the dispatcher guarantees that's non-null.
+// Do NOT move this above line 168 — would create a silent auth bypass
+// (cross-user write becomes possible) and the userId would arrive null
+// causing 500s. Mirror agentEvents mount comment.
+app.route("/v1", capturesScreenshot);
 app.route("/v1", processPhoto);
 app.route("/v1", processAudio);
 app.route("/v1", voiceSpike); // Phase 128a SPIKE — TOSSABLE. Phase 130 productionizes.
