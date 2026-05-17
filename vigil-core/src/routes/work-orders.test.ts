@@ -338,6 +338,142 @@ test("SVCNOW-04/T8: DB unavailable returns 503", async () => {
   assert.equal(res.status, 503);
 });
 
+// ── WO-MANUAL-03: maintenance_problem + department round-trip ─────────────────
+
+// WO-MANUAL-03/T1: sanitizer carries maintenanceProblem + department through to dbInsertOrGet
+test("WO-MANUAL-03/T1: maintenance_problem + department reach dbInsertOrGet payload (round-trip)", async () => {
+  let capturedInput: Record<string, unknown> | null = null;
+
+  const deps = makeDeps({
+    dbInsertOrGet: async (input) => {
+      capturedInput = input;
+      return {
+        row: makeWorkOrderRow(input.userId as number, input.caseNumber as string, {
+          clientCaptureId: input.clientCaptureId as string,
+        }),
+        isNew: true,
+      };
+    },
+  });
+  const app = makeApp(deps, 1);
+
+  const res = await postSync(app, {
+    workOrders: [
+      {
+        caseNumber: "TEST-CS001",
+        clientCaptureId: "uuid-a",
+        maintenanceProblem: "HVAC",
+        department: "Bakery",
+        state: "open",
+        shortDescription: "x",
+      },
+    ],
+  });
+
+  assert.equal(res.status, 200);
+  assert.ok(capturedInput, "dbInsertOrGet must have been called");
+  assert.equal(
+    capturedInput!.maintenanceProblem,
+    "HVAC",
+    "maintenanceProblem must round-trip through sanitizer to dbInsertOrGet payload"
+  );
+  assert.equal(
+    capturedInput!.department,
+    "Bakery",
+    "department must round-trip through sanitizer to dbInsertOrGet payload"
+  );
+});
+
+// WO-MANUAL-03/T2: dbUpsertLegacy SET clause carries maintenanceProblem + department on case_number conflict
+test("WO-MANUAL-03/T2: legacy path (no clientCaptureId) — sanitizer carries maintenance_problem + department on each POST", async () => {
+  const capturedInputs: Array<Record<string, unknown>> = [];
+
+  const deps = makeDeps({
+    dbUpsertLegacy: async (input) => {
+      capturedInputs.push(input);
+      return { row: makeWorkOrderRow(input.userId as number, input.caseNumber as string) };
+    },
+  });
+  const app = makeApp(deps, 1);
+
+  // First POST — legacy path (no clientCaptureId) with one value
+  const res1 = await postSync(app, {
+    workOrders: [
+      {
+        caseNumber: "TEST-CS002",
+        maintenanceProblem: "Plumbing",
+        department: "Deli",
+        state: "open",
+        shortDescription: "x",
+      },
+    ],
+  });
+  assert.equal(res1.status, 200);
+
+  // Second POST same caseNumber, different maintenance_problem + department
+  const res2 = await postSync(app, {
+    workOrders: [
+      {
+        caseNumber: "TEST-CS002",
+        maintenanceProblem: "Electrical",
+        department: "Produce",
+        state: "open",
+        shortDescription: "x",
+      },
+    ],
+  });
+  assert.equal(res2.status, 200);
+
+  assert.equal(capturedInputs.length, 2, "dbUpsertLegacy must have been called twice");
+  assert.equal(capturedInputs[0]!.maintenanceProblem, "Plumbing", "first call: maintenanceProblem=Plumbing");
+  assert.equal(capturedInputs[0]!.department, "Deli", "first call: department=Deli");
+  assert.equal(capturedInputs[1]!.maintenanceProblem, "Electrical", "second call: maintenanceProblem=Electrical");
+  assert.equal(capturedInputs[1]!.department, "Produce", "second call: department=Produce");
+});
+
+// WO-MANUAL-03/T3: missing maintenance_problem + department default to null (not undefined)
+test("WO-MANUAL-03/T3: omitted maintenance_problem + department land as null (not undefined) in sanitizer payload", async () => {
+  let capturedInput: Record<string, unknown> | null = null;
+
+  const deps = makeDeps({
+    dbInsertOrGet: async (input) => {
+      capturedInput = input;
+      return {
+        row: makeWorkOrderRow(input.userId as number, input.caseNumber as string, {
+          clientCaptureId: input.clientCaptureId as string,
+        }),
+        isNew: true,
+      };
+    },
+  });
+  const app = makeApp(deps, 1);
+
+  const res = await postSync(app, {
+    workOrders: [
+      {
+        caseNumber: "TEST-CS003",
+        clientCaptureId: "uuid-c",
+        state: "open",
+        shortDescription: "x",
+        // maintenanceProblem and department deliberately omitted
+      },
+    ],
+  });
+
+  assert.equal(res.status, 200);
+  assert.ok(capturedInput, "dbInsertOrGet must have been called");
+  assert.strictEqual(
+    capturedInput!.maintenanceProblem,
+    null,
+    "omitted maintenanceProblem must land as null, not undefined"
+  );
+  assert.strictEqual(
+    capturedInput!.department,
+    null,
+    "omitted department must land as null, not undefined"
+  );
+});
+
 // ── Drift detectors ────────────────────────────────────────────────────────────
 
 test("DRIFT/T1: work-orders.ts source contains app-layer dedup guard (dbInsertOrGet or select.*client_capture_id)", () => {

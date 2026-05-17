@@ -326,6 +326,8 @@ export const workOrders = pgTable("work_orders", {
   syncedAt: timestamp("synced_at", { withTimezone: true }).defaultNow().notNull(),
   archivedAt: timestamp("archived_at", { withTimezone: true }),
   clientCaptureId: text("client_capture_id"), // nullable; (user_id, client_capture_id) partial unique enforced in 0021 migration (SVCNOW-04)
+  maintenanceProblem: text("maintenance_problem"), // nullable; Phase 129.1 WO-MANUAL-03 — added via migration 0022
+  department: text("department"), // nullable; Phase 129.1 WO-MANUAL-03 — added via migration 0022
 }, (table) => [
   index("idx_work_orders_user_id").on(table.userId),
 ]);
