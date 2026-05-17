@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { updateWorkOrderStatus } from '../api/client'
+import { updateWorkOrderStatus, type WorkOrderApiResponse } from '../api/client'
 import WorkOrderRow from '../components/WorkOrderRow'
 import CreateWorkOrderModal from '../components/CreateWorkOrderModal'
+import ReviewWorkOrderModal from '../components/ReviewWorkOrderModal'
 import { useWorkOrders, type WorkOrderFilter } from '../hooks/useWorkOrders'
 
 const ARCHIVE_FILTERS: { label: string; value: WorkOrderFilter }[] = [
@@ -13,6 +14,8 @@ const ARCHIVE_FILTERS: { label: string; value: WorkOrderFilter }[] = [
 export default function WorkOrdersPage() {
   const [filter, setFilter] = useState<WorkOrderFilter>('active')
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [reviewingWorkOrder, setReviewingWorkOrder] =
+    useState<WorkOrderApiResponse | null>(null)
   const {
     workOrders,
     isLoading,
@@ -21,6 +24,8 @@ export default function WorkOrdersPage() {
     unarchive,
     deleteAllArchived,
     createWorkOrder,
+    commitDraft,
+    discardDraft,
   } = useWorkOrders(filter)
 
   async function handleStatusChange(caseNumber: string, status: string) {
@@ -135,6 +140,7 @@ export default function WorkOrdersPage() {
                 onStatusChange={handleStatusChange}
                 isArchived={isArchived}
                 onUnarchive={() => unarchive(wo.caseNumber)}
+                onReview={setReviewingWorkOrder}
               />
             )
           })}
@@ -145,6 +151,15 @@ export default function WorkOrdersPage() {
         <CreateWorkOrderModal
           onClose={() => setShowCreateModal(false)}
           onCreate={createWorkOrder}
+        />
+      )}
+
+      {reviewingWorkOrder && (
+        <ReviewWorkOrderModal
+          workOrder={reviewingWorkOrder}
+          onClose={() => setReviewingWorkOrder(null)}
+          onCommit={commitDraft}
+          onDiscard={discardDraft}
         />
       )}
     </div>

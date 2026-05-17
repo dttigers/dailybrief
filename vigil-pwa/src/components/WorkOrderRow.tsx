@@ -6,6 +6,10 @@ interface WorkOrderRowProps {
   onStatusChange: (caseNumber: string, status: string) => void
   isArchived?: boolean
   onUnarchive?: () => void
+  // Phase 129.1-05 / WO-MANUAL-02 — parent passes this when it hosts the
+  // ReviewWorkOrderModal; row renders a "Review draft" button (amber) instead
+  // of the status-cycle button when state === 'pending_review'.
+  onReview?: (workOrder: WorkOrderApiResponse) => void
 }
 
 const STATUS_CYCLE = ['open', 'inProgress', 'done'] as const
@@ -18,10 +22,15 @@ const STATUS_STYLES: Record<string, string> = {
   open: 'bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30',
   inProgress: 'bg-info-50 text-info-400 hover:bg-info-50/80',
   done: 'bg-green-500/20 text-green-400 hover:bg-green-500/30',
+  // Phase 129.1-05 — amber draft-review style; row branch below renders
+  // the Review draft button instead of cycling status on click.
+  pending_review: 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30',
 }
 
-export default function WorkOrderRow({ workOrder, priorityRank, onStatusChange, isArchived, onUnarchive }: WorkOrderRowProps) {
+export default function WorkOrderRow({ workOrder, priorityRank, onStatusChange, isArchived, onUnarchive, onReview }: WorkOrderRowProps) {
   const isDone = workOrder.status === 'done'
+  // RESEARCH §568 LANDMINE — pending_review rows MUST NOT be cyclable.
+  const isPendingReview = workOrder.state === 'pending_review'
 
   function handleStatusCycle() {
     if (isArchived) return // Archived orders should not cycle status
@@ -57,6 +66,13 @@ export default function WorkOrderRow({ workOrder, priorityRank, onStatusChange, 
             className="border border-teal-600 text-teal-500 hover:bg-teal-600/10 rounded-full px-2 py-0.5 text-xs font-medium cursor-pointer transition-colors shrink-0"
           >
             Unarchive
+          </button>
+        ) : isPendingReview ? (
+          <button
+            onClick={() => onReview?.(workOrder)}
+            className={`inline-flex px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-colors shrink-0 ${STATUS_STYLES.pending_review}`}
+          >
+            Review draft
           </button>
         ) : (
           <button
