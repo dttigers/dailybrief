@@ -57,15 +57,31 @@
 ### SVCNOW — ServiceNow assisted-capture popup (SUPERSEDED 2026-05-16)
 
 > **Status:** SUPERSEDED by Phase 129.1's screenshot-pipeline + PWA manual-create direction.
-> Phase 129 mid-Session-2 UAT (`129-UAT-RESULTS.md` Pivot Decision) replaced the assisted-capture popup with: (a) operator-specific screenshot ingestion via vigil-core endpoint + Claude API extraction, and (b) PWA manual-create UI for all non-operator users. SVCNOW-01..05 implementation shipped in 129-03/05/07 but is being reverted in Phase 129.1.
+> Phase 129 mid-Session-2 UAT (`129-UAT-RESULTS.md` Pivot Decision) replaced the assisted-capture popup with: (a) operator-specific screenshot ingestion via vigil-core endpoint + Claude API extraction, and (b) PWA manual-create UI for all non-operator users. SVCNOW-01..05 implementation shipped in 129-03/05/07 but was reverted in Phase 129.1.
 >
-> The literal SVCNOW-* requirement text is preserved below for historical record. Re-mapping to NEW requirement IDs (SCAP-* for screenshot capture, WO-MANUAL-* for PWA manual create) happens in Phase 129.1's discuss-phase / spec-phase pass.
+> The literal SVCNOW-* requirement text is preserved below for historical record.
+> **Replacement requirement IDs: SCAP-01..05 (screenshot pipeline) + WO-MANUAL-01..03 (PWA manual-create). See section below.**
 
-- [~] **SVCNOW-01** (SUPERSEDED): Browser extension content-script registers on `*.service-now.com/*`; extracts CS# from `document.title` via strict regex `/^CS\d{7}$/`; the extension button opens a popup with CS# locked in.
-- [~] **SVCNOW-02** (SUPERSEDED): Popup state-machine — CS# snapshot frozen at open-time; `MutationObserver` on document.title shows a "CS# drifted to CS0XXXXXXX — reopen popup" banner if Polaris pushState navigation changes the case mid-flight.
-- [~] **SVCNOW-03** (SUPERSEDED): Popup form — case# header (rendered LARGER than the description input), description textarea (autofocus), priority select (Low / Medium / High / Critical), Send button (⌘+Enter); on submit POST to existing `POST /v1/work-orders/sync` with single-element array `[{case_number, description, priority, client_capture_id}]`.
+- [~] **SVCNOW-01** (SUPERSEDED → replaced by SCAP-01..05 + WO-MANUAL-01..03 in Phase 129.1): Browser extension content-script registers on `*.service-now.com/*`; extracts CS# from `document.title` via strict regex `/^CS\d{7}$/`; the extension button opens a popup with CS# locked in.
+- [~] **SVCNOW-02** (SUPERSEDED → replaced by SCAP-01..05 + WO-MANUAL-01..03 in Phase 129.1): Popup state-machine — CS# snapshot frozen at open-time; `MutationObserver` on document.title shows a "CS# drifted to CS0XXXXXXX — reopen popup" banner if Polaris pushState navigation changes the case mid-flight.
+- [~] **SVCNOW-03** (SUPERSEDED → replaced by SCAP-01..05 + WO-MANUAL-01..03 in Phase 129.1): Popup form — case# header (rendered LARGER than the description input), description textarea (autofocus), priority select (Low / Medium / High / Critical), Send button (⌘+Enter); on submit POST to existing `POST /v1/work-orders/sync` with single-element array `[{case_number, description, priority, client_capture_id}]`.
 - [x] **SVCNOW-04** (PRESERVED): `client_capture_id` UUID + `(user_id, client_capture_id)` composite partial unique index on `work_orders` (mirror Phase 121 pattern) prevents duplicate submission across multi-tab races and corporate-VPN-latency retries. **Still in use by the new screenshot pipeline** — dedup primitive is independent of capture mechanism. Migration 0021 is deployed to prod (verified by 129-08-DEPLOY-LOG.md dedup probe: `synced:1` then `synced:0`).
-- [~] **SVCNOW-05** (SUPERSEDED): Safari extension lock-step port (mirror Phase 114 EXT-02 pattern); both manifests updated; both Send buttons render Vigil-brand-compliant styling.
+- [~] **SVCNOW-05** (SUPERSEDED → replaced by SCAP-01..05 + WO-MANUAL-01..03 in Phase 129.1): Safari extension lock-step port (mirror Phase 114 EXT-02 pattern); both manifests updated; both Send buttons render Vigil-brand-compliant styling.
+
+### SCAP / WO-MANUAL — Screenshot pipeline + PWA manual-create (Phase 129.1 replacement for SVCNOW)
+
+> **Origin:** Phase 129 PARTIAL-COMPLETE 2026-05-16; mid-Session-2 UAT pivoted from the SVCNOW assisted-capture popup to a screenshot-pipeline (operator-only) + PWA manual-create (all users) direction. SVCNOW-01/02/03/05 reverted in Phase 129.1; SVCNOW-04 dedup primitive preserved as mechanism-agnostic.
+>
+> **Field mapping (final, post-UAT remap commit `5926037`):** Polaris "Location" field → `work_orders.store` (e.g. "LINS (CEDAR)"); Polaris "Maintenance Location" field → `work_orders.location` (e.g. "Bakery"). `work_orders.department` was added by Phase 129.1 Plan 01 (migration 0022) but became unused after the post-UAT remap; queued for removal in **Phase 129.2** (drop column + relabel the manual-create modal). See SUMMARY.md "129.2 follow-up queue" for the migration + UI cleanup items.
+
+- [x] **SCAP-01** (Phase 129.1): `POST /v1/captures/screenshot` endpoint with bearerAuth + per-user spend tracking; accepts base64 PNG/JPG + mediaType + UUID v4 clientCaptureId; SVCNOW-04 dedup via SELECT-by-(userId, clientCaptureId) short-circuit; writes `work_orders` row in `state: 'pending_review'`; case_number PK collision via onConflictDoUpdate (latest wins); returns `{workOrderId, duplicate, extractedFields, extraExtractedFields}`.
+- [x] **SCAP-02** (Phase 129.1): Anthropic Claude Sonnet vision extraction via `callClaudeMultimodal(userId)`; prompt produces JSON `{required: {case_number, short_description, location, department, maintenance_problem}, extras: {service?, assignment_group?, assigned_to?, priority?, trade?, equipment?, contact?, opened?, time_worked?, resolution_code?, resolution_notes?, after_hours?, maintenance_vendor?}}`; `parseAIJson` handles ```json fences; 422 on empty case_number. Post-UAT (commit `5926037`) prompt instructs the vision model to map Polaris "Location" → `work_orders.store` and Polaris "Maintenance Location" → `work_orders.location` (the `department` field falls through unused; see Phase 129.2 cleanup).
+- [x] **SCAP-03** (Phase 129.1): macOS LaunchAgent watches `~/vigil-captures/` via `chokidar` with `awaitWriteFinish: {stabilityThreshold: 500, pollInterval: 100}`; on new PNG/JPG, base64-encodes, POSTs to endpoint with Keychain-sourced API key, moves to `processed/<iso-ts>-<workOrderId>.<ext>` on success or `failed/<ts>-<filename>` + `.err` sidecar on failure; startup orphan-scan recovers from prior-run crashes.
+- [x] **SCAP-04** (Phase 129.1): `vigil-capture` CLI provides `install` (idempotent bootout-then-bootstrap, chmod 700 captures dir), `uninstall`, `status` (launchctl print), `tail` subcommands; README documents Keychain key rotation + pause/resume + edge cases.
+- [x] **SCAP-05** (Phase 129.1): PWA `WorkOrderRow` renders amber `pending_review` badge + "Review draft" button (replaces status-cycle for pending_review rows); `ReviewWorkOrderModal` pre-populates from workOrder, shows `extras` JSON in collapsible `<details>`, Commit transitions state to `open` via `POST /v1/work-orders/:caseNumber/commit`, Discard hard-deletes via `DELETE /v1/work-orders/:caseNumber` after window.confirm.
+- [x] **WO-MANUAL-01** (Phase 129.1): PWA `WorkOrdersPage` shows "+ Create work order" CTA next to filter tabs; `CreateWorkOrderModal` exposes all 11 editable `work_orders` columns (case_number, store, short_description, trade, location, equipment, priority, contact, notes, **maintenance_problem**, **department**); case_number form-validated `/^[A-Z0-9]+$/`; submit POSTs to `/v1/work-orders/sync` with `state: "open"` + `crypto.randomUUID()` clientCaptureId. **Note:** `department` is a Phase 129.1-only column slated for removal in Phase 129.2 (post-UAT field-mapping remap moved its semantic onto `location`); the modal's "Maintenance Location" form label will collapse onto the existing `location` input once 129.2 lands.
+- [x] **WO-MANUAL-02** (Phase 129.1): `useWorkOrders` hook gains `createWorkOrder(input)` / `commitDraft(caseNumber, edits)` / `discardDraft(caseNumber)` useCallback mutations; each refreshes the list via `setFetchTick(n+1)` on success; uses existing `vigilFetch` wrapper (no Tanstack Query).
+- [x] **WO-MANUAL-03** (Phase 129.1): vigil-core `SanitizedWorkOrder` interface, sanitizer destructure, `dbInsertOrGet`, and `dbUpsertLegacy` all carry `maintenanceProblem` + `department` fields (the "12 known fields" auditability comment maintained); Drizzle migration 0022 adds both as nullable `text` columns; schema.ts workOrders block declares both consistently. **Note:** `department` is added by 0022 and queued for removal by Phase 129.2's migration 0023 — the column is unused post-UAT-remap (commit `5926037` moved its semantic mapping onto `location`).
 
 ### G2-LIFECYCLE — Last-viewed screen restore
 
@@ -176,11 +192,19 @@ Empty initially. Populated by roadmapper during phase mapping.
 | WATCH-ENRICH-02 | 133 | Pending |
 | WATCH-ENRICH-03 | 133 | Pending |
 | WATCH-ENRICH-04 | 133 | Pending |
-| SVCNOW-01 | 129 → 129.1 | Superseded (revert pending) |
-| SVCNOW-02 | 129 → 129.1 | Superseded (revert pending) |
-| SVCNOW-03 | 129 → 129.1 | Superseded (revert pending) |
+| SVCNOW-01 | 129 → 129.1 | Superseded (reverted) |
+| SVCNOW-02 | 129 → 129.1 | Superseded (reverted) |
+| SVCNOW-03 | 129 → 129.1 | Superseded (reverted) |
 | SVCNOW-04 | 129 | Complete (preserved — used by new screenshot pipeline) |
-| SVCNOW-05 | 129 → 129.1 | Superseded (revert pending) |
+| SVCNOW-05 | 129 → 129.1 | Superseded (reverted) |
+| SCAP-01 | 129.1 | Complete |
+| SCAP-02 | 129.1 | Complete |
+| SCAP-03 | 129.1 | Complete |
+| SCAP-04 | 129.1 | Complete |
+| SCAP-05 | 129.1 | Complete |
+| WO-MANUAL-01 | 129.1 | Complete |
+| WO-MANUAL-02 | 129.1 | Complete |
+| WO-MANUAL-03 | 129.1 | Complete |
 | G2-LIFECYCLE-01 | 129 | Complete |
 | G2-LIFECYCLE-02 | 129 | Complete |
 | G2-LIFECYCLE-03 | 129 | Complete |
@@ -203,11 +227,11 @@ Empty initially. Populated by roadmapper during phase mapping.
 | HUD-CLARITY-05 | 133 | Pending |
 
 **Coverage:**
-- v3.9 requirements: 53 total
-- Mapped to phases: 53 ✓
+- v3.9 requirements: 61 total
+- Mapped to phases: 61 ✓
 - Unmapped: 0
-- Phase distribution: 127 (4) · 127.5 (1) · 128a (1) · 128b (1) · 129 (8) · 130 (7) · 131 (8) · 132 (4) · 133 (19)
+- Phase distribution: 127 (4) · 127.5 (1) · 128a (1) · 128b (1) · 129 (8) · 129.1 (8) · 130 (7) · 131 (8) · 132 (4) · 133 (19)
 
 ---
 *Requirements defined: 2026-05-11*
-*Last updated: 2026-05-12 — all 53 requirements mapped to phases 127–133 by roadmapper (continuing phase numbering from v3.8 Phase 126)*
+*Last updated: 2026-05-17 — Phase 129.1 SCAP-* + WO-MANUAL-* IDs authored; SVCNOW supersession finalized. Coverage 53→61 (Phase 129.1 contributes 8 IDs). `work_orders.department` column added by Phase 129.1 Plan 01 is queued for removal in Phase 129.2 after post-UAT field-mapping remap (commit `5926037`).*
