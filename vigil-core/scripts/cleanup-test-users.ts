@@ -53,6 +53,8 @@ import {
   oauthTokens,
   appSettings,
   aiCache,
+  aiUsageDaily,
+  agentEvents,
   passwordResetTokens,
   users,
 } from "../src/db/schema.js";
@@ -122,6 +124,8 @@ const TABLE_ORDER = [
   "oauth_tokens",
   "app_settings",
   "ai_cache",
+  "ai_usage_daily",
+  "agent_events",
   "password_reset_tokens",
   "users",
 ] as const;
@@ -238,7 +242,9 @@ async function main(): Promise<void> {
     }
   }
   console.log(
-    `Pre-flight OK: id=3 -> upper@case.com, id=44 -> test+phase104@local.test`,
+    `Pre-flight OK: ${Object.entries(TARGETS)
+      .map(([id, email]) => `id=${id} -> ${email}`)
+      .join(", ")}`,
   );
   console.log("");
 
@@ -347,7 +353,23 @@ async function main(): Promise<void> {
           .returning({ id: aiCache.id })
       ).length;
 
-      // 13. password_reset_tokens (FK CASCADE in schema, but explicit per D-05)
+      // 13. ai_usage_daily (composite PK userId+usageDate; FK CASCADE in schema, explicit per D-05)
+      counts.ai_usage_daily = (
+        await tx
+          .delete(aiUsageDaily)
+          .where(inArray(aiUsageDaily.userId, TARGET_IDS))
+          .returning({ usageDate: aiUsageDaily.usageDate })
+      ).length;
+
+      // 14. agent_events (FK restrict — MUST delete before users)
+      counts.agent_events = (
+        await tx
+          .delete(agentEvents)
+          .where(inArray(agentEvents.userId, TARGET_IDS))
+          .returning({ id: agentEvents.id })
+      ).length;
+
+      // 15. password_reset_tokens (FK CASCADE in schema, but explicit per D-05)
       counts.password_reset_tokens = (
         await tx
           .delete(passwordResetTokens)
@@ -355,7 +377,7 @@ async function main(): Promise<void> {
           .returning({ id: passwordResetTokens.id })
       ).length;
 
-      // 14. users (parent — last; WHERE id IN (3, 44))
+      // 16. users (parent — last)
       counts.users = (
         await tx
           .delete(users)
