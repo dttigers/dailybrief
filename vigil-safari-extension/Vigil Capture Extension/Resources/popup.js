@@ -1,195 +1,205 @@
-'use strict'
-// Keep in lockstep with ../vigil-safari-extension/Vigil Capture Extension/Resources/popup.js — Phase 129 (D-13)
-//
-// ServiceNow assisted-capture popup. Replaces Phase 84 capture-the-page popup (D-02).
-// Requires popup-helpers.js loaded BEFORE this file (see popup.html script tag order).
-//
-// Two-view popup (Phase 129 Plan 07 / GAP-129-B):
-//   - setup-view  → shown when chrome.storage.local.vigil_api_key is absent.
-//                   Operator types the key, clicks Save; we write to storage and
-//                   transition to svcnow-view in the same popup session.
-//   - svcnow-view → existing SVCNOW capture form (CS# header, description, priority,
-//                   Send button). Shown when vigil_api_key is present.
-//
-// Behavior (svcnow-view, unchanged from plan 129-03):
-//   D-03: HTTP 200 → close the popup immediately (no toast, no delay)
-//   D-04: non-200 or network error → inline error under Send, popup stays open
-//   D-12: clientCaptureId generated client-side via Web Crypto API
-//   SVCNOW-02: chrome.runtime.onMessage listens for drift messages → shows drift-banner
-//
-// Storage key name `vigil_api_key` is UNCHANGED from Phase 84 — preserve backward
-// compatibility with any existing user who had set the key via the old setup UI.
+'use strict';
+// Keep in lockstep with sibling extension popup.js — Phase 114 (D-02), Phase 129.1 revert
 
-const STORAGE_KEY = 'vigil_api_key'
-const API_BASE = 'https://api.vigilhub.io'
+const STORAGE_KEY = 'vigil_api_key';
+const API_BASE = 'https://api.vigilhub.io';
 
-document.addEventListener('DOMContentLoaded', async () => {
-  // --- API key presence check drives the initial view ---
-  const { [STORAGE_KEY]: apiKey } = await chrome.storage.local.get([STORAGE_KEY])
-  const trimmedKey = typeof apiKey === 'string' ? apiKey.trim() : ''
+// --- DOM references ---
+const setupView = document.getElementById('setup-view');
+const captureView = document.getElementById('capture-view');
+const apiKeyInput = document.getElementById('api-key-input');
+const saveKeyBtn = document.getElementById('save-key-btn');
+const setupError = document.getElementById('setup-error');
+const setupLoading = document.getElementById('setup-loading');
+const contentInput = document.getElementById('content-input');
+const captureBtn = document.getElementById('capture-btn');
+const captureError = document.getElementById('capture-error');
+const captureSuccess = document.getElementById('capture-success');
+const successText = document.getElementById('success-text');
+const includeUrlCheckbox = document.getElementById('include-url');
+const settingsBtn = document.getElementById('settings-btn');
 
-  if (!trimmedKey) {
-    // No key on disk → show setup-view; svcnow-view stays hidden until the operator saves a key.
-    initSetupView()
-    return
+// --- View management ---
+
+function showView(view) {
+  setupView.hidden = true;
+  captureView.hidden = true;
+  view.hidden = false;
+}
+
+// --- API key validation ---
+// Uses /v1/summary (NOT /v1/health -- health returns 200 without auth)
+
+async function validateApiKey(key) {
+  try {
+    const res = await fetch(`${API_BASE}/v1/summary`, {
+      headers: { 'Authorization': `Bearer ${key}` },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+// --- Setup flow ---
+
+saveKeyBtn.addEventListener('click', async () => {
+  const key = apiKeyInput.value.trim();
+  if (!key) {
+    setupError.textContent = 'Please enter an API key.';
+    setupError.hidden = false;
+    return;
   }
 
-  // Key present → hide setup-view, reveal svcnow-view, wire it up.
-  document.getElementById('setup-view').hidden = true
-  document.getElementById('svcnow-view').hidden = false
-  initSvcnowView(trimmedKey)
-})
+  setupError.hidden = true;
+  setupLoading.hidden = false;
+  saveKeyBtn.disabled = true;
 
-/**
- * Wire the inline API-key entry view. On Save:
- *   - validate non-empty (trim whitespace).
- *   - write the trimmed key to chrome.storage.local under the vigil_api_key slot.
- *   - hide setup-view, show svcnow-view, call initSvcnowView with the freshly-saved key.
- * Enter in the input field triggers the Save button.
- */
-function initSetupView() {
-  const apiKeyInput = document.getElementById('api-key-input')
-  const saveBtn = document.getElementById('save-key-btn')
-  const setupError = document.getElementById('setup-error')
-  const setupView = document.getElementById('setup-view')
-  const svcnowView = document.getElementById('svcnow-view')
+  const valid = await validateApiKey(key);
 
-  apiKeyInput.focus()
+  setupLoading.hidden = true;
+  saveKeyBtn.disabled = false;
 
-  saveBtn.addEventListener('click', async () => {
-    const value = apiKeyInput.value.trim()
-    if (!value) {
-      setupError.textContent = 'API key required'
-      setupError.hidden = false
-      apiKeyInput.focus()
-      return
-    }
-    setupError.hidden = true
-    await chrome.storage.local.set({ [STORAGE_KEY]: value })
-    setupView.hidden = true
-    svcnowView.hidden = false
-    initSvcnowView(value)
-  })
+  if (!valid) {
+    setupError.textContent = 'Invalid API key. Check your key and try again.';
+    setupError.hidden = false;
+    return;
+  }
 
-  apiKeyInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault()
-      saveBtn.click()
-    }
-  })
-}
+  await chrome.storage.local.set({ [STORAGE_KEY]: key });
+  await initCaptureView(key);
+});
 
-/**
- * Wire the ServiceNow capture form. Body is unchanged from plan 129-03 except that
- * apiKey is now a parameter (used in the Authorization header) instead of a closure
- * binding from the DOMContentLoaded scope.
- */
-function initSvcnowView(apiKey) {
-  const caseNumberHeader = document.getElementById('case-number-header')
-  const driftBanner = document.getElementById('drift-banner')
-  const descriptionInput = document.getElementById('description-input')
-  const prioritySelect = document.getElementById('priority-select')
-  const sendBtn = document.getElementById('send-btn')
-  const sendError = document.getElementById('send-error')
+// Allow Enter key to submit on the API key input
+apiKeyInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    saveKeyBtn.click();
+  }
+});
 
-  // --- Extract case number from current tab title ---
-  let caseNumber = null
-  ;(async () => {
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true })
-      caseNumber = extractCaseNumber(tab?.title ?? '')
-    } catch {
-      // chrome.tabs.query unavailable (rare) — caseNumber stays null
-    }
+// --- Capture flow ---
 
-    if (caseNumber !== null) {
-      caseNumberHeader.textContent = caseNumber
-      // Focus description textarea when CS# is found
-      descriptionInput.focus()
-    } else {
-      // No CS# detected — show error but keep form open so operator can see the state
-      sendError.textContent = 'No case# detected on this page. Visit a ServiceNow case page first.'
-      sendError.hidden = false
-    }
-  })()
+async function initCaptureView(apiKey) {
+  showView(captureView);
+  captureError.hidden = true;
+  captureSuccess.hidden = true;
 
-  // --- SVCNOW-02: Listen for title drift from content-script.js ---
-  chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.type === 'TITLE_DRIFT') {
-      // Show drift banner if the title changed away from the original case number
-      // (includes when the new CS# differs, or when it becomes null on navigation away)
-      if (msg.to !== caseNumber || msg.to === null) {
-        driftBanner.hidden = false
-      }
-    }
-  })
+  // Start with empty input — matches Mac quick capture behavior
+  contentInput.value = '';
+  contentInput.focus();
 
-  // --- Cmd+Enter shortcut: trigger Send button ---
-  descriptionInput.addEventListener('keydown', (e) => {
+  // Cmd+Enter (Mac) / Ctrl+Enter (Windows) submits the capture form
+  contentInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault()
-      sendBtn.click()
+      e.preventDefault();
+      captureBtn.click();
     }
-  })
+  });
 
-  // --- Send button click handler ---
-  sendBtn.addEventListener('click', async () => {
-    // Validate: must have a case number before submitting
-    if (caseNumber === null) {
-      sendError.textContent = 'No case# detected. Cannot submit without a case number.'
-      sendError.hidden = false
-      return
+  captureBtn.onclick = async () => {
+    const content = contentInput.value.trim();
+    if (!content) {
+      captureError.textContent = 'Content cannot be empty.';
+      captureError.hidden = false;
+      return;
     }
 
-    const description = descriptionInput.value.trim()
-    const priority = prioritySelect.value
-
-    // Disable button + show loading state
-    sendBtn.disabled = true
-    sendBtn.textContent = 'Sending…'
-    sendError.hidden = true
-
-    // D-12: generate clientCaptureId client-side
-    const clientCaptureId = crypto.randomUUID()
-
-    const body = {
-      workOrders: [
-        {
-          caseNumber,
-          shortDescription: description, // NOT `description` — route reads wo.shortDescription (RESEARCH Probe 4 / Pitfall 5)
-          priority,
-          clientCaptureId,
-        },
-      ],
+    // Build final content with optional URL
+    let finalContent = content;
+    if (includeUrlCheckbox.checked) {
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (tab?.url) {
+          finalContent += `\n\n${tab.title || 'Page'}: ${tab.url}`;
+        }
+      } catch { /* activeTab not available — send content without URL */ }
     }
+
+    captureError.hidden = true;
+    captureSuccess.hidden = true;
+    captureBtn.disabled = true;
+    captureBtn.textContent = 'Capturing...';
 
     try {
-      const res = await fetch(`${API_BASE}/v1/work-orders/sync`, {
+      const res = await fetch(`${API_BASE}/v1/thoughts`, {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${apiKey}`,
+          'Authorization': `Bearer ${apiKey}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(body),
-      })
+        body: JSON.stringify({ content: finalContent, source: 'text' }),
+      });
 
-      if (res.ok) {
-        // D-03: close immediately on HTTP 200 — no toast, no delay
-        window.close()
-        return
+      if (!res.ok) {
+        const status = res.status;
+        if (status === 401) {
+          captureError.textContent = 'API key rejected (401). Check your key in settings.';
+        } else {
+          captureError.textContent = `Capture failed (HTTP ${status}). Try again.`;
+        }
+        captureError.hidden = false;
+        captureBtn.disabled = false;
+        captureBtn.textContent = 'Capture';
+        return;
       }
 
-      // D-04: non-200 → inline error, popup stays open
-      sendError.textContent = `Error (HTTP ${res.status}). Try again.`
-      sendError.hidden = false
-      sendBtn.disabled = false
-      sendBtn.textContent = 'Send'
-    } catch {
-      // D-04: network error → inline error, popup stays open
-      sendError.textContent = 'Network error. Try again.'
-      sendError.hidden = false
-      sendBtn.disabled = false
-      sendBtn.textContent = 'Send'
+      // Reset button state after successful POST
+      captureBtn.textContent = 'Capture';
+      captureBtn.disabled = false;
+
+      // Show success area with triage polling
+      const thought = await res.json();
+      captureSuccess.hidden = false;
+      successText.innerHTML = '<span class="analyzing">Analyzing...</span>';
+
+      const startTime = Date.now();
+      const pollInterval = setInterval(async () => {
+        if (Date.now() - startTime > 5000) {
+          clearInterval(pollInterval);
+          successText.innerHTML = '<span class="checkmark">&#10003;</span> Captured!';
+          setTimeout(() => window.close(), 1500);
+          return;
+        }
+        try {
+          const pollRes = await fetch(`${API_BASE}/v1/thoughts/${thought.id}`, {
+            headers: { 'Authorization': `Bearer ${apiKey}` },
+          });
+          if (pollRes.ok) {
+            const updated = await pollRes.json();
+            if (updated.category) {
+              clearInterval(pollInterval);
+              const cat = updated.category.charAt(0).toUpperCase() + updated.category.slice(1);
+              successText.innerHTML = `<span class="checkmark">&#10003;</span> Captured! <span class="category-badge">${cat}</span>`;
+              setTimeout(() => window.close(), 1500);
+            }
+          }
+        } catch { /* ignore poll errors — timeout will handle */ }
+      }, 800);
+    } catch (err) {
+      captureError.textContent = `Network error: ${err.message}`;
+      captureError.hidden = false;
+      captureBtn.disabled = false;
+      captureBtn.textContent = 'Capture';
     }
-  })
+  };
 }
+
+// --- Settings button (switch back to setup view) ---
+
+settingsBtn.addEventListener('click', async () => {
+  const { [STORAGE_KEY]: currentKey } = await chrome.storage.local.get([STORAGE_KEY]);
+  apiKeyInput.value = currentKey ?? '';
+  showView(setupView);
+});
+
+// --- Init on popup open ---
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const { [STORAGE_KEY]: apiKey } = await chrome.storage.local.get([STORAGE_KEY]);
+
+  if (!apiKey) {
+    showView(setupView);
+  } else {
+    await initCaptureView(apiKey);
+  }
+});

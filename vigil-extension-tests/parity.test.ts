@@ -1,41 +1,27 @@
-// Phase 129 Plan 05 — parity.test.ts
-// Drift-detector: asserts Chrome and Safari extension file sets are equivalent.
+// Phase 129.1 revert (file 129.1-02-PLAN.md). Manifest + popup-only surface; SVCNOW-specific files removed.
+// 6 assertions: 2 manifest set-equality (permissions, host_permissions), 3 byte-equality (popup.html/css/js),
+// 1 absence-test (background.js, content-script.js, popup-helpers.js absent on both sides).
 //
-// POLICY: Strict byte-equality for all 6 source files (popup.html, popup.css, popup.js,
-// popup-helpers.js, background.js, content-script.js). Manifest comparison uses structured
-// field checks (set-equality on permissions/host_permissions + exact content_scripts match).
+// Lock-step rule (Phase 114 D-02, preserved across Phase 129.1 revert): every Chrome edit
+// that changes user-facing behavior MUST be mirrored to Safari in the same commit. The
+// popup.{html,css,js} byte-equality assertions enforce this at CI time.
 //
-// This policy enforces the Phase 114 EXT-02 invariant and SVCNOW-05 D-13 lock-step rule:
-// every Chrome edit that changes the user-facing behavior MUST be mirrored to Safari in
-// the same commit. This test fails CI if any Chrome ↔ Safari file pair diverges.
-//
-// FUTURE EXCEPTION PATH (RESEARCH Assumption A2):
-// Safari WKWebExtension polyfills chrome.* APIs, but `chrome.action.disable()` may differ
-// subtly. If 129-06 operator UAT surfaces a Safari incompatibility, a one-line shim
-// (`globalThis.browser?.action ?? chrome.action`) is the documented fallback. At that point,
-// the byte-equality assertions for the affected file(s) must be relaxed to a structured
-// behavioral equivalence check. The manifest + non-affected files remain byte-equal.
-// Do NOT pre-emptively add the shim — D-13 strict lock-step is the policy until UAT proves
-// otherwise.
-//
-// LOCATION NOTE (Phase 129 Plan 07 / GAP-129-A):
-// Relocated from `vigil-extension/__tests__/` (which Chrome's unpacked-extension load
-// rejects because folder names starting with `_` are reserved by the extension system)
-// to this sibling directory at the repo root. All readFileSync paths were re-anchored
-// to reach into vigil-extension/ and vigil-safari-extension/.../Resources/ from the new
-// location.
+// The absence-test pins the Phase 129.1 revert outcome: SVCNOW-only files (background.js,
+// content-script.js, popup-helpers.js) must NOT reappear on either side. If a future plan
+// reintroduces background/content scripts for legitimate reasons, that plan must update
+// this absence-test (and ideally the manifest set-equality assertions) in the same commit.
 //
 // Runner: npx tsx --test "vigil-extension-tests/parity.test.ts" (from repo root)
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-// Chrome source files (source of truth — authored in 129-03)
+// Chrome source files (source of truth — Phase 84 + 94 + 114-00 capture-UX baseline)
 const chromeDir = resolve(__dirname, '../vigil-extension')
 const safariDir = resolve(__dirname, '../vigil-safari-extension/Vigil Capture Extension/Resources')
 
@@ -53,67 +39,40 @@ const safariPopupCss = readFileSync(resolve(safariDir, 'popup.css'), 'utf-8')
 const chromePopupJs = readFileSync(resolve(chromeDir, 'popup.js'), 'utf-8')
 const safariPopupJs = readFileSync(resolve(safariDir, 'popup.js'), 'utf-8')
 
-const chromePopupHelpers = readFileSync(resolve(chromeDir, 'popup-helpers.js'), 'utf-8')
-const safariPopupHelpers = readFileSync(resolve(safariDir, 'popup-helpers.js'), 'utf-8')
-
-const chromeBackground = readFileSync(resolve(chromeDir, 'background.js'), 'utf-8')
-const safariBackground = readFileSync(resolve(safariDir, 'background.js'), 'utf-8')
-
-const chromeContentScript = readFileSync(resolve(chromeDir, 'content-script.js'), 'utf-8')
-const safariContentScript = readFileSync(resolve(safariDir, 'content-script.js'), 'utf-8')
-
 // ── Manifest field tests (structured set-equality) ──────────────────────────
 
-test('SVCNOW-05: Chrome + Safari manifest permissions arrays match (set equality)', () => {
+test('EXT-revert: Chrome + Safari manifest permissions arrays match (set equality)', () => {
   const chromePerm = [...chromeManifest.permissions].sort()
   const safariPerm = [...safariManifest.permissions].sort()
   assert.deepEqual(chromePerm, safariPerm)
 })
 
-test('SVCNOW-05: Chrome + Safari manifest host_permissions match', () => {
+test('EXT-revert: Chrome + Safari manifest host_permissions match', () => {
   const chromeHost = [...chromeManifest.host_permissions].sort()
   const safariHost = [...safariManifest.host_permissions].sort()
   assert.deepEqual(chromeHost, safariHost)
 })
 
-test('SVCNOW-05: Chrome + Safari manifest background.service_worker matches', () => {
-  assert.equal(chromeManifest.background.service_worker, safariManifest.background.service_worker)
-})
-
-test('SVCNOW-05: Chrome + Safari manifest content_scripts[0].matches match', () => {
-  const chromeMatches = [...chromeManifest.content_scripts[0].matches].sort()
-  const safariMatches = [...safariManifest.content_scripts[0].matches].sort()
-  assert.deepEqual(chromeMatches, safariMatches)
-})
-
-test('SVCNOW-05: Chrome + Safari manifest content_scripts[0].js array matches in order', () => {
-  // Order is load-order contract (Checker BLOCKER 5): popup-helpers.js BEFORE content-script.js.
-  // Safari must honor the same load order — deepEqual not sort (order matters here).
-  assert.deepEqual(chromeManifest.content_scripts[0].js, safariManifest.content_scripts[0].js)
-})
-
 // ── Source file byte-equality tests ─────────────────────────────────────────
 
-test('SVCNOW-05: Chrome + Safari popup.html are byte-identical', () => {
+test('EXT-revert: Chrome + Safari popup.html are byte-identical', () => {
   assert.equal(chromePopupHtml, safariPopupHtml)
 })
 
-test('SVCNOW-05: Chrome + Safari popup.css are byte-identical', () => {
+test('EXT-revert: Chrome + Safari popup.css are byte-identical', () => {
   assert.equal(chromePopupCss, safariPopupCss)
 })
 
-test('SVCNOW-05: Chrome + Safari popup.js are byte-identical', () => {
+test('EXT-revert: Chrome + Safari popup.js are byte-identical', () => {
   assert.equal(chromePopupJs, safariPopupJs)
 })
 
-test('SVCNOW-05: Chrome + Safari popup-helpers.js are byte-identical', () => {
-  assert.equal(chromePopupHelpers, safariPopupHelpers)
-})
+// ── Absence-test: SVCNOW-only files must NOT reappear on either side ────────
 
-test('SVCNOW-05: Chrome + Safari background.js are byte-identical', () => {
-  assert.equal(chromeBackground, safariBackground)
-})
-
-test('SVCNOW-05: Chrome + Safari content-script.js are byte-identical', () => {
-  assert.equal(chromeContentScript, safariContentScript)
+test('EXT-revert: SVCNOW-only files (background.js, content-script.js, popup-helpers.js) absent on both sides', () => {
+  const svcnowOnlyFiles = ['background.js', 'content-script.js', 'popup-helpers.js']
+  for (const f of svcnowOnlyFiles) {
+    assert.equal(existsSync(resolve(chromeDir, f)), false, `Chrome should not contain ${f}`)
+    assert.equal(existsSync(resolve(safariDir, f)), false, `Safari should not contain ${f}`)
+  }
 })
