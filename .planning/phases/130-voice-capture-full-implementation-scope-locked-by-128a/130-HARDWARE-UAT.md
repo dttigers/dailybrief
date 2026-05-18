@@ -200,6 +200,32 @@ Successfully packed vigil.ehpk (34753 bytes)
 
 ---
 
+## UAT Line 3 attempt 2 — surfaced second gap (VITE_API_KEY missing from build env)
+
+After the deploy gap above was resolved (push at 21:42:04Z), operator retried DOUBLE_CLICK and saw `[ERR] retry-tap to dismiss` again. Railway access logs (operator-provided slice) showed `POST /v1/voice/transcribe → 401, 55ms` and `GET /v1/agent-stream → 401` (PWA SSE subscriber also failing) — meaning the request reached the deployed server but auth was rejected.
+
+**Root cause:** `vigil-g2-plugin/.env.production` is a committed template with `VITE_API_KEY=` empty (committed empty since Phase 41 commit `da13fef` — operator workstation expected to provide the value via `.env.production.local` or env var injection). On this workstation no `.env.production.local` existed, so Vite inlined empty string for `API_KEY`; `voice.ts:329` (`if (API_KEY)`) skipped the Authorization header entirely; server's global `bearerAuth` returned 401 `"Missing or invalid Authorization header"`.
+
+Diagnostic chain:
+- `awk … .env.production` → `VITE_API_KEY=` length=0
+- `grep -c 'vk_' dist/assets/index-Dztg-UQ2.js` → 0 (no key in bundle)
+- Only long strings in the entire 82 KB bundle: `"Content-Type"`, `"modulepreload"`
+- Asset content hash invariant between `npm run build` and `npm run build:prod` → mode wasn't the issue; the env var itself was empty
+
+**Resolution:**
+- Created `vigil-g2-plugin/.env.production.local` (gitignored — `.env*.local` pattern in root `.gitignore`)
+- Operator populated `VITE_API_KEY=vk_…` in the local file
+- Rebuilt: new bundle `dist/assets/index-Bm3ddj_K.js` (82.70 kB; asset hash changed — confirms env inlined)
+- Verified bundle now contains 1 × `vk_…` token of length 67 chars (vk_ prefix + 64 hex chars)
+- Repacked: `vigil.ehpk` 34804 bytes at 2026-05-18T22:00:40Z (size up from 34751 to accommodate inlined key)
+- Plugin version unchanged at 0.3.8 (same version — superseded sideload)
+
+**Lesson for future phases:** add a build-time guard in `vigil-g2-plugin` (e.g., a `vite.config.ts` plugin that fails the build if `VITE_API_KEY` is empty in production mode). Captured as a follow-up gap.
+
+Re-sideload `vigil.ehpk` to G2 and retry UAT Line 3 below.
+
+---
+
 ## UAT Line 3 attempt 1 — surfaced gap
 
 **Initial attempt:** Operator's DOUBLE_CLICK-stop produced `[ERR]` on G2 (audio upload failed).
