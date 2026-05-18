@@ -185,10 +185,11 @@ dist/assets/index-Dztg-UQ2.js  82.63 kB │ gzip: 31.10 kB
 Successfully packed vigil.ehpk (34753 bytes)
 ```
 
-**Pack timestamp:** 2026-05-18T21:22:23Z
-**.ehpk file size:** 34753 bytes (~34 KiB)
+**Pack timestamp (final, v0.3.8):** 2026-05-18T21:32:15Z
+**Initial pack timestamp (v0.3.7 — superseded):** 2026-05-18T21:22:23Z
+**.ehpk file size:** 34751 bytes (~34 KiB) — final v0.3.8 build
 **.ehpk absolute path:** `/home/morrillboss/dev/dailybrief/vigil-g2-plugin/vigil.ehpk`
-**Plugin name / version (from app.json):** Vigil 0.3.7
+**Plugin name / version (from app.json):** Vigil 0.3.8 (bumped from 0.3.7 in commit `96ac69e` — Even Hub live = 0.3.6, so 0.3.8 leapfrogs the superseded 0.3.7 beta)
 **evenhub CLI version:** 0.1.13
 
 **Sideload timestamp:** [pending — operator-only via Even Hub portal app on iPhone]
