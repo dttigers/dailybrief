@@ -195,3 +195,118 @@ test("emitQuiet without subscribers is no-op (does not create emitter)", () => {
   bus.emitQuiet(9998, { enabled: true, since: null });
   assert.equal(bus._size(), before, "emitQuiet does not allocate emitter without subscribers");
 });
+
+// ── Phase 130 Plan 03 (VOICE-06 / T-130-03-I, T-130-03-R) ───────────────
+// thought-created channel — promoting Plan 02 SHIM (emit-only) to full
+// emit/on/off triple with three-channel joint cleanup gate. Plan 03 turns
+// these tests GREEN by adding `onThoughtCreated` + `offThoughtCreated` and
+// extending the existing `off` / `offQuiet` cleanup gates to ALSO require
+// `listenerCount(THOUGHT_CREATED_NAME) === 0` (PATTERNS.md §"CRITICAL"
+// lines 536-537). Until that, these tests are RED because the methods do
+// not exist.
+
+type ThoughtCreatedPayload = { thoughtId: number; content: string };
+
+test("bus.emitThoughtCreated(userId, payload) fires onThoughtCreated listeners for that userId (T-130-03)", () => {
+  const seen: ThoughtCreatedPayload[] = [];
+  const listener = (p: ThoughtCreatedPayload) => { seen.push(p); };
+  bus.onThoughtCreated(8501, listener);
+  try {
+    const payload: ThoughtCreatedPayload = { thoughtId: 42, content: "hello world" };
+    bus.emitThoughtCreated(8501, payload);
+    assert.equal(seen.length, 1, "onThoughtCreated listener invoked exactly once");
+    assert.deepEqual(seen[0], payload, "listener received the exact payload");
+  } finally {
+    bus.offThoughtCreated(8501, listener);
+  }
+});
+
+test("bus.emitThoughtCreated(userId1) does NOT fire onThoughtCreated listeners for userId2 (cross-user isolation, T-130-03-I)", () => {
+  const seenA: ThoughtCreatedPayload[] = [];
+  const seenB: ThoughtCreatedPayload[] = [];
+  const listenerA = (p: ThoughtCreatedPayload) => { seenA.push(p); };
+  const listenerB = (p: ThoughtCreatedPayload) => { seenB.push(p); };
+  bus.onThoughtCreated(8601, listenerA);
+  bus.onThoughtCreated(8602, listenerB);
+  try {
+    bus.emitThoughtCreated(8601, { thoughtId: 1, content: "userA thought" });
+    assert.equal(seenA.length, 1, "userA listener fired for userA emit");
+    assert.equal(seenB.length, 0, "userB listener did NOT fire for userA emit (cross-user isolation invariant)");
+  } finally {
+    bus.offThoughtCreated(8601, listenerA);
+    bus.offThoughtCreated(8602, listenerB);
+  }
+});
+
+test("multiple onThoughtCreated listeners on same userId all receive emissions (within-user fan-out preserved)", () => {
+  const seen1: ThoughtCreatedPayload[] = [];
+  const seen2: ThoughtCreatedPayload[] = [];
+  const l1 = (p: ThoughtCreatedPayload) => { seen1.push(p); };
+  const l2 = (p: ThoughtCreatedPayload) => { seen2.push(p); };
+  bus.onThoughtCreated(8701, l1);
+  bus.onThoughtCreated(8701, l2);
+  try {
+    bus.emitThoughtCreated(8701, { thoughtId: 7, content: "fan-out" });
+    assert.equal(seen1.length, 1, "listener 1 fired");
+    assert.equal(seen2.length, 1, "listener 2 fired");
+  } finally {
+    bus.offThoughtCreated(8701, l1);
+    bus.offThoughtCreated(8701, l2);
+  }
+});
+
+test("three-channel joint cleanup gate: Map entry deleted only after off+offQuiet+offThoughtCreated all run (T-130-03-R)", () => {
+  const eventL = (_row: Row) => {};
+  const quietL = (_p: QuietPayload) => {};
+  const thoughtL = (_p: ThoughtCreatedPayload) => {};
+
+  const baseline = bus._size();
+
+  // Subscribe all three channels for the same userId.
+  bus.on(8801, eventL);
+  bus.onQuiet(8801, quietL);
+  bus.onThoughtCreated(8801, thoughtL);
+  assert.equal(bus._size(), baseline + 1, "single emitter created for all three listener types");
+
+  // Remove the EVENT_NAME listener. Map entry must STILL exist — both QUIET
+  // and THOUGHT_CREATED listeners remain.
+  bus.off(8801, eventL);
+  assert.equal(
+    bus._size(),
+    baseline + 1,
+    "Map entry STILL present after off() — quiet + thought-created listeners block cleanup",
+  );
+
+  // Remove the QUIET_NAME listener. Map entry must STILL exist because
+  // thought-created listener is alive. This is the CRITICAL three-channel
+  // gate — the existing two-channel offQuiet cleanup gate (Phase 125) must
+  // be extended to also check THOUGHT_CREATED_NAME, otherwise this would
+  // incorrectly delete the entry and orphan the thoughtL listener.
+  bus.offQuiet(8801, quietL);
+  assert.equal(
+    bus._size(),
+    baseline + 1,
+    "Map entry STILL present after offQuiet() — thought-created listener still blocks cleanup (three-channel gate)",
+  );
+
+  // Remove the THOUGHT_CREATED_NAME listener. NOW the Map entry deletes.
+  bus.offThoughtCreated(8801, thoughtL);
+  assert.equal(
+    bus._size(),
+    baseline,
+    "Map entry deleted only after ALL THREE listeners removed (T-130-03-R regression guard)",
+  );
+});
+
+test("offThoughtCreated without prior onThoughtCreated is safe no-op (no emitter exists)", () => {
+  const listener = (_p: ThoughtCreatedPayload) => {};
+  const before = bus._size();
+  bus.offThoughtCreated(9997, listener);
+  assert.equal(bus._size(), before, "offThoughtCreated on non-existent emitter is no-op");
+});
+
+test("emitThoughtCreated without subscribers is no-op (does not create emitter)", () => {
+  const before = bus._size();
+  bus.emitThoughtCreated(9996, { thoughtId: 1, content: "x" });
+  assert.equal(bus._size(), before, "emitThoughtCreated does not allocate emitter without subscribers");
+});

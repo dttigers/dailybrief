@@ -106,4 +106,35 @@ describe('resolveApiError + ERROR_CODE_MAP — AUTH-126-05 / D-04', () => {
     expect(entry.ctaLabel).toBeUndefined()
     expect(entry.ctaHref).toBeUndefined()
   })
+
+  // ── Phase 130 Plan 03 (VOICE-06 / D-E1 locked-enum) ───────────────────
+  // Three new locked-enum error codes mirror the AUDIO_SESSION_TOO_LONG /
+  // DAILY_AI_BUDGET_EXCEEDED EXTENSION block shape. Server-side throws
+  // (vigil-core/src/routes/voice-errors.ts) funnel through app.onError into
+  // HTTP 504/502/503 with these codes; PWA renders the messages on the
+  // dashboard when a queued utterance hits a permanent failure.
+
+  it('VOICE-130-CODE-MAP-TIMEOUT: VOICE_TRANSCRIBE_TIMEOUT key present with non-empty message (D-E1 lock)', () => {
+    expect(ERROR_CODE_MAP, 'ERROR_CODE_MAP must contain Phase 130 D-E1 key "VOICE_TRANSCRIBE_TIMEOUT"').toHaveProperty('VOICE_TRANSCRIBE_TIMEOUT')
+    const entry = ERROR_CODE_MAP['VOICE_TRANSCRIBE_TIMEOUT']!
+    expect(typeof entry.message).toBe('string')
+    expect(entry.message.length).toBeGreaterThan(0)
+    expect(entry.message.toLowerCase()).toContain('timed out')
+  })
+
+  it('VOICE-130-CODE-MAP-PROVIDER-DOWN: VOICE_TRANSCRIBE_PROVIDER_DOWN key present with non-empty message (D-E1 lock)', () => {
+    expect(ERROR_CODE_MAP, 'ERROR_CODE_MAP must contain Phase 130 D-E1 key "VOICE_TRANSCRIBE_PROVIDER_DOWN"').toHaveProperty('VOICE_TRANSCRIBE_PROVIDER_DOWN')
+    const entry = ERROR_CODE_MAP['VOICE_TRANSCRIBE_PROVIDER_DOWN']!
+    expect(typeof entry.message).toBe('string')
+    expect(entry.message.length).toBeGreaterThan(0)
+    expect(entry.message.toLowerCase()).toContain('unavailable')
+  })
+
+  it('VOICE-130-CODE-MAP-QUOTA: VOICE_TRANSCRIBE_QUOTA key present with non-empty message (D-E1 lock)', () => {
+    expect(ERROR_CODE_MAP, 'ERROR_CODE_MAP must contain Phase 130 D-E1 key "VOICE_TRANSCRIBE_QUOTA"').toHaveProperty('VOICE_TRANSCRIBE_QUOTA')
+    const entry = ERROR_CODE_MAP['VOICE_TRANSCRIBE_QUOTA']!
+    expect(typeof entry.message).toBe('string')
+    expect(entry.message.length).toBeGreaterThan(0)
+    expect(entry.message.toLowerCase()).toContain('quota')
+  })
 })
