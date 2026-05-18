@@ -21,13 +21,6 @@ import {
   getActiveSessions,
   cycleSession,
 } from './screens/companion.ts'
-// Phase 128a SPIKE — TOSSABLE. Static import (NOT dynamic) per Phase 125
-// Hermes fix at navigation.ts:222-224. Phase 130 owns hardening/removal.
-import {
-  buildVoiceSpikeScreen,
-  getRecording,
-  toggleVoiceSpikeRecording,
-} from './screens/voice-spike.ts'
 import { fetchSummary, fetchBrief, fetchAffirmation, fetchAgentSessions } from './api.ts'
 import { LAST_SCREEN_LS_KEY } from './lib/screen-state-restore.ts'
 
@@ -38,7 +31,6 @@ export const Screen = {
   WORK_ORDERS: 'work-orders',
   AFFIRMATION: 'affirmation',
   TASK_DETAIL: 'task-detail',
-  VOICE_SPIKE: 'voice-spike', // Phase 128a SPIKE — TOSSABLE
 } as const
 export type ScreenName = (typeof Screen)[keyof typeof Screen]
 
@@ -48,7 +40,6 @@ const SCREEN_ORDER: readonly ScreenName[] = [
   Screen.COMPANION,    // NEW slot 1 — Phase 124 D-05
   Screen.WORK_ORDERS,
   Screen.AFFIRMATION,
-  Screen.VOICE_SPIKE,  // Phase 128a SPIKE — TOSSABLE (visible-not-hidden per 128A-UI-SPEC)
 ]
 
 /** Module-level current screen state */
@@ -126,11 +117,6 @@ export async function buildScreen(screen: ScreenName): Promise<RebuildPageContai
     case Screen.AFFIRMATION: {
       const result = await fetchAffirmation()
       return buildAffirmationScreen(result.affirmation)
-    }
-    case Screen.VOICE_SPIKE: {
-      // Phase 128a SPIKE — TOSSABLE. No API fetch — recording state lives in
-      // the screen module (mirrors audio-session-guard module-scope pattern).
-      return buildVoiceSpikeScreen(getRecording())
     }
     case Screen.TASK_DETAIL: {
       // Sub-screen — on refresh, fall back to work orders list
@@ -273,31 +259,6 @@ export async function handleNavEvent(
       return
     }
     await navigateTo(Screen.HOME, bridge)
-    return
-  }
-
-  // Phase 128a SPIKE — VOICE_SPIKE DOUBLE_CLICK toggles recording (TOSSABLE).
-  // Mirrors Companion D-08 carve-out at lines 219-238 above. Hardware-verified
-  // DOUBLE_CLICK per project_g2_companion_doubletap_hardware_verified 2026-05-10.
-  // Single-press REACTIVATE patch is Phase 133. MUST be checked BEFORE the
-  // default NAV_EVENTS dispatch below — otherwise DOUBLE_CLICK would jump to
-  // HOME via the switch at the bottom of this function.
-  //
-  // Cast rationale: `toggleVoiceSpikeRecording` consumes the
-  // `AudioGuardBridge` structural type from `audio-session-guard.ts`, which
-  // declares `setBackgroundState`/`onBackgroundRestore` per EVEN-SKILLS.md
-  // §"Background state". The runtime EvenAppBridge exposes those methods,
-  // but `@evenrealities/even_hub_sdk@0.0.9`'s `.d.ts` does NOT type them.
-  // Cast through `unknown` per Phase 127 GUARD-02 pattern; Phase 130
-  // productionization owns the upstream SDK .d.ts fix.
-  if (
-    currentScreen === Screen.VOICE_SPIKE &&
-    eventType === OsEventTypeList.DOUBLE_CLICK_EVENT
-  ) {
-    await toggleVoiceSpikeRecording(
-      bridge as unknown as Parameters<typeof toggleVoiceSpikeRecording>[0],
-      () => refreshCurrentScreen(bridge),
-    )
     return
   }
 

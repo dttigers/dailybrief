@@ -58,8 +58,6 @@ import {
 } from './api.ts'
 import { createSseClient } from './lib/sse-client.ts'
 import { pickInitialScreen } from './lib/launch-source-helpers.ts'
-// Phase 128a SPIKE — TOSSABLE. PCM chunk collector for VOICE_SPIKE; Phase 130 owns removal.
-import { appendPcmChunk } from './screens/voice-spike.ts'
 // Phase 129 G2-LIFECYCLE-01: screen state restore module.
 import { registerBackgroundStateHandlers } from './lib/screen-state-restore.ts'
 
@@ -262,7 +260,7 @@ async function buildInitialContainer(
     return buildHomeScreen(summary)
   }
   // Phase 129 GAP-129-G fix: every other screen (WORK_ORDERS, AFFIRMATION,
-  // VOICE_SPIKE, TASK_DETAIL, ...) routes through navigation.ts's `buildScreen`
+  // TASK_DETAIL, ...) routes through navigation.ts's `buildScreen`
   // dispatch (the same one used by in-session navigateTo) so cold-start restore
   // can land on ANY screen the operator was last viewing — not just HOME /
   // COMPANION. The pre-fix switch had `default → HOME`, which silently
@@ -324,23 +322,6 @@ async function init(): Promise<void> {
 
   // Listen for lifecycle + navigation events
   bridge.onEvenHubEvent((event) => {
-    // Phase 128a SPIKE — VOICE_SPIKE audioEvent collector (TOSSABLE).
-    // Append PCM chunks while recording. Log strings use GUARD-01 safe
-    // keys (bytes, chunk_n) — never pcm/audio* (per BLOCKED_PROPERTY_NAMES
-    // at vigil-core/src/analytics/posthog.ts:32). Per W2 revision the
-    // screen does NOT re-render here — counter refresh happens on screen
-    // entry / state transition / post-upload, so we don't round-trip the
-    // SDK ≥10x/s and contaminate the inter_chunk_latency measurement.
-    if (event.audioEvent?.audioPcm) {
-      const bytes = event.audioEvent.audioPcm.length
-      // mic_on_ms is logged inside appendPcmChunk on the first chunk per
-      // session (single-fire — no repeated "Timer 'mic-on' does not exist"
-      // warnings the old console.timeEnd path produced on every chunk).
-      console.log(`[voice-spike] chunk bytes=${bytes}`)
-      appendPcmChunk(event.audioEvent.audioPcm)
-      return
-    }
-
     // List item click → task detail
     if (
       event.listEvent?.eventType === OsEventTypeList.CLICK_EVENT &&

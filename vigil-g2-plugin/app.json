@@ -15,7 +15,7 @@
     },
     {
       "name": "g2-microphone",
-      "desc": "Phase 128a VOICE-01 spike: push-to-record voice capture for thought intake."
+      "desc": "Push-to-record voice capture for thought intake."
     }
   ]
 }

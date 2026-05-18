@@ -4,11 +4,10 @@
 //   - LONG_PRESS_EVENT is never referenced (not in OsEventTypeList anyway,
 //     but a future ride-along could re-introduce dead spec wording —
 //     drift detector trips before that lands).
-//   - SCREEN_ORDER carries [HOME, COMPANION, WORK_ORDERS, AFFIRMATION,
-//     VOICE_SPIKE] in this exact order.
-//     Phase 128a SPIKE — TOSSABLE: slot 4 (VOICE_SPIKE) was added by the
-//     PCM feasibility spike and MUST be removed when Phase 130 lands
-//     (revert slot count to 4 + drop the VOICE_SPIKE assertion below).
+//   - SCREEN_ORDER carries [HOME, COMPANION, WORK_ORDERS, AFFIRMATION] in
+//     this exact order (Phase 130 D-C2 reverted the Phase 128a spike's
+//     extra slot — production VOICE screen lands in Phase 130 Plans
+//     02-07 under a fresh screen name).
 //
 // W-1 portability fix (from plan-checker): comment-stripped source content
 // is the asserted surface — BSD grep / GNU grep parity on macOS + CI.
@@ -62,7 +61,7 @@ test("D-08 drift: navigation.ts handles DOUBLE_CLICK_EVENT for Companion", () =>
   );
 });
 
-test("SCREEN_ORDER lock: [HOME, COMPANION, WORK_ORDERS, AFFIRMATION, VOICE_SPIKE] exact order", () => {
+test("SCREEN_ORDER lock: [HOME, COMPANION, WORK_ORDERS, AFFIRMATION] exact order", () => {
   // Locate the SCREEN_ORDER literal
   const m = noComments.match(/SCREEN_ORDER[^=]*=\s*\[([\s\S]*?)\]/);
   assert.ok(m, "SCREEN_ORDER literal found");
@@ -72,13 +71,12 @@ test("SCREEN_ORDER lock: [HOME, COMPANION, WORK_ORDERS, AFFIRMATION, VOICE_SPIKE
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  // Phase 128a SPIKE — TOSSABLE: slot 4 (VOICE_SPIKE) was added by the PCM
-  // feasibility spike. When Phase 130 lands and the spike is removed,
-  // revert this to `4` entries and drop the slot-4 assertion below.
+  // Phase 130 D-C2: SCREEN_ORDER reverted to pre-128a baseline (4 entries).
+  // Phase 130 Plans 02-07 add the production VOICE screen as a NEW slot.
   assert.equal(
     entries.length,
-    5,
-    `expected 5 SCREEN_ORDER entries, got ${entries.length}: ${JSON.stringify(entries)}`,
+    4,
+    `expected 4 SCREEN_ORDER entries, got ${entries.length}: ${JSON.stringify(entries)}`,
   );
   assert.ok(/Screen\.HOME/.test(entries[0]!), `slot 0: ${entries[0]}`);
   assert.ok(
@@ -92,11 +90,6 @@ test("SCREEN_ORDER lock: [HOME, COMPANION, WORK_ORDERS, AFFIRMATION, VOICE_SPIKE
   assert.ok(
     /Screen\.AFFIRMATION/.test(entries[3]!),
     `slot 3: ${entries[3]}`,
-  );
-  // Phase 128a SPIKE — TOSSABLE assertion (drop when Phase 130 removes spike).
-  assert.ok(
-    /Screen\.VOICE_SPIKE/.test(entries[4]!),
-    `slot 4: ${entries[4]}`,
   );
 });
 
@@ -149,9 +142,10 @@ test("W-6 lock: navigation.ts exports getCurrentScreen + rebuildCurrentScreen fo
 
 test("GAP-129-F (case A): navigation.ts contains WORK_ORDERS DOUBLE_CLICK carve-out that enters TASK_DETAIL via navigateToTaskDetail(0, ...)", () => {
   // Pre-condition surface: the carve-out's if-guard MUST match the literal
-  // template established by COMPANION (line 252-271) and VOICE_SPIKE
-  // (line 287-295) carve-outs — `currentScreen === Screen.WORK_ORDERS`
-  // combined with `OsEventTypeList.DOUBLE_CLICK_EVENT`.
+  // template established by the COMPANION carve-out — `currentScreen ===
+  // Screen.WORK_ORDERS` combined with `OsEventTypeList.DOUBLE_CLICK_EVENT`.
+  // (Phase 130 D-C2 removed the Phase 128a spike carve-out; the
+  // predecessor in the ordering is now the COMPANION carve-out.)
   const guardIdx = noComments.indexOf("currentScreen === Screen.WORK_ORDERS");
   assert.ok(
     guardIdx >= 0,
@@ -215,10 +209,13 @@ test("GAP-129-F: WORK_ORDERS carve-out ordering — appears BEFORE the bottom `l
   // Source-ordering invariant from plan §<interfaces> "Insertion point":
   //   1. TASK_DETAIL sub-screen handling
   //   2. HOME DOUBLE_CLICK → shutDownPageContainer
-  //   3. COMPANION carve-out
-  //   4. VOICE_SPIKE carve-out
-  //   5. NEW: WORK_ORDERS carve-out (this plan)
-  //   6. Default `let target: ScreenName` switch
+  //   3. COMPANION carve-out (Phase 124 D-08)
+  //   4. NEW: WORK_ORDERS carve-out (Phase 129 GAP-129-F)
+  //   5. Default `let target: ScreenName` switch
+  //
+  // Phase 130 D-C2: the Phase 128a spike carve-out (formerly slot 4) was removed
+  // alongside the spike's screen module. The COMPANION carve-out is now the
+  // immediately preceding carve-out.
   const workOrdersGuardIdx = noComments.indexOf("currentScreen === Screen.WORK_ORDERS");
   const letTargetIdx = noComments.search(/let\s+target\s*:\s*ScreenName/);
   assert.ok(workOrdersGuardIdx > 0, "WORK_ORDERS carve-out present");
@@ -227,13 +224,13 @@ test("GAP-129-F: WORK_ORDERS carve-out ordering — appears BEFORE the bottom `l
     workOrdersGuardIdx < letTargetIdx,
     "WORK_ORDERS carve-out MUST appear BEFORE the default switch (otherwise default DOUBLE_CLICK→HOME would intercept the gesture and the carve-out would be unreachable)",
   );
-  // Also assert it sits AFTER the VOICE_SPIKE carve-out (the immediately
-  // preceding carve-out per the plan's <interfaces> ordering).
-  const voiceSpikeIdx = noComments.indexOf("currentScreen === Screen.VOICE_SPIKE");
-  assert.ok(voiceSpikeIdx > 0, "VOICE_SPIKE carve-out present (predecessor)");
+  // Assert it sits AFTER the COMPANION carve-out (the immediately preceding
+  // carve-out per the plan's <interfaces> ordering, post-spike-removal).
+  const companionIdx = noComments.indexOf("currentScreen === Screen.COMPANION");
+  assert.ok(companionIdx > 0, "COMPANION carve-out present (predecessor)");
   assert.ok(
-    voiceSpikeIdx < workOrdersGuardIdx,
-    "WORK_ORDERS carve-out MUST appear AFTER VOICE_SPIKE (plan-mandated ordering)",
+    companionIdx < workOrdersGuardIdx,
+    "WORK_ORDERS carve-out MUST appear AFTER COMPANION (plan-mandated ordering, post-spike-removal)",
   );
 });
 
