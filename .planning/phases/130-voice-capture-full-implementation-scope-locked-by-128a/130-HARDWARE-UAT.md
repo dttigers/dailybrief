@@ -375,11 +375,16 @@ Re-sideload `vigil.ehpk` to G2 and retry UAT Line 3 below.
 
 **Wallclock timestamp:** 2026-05-18T22:32:27Z (UAT batch sign-off)
 
-**PWA confirmation — both transcripts visible:** YES (operator confirmed during batch sign-off)
+**PWA confirmation — both transcripts visible:** YES
 
-**Notes:** Operator confirmed offline queue indicator + drain flow worked end-to-end. Both transcripts appeared on PWA dashboard after disabling airplane mode. VOICE-07 offline-queue resilience (D-O1 backoff + D-O3 priority override) closed.
+**Notes:** Initial UAT batch sign-off PASS on 2026-05-18T22:32:27Z was later found via code review (`130-REVIEW.md` M-03) to be a **false positive**: `drainQueue()` had no caller in production code (queue was write-only). The operator's "drain to 0" observation was conflated with a fresh successful recording after airplane-mode-off, not actual queue drain.
 
-**Side observation (potential gap — investigated below):** Operator noted "companion showing idle though" after the test completed (queue had drained to 0). The line 2 `idle` text is the existing pre-Phase-130 empty-state copy in `companion.ts:334` (`No active sessions / idle / No Claude Code activity yet`), shown when `activeSessions.length === 0`. Per Plan 130-05 the line-3 voice-queue indicator should appear in the empty-state path too via `computeBodyLine3()`, but the current wiring at `companion.ts:335` bypasses `computeBodyLine3` and falls back directly to `emptyStateBottomLine()`. See gap entry at the bottom of this file.
+**Re-test PASS on 2026-05-18T23:11Z (v0.3.10):** After fix commit `8d78009` wired four drain triggers (init / FOREGROUND_ENTER_EVENT / window.online / post-success) AND fixed GAP-130-FU1 (empty-state HUD path bypassing the voice-queue ladder), operator reinstalled vigil.ehpk v0.3.10 and re-ran the airplane-mode UAT. **Verified end-to-end:**
+
+  1. Airplane mode ON → record on G2 → `[ERR]` on voice screen → swipe to Companion → HUD line 3 shows `syncing N voice captures…` ✓ (proves enqueue + empty-state ladder both work)
+  2. Network reconnect + Even Hub foreground re-enter → HUD line 3 drains back to `No Claude Code activity yet` (idle) ✓ (proves drain on FOREGROUND_ENTER_EVENT fires)
+
+VOICE-07 offline-queue resilience (D-O1 backoff + D-O3 priority override) **now genuinely closed**.
 
 ---
 
@@ -464,11 +469,12 @@ Re-sideload `vigil.ehpk` to G2 and retry UAT Line 3 below.
 
 The following gaps surfaced during UAT but do NOT block Phase 130 closure. They should be scheduled as a future phase (likely v3.9-followups or v3.10 hardening):
 
-### GAP-130-FU1: Companion HUD empty-state bypasses voice-queue priority ladder
+### GAP-130-FU1: Companion HUD empty-state bypasses voice-queue priority ladder — RESOLVED in commit 8d78009
 
 **Source:** UAT Line 6 side observation ("companion showing idle though")
-**File:** `vigil-g2-plugin/src/screens/companion.ts:335`
-**Severity:** Low (cosmetic — happy path works; only edge case where operator records voice WITHOUT any active Claude Code agent sessions misses the syncing indicator)
+**File:** `vigil-g2-plugin/src/screens/companion.ts:341`
+**Severity:** ~~Low~~ → MEDIUM in retrospect (compounded with VOICE-07 wiring gap to produce a false-positive UAT PASS)
+**Status:** RESOLVED — fix at commit `8d78009`; regression test added at `companion.test.ts HUD-01 (GAP-130-FU1)`; verified on real hardware via v0.3.10 re-test (2026-05-18T23:11Z).
 
 When `activeSessions.length === 0`, `assembleHudFromState()` falls back to:
 ```text
@@ -517,6 +523,30 @@ Test: a unit test against `loadEnv` + a CI gate that exercises `npm run build` i
 Surface a build identifier or short hash in the Companion HUD footer or banner so operators can verify the bundle running on G2 matches the bundle they just packed. This makes silent same-version cache scenarios immediately visible.
 
 Reference implementation: emit `import.meta.env.VITE_BUILD_ID` (or similar) and display via Companion HUD ASCII line. Operator can compare against the pack-time logged ID.
+
+### GAP-130-FU0: VOICE-07 drainQueue had no caller in production code — RESOLVED in commit 8d78009
+
+**Source:** Code review (130-REVIEW.md M-03) surfaced after initial UAT batch sign-off
+**File:** `vigil-g2-plugin/src/screens/voice.ts` + `vigil-g2-plugin/src/main.ts`
+**Severity:** HIGH (in retrospect — invalidated original UAT Line 6 PASS verdict)
+**Status:** RESOLVED — four drain triggers wired (post-success in voice.ts, init + FOREGROUND_ENTER_EVENT + window.online in main.ts); verified on real hardware via v0.3.10 re-test (2026-05-18T23:11Z). UAT Line 6 re-verified PASS.
+
+**Lesson:** Code review should run BEFORE hardware UAT closure, not after. The reviewer caught what the verifier (structural-only check) and the operator (behavioral observation of an apparent drain) both missed. For Phase 13x+, run `/gsd:code-review` immediately after `/gsd:execute-phase` and before any operator hardware UAT. Captured for memory.
+
+### GAP-130-FU5: `[ERR]` state surfaces for expected airplane-mode failures (UX softening)
+
+**Source:** UAT Line 6 re-test observation — operator sees `[ERR] retry-tap to dismiss` on G2 even though the queue silently recovers
+**File:** `vigil-g2-plugin/src/screens/voice.ts` (failure branch + state-line union type)
+**Severity:** Low (cosmetic — operator workflow works; just shows scary error state for an expected condition)
+
+The voice screen state machine flips to `[ERR]` on any POST failure, including network errors that the offline queue silently recovers from. Distinguishing transient-network-failure (`[QUEUED]`) from actual server errors (`[ERR]`) would improve operator confidence in the queue.
+
+Proposed UX:
+- `[QUEUED]` + `bodyLine2: "syncing when online"` — when `networkError === true` AND `navigator.onLine === false` AND the queue contains the entry just enqueued
+- `[ERR]` + `bodyLine2: "retry — tap to dismiss"` — when the POST failed with a server-side error (5xx) AND the queue contains the entry
+- `[ERR]` + `bodyLine2: "tap to dismiss"` — when the POST failed permanently (4xx that won't retry, e.g., 413 / 429)
+
+Test: extend `voice.test.ts` fixture with the three branches.
 
 ### GAP-130-FU4: Gmail OAuth token expired on Railway
 
