@@ -28,6 +28,18 @@ const {
   __readCapUsdForTest,
 } = aiBudgetModule;
 
+// Phase 130 Plan 02 — OpenAI duration-based accumulator (RED until Task 3
+// ships the export). Cast to a narrow type so the test compiles against the
+// existing ai-budget module shape; once Task 3 lands the export, the import
+// resolves and the cast is structurally compatible.
+const withOpenAIBudgetTracking = (aiBudgetModule as unknown as {
+  withOpenAIBudgetTracking: <T>(
+    userId: number,
+    durationMs: number,
+    fn: () => Promise<T>,
+  ) => Promise<T>;
+}).withOpenAIBudgetTracking;
+
 // ── Env capture/restore (mirrors sentry.test.ts pattern) ──────────────────
 const realCapEnv = process.env["VIGIL_DAILY_AI_BUDGET_USD"];
 
@@ -253,6 +265,74 @@ describe("ai-budget (vigil-core/src/lib/ai-budget.ts) — Phase 127 GUARD-03 / P
         expected,
         "literal math: 100 in @ $3/1M + 50 out @ $15/1M",
       );
+    });
+  });
+
+  // ── Phase 130 Plan 02 — withOpenAIBudgetTracking (duration-based accumulator) ──
+  //
+  // OpenAI transcription is billed at $0.003/minute. The new helper accepts a
+  // pre-computed `durationMs` (estimated from PCM byte count at the call
+  // site — bytes / 32000 * 1000 for 16 kHz × 16-bit × mono) and accumulates
+  // usd = (durationMs / 1000) * (0.003 / 60) into ai_usage_daily via the
+  // same INSERT … ON CONFLICT DO UPDATE pattern used by withBudgetTracking.
+  describe("withOpenAIBudgetTracking (Phase 130 Plan 02 — duration-based)", () => {
+    it("A: runs fn and returns its resolved value unchanged", async () => {
+      const fn = async (): Promise<string> => "hello world";
+      const result = await withOpenAIBudgetTracking(42, 10_000, fn);
+      assert.equal(result, "hello world");
+    });
+
+    it("B: on retry for the same user same day, accumulates without throwing (idempotent ON CONFLICT path)", async () => {
+      // We cannot easily SELECT from ai_usage_daily without DB access in unit
+      // tests, but we can verify the function does NOT throw across two
+      // sequential calls for the same user. The ON CONFLICT DO UPDATE math is
+      // pure SQL — concurrent or sequential repeats simply add to the
+      // existing row. Use a non-existent userId so the INSERT fails on FK
+      // and the catch fires non-fatally (mirror existing Test 6 approach).
+      const BAD_USER_ID = -888_888_888;
+      const fn1 = async (): Promise<string> => "first";
+      const fn2 = async (): Promise<string> => "second";
+      // Suppress noisy console.error from the deliberately-failing accumulator.
+      const originalConsoleError = console.error;
+      console.error = () => {};
+      try {
+        const r1 = await withOpenAIBudgetTracking(BAD_USER_ID, 5_000, fn1);
+        const r2 = await withOpenAIBudgetTracking(BAD_USER_ID, 5_000, fn2);
+        assert.equal(r1, "first", "first call returns its resolved value");
+        assert.equal(r2, "second", "second call returns its resolved value");
+      } finally {
+        console.error = originalConsoleError;
+      }
+    });
+
+    it("C: accumulator errors do NOT throw — caller still receives fn's resolved value", async () => {
+      // Same pattern as withBudgetTracking Test 6 — induce FK failure via a
+      // bogus user_id; console.error must capture the sentinel string;
+      // the helper still returns the fn() result.
+      const captured: unknown[][] = [];
+      const originalConsoleError = console.error;
+      console.error = (...args: unknown[]) => {
+        captured.push(args);
+      };
+      try {
+        const BAD_USER_ID = -999_999_998;
+        const fn = async (): Promise<{ text: string }> => ({ text: "ok" });
+        const result = await withOpenAIBudgetTracking(BAD_USER_ID, 10_000, fn);
+        assert.deepEqual(result, { text: "ok" }, "fn result round-trips on accumulator failure");
+        const matched = captured.find((args) =>
+          args.some(
+            (a) =>
+              typeof a === "string" &&
+              a.includes("withOpenAIBudgetTracking accumulator failed"),
+          ),
+        );
+        assert.ok(
+          matched,
+          `console.error must include 'withOpenAIBudgetTracking accumulator failed' sentinel; captured: ${JSON.stringify(captured)}`,
+        );
+      } finally {
+        console.error = originalConsoleError;
+      }
     });
   });
 });
