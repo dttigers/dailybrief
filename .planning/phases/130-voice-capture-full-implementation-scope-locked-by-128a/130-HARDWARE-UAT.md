@@ -5,8 +5,8 @@ runbook_source: 130-07-PLAN.md
 operator: Jameson Morrill
 operator_email: jamesonmorrill1@gmail.com
 status: partial
-started: pending
-updated: 2026-05-18
+started: 2026-05-18T21:20:35Z
+updated: 2026-05-18T21:20:35Z
 resume_signal: do NOT mark Plan 07 complete until all 7 UAT lines have a result of PASS or FAIL (with notes)
 loom_waived: true
 loom_waived_reason: G2 lenses are not screen-mirrorable per [feedback_loom_waived_g2_not_screen_mirrorable] auto-memory; portfolio artifacts are console-log timing screenshot + PWA dashboard render screenshot
@@ -63,21 +63,82 @@ loom_waived_reason: G2 lenses are not screen-mirrorable per [feedback_loom_waive
    ```
    Expected: `drizzle-kit migrate` reports no migrations pending.
 
-**Result:** [pending]
+**Result:** PASS
 
-**Wallclock timestamp:** [pending]
+**Wallclock timestamp:** 2026-05-18T21:20:35Z (UTC) — initial apply + idempotency re-run both completed by this timestamp
+
+**Invocation (canonical Phase 118 pattern, D-01 invariant preserved — no DATABASE_URL on disk):**
+```bash
+cd vigil-core && railway run --service Postgres -- bash -c 'DATABASE_URL="$DATABASE_PUBLIC_URL" npm run db:migrate-prod'
+```
+
+**Migrator output (initial apply):**
+```text
+> vigil-core@0.2.0 db:migrate-prod
+> node dist/db/migrate.js
+
+[migrate] Running migrations...
+{
+  severity_local: 'NOTICE',
+  severity: 'NOTICE',
+  code: '42P06',
+  message: 'schema "drizzle" already exists, skipping',
+  file: 'schemacmds.c',
+  line: '132',
+  routine: 'CreateSchemaCommand'
+}
+{
+  severity_local: 'NOTICE',
+  severity: 'NOTICE',
+  code: '42P07',
+  message: 'relation "__drizzle_migrations" already exists, skipping',
+  file: 'parse_utilcmd.c',
+  line: '208',
+  routine: 'transformCreateStmt'
+}
+[migrate] Migrations complete
+```
+(Notices are expected — the `drizzle` schema + `__drizzle_migrations` tracking table exist from prior migrations; this is the standard Drizzle migrator pattern.)
+
+**Migrator output (idempotency re-run):**
+```text
+[migrate] Migrations complete
+```
+(Same NOTICE block; no new SQL executed — migrator detects 0023 already journaled in `__drizzle_migrations`.)
 
 **`\d voice_captures` raw output:**
 ```text
-[paste here]
+                                          Table "public.voice_captures"
+      Column       |           Type           | Collation | Nullable |                  Default                   
+-------------------+--------------------------+-----------+----------+--------------------------------------------
+ id                | integer                  |           | not null | nextval('voice_captures_id_seq'::regclass)
+ user_id           | integer                  |           | not null | 
+ thought_id        | integer                  |           |          | 
+ client_capture_id | text                     |           | not null | 
+ queued_at         | timestamp with time zone |           | not null | now()
+ retry_count       | integer                  |           | not null | 0
+Indexes:
+    "voice_captures_pkey" PRIMARY KEY, btree (id)
+    "uq_voice_captures_user_client_capture_id" UNIQUE, btree (user_id, client_capture_id) WHERE client_capture_id IS NOT NULL
+Foreign-key constraints:
+    "voice_captures_thought_id_fkey" FOREIGN KEY (thought_id) REFERENCES thoughts(id) ON DELETE SET NULL
+    "voice_captures_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ```
 
-**`pg_indexes` raw output:**
+**`pg_indexes` raw output (extracted from `\d voice_captures` Indexes section):**
 ```text
-[paste here]
+voice_captures_pkey                          PRIMARY KEY, btree (id)
+uq_voice_captures_user_client_capture_id     UNIQUE, btree (user_id, client_capture_id) WHERE client_capture_id IS NOT NULL
 ```
 
-**Notes:** [pending]
+**Acceptance criteria — all PASS:**
+- ✓ 6 columns present: `id`, `user_id`, `thought_id`, `client_capture_id`, `queued_at`, `retry_count`
+- ✓ Partial unique index `uq_voice_captures_user_client_capture_id` present on `(user_id, client_capture_id) WHERE client_capture_id IS NOT NULL`
+- ✓ FK `voice_captures_user_id_fkey` → `users(id) ON DELETE CASCADE`
+- ✓ FK `voice_captures_thought_id_fkey` → `thoughts(id) ON DELETE SET NULL`
+- ✓ Idempotency re-run reports `[migrate] Migrations complete` with no new SQL executed
+
+**Notes:** Executed by Claude on operator's behalf at explicit operator request. Operator's Railway CLI was pre-linked to `vigil-core` project (`Project ID: e9d47f40-406a-4c47-8745-081e28195c72`, env `production`). D-01 invariant (no `DATABASE_URL` written to local disk) preserved via `railway run --service Postgres -- bash -c 'DATABASE_URL="$DATABASE_PUBLIC_URL" ...'` remap pattern from Phase 118 runbook. No `railway variables` dump performed per `[Railway variables leak]` auto-memory.
 
 ---
 
