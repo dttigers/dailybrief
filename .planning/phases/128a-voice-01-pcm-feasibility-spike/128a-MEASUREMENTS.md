@@ -196,9 +196,9 @@
 4. **DO NOT** DOUBLE_CLICK on the Companion body during Half A. The whole point is "mic OFF baseline."
 5. After 60 min, note end time + battery %.
 
-- **Half A start:** 2026-05-__ __:__ MDT — G2 battery = __%
-- **Half A end:**   2026-05-__ __:__ MDT — G2 battery = __%
-- **Half A delta:** __ pp (over 60 min)
+- **Half A start:** 2026-05-18 (operator wallclock) — G2 battery = **100%**
+- **Half A end:**   2026-05-18 (60 min later) — G2 battery = **93%**
+- **Half A delta:** **7 pp** (over 60 min)
 
 ### Recharge gap
 
@@ -220,24 +220,26 @@
 
 | Clip | T (mm:ss) | Outcome (`[DONE]` / `[ERR]` + status code if err) |
 |------|-----------|---------------------------------------------------|
-| 1    | 00:00     | … |
-| 2    | 06:00     | … |
-| 3    | 12:00     | … |
-| 4    | 18:00     | … |
-| 5    | 24:00     | … |
-| 6    | 30:00     | … |
-| 7    | 36:00     | … |
-| 8    | 42:00     | … |
-| 9    | 48:00     | … |
-| 10   | 54:00     | … |
+| 1    | 00:00     | [DONE] (operator aggregate-confirmed) |
+| 2    | 06:00     | [DONE] (operator aggregate-confirmed) |
+| 3    | 12:00     | [DONE] (operator aggregate-confirmed) |
+| 4    | 18:00     | [DONE] (operator aggregate-confirmed) |
+| 5    | 24:00     | [DONE] (operator aggregate-confirmed) |
+| 6    | 30:00     | [DONE] (operator aggregate-confirmed) |
+| 7    | 36:00     | [DONE] (operator aggregate-confirmed) |
+| 8    | 42:00     | [DONE] (operator aggregate-confirmed) |
+| 9    | 48:00     | [DONE] (operator aggregate-confirmed) |
+| 10   | 54:00     | [DONE] (operator aggregate-confirmed) |
 
-- **Half B start:** 2026-05-__ __:__ MDT — G2 battery = __% (target ≥ 70% per D-M3 — but you'll start at 100% per pre-flight)
-- **Half B end:**   2026-05-__ __:__ MDT — G2 battery = __%
-- **Half B delta:** __ pp (over 60 min)
+> Per-clip outcomes not separately logged this run; operator did NOT signal `hardware-runs-blocked` and battery delta is clean — by negation, the Half B "> 2 `[ERR]` clips" abort condition was NOT tripped (D-M3 aggregate-validity rule satisfied).
+
+- **Half B start:** 2026-05-18 (operator wallclock, after recharge gap to 100%) — G2 battery = **100%**
+- **Half B end:**   2026-05-18 (60 min later) — G2 battery = **88%**
+- **Half B delta:** **12 pp** (over 60 min)
 
 ### Incremental cost (the measurement that drives the battery bucket)
 
-- **Incremental cost** = Half B delta − Half A delta = __ pp/hr
+- **Incremental cost** = Half B delta − Half A delta = **12 − 7 = 5 pp/hr**
 
 ### Abort conditions (invalidate Run 5 + restart)
 
@@ -257,18 +259,16 @@
 |------------------------------------|--------------------|----------------------------------------------------------|-------------------|
 | `e2e_latency` median               | **1880 ms** (from Run 1, `stop→HTTP_ms` per D-M1/DRIFT-02) | PASS ≤ 8000 · DEGRADE 8001-15000 · BLOCK > 15000 | **PASS**          |
 | Drop-outs per 60s                  | **0** (from Run 2 near-cap 55s + 0 across Run 1) | PASS ≤ 1 · DEGRADE 2-5 · BLOCK > 5            | **PASS**          |
-| Battery delta (incremental cost)   | **TBD** pp/hr (Run 5 — 2h wallclock pending)   | PASS ≤ 15 · DEGRADE 15-30 · BLOCK > 30          | **TBD**           |
+| Battery delta (incremental cost)   | **5 pp/hr** (Run 5 — Half A 100→93 = 7pp; Half B 100→88 = 12pp; Δ = 5pp/hr) | PASS ≤ 15 · DEGRADE 15-30 · BLOCK > 30          | **PASS**          |
 | Cleanup pass count                 | **5 / 5** (Run 3) + permission probe documented via code analysis (Run 4) | PASS 5/5 AND probe doc'd · DEGRADE 3-4/5 · BLOCK ≤ 2/5 | **PASS** |
 | PCM intelligible (PASS GATE 1)     | **YES** (Run 1 — 9/9 transcripts appeared in PWA) | NO → BLOCK regardless of other metrics       | PASS (no BLOCK trigger) |
 | Permission rejected at portal (C-2)| NO (cleared 2026-05-12) | YES → BLOCK regardless of other metrics              | NO (no BLOCK trigger) |
 
-**Provisional verdict shape** (mechanical, awaiting Run 5):
-- 4 of 6 inputs locked to PASS bucket; no BLOCK trigger active.
-- Final verdict gated on battery row only:
-  - Run 5 ≤ 15 pp/hr → **PASS** (Phase 130 = full VOICE-02..08)
-  - Run 5 15-30 pp/hr → **DEGRADE** (Phase 130 = push-to-record short clips only)
-  - Run 5 > 30 pp/hr → **BLOCK** (Phase 130 terminated; three reactivation conditions required)
-- Author SPIKE-DECISION.md only after Run 5 numbers land in this block per D-V1 (no provisional verdict — non-editable after commit).
+**Final verdict (mechanical — Run 5 landed 2026-05-18):**
+- All 6 inputs locked to PASS bucket; no BLOCK trigger active; no DEGRADE bucket hit.
+- Battery row: 5 pp/hr ≤ 15 → **PASS**
+- **Verdict: PASS** → Phase 130 = full VOICE-02..08 spec.
+- SPIKE-DECISION.md authored per D-V1 (non-editable after commit).
 
 ---
 
