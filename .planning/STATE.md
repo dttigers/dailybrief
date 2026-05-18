@@ -4,13 +4,13 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Completed Phase 130 Plan 01 (spike-removal)
-last_updated: "2026-05-18T18:05:50.445Z"
+last_updated: "2026-05-18T18:20:14.132Z"
 last_activity: 2026-05-18
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 50
-  completed_plans: 45
+  completed_plans: 46
   percent: 50
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 130 (voice-capture-full-implementation-scope-locked-by-128a) — EXECUTING
-Plan: 3 of 7
+Plan: 4 of 7
 Status: Ready to execute
 Last activity: 2026-05-18
 
@@ -158,6 +158,7 @@ Last activity: 2026-05-16
 | Phase 129 P09 | 5 min | 2 tasks | 3 files |
 | Phase 130 P01 | 45 | 2 tasks | 11 files |
 | Phase 130 P02 | 21min | 3 tasks | 10 files |
+| Phase 130 P03 | 8min | 3 tasks | 8 files |
 
 ## Deferred Items
 
@@ -443,6 +444,7 @@ Recent (v3.7 closeout):
 - [Phase ?]: [Phase 130 / Plan 02] withOpenAIBudgetTracking is a DISTINCT helper from withBudgetTracking — OpenAI gpt-4o-mini-transcribe is duration-billed ($0.003/min), Anthropic is token-billed. Pre-computed durationMs at call site.
 - [Phase ?]: [Phase 130 / Plan 02] bus.emitThoughtCreated ships as SHIM in this plan — emit-side only, THOUGHT_CREATED_NAME channel constant added, no on/off triple. Plan 03 promotes to full triple + three-channel joint cleanup gate.
 - [Phase ?]: [Phase 130 / Plan 02] Rule 2 deviation — extended app-on-error.test.ts drift-detector mirror to cover 4 new branches (AudioSessionTooLongError + 3 VOICE_TRANSCRIBE_*Error) plus 4 new test cases. Maintains regression coverage for the production translation table.
+- [Phase ?]: Plan 03 three-channel joint cleanup gate; fetch-stream SSE subscriber
 
 ### Pending Todos
 
@@ -479,7 +481,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-18T18:05:14.967Z
+Last session: 2026-05-18T18:19:53.718Z
 Stopped at: Completed Phase 130 Plan 01 (spike-removal)
 Resume file: None
 
