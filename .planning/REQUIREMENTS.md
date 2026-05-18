@@ -110,6 +110,15 @@
 - [ ] **QUIET-AUTO-03**: Existing `PUT /v1/quiet-mode` endpoint extended to accept `quiet_mode_source: 'manual' | 'ios_focus' | 'shortcut_webhook'` field; users table gains `quiet_mode_source` column (default 'manual').
 - [ ] **QUIET-AUTO-04**: PWA Settings — "Download Shortcut" link/QR + "Quiet Mode log" showing last 10 toggles (timestamp + source); "Source: iOS Focus" badge on the toggle when last set source was `ios_focus`.
 
+### AGENT-LINUX — Linux Claude Code → vigil-core agent-events bridge
+
+- [ ] **AGENT-LINUX-01**: `~/.claude/hooks/vigil-agent-bridge.sh` (or `.js`) installed on Linux dev workstation. Wired to Claude Code's `SessionStart` hook — POSTs a `heartbeat` event to `https://api.vigilhub.io/v1/agent-events` with `{session_id, event:'heartbeat', message:'session started in <cwd>', timestamp}`. Session ID derived from Claude Code's session UUID (available in hook env via `$CLAUDE_SESSION_ID` or equivalent — verify in discuss-phase against actual hook env).
+- [ ] **AGENT-LINUX-02**: Same hook wired to `Stop` event — POSTs `task_complete` with `{session_id, event:'task_complete', message:'turn complete'}`. Each finished assistant turn creates one event.
+- [ ] **AGENT-LINUX-03**: Same hook wired to `UserPromptSubmit` — POSTs `heartbeat` with `{session_id, event:'heartbeat', message:'<truncated prompt ≤80 chars>'}`. Privacy-redaction passes the same denylist as `WATCH-ENRICH-03` (strips `api[_-]?key`, `bearer`, `password`, `vk_`, `ey...` JWT prefix, long base64 blobs); zero raw secret material reaches the wire.
+- [ ] **AGENT-LINUX-04**: Bearer auth via `VIGIL_API_KEY` env var (read by hook, never logged). If env var is missing, hook MUST exit 0 silently — never block the Claude Code session. Same fail-safe applies to network failures (cap at 2s timeout, drop event on timeout, log nothing on stdout/stderr that would clutter the operator's terminal).
+- [ ] **AGENT-LINUX-05**: Hook config is portable — single-file install, idempotent (re-running the installer doesn't duplicate hook entries in `~/.claude/settings.json`), and uninstallable via `--uninstall` flag.
+- [ ] **AGENT-LINUX-06**: Drift-detector test: hook script source is grep-pinned in the repo so the privacy-redaction denylist matches `WATCH-ENRICH-03` patterns verbatim; CI fails if the two denylists diverge.
+
 ### HUD-CLARITY — Companion HUD away-from-desk improvements
 
 - [ ] **HUD-CLARITY-01**: SEED-016 Gap 1 staleness — replace heartbeat string `session idle > 60s` with computed relative timestamp `last activity 4m ago` / `last activity 1h 14m ago` rendered against `lastEvent.eventTimestamp` on every 30s plugin refresh tick.

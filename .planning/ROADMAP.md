@@ -353,6 +353,7 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
 - [ ] **Phase 131: Insights freshness + chat context expansion** — INSIGHTS-FRESH-01/02/03 + CHAT-CTX-01..05 bundled for one PWA UAT pass
 - [ ] **Phase 132: Quiet Mode auto-detect** — iOS Focus → webhook → existing `/v1/quiet-mode` (QUIET-AUTO-01..04)
 - [ ] **Phase 133: G2 closeout bundle** — G2-ACTION-01..06 + G2-REPLY-02..05 (gated on 128b PASS) + WATCH-ENRICH-01..04 + HUD-CLARITY-01..05 (hardware UAT close-out)
+- [ ] **Phase 134: Linux Claude Code agent-events bridge** — Linux-side `~/.claude/hooks/` shim that POSTs to `/v1/agent-events` so Linux Claude Code sessions appear in the Companion HUD (parity with macOS vigil-watch); AGENT-LINUX-01..06
 
 ### Phase Details
 
@@ -625,6 +626,30 @@ Plans:
 
 **UI hint**: yes
 
+### Phase 134: Linux Claude Code → vigil-core agent-events bridge (NEW 2026-05-18)
+
+**Status:** Not started — surfaced during Phase 130 UAT when operator asked why their Linux Claude Code session wasn't appearing in the Companion HUD.
+**Goal:** Add Linux-side parity for macOS `vigil-watch` so Claude Code sessions running on a Linux dev workstation appear in the Companion HUD alongside Mac sessions. Lightweight approach: small hook script wired into Claude Code's `~/.claude/hooks/` that POSTs `heartbeat` / `task_complete` events to `/v1/agent-events` on session lifecycle transitions.
+**Depends on:** Phase 121 (`/v1/agent-events` API exists), Phase 122 (vigil-watch event-shape canonical reference)
+**Requirements:** AGENT-LINUX-01, AGENT-LINUX-02, AGENT-LINUX-03, AGENT-LINUX-04, AGENT-LINUX-05, AGENT-LINUX-06
+**Success Criteria** (what must be TRUE):
+
+  1. A fresh `claude` session started on Linux (`/home/<operator>/dev/dailybrief` cwd) shows up on the G2 Companion HUD within 5s of the first user prompt — visible session-count delta (`0 active sessions` → `1 active session`) AND session label derived from `cwd` basename (e.g., `dailybrief: running`).
+  2. The hook script is installed once via a single `bash install.sh` (or `node install.js`) command — idempotent, reads `$VIGIL_API_KEY` from operator's shell env, registers entries in `~/.claude/settings.json` for `SessionStart`, `UserPromptSubmit`, and `Stop` events without duplicating existing GSD planning hooks.
+  3. Privacy redaction: hook never POSTs any string containing `api[_-]?key`, `bearer`, `password`, `vk_`, JWT-shaped tokens (`ey...` 3-segment), or long base64-like blobs (≥40 chars). Verified by a unit test that runs the redactor against a corpus of synthetic prompts.
+  4. Fail-safe: hook MUST NOT block the Claude Code session. Network failure / missing env var / vigil-core 5xx → hook exits 0 silently with no stderr noise. Verified by toggling iPhone airplane mode mid-session and confirming Claude Code continues to function normally.
+  5. Once installed, an `~/.claude/hooks/vigil-agent-bridge.sh --uninstall` flag removes the hook entries from settings.json cleanly (matches the install pattern used by other GSD hooks).
+
+**Plans (placeholder — finalize in discuss-phase):**
+
+- [ ] 134-01-PLAN.md — Hook script shell scaffold + auth (read `$VIGIL_API_KEY`, fail-safe 2s curl timeout, exit-0-on-failure invariant) — AGENT-LINUX-04
+- [ ] 134-02-PLAN.md — `SessionStart` + `Stop` event POST paths (heartbeat + task_complete) — AGENT-LINUX-01, AGENT-LINUX-02
+- [ ] 134-03-PLAN.md — `UserPromptSubmit` event with privacy-redacted prompt preview (≤80 chars, denylist parity with WATCH-ENRICH-03) — AGENT-LINUX-03
+- [ ] 134-04-PLAN.md — `install.sh` / `uninstall.sh` scaffold + idempotency test + drift-detector for denylist parity — AGENT-LINUX-05, AGENT-LINUX-06
+- [ ] 134-05-PLAN.md — Operator hardware UAT (Linux dev box → Railway prod → G2 Companion HUD round-trip)
+
+**UI hint**: yes (Companion HUD surfaces the new Linux sessions)
+
 ### Coverage
 
 ✓ All 53 v3.9 requirements mapped to exactly one phase (see REQUIREMENTS.md Traceability)
@@ -777,6 +802,7 @@ Plans:
 | 131. Insights freshness + chat context expansion (one PWA UAT pass) | v3.9 | 0/TBD | Not started | - |
 | 132. Quiet Mode auto-detect via iPhone Focus | v3.9 | 0/TBD | Not started | - |
 | 133. G2 closeout bundle (G2-ACTION + G2-REPLY + WATCH-ENRICH + HUD-CLARITY; hardware UAT) | v3.9 | 0/TBD | Not started | - |
+| 134. Linux Claude Code → vigil-core agent-events bridge | v3.9 | 0/5 | Not started | - |
 
 ## Backlog
 
