@@ -158,7 +158,7 @@ uq_voice_captures_user_client_capture_id     UNIQUE, btree (user_id, client_capt
 4. Sideload the packed plugin → confirm install succeeds with no portal errors.
 5. Confirm plugin appears in the carousel on G2 hardware (operator swipes to verify).
 
-**Result:** PARTIAL — pack PASS; sideload pending operator
+**Result:** PASS — pack + sideload complete; carousel-slot-2 verification pending Line 3
 
 **Pack invocation:**
 ```bash
@@ -192,9 +192,9 @@ Successfully packed vigil.ehpk (34753 bytes)
 **Plugin name / version (from app.json):** Vigil 0.3.8 (bumped from 0.3.7 in commit `96ac69e` — Even Hub live = 0.3.6, so 0.3.8 leapfrogs the superseded 0.3.7 beta)
 **evenhub CLI version:** 0.1.13
 
-**Sideload timestamp:** [pending — operator-only via Even Hub portal app on iPhone]
+**Sideload timestamp:** 2026-05-18T21:37:49Z — operator confirmed "vigil now open on phone" (Vigil 0.3.8 visible in Even Hub portal app on iPhone)
 
-**Carousel confirmation:** [pending — operator swipes G2 to verify VOICE screen at slot 2 between Companion and Tasks]
+**Carousel confirmation:** to be verified during Line 3 (operator swipes G2 to VOICE screen as part of the round-trip test)
 
 **Notes:** Build + pack executed by Claude at explicit operator request. Sideload step remains operator-only (Even Hub portal lives on iPhone). Operator transfers `vigil.ehpk` to iPhone (AirDrop / iCloud Drive / Files share), opens Even Hub portal, sideloads, and confirms install. Plugin includes the production VOICE screen at carousel slot 2 (post-Phase-130 implementation: Companion → VOICE → Tasks → Work Orders).
 
