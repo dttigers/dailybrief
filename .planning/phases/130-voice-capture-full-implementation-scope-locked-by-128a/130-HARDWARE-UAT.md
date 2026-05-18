@@ -200,6 +200,23 @@ Successfully packed vigil.ehpk (34753 bytes)
 
 ---
 
+## UAT Line 3 attempt 3 — surfaced third gap (Even Hub portal silently kept cached same-version package)
+
+After attempt-2 rebuild (with `vk_20a84b64…` inlined), operator re-AirDropped + re-sideloaded the new `vigil.ehpk`, but Railway logs continued showing `POST /v1/voice/transcribe → 401, 55ms`. Diagnostic chain ruled out prototype mode (vite dev server on :5175 had no VITE_API_* env, so its `BASE_URL` fallback `localhost:3001` would have failed before reaching Railway — incompatible with the observed 401s).
+
+**Root cause:** Even Hub portal silently keeps the cached same-version package when sideloading a new `.ehpk` with the same `version` field. The portal install step appears to succeed but the WebView keeps running the previously-cached bundle (the first empty-key 0.3.8 build, ~34751 bytes, packed at 21:22:23Z, with `VITE_API_KEY=''` inlined). The plugin therefore sent no `Authorization` header (or sent the old wrong-key bundle's `vk_94ec…`), and the server returned 401 "Missing or invalid Authorization header" / "Invalid API key".
+
+**Resolution:**
+- Bumped `app.json` version `0.3.8` → `0.3.9` (commit `cbb911e`)
+- Rebuilt: bundle `index-CcCKwLfO.js` (identical content, just packaged at the new version)
+- Verified `vk_20a84b64…` still inlined (length 67)
+- Repacked: `vigil.ehpk` 34808 bytes at 2026-05-18T22:27:51Z
+- Operator uninstalls existing 0.3.8 Vigil via Even Hub portal, then sideloads 0.3.9
+
+**Lesson for future phases:** any operator sideload of vigil-g2-plugin should bump `app.json` `version` even for content-only changes (e.g., new env in the bundle), OR explicitly uninstall before reinstall. Even Hub portal does not enforce strict monotonic-version replacement but it does silently no-op same-version installs. Captured as a follow-up gap.
+
+---
+
 ## UAT Line 3 attempt 2 — surfaced second gap (VITE_API_KEY missing from build env)
 
 After the deploy gap above was resolved (push at 21:42:04Z), operator retried DOUBLE_CLICK and saw `[ERR] retry-tap to dismiss` again. Railway access logs (operator-provided slice) showed `POST /v1/voice/transcribe → 401, 55ms` and `GET /v1/agent-stream → 401` (PWA SSE subscriber also failing) — meaning the request reached the deployed server but auth was rejected.
