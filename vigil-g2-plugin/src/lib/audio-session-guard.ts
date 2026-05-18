@@ -80,7 +80,7 @@ const BG_STATE_KEY = 'vigil-audio-guard'
 export async function safeAudioControl(
   on: boolean,
   bridge: AudioGuardBridge,
-): Promise<void> {
+): Promise<boolean> {
   if (!cleanupRegistered && on) {
     // Idempotent registration: fires exactly once per process lifetime
     // on the first true call (T-127-02-D mitigation).
@@ -155,7 +155,11 @@ export async function safeAudioControl(
   }
 
   audioActive = on
-  await bridge.audioControl(on)
+  // Phase 130 Plan 04 / Run 4 §1 (D-S2): return the SDK ack value instead of
+  // discarding it. Callers (voice.ts toggleVoiceRecording) observe `false` as
+  // a permission-denied signal and short-circuit to [NO MIC] state. The
+  // PATTERNS.md change is a single-line delta: `await … ;` → `return …`.
+  return bridge.audioControl(on)
 }
 
 /**
