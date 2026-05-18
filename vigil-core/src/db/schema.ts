@@ -472,3 +472,34 @@ export const agentEvents = pgTable(
     index("idx_agent_events_user_id").on(table.userId),
   ],
 );
+
+// ── voice_captures table (Phase 130 Plan 02 — VOICE-05 dedup) ─────────────
+// Sibling table to `thoughts` for G2 voice capture dedup-on-retry. Composite
+// partial unique index `(user_id, client_capture_id) WHERE client_capture_id
+// IS NOT NULL` is declared in migration 0023 (Drizzle's `uniqueIndex` helper
+// cannot express a partial WHERE clause). Mirrors SVCNOW-04 / SCAP-04 dedup
+// pattern from work_orders.client_capture_id (migration 0021).
+//
+// W-01 invariant: ALL queries on voice_captures MUST filter
+// eq(voiceCaptures.userId, userId). Enforced in application code at
+// routes/voice-transcribe.ts.
+//
+// Foreign keys (matching migration 0023):
+//   user_id   → users.id      ON DELETE CASCADE   (user delete → drop dedup rows)
+//   thought_id → thoughts.id  ON DELETE SET NULL  (thought delete → keep dedup row,
+//                                                  preserves audit trail for the
+//                                                  clientCaptureId that produced it)
+export const voiceCaptures = pgTable("voice_captures", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  thoughtId: integer("thought_id").references(() => thoughts.id, {
+    onDelete: "set null",
+  }),
+  clientCaptureId: text("client_capture_id").notNull(),
+  queuedAt: timestamp("queued_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  retryCount: integer("retry_count").notNull().default(0),
+});
