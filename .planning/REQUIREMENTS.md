@@ -22,9 +22,9 @@
 ### Voice — G2 PCM capture (anchor)
 
 - [x] **VOICE-01**: PCM feasibility spike — empirically resolves chunk size, end-to-end latency, drop-out modes, battery delta (1h baseline vs 1h push-to-record), `audioControl(false)` cleanup robustness. Output: `128a-SPIKE-DECISION.md` with PASS / DEGRADE / BLOCK verdict and `60s-demo.mp4` portfolio loom.
-- [ ] **VOICE-02**: G2 plugin requests `g2-microphone` permission in `app.json`; push-to-record gesture triggers `audioControl(true)` via either single-press (if AUDIT-G2-INPUT-01 = REACTIVATE) or DOUBLE_CLICK-cycle (if = CONFIRM-DEFER).
-- [ ] **VOICE-03**: G2 plugin renders a visible "recording" indicator (LED-style) on Companion HUD that survives screen changes for the duration of any `audioControl(true)` session.
-- [ ] **VOICE-04**: G2 plugin buffers PCM client-side and POSTs WAV-wrapped audio (16kHz mono 16-bit LE) as a single base64 blob per utterance to `POST /v1/voice/transcribe`.
+- [x] **VOICE-02**: G2 plugin requests `g2-microphone` permission in `app.json`; push-to-record gesture triggers `audioControl(true)` via either single-press (if AUDIT-G2-INPUT-01 = REACTIVATE) or DOUBLE_CLICK-cycle (if = CONFIRM-DEFER).
+- [x] **VOICE-03**: G2 plugin renders a visible "recording" indicator (LED-style) on Companion HUD that survives screen changes for the duration of any `audioControl(true)` session.
+- [x] **VOICE-04**: G2 plugin buffers PCM client-side and POSTs WAV-wrapped audio (16kHz mono 16-bit LE) as a single base64 blob per utterance to `POST /v1/voice/transcribe`.
 - [x] **VOICE-05**: Vigil Core `POST /v1/voice/transcribe` endpoint: bearerAuth + email-verified, accepts base64 WAV, calls selected transcription provider (Anthropic beta.files or OpenAI `gpt-4o-mini-transcribe` — provider locked before phase plan), creates a thought row with `source = 'g2_voice'`, fires fire-and-forget triage (existing path).
 - [x] **VOICE-06**: Transcribed thoughts appear in PWA dashboard within 8s of utterance end (UAT criterion); failure paths surface specific locked-enum error codes (`VOICE_TRANSCRIBE_TIMEOUT`, `VOICE_TRANSCRIBE_PROVIDER_DOWN`, `VOICE_TRANSCRIBE_QUOTA`).
 - [ ] **VOICE-07**: Offline queue — failed POSTs retry with exponential backoff `[1s, 2s, 4s, 8s, 16s, 30s]` (mirror Phase 124 D-11); max 10 queued utterances; visible "syncing N voice captures" indicator on HUD when queue depth > 0.
@@ -170,9 +170,9 @@ Empty initially. Populated by roadmapper during phase mapping.
 | GUARD-04 | 127 | Complete |
 | AUDIT-G2-INPUT-01 | 127.5 | Complete |
 | VOICE-01 | 128a | Complete |
-| VOICE-02 | 130 | Pending |
-| VOICE-03 | 130 | Pending |
-| VOICE-04 | 130 | Pending |
+| VOICE-02 | 130 | Complete |
+| VOICE-03 | 130 | Complete |
+| VOICE-04 | 130 | Complete |
 | VOICE-05 | 130 | Complete |
 | VOICE-06 | 130 | Complete |
 | VOICE-07 | 130 | Pending |

@@ -4,13 +4,13 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Completed Phase 130 Plan 01 (spike-removal)
-last_updated: "2026-05-18T18:20:14.132Z"
+last_updated: "2026-05-18T18:35:53.054Z"
 last_activity: 2026-05-18
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 50
-  completed_plans: 46
+  completed_plans: 47
   percent: 50
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 130 (voice-capture-full-implementation-scope-locked-by-128a) — EXECUTING
-Plan: 4 of 7
+Plan: 5 of 7
 Status: Ready to execute
 Last activity: 2026-05-18
 
@@ -159,6 +159,7 @@ Last activity: 2026-05-16
 | Phase 130 P01 | 45 | 2 tasks | 11 files |
 | Phase 130 P02 | 21min | 3 tasks | 10 files |
 | Phase 130 P03 | 8min | 3 tasks | 8 files |
+| Phase 130 P04 | 25min | 3 tasks | 11 files |
 
 ## Deferred Items
 
@@ -445,6 +446,7 @@ Recent (v3.7 closeout):
 - [Phase ?]: [Phase 130 / Plan 02] bus.emitThoughtCreated ships as SHIM in this plan — emit-side only, THOUGHT_CREATED_NAME channel constant added, no on/off triple. Plan 03 promotes to full triple + three-channel joint cleanup gate.
 - [Phase ?]: [Phase 130 / Plan 02] Rule 2 deviation — extended app-on-error.test.ts drift-detector mirror to cover 4 new branches (AudioSessionTooLongError + 3 VOICE_TRANSCRIBE_*Error) plus 4 new test cases. Maintains regression coverage for the production translation table.
 - [Phase ?]: Plan 03 three-channel joint cleanup gate; fetch-stream SSE subscriber
+- [Phase ?]: Phase 130 Plan 04: production VOICE screen at SCREEN_ORDER slot 2 (after Companion); D-S1 6-state machine; Run 4 safeAudioControl Promise<boolean> with try/catch for false-return + permission throw; wav-encoder buildWav pins D-D1 44-byte RIFF/WAVE/16kHz mono container at producer side
 
 ### Pending Todos
 
@@ -481,7 +483,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-18T18:19:53.718Z
+Last session: 2026-05-18T18:35:18.634Z
 Stopped at: Completed Phase 130 Plan 01 (spike-removal)
 Resume file: None
 
