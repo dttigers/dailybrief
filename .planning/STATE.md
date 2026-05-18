@@ -4,13 +4,13 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Completed Phase 130 Plan 01 (spike-removal)
-last_updated: "2026-05-18T17:37:42.735Z"
+last_updated: "2026-05-18T18:05:50.445Z"
 last_activity: 2026-05-18
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 50
-  completed_plans: 44
+  completed_plans: 45
   percent: 50
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 130 (voice-capture-full-implementation-scope-locked-by-128a) — EXECUTING
-Plan: 2 of 7
+Plan: 3 of 7
 Status: Ready to execute
 Last activity: 2026-05-18
 
@@ -157,6 +157,7 @@ Last activity: 2026-05-16
 | Phase 129 P07 | 8 min | 4 tasks | 12 files |
 | Phase 129 P09 | 5 min | 2 tasks | 3 files |
 | Phase 130 P01 | 45 | 2 tasks | 11 files |
+| Phase 130 P02 | 21min | 3 tasks | 10 files |
 
 ## Deferred Items
 
@@ -438,6 +439,10 @@ Recent (v3.7 closeout):
 - [Phase ?]: Total empirical cost ~$0.131 (Plans 01-04 + spike 001) is UNDER RESEARCH §Cost ≤$0.20 ceiling; Path B first-invocation cache cost drove variance, re-runs amortize to ~$0.021 total
 - [Phase ?]: 128b Plan 05: VERDICT PASS computed mechanically per D-V4 max aggregation (Path E PASS dominates A=FAIL, B=DEGRADE, D=DEGRADE, C=INCONCLUSIVE); scope-locks Phase 133 to full G2-REPLY-02..04 reply UX
 - [Phase ?]: Phase 130 Plan 01: atomic spike-removal commit (D-C1+D-C2+D-C4) — 5 files deleted, 5 files reverted, g2-microphone permission preserved
+- [Phase ?]: [Phase 130 / Plan 02] Migration 0023 journal handling — drizzle-kit generate first to create journal entry + snapshot, then DELETE auto-generated SQL and replace with hand-crafted version with IF NOT EXISTS + partial unique WHERE clause, then rename journal tag to canonical name.
+- [Phase ?]: [Phase 130 / Plan 02] withOpenAIBudgetTracking is a DISTINCT helper from withBudgetTracking — OpenAI gpt-4o-mini-transcribe is duration-billed ($0.003/min), Anthropic is token-billed. Pre-computed durationMs at call site.
+- [Phase ?]: [Phase 130 / Plan 02] bus.emitThoughtCreated ships as SHIM in this plan — emit-side only, THOUGHT_CREATED_NAME channel constant added, no on/off triple. Plan 03 promotes to full triple + three-channel joint cleanup gate.
+- [Phase ?]: [Phase 130 / Plan 02] Rule 2 deviation — extended app-on-error.test.ts drift-detector mirror to cover 4 new branches (AudioSessionTooLongError + 3 VOICE_TRANSCRIBE_*Error) plus 4 new test cases. Maintains regression coverage for the production translation table.
 
 ### Pending Todos
 
@@ -474,7 +479,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-18T17:37:42.724Z
+Last session: 2026-05-18T18:05:14.967Z
 Stopped at: Completed Phase 130 Plan 01 (spike-removal)
 Resume file: None
 

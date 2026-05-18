@@ -522,7 +522,7 @@ Plans:
   4. With network disabled, the G2 plugin queues up to 10 utterances (exact `[1s, 2s, 4s, 8s, 16s, 30s]` backoff per Phase 124 D-11) and shows "syncing N voice captures" on the HUD; queue drains when network returns
   5. Drift-detector tests structurally prevent any `audioPcm` reference from reaching `console.log` / `Sentry.captureException` / `posthog.capture`, and prevent any orphaned `audioControl(true)` without a matching `audioControl(false)`
 
-**Plans:** 1/7 plans executed
+**Plans:** 2/7 plans executed
 Plans:
 **Wave 1**
 
@@ -530,7 +530,7 @@ Plans:
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 130-02-PLAN.md — Server: migration 0023 voice_captures dedup + voice-transcribe.ts route + transcribe.ts (OpenAI lazy-init) + withOpenAIBudgetTracking + three locked-enum error classes + app.onError translation
+- [x] 130-02-PLAN.md — Server: migration 0023 voice_captures dedup + voice-transcribe.ts route + transcribe.ts (OpenAI lazy-init) + withOpenAIBudgetTracking + three locked-enum error classes + app.onError translation
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
@@ -773,7 +773,7 @@ Plans:
 | 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 7/8 | In Progress|  |
 | 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 13/13 | Partial-complete (SVCNOW-01/02/03/05 superseded → 129.1) | 2026-05-16 |
 | 129.1. SVCNOW revert + screenshot pipeline + PWA manual-create | v3.9 | 6/6 | Complete    | 2026-05-17 |
-| 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 1/7 | In Progress|  |
+| 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 2/7 | In Progress|  |
 | 131. Insights freshness + chat context expansion (one PWA UAT pass) | v3.9 | 0/TBD | Not started | - |
 | 132. Quiet Mode auto-detect via iPhone Focus | v3.9 | 0/TBD | Not started | - |
 | 133. G2 closeout bundle (G2-ACTION + G2-REPLY + WATCH-ENRICH + HUD-CLARITY; hardware UAT) | v3.9 | 0/TBD | Not started | - |
