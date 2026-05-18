@@ -349,7 +349,7 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
 - [ ] **Phase 128b: G2-REPLY-01 write-back path spike** — empirically prove or rule out programmatic Claude Code input injection across 3+ candidate paths; output `128b-SPIKE-DECISION.md`
 - [x] **Phase 129: Lifecycle restore + ServiceNow popup** — PARTIAL-COMPLETE 2026-05-16 (G2-LIFECYCLE-01/02/03 + SVCNOW-04 shipped; SVCNOW-01/02/03/05 SUPERSEDED → 129.1)
 - [x] **Phase 129.1: SVCNOW revert + screenshot pipeline + PWA manual-create** — operator screenshot ingestion via Claude Sonnet vision + non-operator PWA manual-create form (replaces SVCNOW-01/02/03/05) (completed 2026-05-17)
-- [ ] **Phase 130: Voice capture full implementation** — scope-locked by 128a; G2 PCM record→base64→`/v1/voice/transcribe`→thought row→PWA
+- [x] **Phase 130: Voice capture full implementation** — scope-locked by 128a; G2 PCM record→base64→`/v1/voice/transcribe`→thought row→PWA (completed 2026-05-18)
 - [ ] **Phase 131: Insights freshness + chat context expansion** — INSIGHTS-FRESH-01/02/03 + CHAT-CTX-01..05 bundled for one PWA UAT pass
 - [ ] **Phase 132: Quiet Mode auto-detect** — iOS Focus → webhook → existing `/v1/quiet-mode` (QUIET-AUTO-01..04)
 - [ ] **Phase 133: G2 closeout bundle** — G2-ACTION-01..06 + G2-REPLY-02..05 (gated on 128b PASS) + WATCH-ENRICH-01..04 + HUD-CLARITY-01..05 (hardware UAT close-out)
@@ -522,7 +522,7 @@ Plans:
   4. With network disabled, the G2 plugin queues up to 10 utterances (exact `[1s, 2s, 4s, 8s, 16s, 30s]` backoff per Phase 124 D-11) and shows "syncing N voice captures" on the HUD; queue drains when network returns
   5. Drift-detector tests structurally prevent any `audioPcm` reference from reaching `console.log` / `Sentry.captureException` / `posthog.capture`, and prevent any orphaned `audioControl(true)` without a matching `audioControl(false)`
 
-**Plans:** 6/7 plans executed
+**Plans:** 7/7 plans complete
 Plans:
 **Wave 1**
 
@@ -544,7 +544,7 @@ Plans:
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
-- [ ] 130-07-PLAN.md — Hardware UAT (operator wallclock): production migration 0023 + G2 plugin pack/install + round-trip ≤ 8s + [NO MIC] surface + airplane-mode queue drain + portfolio screenshots (Loom waived)
+- [x] 130-07-PLAN.md — Hardware UAT (operator wallclock): production migration 0023 + G2 plugin pack/install + round-trip ≤ 8s + [NO MIC] surface + airplane-mode queue drain + portfolio screenshots (Loom waived)
 
 **UI hint**: yes
 
@@ -773,7 +773,7 @@ Plans:
 | 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 7/8 | In Progress|  |
 | 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 13/13 | Partial-complete (SVCNOW-01/02/03/05 superseded → 129.1) | 2026-05-16 |
 | 129.1. SVCNOW revert + screenshot pipeline + PWA manual-create | v3.9 | 6/6 | Complete    | 2026-05-17 |
-| 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 6/7 | In Progress|  |
+| 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 7/7 | Complete   | 2026-05-18 |
 | 131. Insights freshness + chat context expansion (one PWA UAT pass) | v3.9 | 0/TBD | Not started | - |
 | 132. Quiet Mode auto-detect via iPhone Focus | v3.9 | 0/TBD | Not started | - |
 | 133. G2 closeout bundle (G2-ACTION + G2-REPLY + WATCH-ENRICH + HUD-CLARITY; hardware UAT) | v3.9 | 0/TBD | Not started | - |
