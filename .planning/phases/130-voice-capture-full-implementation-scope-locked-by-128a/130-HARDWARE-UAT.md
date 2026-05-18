@@ -200,6 +200,21 @@ Successfully packed vigil.ehpk (34753 bytes)
 
 ---
 
+## UAT Line 3 attempt 1 — surfaced gap
+
+**Initial attempt:** Operator's DOUBLE_CLICK-stop produced `[ERR]` on G2 (audio upload failed).
+
+**Root cause:** Phase 130 Plans 02-06 (41 commits) were sitting unpushed on local `main`. The Railway-deployed Vigil Core was running `f49e801` (Phase 129.1 head) which does NOT have the `POST /v1/voice/transcribe` route. The G2 plugin received a 404 from the deployed server and surfaced `[ERR]` (and per Plan 130-05 also enqueued to offline queue).
+
+**Note on prod-DB-vs-deploy mismatch:** UAT Line 1 applied migration 0023 directly against the Railway prod DB via `railway run --service Postgres` — so the `voice_captures` table exists. But the application code that inserts into it was not yet deployed. **Lesson for future phases: order should be deploy code first → migrate DB second when a new feature adds a route + a table together**, since the migration alone leaves the server in an inconsistent state where the new table exists but no code writes to it.
+
+**Resolution:**
+- Pushed 41 commits to `origin/main` at 2026-05-18T21:42:04Z (head moved `f49e801` → `0bb500d`).
+- Railway auto-deploy triggered; wait ~2-4 min for vigil-core Docker build to complete.
+- Retry UAT Line 3 once deploy is green (check Railway dashboard for deploy completion).
+
+---
+
 ## UAT Line 3 — VOICE-06 round-trip ≤ 8 s (operator wallclock stopwatch)
 
 **Source:** Plan 130-07 Task 2 round-trip, `must_haves.truths[2]`
