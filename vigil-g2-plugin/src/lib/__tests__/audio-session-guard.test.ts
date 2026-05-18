@@ -73,7 +73,17 @@ interface FakeBridge extends AudioGuardBridge {
   restore: (saved: unknown) => void
 }
 
-function fakeBridge(): FakeBridge {
+interface FakeBridgeOptions {
+  /** Override audioControl return value. Defaults to `true`. If a function,
+   *  invoked per-call with the `on` argument (lets tests return true on (false,)
+   *  closes and false on (true,) opens to simulate the "mic permission denied"
+   *  path). If a thrown value, the audioControl Promise rejects with it. */
+  audioControlResult?: boolean | ((on: boolean) => boolean | Promise<boolean>)
+  /** If set, audioControl rejects with this value on every call. */
+  audioControlThrow?: unknown
+}
+
+function fakeBridge(opts: FakeBridgeOptions = {}): FakeBridge {
   const calls: Array<{ on: boolean }> = []
   let handler: ((ev: EvenHubEvent) => void) | null = null
   let handlerCount = 0
@@ -86,7 +96,14 @@ function fakeBridge(): FakeBridge {
     },
     audioControl: async (on: boolean) => {
       calls.push({ on })
-      return true
+      if (opts.audioControlThrow !== undefined) {
+        throw opts.audioControlThrow
+      }
+      const result = opts.audioControlResult
+      if (typeof result === 'function') {
+        return await result(on)
+      }
+      return result ?? true
     },
     onEvenHubEvent: (h: (ev: EvenHubEvent) => void) => {
       handler = h
@@ -191,4 +208,53 @@ test('cleanup is no-op when audioActive=false: ABNORMAL_EXIT_EVENT does not fire
   fb.fire({ sysEvent: { eventType: OsEventTypeList.ABNORMAL_EXIT_EVENT } })
   // No additional call — audioControl(false) NOT re-invoked.
   assert.deepEqual(fb.calls, [{ on: false }])
+})
+
+// ─── Phase 130 Plan 04 Wave 0 RED tests — Run 4 hardening: Promise<boolean> ───
+
+test('Run 4 §1: safeAudioControl(true) returns true when bridge.audioControl resolves true', async () => {
+  beforeEach()
+  const fb = fakeBridge({ audioControlResult: true })
+  const result = await safeAudioControl(true, fb)
+  assert.equal(typeof result, 'boolean', 'return value is a boolean (not undefined)')
+  assert.equal(result, true, 'returns true when SDK acks mic open')
+})
+
+test('Run 4 §2: safeAudioControl(true) returns false when bridge.audioControl resolves false', async () => {
+  // Permission-denied path — SDK reports the mic was NOT opened. Caller MUST
+  // be able to observe this denial and short-circuit to [NO MIC] UI state.
+  // The internal `audioActive` flag remains true-flipped (state-machine
+  // consistency with the existing cleanup hooks — those still need to know
+  // the caller INTENDED to open), but the caller observes false.
+  beforeEach()
+  const fb = fakeBridge({ audioControlResult: false })
+  const result = await safeAudioControl(true, fb)
+  assert.equal(typeof result, 'boolean', 'return value is a boolean (not undefined)')
+  assert.equal(result, false, 'returns false when SDK denies mic open')
+})
+
+test('Run 4 §3: safeAudioControl(false) returns true when bridge.audioControl(false) resolves true', async () => {
+  // STOP path — SDK acks mic close. Caller observes the SDK ack value.
+  beforeEach()
+  const fb = fakeBridge({ audioControlResult: true })
+  // First open the mic so cleanup registration fires (closing without
+  // having opened is a no-op path).
+  await safeAudioControl(true, fb)
+  // Now close it
+  const result = await safeAudioControl(false, fb)
+  assert.equal(typeof result, 'boolean', 'return value is a boolean')
+  assert.equal(result, true, 'returns true (SDK ack of close)')
+})
+
+test('Run 4 §4: safeAudioControl signature resolves to a boolean (Promise<boolean>, never undefined)', async () => {
+  // Type-shape assertion: under the OLD Promise<void> signature, `await
+  // safeAudioControl(...)` resolved to undefined. Under the NEW Promise<boolean>
+  // signature it resolves to a boolean. This test pins the signature change
+  // structurally — if a future refactor reverts to Promise<void> (e.g.,
+  // `return undefined as any`), this assertion fails.
+  beforeEach()
+  const fb = fakeBridge({ audioControlResult: true })
+  const result: boolean = await safeAudioControl(true, fb)
+  assert.notEqual(result, undefined, 'result MUST NOT be undefined')
+  assert.equal(typeof result, 'boolean', 'result MUST be a boolean')
 })
