@@ -489,15 +489,15 @@ Plans:
   3. Transcription failures surface as locked-enum codes (`VOICE_TRANSCRIBE_TIMEOUT` / `VOICE_TRANSCRIBE_PROVIDER_DOWN` / `VOICE_TRANSCRIBE_QUOTA`) — the user sees specific copy, not a generic error
   4. With network disabled, the G2 plugin queues up to 10 utterances (exact `[1s, 2s, 4s, 8s, 16s, 30s]` backoff per Phase 124 D-11) and shows "syncing N voice captures" on the HUD; queue drains when network returns
   5. Drift-detector tests structurally prevent any `audioPcm` reference from reaching `console.log` / `Sentry.captureException` / `posthog.capture`, and prevent any orphaned `audioControl(true)` without a matching `audioControl(false)`
-**Plans:** 8 plans (5 waves)
-- [x] 128b-01-PLAN.md — Path B (claude -p stream-json) empirical probe + new spike dir scaffold
-- [x] 128b-02-PLAN.md — Path A (JSONL append + IPC) empirical probe; clobber-protected operation on corpus copy
-- [x] 128b-03-PLAN.md — Path D (MCP server hook) empirical probe; inverted-direction Claude-pulls model
-- [x] 128b-04-PLAN.md — Path E (tmux send-keys) regression: rerun spike 001 L4 + copy evidence into phase artifacts
-- [ ] 128b-05-PLAN.md — Author 128b-SPIKE-DECISION.md: verdict at TOP + per-path table + privilege sketch reference + Phase 133 scope-lock
-- [x] 128b-06-PLAN.md — Author 128b-MEASUREMENTS.md: consolidated per-path wallclock + cost + evidence inventory
-- [ ] 128b-07-PLAN.md — Operator wallclock C-1: live `claude` interactive session round-trip (Ubuntu dev box)
-- [ ] 128b-08-PLAN.md — Operator wallclock C-2: 60s portfolio Loom (success-criterion-3 proxy)
+**Plans:** 7 plans (5 waves)
+Plans:
+- [ ] 130-01-PLAN.md — Atomic spike-removal commit: delete 5 spike files (D-C1) + revert 5 spike modifications (D-C2); KEEP g2-microphone permission
+- [ ] 130-02-PLAN.md — Server: migration 0023 voice_captures dedup + voice-transcribe.ts route + transcribe.ts (OpenAI lazy-init) + withOpenAIBudgetTracking + three locked-enum error classes + app.onError translation
+- [ ] 130-03-PLAN.md — SSE fan-out: thought-created channel on agent-events-bus + agent-stream.ts multiplex + PWA useAgentStream subscriber + 3 api-error-codes entries + D8 round-trip integration test
+- [ ] 130-04-PLAN.md — G2 plugin: wav-encoder.ts + production voice.ts screen + safeAudioControl Promise<boolean> hardening + main.ts cross-screen state + navigation/constants wiring
+- [ ] 130-05-PLAN.md — Offline queue: voice-queue.ts ([1s,2s,4s,8s,16s,30s] backoff + LRU eviction max 10) + Companion HUD body line 3 + PostHog voice_capture_completed/dropout events
+- [ ] 130-06-PLAN.md — Drift detectors: D-D1 WAV header byte-for-byte pin + D-D2 audioPcm log-sink ban extension + D-D3 safeAudioControl pairing parity
+- [ ] 130-07-PLAN.md — Hardware UAT (operator wallclock): production migration 0023 + G2 plugin pack/install + round-trip ≤ 8s + [NO MIC] surface + airplane-mode queue drain + portfolio screenshots (Loom waived)
 **UI hint**: yes
 
 ### Phase 131: Insights freshness + chat context expansion
