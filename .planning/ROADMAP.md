@@ -345,7 +345,7 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
 
 - [ ] **Phase 127: Pre-spike guardrails** — audio-redaction + audio-session caps + per-user daily AI-cost watermark + schema reconciliation before any feature code
 - [x] **Phase 127.5: G2 input gesture audit** — 30-min code audit of single-press event plumbing; output verdict shapes downstream gesture grammar (completed 2026-05-12)
-- [ ] **Phase 128a: VOICE-01 PCM feasibility spike** — measure chunk size / E2E latency / dropout / battery / `audioControl(false)` cleanup; output `128a-SPIKE-DECISION.md`
+- [x] **Phase 128a: VOICE-01 PCM feasibility spike** — measure chunk size / E2E latency / dropout / battery / `audioControl(false)` cleanup; output `128a-SPIKE-DECISION.md` (completed 2026-05-18)
 - [ ] **Phase 128b: G2-REPLY-01 write-back path spike** — empirically prove or rule out programmatic Claude Code input injection across 3+ candidate paths; output `128b-SPIKE-DECISION.md`
 - [x] **Phase 129: Lifecycle restore + ServiceNow popup** — PARTIAL-COMPLETE 2026-05-16 (G2-LIFECYCLE-01/02/03 + SVCNOW-04 shipped; SVCNOW-01/02/03/05 SUPERSEDED → 129.1)
 - [x] **Phase 129.1: SVCNOW revert + screenshot pipeline + PWA manual-create** — operator screenshot ingestion via Claude Sonnet vision + non-operator PWA manual-create form (replaces SVCNOW-01/02/03/05) (completed 2026-05-17)
@@ -396,7 +396,7 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
   2. The decision file resolves to exactly one of `PASS` (proceed full scope) / `DEGRADE` (push-to-record short clips only) / `BLOCK` (defer entire voice anchor to v3.10)
   3. A 60s portfolio Loom (`60s-demo.mp4`) demonstrates a working capture → transcription → PWA dashboard round-trip OR documents the failure mode that drove DEGRADE/BLOCK
   4. `audioControl(false)` cleanup is verified to fire on every documented exit path (no zombie microphone sessions after 5 force-quit cycles)
-**Plans:** 5/6 plans executed
+**Plans:** 6/6 plans complete
 Plans:
 **Wave 1**
 - [x] 128a-01-PLAN.md — Wave 0 scaffolding: pin openai@^6.37.0 (DRIFT-03) + Wave 0 smoke test
@@ -410,7 +410,7 @@ Plans:
 - [x] 128a-05-PLAN.md — Pre-hardware gates: bundle exclusion (D-A3) + C-1 OPENAI_API_KEY + C-2 g2-microphone portal — **Partial — wallclock pending** (Task 1 D-A3 PASS 2026-05-12; Tasks 2-3 pending operator C-1/C-2 wallclock per `[feedback_wallclock_checkpoint_exempt]`; see `128a-05-SUMMARY.md` for operator instructions)
 
 **Wave 4** *(blocked on Wave 3 completion)*
-- [ ] 128a-06-PLAN.md — Hardware spike (C-3/C-4/C-5): MEASUREMENTS.md + mechanical-verdict SPIKE-DECISION.md + 60s Loom
+- [x] 128a-06-PLAN.md — Hardware spike (C-3/C-4/C-5): MEASUREMENTS.md + mechanical-verdict SPIKE-DECISION.md + 60s Loom
 **UI hint**: yes
 
 ### Phase 128b: G2-REPLY-01 write-back path spike
@@ -707,7 +707,7 @@ Plans:
 | 126. Wide-release auth hardening (mid-milestone insert) | v3.8 | 11/11 | Complete | 2026-05-11 |
 | 127. Pre-spike guardrails (audio redaction + audio caps + AI-cost watermark + schema reconcile) | v3.9 | 8/9 | In Progress|  |
 | 127.5. G2 input gesture audit (30-min code review; verdict shapes G2-ACTION + G2-REPLY) | v3.9 | 1/1 | Complete    | 2026-05-12 |
-| 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 5/6 | In Progress|  |
+| 128a. VOICE-01 PCM feasibility spike (gates Phase 130 scope) | v3.9 | 6/6 | Complete    | 2026-05-18 |
 | 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 7/8 | In Progress|  |
 | 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 13/13 | Partial-complete (SVCNOW-01/02/03/05 superseded → 129.1) | 2026-05-16 |
 | 129.1. SVCNOW revert + screenshot pipeline + PWA manual-create | v3.9 | 6/6 | Complete    | 2026-05-17 |
