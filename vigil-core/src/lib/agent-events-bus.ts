@@ -29,14 +29,14 @@ const EVENT_NAME = "event" as const;
 // Phase 125 (AGENT-HUD-03 / D-02): per-userId quiet_mode_changed fan-out.
 // Same per-userId emitter Map as EVENT_NAME, second event channel.
 const QUIET_NAME = "quiet" as const;
-// Phase 130 Plan 02 (VOICE-06): thought-created fan-out for G2 voice
-// transcribe → PWA dashboard refresh. The emit-side ships in this plan as a
-// SHIM (no listeners registered yet); Plan 03 lands the full triple
-// (emitThoughtCreated / onThoughtCreated / offThoughtCreated) + extends the
-// agent-stream.ts SSE subscriber + updates the joint listener-cleanup gate to
-// three channels. Until Plan 03 ships, this is a no-op write to a channel
-// no one subscribes to — preserves call-site source in this plan without
-// shipping a broken cleanup gate.
+// Phase 130 Plan 03 (VOICE-06): thought-created fan-out for G2 voice
+// transcribe → /v1/agent-stream SSE → PWA dashboard refresh. Plan 02 landed
+// the emitThoughtCreated SHIM (emit-only); Plan 03 promotes this to the full
+// emit/on/off triple AND extends the existing two-channel `off`/`offQuiet`
+// joint cleanup gates to ALSO require listenerCount(THOUGHT_CREATED_NAME) === 0
+// (PATTERNS.md §"CRITICAL" — without this, a still-subscribed thought-created
+// listener silently blocks Map cleanup when the operator unsubscribes from
+// the other two channels).
 const THOUGHT_CREATED_NAME = "thought-created" as const;
 // MAX_LISTENERS_PER_USER = 50 — RESEARCH §node:events: default 10 too tight for
 // reconnect storms. Literal `50` is inlined into setMaxListeners(50) below so
@@ -77,13 +77,16 @@ export class AgentEventBus {
     emitter.off(EVENT_NAME, listener);
     // Delete Map entry when no listeners remain — bounds memory across
     // many users. RESEARCH Pitfall 3.
-    // Phase 125: cleanup gate now joint across EVENT_NAME + QUIET_NAME so
+    // Phase 125: cleanup gate joint across EVENT_NAME + QUIET_NAME so
     // an outstanding onQuiet listener prevents emitter Map deletion (and
     // vice versa). Without this gate, off() would orphan a still-registered
     // QUIET listener on a deleted-then-resurrected emitter (T-125-W3-01).
+    // Phase 130 Plan 03: cleanup gate extended to three channels — also
+    // require THOUGHT_CREATED_NAME listener count to be 0 (T-130-03-R).
     if (
       emitter.listenerCount(EVENT_NAME) === 0 &&
-      emitter.listenerCount(QUIET_NAME) === 0
+      emitter.listenerCount(QUIET_NAME) === 0 &&
+      emitter.listenerCount(THOUGHT_CREATED_NAME) === 0
     ) {
       emitters.delete(userId);
     }
@@ -112,29 +115,59 @@ export class AgentEventBus {
     const emitter = emitters.get(userId);
     if (!emitter) return;
     emitter.off(QUIET_NAME, listener);
-    // Delete Map entry only when BOTH event types have zero listeners.
-    // Phase 124 cleanup gate is now joint across EVENT_NAME + QUIET_NAME.
+    // Delete Map entry only when ALL event types have zero listeners.
+    // Phase 130 Plan 03: extended from two-channel (EVENT + QUIET) to
+    // three-channel (+ THOUGHT_CREATED). Without this extension, an
+    // outstanding onThoughtCreated listener would be orphaned when the
+    // operator unsubscribes from both EVENT and QUIET channels.
     if (
       emitter.listenerCount(EVENT_NAME) === 0 &&
-      emitter.listenerCount(QUIET_NAME) === 0
+      emitter.listenerCount(QUIET_NAME) === 0 &&
+      emitter.listenerCount(THOUGHT_CREATED_NAME) === 0
     ) {
       emitters.delete(userId);
     }
   }
 
-  // ── Phase 130 Plan 02 (VOICE-06) — thought-created SHIM ──────────────────
-  // Emit-side only. No on/off triple yet — Plan 03 ships those alongside the
-  // agent-stream.ts SSE listener and updates the joint cleanup gate. Until
-  // then, this method is a no-op write to a channel with no listeners; it
-  // exists so this plan's voice-transcribe.ts route can write its call site
-  // without a TODO/stub.
+  // ── Phase 130 Plan 03 (VOICE-06) — thought-created full triple ────────────
+  // emit/on/off with three-channel joint cleanup gate (PATTERNS.md lines
+  // 503-535). Plan 02 shipped the emit-only SHIM; Plan 03 promotes to the
+  // full triple and extends the existing `off` and `offQuiet` cleanup gates
+  // to also require listenerCount(THOUGHT_CREATED_NAME) === 0.
   emitThoughtCreated(
     userId: number,
     payload: { thoughtId: number; content: string },
   ): void {
+    // Mirror emit() — do NOT create an emitter on emitThoughtCreated alone.
+    // Listeners create emitters via onThoughtCreated().
     const emitter = emitters.get(userId);
     if (!emitter) return;
     emitter.emit(THOUGHT_CREATED_NAME, payload);
+  }
+
+  onThoughtCreated(
+    userId: number,
+    listener: (p: { thoughtId: number; content: string }) => void,
+  ): void {
+    getOrCreate(userId).on(THOUGHT_CREATED_NAME, listener);
+  }
+
+  offThoughtCreated(
+    userId: number,
+    listener: (p: { thoughtId: number; content: string }) => void,
+  ): void {
+    const emitter = emitters.get(userId);
+    if (!emitter) return;
+    emitter.off(THOUGHT_CREATED_NAME, listener);
+    // Delete Map entry only when ALL THREE event types have zero listeners.
+    // Phase 130 Plan 03 three-channel cleanup gate (T-130-03-R).
+    if (
+      emitter.listenerCount(EVENT_NAME) === 0 &&
+      emitter.listenerCount(QUIET_NAME) === 0 &&
+      emitter.listenerCount(THOUGHT_CREATED_NAME) === 0
+    ) {
+      emitters.delete(userId);
+    }
   }
 
   // Test hooks — intentional. agent-events-bus.test.ts asserts no leaks.

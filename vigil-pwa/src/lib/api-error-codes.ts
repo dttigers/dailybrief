@@ -158,6 +158,31 @@ export const ERROR_CODE_MAP: Record<string, ApiErrorUx> = {
   DAILY_AI_BUDGET_EXCEEDED: {
     message: "You've hit today's AI processing limit. Capture still works — AI features resume at midnight UTC.",
   },
+
+  // ── EXTENSION (Phase 130 VOICE-06 — D-E1 locked-enum) ──
+  // vigil-core /v1/voice/transcribe (Phase 130) returns HTTP 504 + this code
+  // when OpenAI transcription exceeds the 30s server-side AbortController
+  // timeout (RESEARCH Gray Area #5 — 16× spike p95 headroom). G2 plugin
+  // evicts the queued entry and surfaces [ERR]; PWA dashboard renders this
+  // message for any queued utterance that exhausts retries with this code.
+  // D-E1 LOCK — cannot be removed.
+  VOICE_TRANSCRIBE_TIMEOUT: {
+    message: "Voice transcription timed out. Please try again.",
+  },
+
+  // vigil-core returns HTTP 502 + this code when OpenAI returns 5xx, refused
+  // connection, or network error. Plugin retries via offline queue (Plan 05).
+  // D-E1 LOCK — cannot be removed.
+  VOICE_TRANSCRIBE_PROVIDER_DOWN: {
+    message: "Voice transcription service unavailable. Please try again shortly.",
+  },
+
+  // vigil-core returns HTTP 503 + this code when OpenAI org-level quota is
+  // exhausted (distinct from per-user DAILY_AI_BUDGET_EXCEEDED above —
+  // quota is org-wide and retrying won't unlock it). D-E1 LOCK.
+  VOICE_TRANSCRIBE_QUOTA: {
+    message: "Voice transcription quota reached. Please try again later.",
+  },
 }
 
 /**

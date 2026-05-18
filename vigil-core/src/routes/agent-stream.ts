@@ -68,6 +68,17 @@ export interface AgentStreamDeps {
       userId: number,
       listener: (p: { enabled: boolean; since: string | null }) => void,
     ): void;
+    // Phase 130 Plan 03 (VOICE-06): thought-created fan-out from G2 voice
+    // transcribe. Optional on the type so test-time fakes can omit them;
+    // the production `agent-events-bus.ts` singleton always supplies them.
+    onThoughtCreated?(
+      userId: number,
+      listener: (p: { thoughtId: number; content: string }) => void,
+    ): void;
+    offThoughtCreated?(
+      userId: number,
+      listener: (p: { thoughtId: number; content: string }) => void,
+    ): void;
   };
   dbReplayMissed: (
     userId: number,
@@ -164,8 +175,23 @@ export function createAgentStreamRoute(deps: AgentStreamDeps): Hono {
           data: JSON.stringify(p),
         });
       };
+      // Phase 130 Plan 03 (VOICE-06 / D8 round-trip): thought-created SSE
+      // multiplex. Triggered by /v1/voice/transcribe → bus.emitThoughtCreated
+      // (PATTERNS.md lines 558-565). Carries the new thought's id + content
+      // to the PWA so useAgentStream.ts dispatches `vigil:thought-created`
+      // → useThoughts.ts:127 refetch (cross-device G2-origin path).
+      const thoughtCreatedListener = (
+        p: { thoughtId: number; content: string },
+      ) => {
+        if (stream.aborted || stream.closed) return;
+        void stream.writeSSE({
+          event: "thought-created",
+          data: JSON.stringify(p),
+        });
+      };
       deps.bus.on(userId, eventListener);
       deps.bus.onQuiet?.(userId, quietListener);
+      deps.bus.onThoughtCreated?.(userId, thoughtCreatedListener);
 
       // Phase 3: 25s keepalive — Hono streamSSE does NOT auto-emit pings.
       // .unref() so a stuck keepalive timer never blocks Node process exit
@@ -184,6 +210,10 @@ export function createAgentStreamRoute(deps: AgentStreamDeps): Hono {
         clearInterval(keepalive);
         deps.bus.off(userId, eventListener);
         deps.bus.offQuiet?.(userId, quietListener);
+        // Phase 130 Plan 03 (T-130-03-R): three-channel cleanup gate on
+        // agent-events-bus.ts requires this off call, otherwise the
+        // thought-created listener orphan-blocks emitter Map cleanup.
+        deps.bus.offThoughtCreated?.(userId, thoughtCreatedListener);
       });
 
       // Phase 5: Hold the connection open. Without this, the streamSSE
