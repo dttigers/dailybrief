@@ -4,6 +4,7 @@ import { getStoredKey, vigilFetch } from './api/client'
 import { identifyUser } from './analytics/posthog'
 import { GoogleStatusProvider } from './hooks/GoogleStatusContext'
 import { ToastProvider } from './hooks/useToast'
+import { useAgentStream } from './hooks/useAgentStream'
 import ToastHost from './components/ToastHost'
 import Layout from './components/Layout'
 import AuthPage from './pages/AuthPage'
@@ -21,6 +22,17 @@ import TherapyPage from './pages/TherapyPage'
 import BriefHistoryPage from './pages/BriefHistoryPage'
 import UploadPage from './pages/UploadPage'
 import SettingsPage from './pages/SettingsPage'
+
+// Phase 130 Plan 03 (VOICE-06 / D-X1 step 4): mounts the SSE subscriber so
+// cross-device G2-origin voice captures dispatch `vigil:thought-created`
+// window events that useThoughts.ts:127 already listens for. Component
+// renders nothing — effect-only mount. Wrapped this way so the hook only
+// runs inside the authenticated branch (sign-in/out tears it down via
+// React's unmount cycle).
+function AgentStreamSubscriber() {
+  useAgentStream()
+  return null
+}
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => getStoredKey() !== null)
@@ -87,6 +99,7 @@ export default function App() {
             ? (
               <GoogleStatusProvider>
                 <ToastProvider>
+                  <AgentStreamSubscriber />
                   <Layout>
                     <Routes>
                       <Route path="/" element={<DashboardPage />} />
