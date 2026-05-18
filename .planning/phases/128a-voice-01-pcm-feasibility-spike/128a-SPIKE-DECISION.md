@@ -1,6 +1,6 @@
 # Phase 128a — VOICE-01 SPIKE DECISION: PASS
 
-**Verdict:** PASS · **Authored:** 2026-05-18 · **Loom:** _pending — operator to commit `60s-demo.mp4` to this phase directory OR paste Loom URL into this field per UI-SPEC §"60s Loom demonstration shape" (C-5)_
+**Verdict:** PASS · **Authored:** 2026-05-18 · **Loom:** N/A — waived as not-applicable by operator-amendment 2026-05-18 (G2 lenses are not screen-mirrorable; spike value is internal-feasibility evidence not portfolio material; verifier independently rated Loom as portfolio-only and not scope-affecting — see `128a-HUMAN-UAT.md` resolved entry for full rationale and re-open conditions)
 
 > **D-V1 NOTICE:** Per CONTEXT D-V1, this verdict is **not editable** after commit. If a subsequent re-test contradicts this verdict, the spike author opens a Phase 128a.1 with updated protocol — no in-place edit. The verdict is a mechanical function of the measurements in `128a-MEASUREMENTS.md` "Verdict inputs (mechanical)" block; the threshold trace at the bottom of this file proves the derivation.
 

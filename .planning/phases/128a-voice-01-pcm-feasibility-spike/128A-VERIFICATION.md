@@ -1,14 +1,16 @@
 ---
-status: human_needed
+status: passed
 phase: 128a
-score: 3/4 success criteria verified
+score: 4/4 success criteria verified (SC#3 Loom waived as not-applicable per operator-amendment 2026-05-18)
 date: 2026-05-18
 verified: 2026-05-18T00:00:00Z
-overrides_applied: 0
-human_verification:
-  - test: "60s portfolio Loom — capture `60s-demo.mp4` (or paste Loom URL into `128a-SPIKE-DECISION.md` frontmatter `**Loom:**` field) demonstrating G2 DOUBLE_CLICK → recording → `[DONE]` → PWA dashboard thought row appearing OR documenting the failure mode that drove DEGRADE/BLOCK"
-    expected: "`.planning/phases/128a-voice-01-pcm-feasibility-spike/60s-demo.mp4` exists on disk OR `128a-SPIKE-DECISION.md` line 3 frontmatter `**Loom:**` field is a publicly accessible Loom/Vimeo/YouTube URL (no longer the `_pending — operator to commit ... OR paste URL here_` placeholder)"
-    why_human: "Operator-only wallclock (C-5) per `[feedback_wallclock_checkpoint_exempt]` memory. Recording the Loom requires physical G2 hardware + iPhone screen recording + portfolio editor — not Claude-executable. Plan 06 acceptance criteria + 128a-06-SUMMARY.md explicitly call this out as the single deferred operator-only step. Plan 06 SUMMARY frontmatter status field literally reads `'Complete — PASS verdict, Loom pending operator commit/URL'`."
+overrides_applied: 1
+overrides:
+  - criterion: "SC#3 — 60s portfolio Loom"
+    type: "waived-as-not-applicable"
+    rationale: "G2 lenses are not screen-mirrorable (no HDMI out, no Cast, no Hub-mirror API). Only viable Loom shape is iPhone screen-recording + post-editor overlay — a composite portfolio artifact rather than a direct demonstration. Verifier independently rated the Loom as portfolio-only and explicitly not scope-affecting for Phase 130. Operator decision 2026-05-18 to waive: this spike's value is internal feasibility evidence (the PASS verdict + measured numbers locked in `128a-SPIKE-DECISION.md` per D-V1), not portfolio material. Re-open path documented in `128a-HUMAN-UAT.md` resolved entry."
+    pattern: "operator-amendment closure (Phase 119 OPS-02 precedent — closure for plans whose execution gate is structurally unsatisfiable / unnecessary at current scale)"
+human_verification: []
 ---
 
 # Phase 128a: VOICE-01 PCM Feasibility Spike — Verification Report
@@ -16,8 +18,8 @@ human_verification:
 **Phase Goal (ROADMAP.md §"Phase 128a"):** "Empirically resolve whether G2 PCM capture can support the v3.9 voice anchor — and if so, in what scope. Format already locked (16kHz × 16-bit LE × mono = 32 KB/s); spike measures the operational envelope."
 
 **Verified:** 2026-05-18
-**Status:** `human_needed` — 3 of 4 ROADMAP success criteria fully VERIFIED in code/artifacts; 1 (60s Loom) is operator-only-deferred and cannot be verified without human action.
-**Re-verification:** No — initial verification.
+**Status:** `passed` — all 4 ROADMAP success criteria cleared (3 verified in code/artifacts; SC#3 Loom waived as not-applicable per operator-amendment 2026-05-18 — see `overrides` block above).
+**Re-verification:** Yes — initial 2026-05-18 returned `human_needed` on SC#3; same-day amendment by operator after determining G2 lenses are not screen-mirrorable and the spike's internal-feasibility value is fully captured in `128a-SPIKE-DECISION.md` per D-V1.
 
 ---
 

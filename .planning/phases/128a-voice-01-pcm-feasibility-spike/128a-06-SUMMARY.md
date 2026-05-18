@@ -3,7 +3,7 @@ phase: 128a-voice-01-pcm-feasibility-spike
 plan: 06
 subsystem: voice
 tags: [hardware-spike, voice-anchor, g2-microphone, openai-transcribe, battery-delta, VOICE-01, D-PASS, RESEARCH-DRIFT-02]
-status: "Complete — PASS verdict, Loom pending operator commit/URL"
+status: "Complete — PASS verdict, Loom waived as not-applicable (operator-amendment 2026-05-18)"
 
 # Dependency graph
 requires:
@@ -122,6 +122,6 @@ These are explicitly carried into Phase 130 planning, not deferred to discovery 
 - [x] Plan 06 Task 2 automated verification gate passes (head-1 regex + all required section greps — verified inline before commit)
 - [x] No edits to spike production code (`vigil-g2-plugin/`, `vigil-core/`) this plan — Task 2 is doc-only authoring per its `<files>` declaration
 - [x] Phase 130 scope implication unambiguous from the SPIKE-DECISION (full VOICE-02..08)
-- [ ] **60s Loom captured** — pending operator commit; not blocking Phase 128a's MEASUREMENTS/SPIKE-DECISION integrity, but is a Plan 06 acceptance criterion. Surfaced explicitly in the "Pending" section above and in SPIKE-DECISION.md frontmatter for visibility.
+- [x] **60s Loom** — waived as not-applicable per operator-amendment 2026-05-18 (G2 lenses are not screen-mirrorable; spike value is internal feasibility evidence locked in `128a-SPIKE-DECISION.md` per D-V1, not portfolio material). Recorded as resolved-skipped in `128a-HUMAN-UAT.md` and as an override on `128A-VERIFICATION.md` SC#3.
 
-## Self-Check: PASSED (with one operator-only deferred item: 60s Loom)
+## Self-Check: PASSED (Loom item waived as not-applicable; no outstanding deferred work)
