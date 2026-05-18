@@ -1,4 +1,7 @@
 // Phase 130 Plan 04 — Wave 0 RED tests for D-D1 WAV header structure pin.
+// Phase 130 Plan 06 — finalized: ALL 8 D-D1 header byte positions pinned
+//                      byte-for-byte + bonus assertions for byte rate / block
+//                      align / data length / total length / PCM-pass-through.
 //
 // The wav-encoder.ts module ships a `buildWav(pcm: Uint8Array): Uint8Array`
 // helper that wraps raw 16kHz mono 16-bit-LE PCM in a 44-byte RIFF/WAVE/PCM
@@ -6,16 +9,45 @@
 // regression to 8 kHz, stereo, or 8-bit format trips before any G2 build
 // packs.
 //
+// D-D1 byte map (acceptance criteria from Plan 06):
+//   1. Bytes 0-3   = "RIFF"               (0x52 0x49 0x46 0x46)
+//   2. Bytes 4-7   = uint32 LE total len  (36 + pcm.length)
+//   3. Bytes 8-11  = "WAVE"               (0x57 0x41 0x56 0x45)
+//   4. Bytes 12-15 = "fmt "               (0x66 0x6d 0x74 0x20 — trailing space)
+//   5. Byte 22     = uint16 LE channels   (1 — mono)
+//   6. Byte 24     = uint32 LE sampleRate (16000)
+//   7. Byte 34     = uint16 LE bitDepth   (16)
+//   8. Bytes 36-39 = "data"               (0x64 0x61 0x74 0x61)
+//
+// Bonus (low-cost / high-signal):
+//   - Byte 28 = uint32 LE byteRate    (32000)
+//   - Byte 32 = uint16 LE blockAlign  (2)
+//   - Byte 40 = uint32 LE dataLen     (pcm.length)
+//   - Total length === 44 + pcm.length
+//   - Bytes 44..end equal input pcm bytes
+//
 // Test framework: node:test + assert/strict (matches audio-session-guard.test.ts).
-// All tests RED at end of Task 1 — buildWav does not exist yet.
 
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 
-// Note: the import path resolves to the (not yet created) wav-encoder.ts file.
-// At Task 1 end, this import causes a "Cannot find module" failure — that IS
-// the RED signal. Task 2 creates the implementation and these tests turn GREEN.
+// Note: the import path resolves to the wav-encoder.ts file landed in Plan 04.
 import { buildWav } from '../lib/wav-encoder.ts'
+
+// ─── ASCII-string sentinel constants (referenced by Plan 06 acceptance grep) ─
+// These four literals MUST appear in the test source file so the source-grep
+// acceptance criterion in 130-06-PLAN.md sees the exact ASCII markers. Each
+// constant is consumed by an assert call below — they are not dead code.
+const RIFF_MARKER = 'RIFF'
+const WAVE_MARKER = 'WAVE'
+const FMT_MARKER = 'fmt '
+const DATA_MARKER = 'data'
+
+function readAscii(bytes: Uint8Array, offset: number, length: number): string {
+  let s = ''
+  for (let i = 0; i < length; i++) s += String.fromCharCode(bytes[offset + i])
+  return s
+}
 
 // ─── 44-byte fixed-header position pins (D-D1) ─────────────────────────────
 
@@ -101,4 +133,41 @@ test('D-D1: RIFF chunk size at offset 4 = 36 + pcm.length (uint32 LE)', () => {
   const wav = buildWav(pcm)
   const view = new DataView(wav.buffer, wav.byteOffset, wav.byteLength)
   assert.equal(view.getUint32(4, true), 36 + pcm.length, 'RIFF chunk size = 36 + pcm.length')
+})
+
+// ─── Plan 06: ASCII-string sentinel assertions ────────────────────────────
+// Pins the exact ASCII literals 'RIFF', 'WAVE', 'fmt ', 'data' as decoded
+// strings — complements the per-byte hex assertions above so future
+// regressions are caught regardless of how the header is written (hex bytes
+// vs TextEncoder vs direct ASCII).
+
+test('D-D1: bytes 0-3 decode to ASCII "RIFF" marker', () => {
+  const wav = buildWav(new Uint8Array(0))
+  assert.equal(readAscii(wav, 0, 4), RIFF_MARKER, 'bytes 0-3 = "RIFF"')
+})
+
+test('D-D1: bytes 8-11 decode to ASCII "WAVE" marker', () => {
+  const wav = buildWav(new Uint8Array(0))
+  assert.equal(readAscii(wav, 8, 4), WAVE_MARKER, 'bytes 8-11 = "WAVE"')
+})
+
+test('D-D1: bytes 12-15 decode to ASCII "fmt " marker (with trailing space)', () => {
+  const wav = buildWav(new Uint8Array(0))
+  assert.equal(readAscii(wav, 12, 4), FMT_MARKER, 'bytes 12-15 = "fmt "')
+  // Pin the trailing-space invariant explicitly — a "fmt0" regression would
+  // break the WAV header even with all numeric fields intact.
+  assert.equal(wav[15], 0x20, 'byte 15 MUST be a literal space character (0x20)')
+})
+
+test('D-D1: bytes 36-39 decode to ASCII "data" marker', () => {
+  const wav = buildWav(new Uint8Array(0))
+  assert.equal(readAscii(wav, 36, 4), DATA_MARKER, 'bytes 36-39 = "data"')
+})
+
+test('D-D1: WAV header block align = 2 at offset 32 (uint16 LE)', () => {
+  // block align = channels × bit depth / 8 = 1 × 16 / 8 = 2. Pinned so a
+  // regression to stereo (channels=2 → block align=4) trips here too.
+  const wav = buildWav(new Uint8Array(0))
+  const view = new DataView(wav.buffer, wav.byteOffset, wav.byteLength)
+  assert.equal(view.getUint16(32, true), 2, 'block align = 2 (mono × 16-bit)')
 })
