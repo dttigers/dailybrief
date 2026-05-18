@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: ready_to_plan
-stopped_at: Phase 130 complete (7/7) — ready to discuss Phase 999.1
-last_updated: 2026-05-18T23:19:54.174Z
+status: planning
+stopped_at: Phase 134 context gathered
+last_updated: "2026-05-18T23:36:02.441Z"
 last_activity: 2026-05-18
 progress:
   total_phases: 13
-  completed_phases: 6
-  total_plans: 55
+  completed_phases: 7
+  total_plans: 50
   completed_plans: 50
-  percent: 46
+  percent: 54
 ---
 
 # Project State
@@ -487,9 +487,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-18T19:30:00.000Z
-Stopped at: Phase 130 Plan 07 scaffold committed (130-HARDWARE-UAT.md); awaiting operator hardware UAT (prod migration 0023 + G2 round-trip / [NO MIC] / airplane-mode queue drain). Plan 07 NOT yet marked complete — operator wallclock + cross-device G2 verification is operator-only per [feedback_wallclock_checkpoint_exempt] + [feedback_loom_waived_g2_not_screen_mirrorable] auto-memories.
-Resume file: .planning/phases/130-voice-capture-full-implementation-scope-locked-by-128a/130-HARDWARE-UAT.md
+Last session: 2026-05-18T23:36:02.424Z
+Stopped at: Phase 134 context gathered
+Resume file: .planning/phases/134-linux-claude-code-vigil-core-agent-events-bridge-new-2026-05/134-CONTEXT.md
 
 ## Operator Next Steps
 
