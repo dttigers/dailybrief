@@ -67,6 +67,10 @@ import {
   getVoiceRecording,
   recordChunkArrival,
 } from './screens/voice.ts'
+// Phase 130 Plan 07 GAP-130-FU-VOICE07-DRAIN fix: drainQueue must be triggered
+// from a lifecycle entry point so airplane-mode-then-online produces an
+// automatic retry without requiring the operator to make a fresh recording.
+import { drainQueue, queueDepth } from './lib/voice-queue.ts'
 
 // Re-export the testable launch-source helpers from main.ts so any future
 // caller importing them via './main.ts' still works (and so the plan's
@@ -442,6 +446,18 @@ async function init(): Promise<void> {
         console.log('Vigil foregrounded')
         void refreshCurrentScreen(bridge)
         startRefreshTimer(bridge)
+        // Phase 130 Plan 07 GAP-130-FU-VOICE07-DRAIN fix: foreground re-entry
+        // is the canonical trigger for the airplane-mode-then-online case.
+        // The operator typically toggles airplane mode in iOS Settings
+        // (backgrounding Even Hub), then foregrounds Even Hub again. This
+        // event handler runs at that moment — drain any pending queue so
+        // transcripts land before the operator interacts with the screen.
+        if (queueDepth() > 0) {
+          console.log(`[voice-queue] foreground drain depth=${queueDepth()}`)
+          void drainQueue(fetch, API_KEY, BASE_URL)
+            .then(() => bridge && rebuildCurrentScreen(bridge))
+            .catch(() => {})
+        }
       } else if (eventType === OsEventTypeList.FOREGROUND_EXIT_EVENT) {
         console.log('Vigil backgrounded')
         stopRefreshTimer()
@@ -454,6 +470,36 @@ async function init(): Promise<void> {
   // onStateChange flips the offline indicator, onEvent drives Companion
   // HUD rebuilds.
   sseClient.connect()
+
+  // Phase 130 Plan 07 GAP-130-FU-VOICE07-DRAIN fix: trigger an offline-queue
+  // drain at plugin launch. If the operator recorded while airplane-mode was
+  // on, those entries persist in localStorage across plugin reopens; on
+  // launch we attempt to drain them so transcripts land without requiring
+  // the operator to make a fresh recording first.
+  if (queueDepth() > 0) {
+    console.log(`[voice-queue] init drain depth=${queueDepth()}`)
+    void drainQueue(fetch, API_KEY, BASE_URL)
+      .then(() => bridge && rebuildCurrentScreen(bridge))
+      .catch(() => {
+        // Individual POST failures are handled per-entry inside drainQueue;
+        // this top-level catch covers unexpected throws (localStorage quota).
+      })
+  }
+
+  // Phase 130 Plan 07 GAP-130-FU-VOICE07-DRAIN fix: window.online listener.
+  // Best-effort — the Even Hub iPhone WebView may not fire this reliably,
+  // but it's a cheap backstop. Foreground-enter (below) is the primary
+  // trigger for the airplane-mode-toggle case.
+  if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    window.addEventListener('online', () => {
+      if (queueDepth() > 0) {
+        console.log(`[voice-queue] online-event drain depth=${queueDepth()}`)
+        void drainQueue(fetch, API_KEY, BASE_URL)
+          .then(() => bridge && rebuildCurrentScreen(bridge))
+          .catch(() => {})
+      }
+    })
+  }
 
   console.log('Vigil G2 plugin ready')
 }

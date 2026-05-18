@@ -328,11 +328,17 @@ function computeBodyLines(): {
   bannerActive: boolean
 } {
   // Empty state
+  // Phase 130 Plan 07 GAP-130-FU1 fix: wrap emptyStateBottomLine through
+  // computeBodyLine3 so the voice-queue priority ladder (D-O3 + RESEARCH
+  // Gray Area #6) applies in the no-active-sessions path too. Previously
+  // the static 'No Claude Code activity yet' string bypassed the ladder,
+  // hiding the `syncing N voice captures…` indicator if the operator
+  // recorded voice without any active Claude Code agent sessions.
   if (activeSessions.length === 0) {
     return {
       line1: 'No active sessions',
       line2: 'idle',
-      line3: emptyStateBottomLine(),
+      line3: computeBodyLine3(emptyStateBottomLine()),
       bannerActive: false,
     }
   }

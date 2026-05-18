@@ -54,7 +54,7 @@ import {
 } from '../lib/audio-session-guard.ts'
 import { buildWav } from '../lib/wav-encoder.ts'
 import { BASE_URL, API_KEY } from '../api.ts'
-import { enqueue } from '../lib/voice-queue.ts'
+import { enqueue, drainQueue, queueDepth } from '../lib/voice-queue.ts'
 import {
   emitVoiceCaptureCompleted,
   emitVoiceCaptureDropout,
@@ -367,6 +367,18 @@ async function stopRecording(
     stateLine = '[DONE]'
     bodyLine2 = ''
     pcmChunks.length = 0
+    // Phase 130 Plan 07 GAP-130-FU-VOICE07-DRAIN fix: kick the offline queue
+    // drain on every successful upload. If prior recordings failed (e.g.
+    // airplane-mode) and were enqueued, they retry now that we're online.
+    // Fire-and-forget — failures (network re-flap) re-enqueue themselves and
+    // the next success will drain again. queueDepth() is a synchronous
+    // localStorage read; drainQueue is async.
+    if (queueDepth() > 0) {
+      void drainQueue(fetch, API_KEY, BASE_URL).then(onStateChange).catch(() => {
+        // drainQueue's per-entry catch handles individual POSTs; this top-level
+        // catch is paranoia for unexpected throws (e.g., localStorage quota).
+      })
+    }
     // Schedule auto-clear to [IDLE] after 2 seconds (D-S1).
     doneTimer = setTimeout(() => {
       if (stateLine === '[DONE]') {

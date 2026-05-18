@@ -4,6 +4,28 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
+
+// Phase 130 Plan 07 GAP-130-FU1 regression: companion.ts reads queueDepth()
+// from voice-queue.ts via localStorage. Node:test has no DOM — install a
+// minimal in-memory shim BEFORE importing companion (transitively imports
+// voice-queue). Same pattern as voice-queue.test.ts.
+const _storage: Record<string, string> = {};
+(globalThis as unknown as { localStorage: Storage }).localStorage = {
+  getItem: (k: string) => _storage[k] ?? null,
+  setItem: (k: string, v: string) => {
+    _storage[k] = String(v);
+  },
+  removeItem: (k: string) => {
+    delete _storage[k];
+  },
+  clear: () => {
+    for (const k of Object.keys(_storage)) delete _storage[k];
+  },
+  key: () => null,
+  length: 0,
+} as unknown as Storage;
+
+import { enqueue, __resetQueueForTesting } from "../../lib/voice-queue.ts";
 import {
   buildCompanionScreen,
   rebuildCompanionScreen,
@@ -208,12 +230,47 @@ test("HUD-01: heartbeat does NOT set banner; updates state line", () => {
 
 test("HUD-01: empty state — 'No active sessions' / 'idle' / 'No Claude Code activity yet'", () => {
   _resetState();
+  __resetQueueForTesting();
   hydrateActiveSessions([]);
   const body = bodyContentFromBuild();
   const lines = body.split("\n");
   assert.equal(lines[0], "No active sessions");
   assert.equal(lines[1], "idle");
   assert.equal(lines[2], "No Claude Code activity yet");
+});
+
+// Phase 130 Plan 07 GAP-130-FU1 regression: voice-queue priority ladder
+// MUST apply in the empty-session HUD path. Prior to the fix, the static
+// 'No Claude Code activity yet' bypassed computeBodyLine3 and hid the
+// `syncing N voice captures…` indicator when activeSessions.length === 0.
+test("HUD-01 (GAP-130-FU1): empty state shows voice-queue indicator when depth > 0", () => {
+  _resetState();
+  __resetQueueForTesting();
+  hydrateActiveSessions([]);
+  // Seed two queue entries directly (test-only path; production enqueue is
+  // called from voice.ts on POST failure).
+  enqueue({
+    clientCaptureId: "test-cap-1",
+    base64Audio: "dGVzdA==", // "test"
+    queuedAt: Date.now(),
+    retryCount: 0,
+  });
+  enqueue({
+    clientCaptureId: "test-cap-2",
+    base64Audio: "dGVzdA==",
+    queuedAt: Date.now(),
+    retryCount: 0,
+  });
+  const body = bodyContentFromBuild();
+  const lines = body.split("\n");
+  assert.equal(lines[0], "No active sessions");
+  assert.equal(lines[1], "idle");
+  assert.equal(
+    lines[2],
+    "syncing 2 voice captures…",
+    "empty-state line 3 MUST surface voice-queue depth via computeBodyLine3 (GAP-130-FU1 fix at companion.ts:335)",
+  );
+  __resetQueueForTesting();
 });
 
 test("HUD-01: N/M indicator on header rightSide when ≥2 sessions", () => {
