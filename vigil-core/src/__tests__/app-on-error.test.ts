@@ -38,6 +38,12 @@ import { describe, it, mock, beforeEach } from "node:test";
 import assert from "node:assert/strict";
 import { Hono } from "hono";
 import { DailyBudgetExceededError } from "../lib/ai-budget.js";
+import { AudioSessionTooLongError } from "../lib/audio-cap.js";
+import {
+  VoiceTranscribeTimeoutError,
+  VoiceTranscribeProviderDownError,
+  VoiceTranscribeQuotaError,
+} from "../routes/voice-errors.js";
 
 // Build a test app whose onError mirrors the production handler at
 // src/index.ts:265-298. The two side-effect functions are injected so we can
@@ -64,7 +70,23 @@ function buildTestApp(
     throw new Error("kaboom");
   });
 
-  // EXACT mirror of vigil-core/src/index.ts app.onError handler (lines 265-298).
+  // Phase 130 Plan 02 — additional typed-error routes for the new locked-enum
+  // codes. Each follows the same "deliberate throw → app.onError → no Sentry
+  // sink" contract as DailyBudgetExceededError (Pitfall 5).
+  testApp.get("/throw-audio-cap", () => {
+    throw new AudioSessionTooLongError(3_000_000);
+  });
+  testApp.get("/throw-transcribe-timeout", () => {
+    throw new VoiceTranscribeTimeoutError();
+  });
+  testApp.get("/throw-transcribe-down", () => {
+    throw new VoiceTranscribeProviderDownError();
+  });
+  testApp.get("/throw-transcribe-quota", () => {
+    throw new VoiceTranscribeQuotaError();
+  });
+
+  // EXACT mirror of vigil-core/src/index.ts app.onError handler.
   // If the production handler body changes, this mirror must be updated.
   testApp.onError((err, c) => {
     if (err instanceof DailyBudgetExceededError) {
@@ -72,6 +94,19 @@ function buildTestApp(
         { error: "Daily AI budget exceeded", code: "DAILY_AI_BUDGET_EXCEEDED" },
         429,
       );
+    }
+    // Phase 127 GUARD-02 + Phase 130 Plan 02 (VOICE-06 D-E1)
+    if (err instanceof AudioSessionTooLongError) {
+      return c.json({ error: err.message, code: err.code }, 413);
+    }
+    if (err instanceof VoiceTranscribeTimeoutError) {
+      return c.json({ error: err.message, code: err.code }, 504);
+    }
+    if (err instanceof VoiceTranscribeProviderDownError) {
+      return c.json({ error: err.message, code: err.code }, 502);
+    }
+    if (err instanceof VoiceTranscribeQuotaError) {
+      return c.json({ error: err.message, code: err.code }, 503);
     }
 
     // Note: console.error is suppressed below via mock.method to keep test
@@ -188,5 +223,62 @@ describe("vigil-core/src/index.ts app.onError — Plan 05.1b / Pitfall 5 lock", 
       { route: "/throw-generic", method: "GET" },
       "captureException ctx is {route, method} (Phase 103 BLOCKED_PROPERTY_NAMES denylist compliance)",
     );
+  });
+
+  // ── Phase 130 Plan 02 — VOICE-06 D-E1 locked-enum branches ───────────────
+  // Same Pitfall 5 contract as DailyBudgetExceededError: deliberate typed
+  // throws → translated to locked-enum HTTP responses with NO Sentry/PostHog
+  // sink (these are intentional rejections, not server errors).
+
+  it("AudioSessionTooLongError → 413 + AUDIO_SESSION_TOO_LONG; no sinks fired", async () => {
+    const captureExceptionSpy = mock.fn(() => {});
+    const captureToSentrySpy = mock.fn(() => {});
+    const testApp = buildTestApp(captureExceptionSpy, captureToSentrySpy);
+
+    const res = await testApp.request("/throw-audio-cap");
+    assert.equal(res.status, 413);
+    const body = (await res.json()) as { error: string; code: string };
+    assert.equal(body.code, "AUDIO_SESSION_TOO_LONG");
+    assert.equal(captureExceptionSpy.mock.calls.length, 0);
+    assert.equal(captureToSentrySpy.mock.calls.length, 0);
+  });
+
+  it("VoiceTranscribeTimeoutError → 504 + VOICE_TRANSCRIBE_TIMEOUT; no sinks fired", async () => {
+    const captureExceptionSpy = mock.fn(() => {});
+    const captureToSentrySpy = mock.fn(() => {});
+    const testApp = buildTestApp(captureExceptionSpy, captureToSentrySpy);
+
+    const res = await testApp.request("/throw-transcribe-timeout");
+    assert.equal(res.status, 504);
+    const body = (await res.json()) as { code: string };
+    assert.equal(body.code, "VOICE_TRANSCRIBE_TIMEOUT");
+    assert.equal(captureExceptionSpy.mock.calls.length, 0);
+    assert.equal(captureToSentrySpy.mock.calls.length, 0);
+  });
+
+  it("VoiceTranscribeProviderDownError → 502 + VOICE_TRANSCRIBE_PROVIDER_DOWN; no sinks fired", async () => {
+    const captureExceptionSpy = mock.fn(() => {});
+    const captureToSentrySpy = mock.fn(() => {});
+    const testApp = buildTestApp(captureExceptionSpy, captureToSentrySpy);
+
+    const res = await testApp.request("/throw-transcribe-down");
+    assert.equal(res.status, 502);
+    const body = (await res.json()) as { code: string };
+    assert.equal(body.code, "VOICE_TRANSCRIBE_PROVIDER_DOWN");
+    assert.equal(captureExceptionSpy.mock.calls.length, 0);
+    assert.equal(captureToSentrySpy.mock.calls.length, 0);
+  });
+
+  it("VoiceTranscribeQuotaError → 503 + VOICE_TRANSCRIBE_QUOTA; no sinks fired", async () => {
+    const captureExceptionSpy = mock.fn(() => {});
+    const captureToSentrySpy = mock.fn(() => {});
+    const testApp = buildTestApp(captureExceptionSpy, captureToSentrySpy);
+
+    const res = await testApp.request("/throw-transcribe-quota");
+    assert.equal(res.status, 503);
+    const body = (await res.json()) as { code: string };
+    assert.equal(body.code, "VOICE_TRANSCRIBE_QUOTA");
+    assert.equal(captureExceptionSpy.mock.calls.length, 0);
+    assert.equal(captureToSentrySpy.mock.calls.length, 0);
   });
 });

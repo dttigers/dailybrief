@@ -74,6 +74,16 @@ import { aiUsageDaily } from "../db/schema.js";
 const INPUT_PRICE_PER_TOKEN = 3 / 1_000_000;
 const OUTPUT_PRICE_PER_TOKEN = 15 / 1_000_000;
 
+// ── OpenAI gpt-4o-mini-transcribe pricing (Phase 130 Plan 02) ──────────────
+//
+// $0.003 per minute → $0.003 / 60 per second. Duration-billed, NOT token-
+// billed: the OpenAI transcription API response has no `usage` field, so the
+// existing token-based withBudgetTracking helper would silently record $0.
+// withOpenAIBudgetTracking accepts a pre-computed durationMs at the call site
+// and accumulates against ai_usage_daily using the same INSERT … ON CONFLICT
+// DO UPDATE pattern.
+const OPENAI_TRANSCRIBE_PRICE_PER_SEC = 0.003 / 60;
+
 // ── Cap default (D-03.2) ──────────────────────────────────────────────────
 //
 // $0.50/day per user. With Sonnet 4 at $3/$15 per 1M tokens, this gives
@@ -243,4 +253,54 @@ export async function withBudgetTracking<
     );
   }
   return response;
+}
+
+// ── withOpenAIBudgetTracking (Phase 130 Plan 02 — duration-based) ──────────
+//
+// OpenAI transcription is billed by clip duration ($0.003/min). The existing
+// withBudgetTracking helper expects the wrapped fn's response shape to carry
+// `usage: { input_tokens, output_tokens }` (Anthropic convention) — OpenAI's
+// audio.transcriptions.create response is `{ text: string }` only, so token
+// arithmetic silently records $0. This helper accepts a pre-computed
+// `durationMs` (estimated at the call site from PCM byte count: bytes / 32000
+// for 16 kHz × 16-bit × mono) and accumulates duration × price into
+// ai_usage_daily via the same INSERT … ON CONFLICT DO UPDATE shape.
+//
+// Locked invariants (mirror withBudgetTracking):
+//   - The INSERT is AWAITED — fire-and-forget would let bursts squeak past
+//     the cap.
+//   - ON CONFLICT DO UPDATE (atomic upsert keyed on composite PK).
+//   - Failure is NON-FATAL (D-03.3) — log + continue.
+//   - Skips INSERT when `usd === 0 || !db` — avoids zero-impact writes (e.g.,
+//     a 0-byte clip would compute 0 USD).
+//   - Returns the fn() result unchanged so the caller sees the same shape
+//     it would have without the wrapper.
+//
+// Cap-enforcement workhorse remains requireAiBudget(userId) at the route's
+// pre-flight gate. This helper is purely the post-call accumulator.
+export async function withOpenAIBudgetTracking<T>(
+  userId: number,
+  durationMs: number,
+  fn: () => Promise<T>,
+): Promise<T> {
+  const result = await fn();
+  try {
+    const seconds = Math.max(0, durationMs) / 1000;
+    const usd = seconds * OPENAI_TRANSCRIBE_PRICE_PER_SEC;
+    if (usd > 0 && db) {
+      await db.execute(sql`
+        INSERT INTO ai_usage_daily (user_id, usage_date, usd_estimate, updated_at)
+        VALUES (${userId}, CURRENT_DATE, ${usd}, NOW())
+        ON CONFLICT (user_id, usage_date) DO UPDATE
+          SET usd_estimate = ai_usage_daily.usd_estimate + EXCLUDED.usd_estimate,
+              updated_at = NOW()
+      `);
+    }
+  } catch (err) {
+    console.error(
+      "[vigil-core] withOpenAIBudgetTracking accumulator failed (non-fatal):",
+      err instanceof Error ? err.message : err,
+    );
+  }
+  return result;
 }

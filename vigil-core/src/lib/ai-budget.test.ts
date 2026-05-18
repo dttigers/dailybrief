@@ -307,8 +307,15 @@ describe("ai-budget (vigil-core/src/lib/ai-budget.ts) — Phase 127 GUARD-03 / P
 
     it("C: accumulator errors do NOT throw — caller still receives fn's resolved value", async () => {
       // Same pattern as withBudgetTracking Test 6 — induce FK failure via a
-      // bogus user_id; console.error must capture the sentinel string;
-      // the helper still returns the fn() result.
+      // bogus user_id. The helper MUST return fn()'s result regardless of
+      // whether the accumulator INSERT runs.
+      //
+      // When DATABASE_URL is set (local dev / npm run dev test path), the
+      // INSERT path fires, the FK constraint fails, console.error captures
+      // the sentinel. When DATABASE_URL is unset (npm test path without
+      // --env-file=.env), db is null and the INSERT path short-circuits
+      // BEFORE the catch — same shape as the existing withBudgetTracking
+      // Test 6 (matches in `if (usd > 0 && db)`).
       const captured: unknown[][] = [];
       const originalConsoleError = console.error;
       console.error = (...args: unknown[]) => {
@@ -318,18 +325,30 @@ describe("ai-budget (vigil-core/src/lib/ai-budget.ts) — Phase 127 GUARD-03 / P
         const BAD_USER_ID = -999_999_998;
         const fn = async (): Promise<{ text: string }> => ({ text: "ok" });
         const result = await withOpenAIBudgetTracking(BAD_USER_ID, 10_000, fn);
-        assert.deepEqual(result, { text: "ok" }, "fn result round-trips on accumulator failure");
-        const matched = captured.find((args) =>
-          args.some(
-            (a) =>
-              typeof a === "string" &&
-              a.includes("withOpenAIBudgetTracking accumulator failed"),
-          ),
+        assert.deepEqual(
+          result,
+          { text: "ok" },
+          "fn result round-trips on accumulator failure",
         );
-        assert.ok(
-          matched,
-          `console.error must include 'withOpenAIBudgetTracking accumulator failed' sentinel; captured: ${JSON.stringify(captured)}`,
-        );
+        // When DATABASE_URL is set, the FK error fires → sentinel captured.
+        // When unset, no INSERT runs → no sentinel. Both shapes are valid:
+        // the contract is that the wrapper NEVER throws, the result is
+        // ALWAYS the fn's resolved value. The sentinel is asserted only
+        // when the db-driven path is exercised (parity with how Test 6
+        // works in this test file).
+        if (process.env["DATABASE_URL"]) {
+          const matched = captured.find((args) =>
+            args.some(
+              (a) =>
+                typeof a === "string" &&
+                a.includes("withOpenAIBudgetTracking accumulator failed"),
+            ),
+          );
+          assert.ok(
+            matched,
+            `console.error must include 'withOpenAIBudgetTracking accumulator failed' sentinel; captured: ${JSON.stringify(captured)}`,
+          );
+        }
       } finally {
         console.error = originalConsoleError;
       }

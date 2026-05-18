@@ -18,6 +18,12 @@ const SENSITIVE_ROUTES = new Set<string>([
   "/v1/thoughts",
   "/v1/therapy",
   "/v1/insights",
+  // Phase 130 Plan 02 (VOICE-05) — base64 WAV payload + transcript content
+  // must be stripped from any error reports / request-body event captures.
+  // BLOCKED_PROPERTY_NAMES already covers audio/audioPcm/pcm/content; adding
+  // the route to SENSITIVE_ROUTES strips the `request_body` and `headers`
+  // properties from any captured event.
+  "/v1/voice/transcribe",
 ]);
 
 // ── D-01..D-04: Property-name denylist for trackEvent runtime guard ──────────

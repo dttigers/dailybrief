@@ -48,6 +48,13 @@ import { requireVerifiedEmailWithGrace } from "./middleware/require-verified-ema
 import { captureException, shutdownPosthog } from "./analytics/posthog.js";
 import { initSentry, captureToSentry } from "./lib/sentry.js"; // Phase 126 (AUTH-126-04 / Plan 06) — init position constraint documented at the call site below
 import { DailyBudgetExceededError } from "./lib/ai-budget.js"; // Phase 127 GUARD-03 (Plan 05.1b / D-03.4 / Pitfall 5) — app.onError 429 branch ordered BEFORE Sentry/PostHog sinks below
+import { AudioSessionTooLongError } from "./lib/audio-cap.js"; // Phase 127 GUARD-02 — app.onError 413 branch
+import { voiceTranscribe } from "./routes/voice-transcribe.js"; // Phase 130 Plan 02 (VOICE-05) — bearerAuth required; mount AFTER dispatcher
+import {
+  VoiceTranscribeTimeoutError,
+  VoiceTranscribeProviderDownError,
+  VoiceTranscribeQuotaError,
+} from "./routes/voice-errors.js"; // Phase 130 Plan 02 (VOICE-06 D-E1) — app.onError 504/502/503 branches
 import { settings } from "./routes/settings.js";
 import { briefGenerate } from "./routes/brief-generate.js";
 import { testConnection, closeConnection, db as mainDb } from "./db/connection.js";
@@ -226,6 +233,14 @@ app.route("/v1", describeImage);
 // (cross-user write becomes possible) and the userId would arrive null
 // causing 500s. Mirror agentEvents mount comment.
 app.route("/v1", capturesScreenshot);
+// Phase 130 Plan 02 (VOICE-05): voice-transcribe is a NEW protected router.
+// SAME mount-order constraint as capturesScreenshot above — MUST be after
+// the bearerAuth dispatcher (T-130-02-S silent-auth-bypass mitigation) AND
+// after the metricsMiddleware. The handler does `c.get("userId") as number`
+// and the dispatcher guarantees that's non-null. Production singleton
+// uses the real db + real OpenAI client + real bus; the createVoiceTranscribeRoute
+// DI factory is used in tests with mocks.
+app.route("/v1", voiceTranscribe);
 app.route("/v1", processPhoto);
 app.route("/v1", processAudio);
 app.route("/v1", therapy);
@@ -288,6 +303,23 @@ app.onError((err, c) => {
       { error: "Daily AI budget exceeded", code: "DAILY_AI_BUDGET_EXCEEDED" },
       429,
     );
+  }
+
+  // Phase 127 GUARD-02 (audio session cap) + Phase 130 Plan 02 (VOICE-06 D-E1):
+  // typed throws translate to locked-enum codes. Branches MUST appear BEFORE
+  // captureException/captureToSentry so deliberate validation/transcribe
+  // rejections do not burn the 5k events/mo Sentry quota (Pitfall 5).
+  if (err instanceof AudioSessionTooLongError) {
+    return c.json({ error: err.message, code: err.code }, 413);
+  }
+  if (err instanceof VoiceTranscribeTimeoutError) {
+    return c.json({ error: err.message, code: err.code }, 504);
+  }
+  if (err instanceof VoiceTranscribeProviderDownError) {
+    return c.json({ error: err.message, code: err.code }, 502);
+  }
+  if (err instanceof VoiceTranscribeQuotaError) {
+    return c.json({ error: err.message, code: err.code }, 503);
   }
 
   console.error("[vigil-core] unhandled error:", err);

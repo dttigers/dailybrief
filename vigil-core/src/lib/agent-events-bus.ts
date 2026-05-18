@@ -29,6 +29,15 @@ const EVENT_NAME = "event" as const;
 // Phase 125 (AGENT-HUD-03 / D-02): per-userId quiet_mode_changed fan-out.
 // Same per-userId emitter Map as EVENT_NAME, second event channel.
 const QUIET_NAME = "quiet" as const;
+// Phase 130 Plan 02 (VOICE-06): thought-created fan-out for G2 voice
+// transcribe → PWA dashboard refresh. The emit-side ships in this plan as a
+// SHIM (no listeners registered yet); Plan 03 lands the full triple
+// (emitThoughtCreated / onThoughtCreated / offThoughtCreated) + extends the
+// agent-stream.ts SSE subscriber + updates the joint listener-cleanup gate to
+// three channels. Until Plan 03 ships, this is a no-op write to a channel
+// no one subscribes to — preserves call-site source in this plan without
+// shipping a broken cleanup gate.
+const THOUGHT_CREATED_NAME = "thought-created" as const;
 // MAX_LISTENERS_PER_USER = 50 — RESEARCH §node:events: default 10 too tight for
 // reconnect storms. Literal `50` is inlined into setMaxListeners(50) below so
 // the acceptance-criteria drift detector (grep "setMaxListeners(50)") in the
@@ -111,6 +120,21 @@ export class AgentEventBus {
     ) {
       emitters.delete(userId);
     }
+  }
+
+  // ── Phase 130 Plan 02 (VOICE-06) — thought-created SHIM ──────────────────
+  // Emit-side only. No on/off triple yet — Plan 03 ships those alongside the
+  // agent-stream.ts SSE listener and updates the joint cleanup gate. Until
+  // then, this method is a no-op write to a channel with no listeners; it
+  // exists so this plan's voice-transcribe.ts route can write its call site
+  // without a TODO/stub.
+  emitThoughtCreated(
+    userId: number,
+    payload: { thoughtId: number; content: string },
+  ): void {
+    const emitter = emitters.get(userId);
+    if (!emitter) return;
+    emitter.emit(THOUGHT_CREATED_NAME, payload);
   }
 
   // Test hooks — intentional. agent-events-bus.test.ts asserts no leaks.

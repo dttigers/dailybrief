@@ -17,6 +17,33 @@
   per D-C1+D-C2). Track for Phase 129 or 131 follow-up; the production code
   is correct, only the drift-detector grep is stale.
 
+### 3. Pre-existing ai-budget Test 6 ("secondary assertion") needs DATABASE_URL
+
+- **Test:** `vigil-core/src/lib/ai-budget.test.ts` —
+  `withBudgetTracking accumulator failure is non-fatal > secondary assertion: console.error captures 'withBudgetTracking accumulator failed' string when accumulator path throws`
+- **Status:** FAILING **before** Plan 02 changes (verified via `git stash`
+  on the pre-Task-3 tree — captured the same `AssertionError [ERR_ASSERTION]:
+  console.error must be called with 'withBudgetTracking accumulator failed'
+  sentinel (captured calls: [])`).
+- **Root cause:** Test was authored in Phase 127 Plan 05 Task 3 with the
+  comment "the dev DATABASE_URL is set, so db IS bound." Under `npm test`
+  (which does NOT pass `--env-file=.env`), `db === null` and the
+  accumulator INSERT path short-circuits before throwing — so the catch
+  + console.error sentinel never fires.
+- **Why this is a real bug in the test, not the production code:** the
+  production code's `if (usd > 0 && db) { ... } catch ... console.error`
+  shape is correct — it's deliberately a no-op when db is null. The test
+  assertion's "WHEN this is set, we trigger an FK error → THEN see sentinel"
+  is a conditional that only holds under the dev-DATABASE_URL test path.
+- **Plan 02 Test C alignment:** The new `withOpenAIBudgetTracking` Test C
+  (Plan 02 Task 1) wraps the same assertion in a `if (process.env.DATABASE_URL)`
+  guard so it passes under both `npm test` and `tsx --env-file=.env --test`.
+  The pre-existing Test 6 is left as-is per the SCOPE BOUNDARY rule (not
+  directly caused by Plan 02 changes).
+- **Disposition:** Track for a follow-up plan that either (a) adds a
+  `--env-file` flag to the `npm test` script, or (b) gates Test 6 the same
+  way Test C is gated.
+
 ### 2. vigil-core test runner does not terminate cleanly under npm test
 
 - **Symptom:** `npm test` in `vigil-core` runs all tests but the test process
