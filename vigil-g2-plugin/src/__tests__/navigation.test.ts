@@ -61,7 +61,7 @@ test("D-08 drift: navigation.ts handles DOUBLE_CLICK_EVENT for Companion", () =>
   );
 });
 
-test("SCREEN_ORDER lock: [HOME, COMPANION, WORK_ORDERS, AFFIRMATION] exact order", () => {
+test("SCREEN_ORDER lock: [HOME, COMPANION, VOICE, WORK_ORDERS, AFFIRMATION] exact order", () => {
   // Locate the SCREEN_ORDER literal
   const m = noComments.match(/SCREEN_ORDER[^=]*=\s*\[([\s\S]*?)\]/);
   assert.ok(m, "SCREEN_ORDER literal found");
@@ -71,12 +71,15 @@ test("SCREEN_ORDER lock: [HOME, COMPANION, WORK_ORDERS, AFFIRMATION] exact order
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  // Phase 130 D-C2: SCREEN_ORDER reverted to pre-128a baseline (4 entries).
-  // Phase 130 Plans 02-07 add the production VOICE screen as a NEW slot.
+  // Phase 130 Plan 04 (VOICE-02/03/04): SCREEN_ORDER grew to 5 entries with
+  // the production VOICE screen added at slot 2 (after Companion, before
+  // Work Orders) per CONTEXT specifics §"Voice screen carousel position".
+  // The Plan 01 revert dropped the spike's VOICE_SPIKE slot; this plan adds
+  // the production VOICE slot under a fresh enum name.
   assert.equal(
     entries.length,
-    4,
-    `expected 4 SCREEN_ORDER entries, got ${entries.length}: ${JSON.stringify(entries)}`,
+    5,
+    `expected 5 SCREEN_ORDER entries, got ${entries.length}: ${JSON.stringify(entries)}`,
   );
   assert.ok(/Screen\.HOME/.test(entries[0]!), `slot 0: ${entries[0]}`);
   assert.ok(
@@ -84,12 +87,16 @@ test("SCREEN_ORDER lock: [HOME, COMPANION, WORK_ORDERS, AFFIRMATION] exact order
     `slot 1: ${entries[1]}`,
   );
   assert.ok(
-    /Screen\.WORK_ORDERS/.test(entries[2]!),
+    /Screen\.VOICE/.test(entries[2]!),
     `slot 2: ${entries[2]}`,
   );
   assert.ok(
-    /Screen\.AFFIRMATION/.test(entries[3]!),
+    /Screen\.WORK_ORDERS/.test(entries[3]!),
     `slot 3: ${entries[3]}`,
+  );
+  assert.ok(
+    /Screen\.AFFIRMATION/.test(entries[4]!),
+    `slot 4: ${entries[4]}`,
   );
 });
 

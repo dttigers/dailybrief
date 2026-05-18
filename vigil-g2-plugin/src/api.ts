@@ -12,14 +12,23 @@ import type {
 // without re-reading import.meta.env. Bearer goes ONLY into the Authorization
 // header (via createSseClient's apiKey opt) — never URL-appended (memory:
 // feedback_railway_variables_leak).
-export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/v1'
-export const API_KEY = import.meta.env.VITE_API_KEY || ''
+//
+// Phase 130 Plan 04: defensive env read. `import.meta.env` is undefined under
+// Node's plain ESM loader (e.g. node:test contexts that import this module
+// transitively via screens/voice.ts → screens/__tests__/voice.test.ts). The
+// Vite build inlines `import.meta.env.VITE_*` at compile time, so production
+// bundles still resolve the env values; only the test path needed the
+// fallback. Optional-chain through unknown to satisfy verbatimModuleSyntax.
+const _env =
+  (import.meta as unknown as { env?: Record<string, string | undefined> }).env ?? {}
+export const BASE_URL = _env.VITE_API_URL || 'http://localhost:3001/v1'
+export const API_KEY = _env.VITE_API_KEY || ''
 
 // Phase 106 G2-01: VITE_SCREENSHOT_MODE short-circuits fetches to deterministic demo
 // data so Plan 05's simulator session produces stable, reproducible PNGs.
 // Per D-11 and RESEARCH §Security T8-leak-1, this flag MUST NOT be set in
 // .env.production — Vite dead-code-eliminates the demo branch when unset.
-const SCREENSHOT_MODE = import.meta.env.VITE_SCREENSHOT_MODE
+const SCREENSHOT_MODE = _env.VITE_SCREENSHOT_MODE
 
 /** Returns headers for API requests, including Bearer auth when API_KEY is set */
 function authHeaders(): Record<string, string> {

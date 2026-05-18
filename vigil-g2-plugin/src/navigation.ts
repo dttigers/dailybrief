@@ -21,6 +21,7 @@ import {
   getActiveSessions,
   cycleSession,
 } from './screens/companion.ts'
+import { buildVoiceScreen, getVoiceRecording } from './screens/voice.ts'
 import { fetchSummary, fetchBrief, fetchAffirmation, fetchAgentSessions } from './api.ts'
 import { LAST_SCREEN_LS_KEY } from './lib/screen-state-restore.ts'
 
@@ -28,16 +29,20 @@ import { LAST_SCREEN_LS_KEY } from './lib/screen-state-restore.ts'
 export const Screen = {
   HOME: 'home',
   COMPANION: 'companion',     // NEW — Phase 124 D-05
+  VOICE: 'voice',             // NEW — Phase 130 Plan 04 (VOICE-02/03/04)
   WORK_ORDERS: 'work-orders',
   AFFIRMATION: 'affirmation',
   TASK_DETAIL: 'task-detail',
 } as const
 export type ScreenName = (typeof Screen)[keyof typeof Screen]
 
-// Circular navigation order
+// Circular navigation order. Phase 130 Plan 04: VOICE slot inserted after
+// COMPANION + before WORK_ORDERS (CONTEXT specifics §"Voice screen carousel
+// position — default: after Companion, before Tasks").
 const SCREEN_ORDER: readonly ScreenName[] = [
   Screen.HOME,
-  Screen.COMPANION,    // NEW slot 1 — Phase 124 D-05
+  Screen.COMPANION,    // Phase 124 D-05
+  Screen.VOICE,        // Phase 130 Plan 04 — voice capture screen
   Screen.WORK_ORDERS,
   Screen.AFFIRMATION,
 ]
@@ -109,6 +114,13 @@ export async function buildScreen(screen: ScreenName): Promise<RebuildPageContai
           ],
         })
       }
+    }
+    case Screen.VOICE: {
+      // Phase 130 Plan 04 — production voice screen. The recording flag lives
+      // at voice.ts module scope (D-S3 cross-screen survival); buildVoiceScreen
+      // re-reads it on every rebuild so the mid-recording m:ss elapsed counter
+      // continues advancing across swipe-away-and-back.
+      return buildVoiceScreen(getVoiceRecording())
     }
     case Screen.WORK_ORDERS: {
       const brief = await fetchBrief()

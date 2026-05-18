@@ -25,4 +25,7 @@ export const ContainerId = {
   COMPANION_HEADER: 13,    // Phase 124 D-05
   COMPANION_BODY: 14,
   COMPANION_FOOTER: 15,
+  VOICE_HEADER: 16,        // Phase 130 Plan 04 — production voice screen (VOICE-02/03/04)
+  VOICE_BODY: 17,
+  VOICE_FOOTER: 18,
 } as const

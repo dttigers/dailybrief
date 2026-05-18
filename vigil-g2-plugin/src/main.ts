@@ -60,6 +60,8 @@ import { createSseClient } from './lib/sse-client.ts'
 import { pickInitialScreen } from './lib/launch-source-helpers.ts'
 // Phase 129 G2-LIFECYCLE-01: screen state restore module.
 import { registerBackgroundStateHandlers } from './lib/screen-state-restore.ts'
+// Phase 130 Plan 04 (VOICE-02/03/04): production voice capture screen.
+import { toggleVoiceRecording, getVoiceRecording } from './screens/voice.ts'
 
 // Re-export the testable launch-source helpers from main.ts so any future
 // caller importing them via './main.ts' still works (and so the plan's
@@ -243,6 +245,28 @@ const sseClient = createSseClient({
   },
 })
 
+// ── Phase 130 Plan 04 (VOICE-02 / VOICE-03 / VOICE-04) ────────────────────
+// Module-scope state for the production voice capture path. D-S3 invariant:
+// `voiceRecording` and `pcmChunks` live at MODULE scope here (not inside
+// init() and not inside voice.ts's screen builder) so that:
+//   1. The screen-carousel rebuild on swipe does not reset the recording
+//      state mid-utterance.
+//   2. The SDK `bridge.onEvenHubEvent` collector (registered inside init())
+//      pushes into the same buffer instance that voice.ts reads on STOP.
+//
+// voice.ts's own module-scope `recording` flag is the source of truth for
+// UI state; `voiceRecording` here is a mirror updated via the toggleVoiceRecording
+// onStateChange callback so the PCM collector branch below can fast-path the
+// gate without importing voice.ts state-readers on the hot path.
+//
+// Security (T-130-04-2): the per-chunk log uses SAFE KEY NAMES (`bytes` / `t`)
+// only. The Phase 127 GUARD-01 BLOCKED_PROPERTY_NAMES blocklist enforces this
+// for PostHog / Sentry; the per-callsite hygiene here is the third rail. The
+// Plan 06 drift detector will source-grep this file for `audioPcm` / `pcm` /
+// `audio_pcm` in log statements.
+let voiceRecording = false
+const pcmChunks: Uint8Array[] = []
+
 async function buildInitialContainer(
   screen: ScreenName,
 ): Promise<CreateStartUpPageContainer> {
@@ -322,6 +346,58 @@ async function init(): Promise<void> {
 
   // Listen for lifecycle + navigation events
   bridge.onEvenHubEvent((event) => {
+    // ── Phase 130 Plan 04 (VOICE-04): PCM chunk collector ────────────────
+    // When `voiceRecording === true`, push every audioEvent.audioPcm payload
+    // into the module-scope `pcmChunks` buffer. The buffer is drained by
+    // toggleVoiceRecording's STOP path (WAV-wrap + base64 + POST).
+    //
+    // Safe-key log only (T-130-04-2 + Phase 127 GUARD-01): `bytes` and `t`
+    // are operator-facing metric names, NOT PCM-data property names. The
+    // Plan 06 drift detector will source-grep this file for forbidden keys
+    // (`audioPcm` / `audio_pcm` / `pcm` / `audio` / `audioBuffer`) in log
+    // statements.
+    if (event.audioEvent?.audioPcm && voiceRecording) {
+      const chunk = event.audioEvent.audioPcm
+      pcmChunks.push(chunk)
+      console.log(`[voice] chunk bytes=${chunk.length} t=${Date.now()}`)
+    }
+
+    // ── Phase 130 Plan 04: VOICE-screen DOUBLE_CLICK toggle ────────────
+    // When the operator is on the VOICE screen and emits DOUBLE_CLICK_EVENT
+    // (regardless of carrier: text/list/sys), toggle recording. This branch
+    // MUST run BEFORE the generic handleNavEvent delegation below, because
+    // handleNavEvent's default DOUBLE_CLICK_EVENT path routes to HOME and
+    // would otherwise consume the gesture.
+    //
+    // The recording flag mirror is updated via the onStateChange callback
+    // (which also triggers a UI rebuild so the operator sees [REC m:ss] /
+    // [UPLOADING…] / [DONE] transitions land within the same gesture frame).
+    const doubleClickType =
+      event.textEvent?.eventType === OsEventTypeList.DOUBLE_CLICK_EVENT
+        ? OsEventTypeList.DOUBLE_CLICK_EVENT
+        : event.listEvent?.eventType === OsEventTypeList.DOUBLE_CLICK_EVENT
+          ? OsEventTypeList.DOUBLE_CLICK_EVENT
+          : event.sysEvent?.eventType === OsEventTypeList.DOUBLE_CLICK_EVENT
+            ? OsEventTypeList.DOUBLE_CLICK_EVENT
+            : null
+    if (doubleClickType !== null && getCurrentScreen() === Screen.VOICE && bridge) {
+      // Cast: EvenAppBridge@0.0.9 .d.ts does not type setBackgroundState/
+      // onBackgroundRestore (they're production-only — same situation as the
+      // Phase 129 G2-LIFECYCLE-01 wiring at line 141). The runtime bridge
+      // does expose them on production iPhone WebView; the dev-preview
+      // bridge is handled defensively by safeAudioControl's feature-detect.
+      const audioBridge = bridge as unknown as import('./lib/audio-session-guard.ts').AudioGuardBridge
+      void (async () => {
+        await toggleVoiceRecording(audioBridge, pcmChunks, async () => {
+          voiceRecording = getVoiceRecording()
+          if (bridge && getCurrentScreen() === Screen.VOICE) {
+            await rebuildCurrentScreen(bridge)
+          }
+        })
+      })()
+      return
+    }
+
     // List item click → task detail
     if (
       event.listEvent?.eventType === OsEventTypeList.CLICK_EVENT &&
