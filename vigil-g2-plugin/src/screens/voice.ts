@@ -54,6 +54,11 @@ import {
 } from '../lib/audio-session-guard.ts'
 import { buildWav } from '../lib/wav-encoder.ts'
 import { BASE_URL, API_KEY } from '../api.ts'
+import { enqueue } from '../lib/voice-queue.ts'
+import {
+  emitVoiceCaptureCompleted,
+  emitVoiceCaptureDropout,
+} from '../lib/voice-telemetry.ts'
 
 // ─── State-line union type (D-S1) ──────────────────────────────────────────
 
@@ -77,6 +82,37 @@ let doneTimer: ReturnType<typeof setTimeout> | null = null
 // visually distinct so the operator knows which corrective action applies).
 const COPY_NO_MIC = 'enable mic in Hub'
 const COPY_ERR = 'retry — tap to dismiss'
+// D-E3 cascade — 429 DAILY_AI_BUDGET_EXCEEDED is a permanent failure; the
+// daily AI cost cap won't reset until midnight UTC. Distinct copy lets the
+// operator distinguish "transient retry-on-its-own" from "you've hit the
+// daily cap; no point trying again until tomorrow".
+const COPY_BUDGET_CAP = 'daily AI cost cap hit — try tomorrow'
+
+// ─── Drop-out detection state (D-T2) ───────────────────────────────────────
+//
+// We track inter-chunk gap times during the first 5 seconds of recording to
+// compute a baseline. After 5 s, any inter-chunk gap > 2× baseline emits a
+// `voice_capture_dropout` event. State is reset on each START.
+
+interface DropoutState {
+  recordingId: string | null
+  /** First-5s inter-chunk gaps used to compute baseline. */
+  baselineGaps: number[]
+  /** Computed baseline (mean of baselineGaps); null until 5 s elapsed. */
+  baselineMs: number | null
+  /** Timestamp of the most recent chunk arrival (for gap computation). */
+  lastChunkAt: number | null
+}
+
+let dropoutState: DropoutState = {
+  recordingId: null,
+  baselineGaps: [],
+  baselineMs: null,
+  lastChunkAt: null,
+}
+
+const BASELINE_WINDOW_MS = 5000
+const DROPOUT_THRESHOLD_MULTIPLIER = 2
 
 // ─── Accessors ──────────────────────────────────────────────────────────────
 
@@ -167,7 +203,74 @@ export async function toggleVoiceRecording(
   recordingStartedAt = Date.now()
   stateLine = formatRecState(0)
   bodyLine2 = ''
+  // Reset drop-out tracking + mint a fresh recording_id for the dropout +
+  // completed events. The same UUID is reused as the clientCaptureId on the
+  // POST so the eventual server-side voice_captures row, the queue entry
+  // (if it fails), and the telemetry events all share one identifier.
+  dropoutState = {
+    recordingId: generateUuidV4(),
+    baselineGaps: [],
+    baselineMs: null,
+    lastChunkAt: null,
+  }
   await onStateChange?.()
+}
+
+/**
+ * Record an audio-chunk arrival timestamp. Called by main.ts's audioEvent
+ * collector branch on each `audioEvent.audioPcm` event while `recording ===
+ * true`. Implements D-T2 drop-out detection:
+ *
+ *   1. First 5 s of recording: collect inter-chunk gap times to compute the
+ *      baseline.
+ *   2. At the 5 s mark: freeze the baseline (mean of gaps).
+ *   3. After 5 s: any inter-chunk gap > 2× baseline emits a
+ *      `voice_capture_dropout` event with safe-key props `{ gap_ms,
+ *      recording_id }`. Multiple drop-outs in one capture produce multiple
+ *      events.
+ *
+ * Idempotent w.r.t. calls outside a recording session — if `recording ===
+ * false`, returns early.
+ */
+export function recordChunkArrival(now: number = Date.now()): void {
+  if (!recording || recordingStartedAt === null) return
+  if (dropoutState.recordingId === null) return
+
+  const elapsedSinceStart = now - recordingStartedAt
+  const gap = dropoutState.lastChunkAt === null ? 0 : now - dropoutState.lastChunkAt
+  dropoutState.lastChunkAt = now
+
+  // First-5s baseline window: accumulate gap samples (skip the first chunk,
+  // which has no prior chunk to gap against).
+  if (elapsedSinceStart < BASELINE_WINDOW_MS) {
+    if (gap > 0) dropoutState.baselineGaps.push(gap)
+    return
+  }
+
+  // Past the 5 s baseline window — compute baseline once on first
+  // out-of-window call, then start scoring subsequent gaps.
+  if (dropoutState.baselineMs === null) {
+    if (dropoutState.baselineGaps.length === 0) {
+      // No baseline samples collected — fall back to a conservative 200 ms
+      // (the spike's typical inter-chunk arrival cadence). Without this
+      // fallback we'd never detect drop-outs from very short recordings
+      // that happened to skip the first 5 s window entirely.
+      dropoutState.baselineMs = 200
+    } else {
+      const sum = dropoutState.baselineGaps.reduce((a, b) => a + b, 0)
+      dropoutState.baselineMs = sum / dropoutState.baselineGaps.length
+    }
+  }
+
+  if (
+    gap > 0 &&
+    gap > dropoutState.baselineMs * DROPOUT_THRESHOLD_MULTIPLIER
+  ) {
+    emitVoiceCaptureDropout({
+      gap_ms: gap,
+      recording_id: dropoutState.recordingId,
+    })
+  }
 }
 
 async function stopRecording(
@@ -190,55 +293,132 @@ async function stopRecording(
   bodyLine2 = ''
   await onStateChange?.()
 
+  // Capture chunk count BEFORE the buffer is mutated below — it's a
+  // load-bearing input to the voice_capture_completed event's `chunks` field
+  // (D-T1). We intentionally do this before WAV-wrap so a thrown encode
+  // doesn't drop the metric.
+  const totalChunks = pcmChunks.length
+
+  let audioBase64 = ''
+  let wavBytes = 0
+  // Reuse the dropout recording_id as the clientCaptureId so the queue entry,
+  // the server-side voice_captures row, and the telemetry events all share
+  // one identifier. Falls back to a fresh UUID v4 if the dropout state was
+  // never initialized (defensive — should be unreachable since the START
+  // path always sets it).
+  const clientCaptureId = dropoutState.recordingId ?? generateUuidV4()
+
   try {
-    // Concatenate PCM chunks into a single Uint8Array
     const pcm = concatPcmChunks(pcmChunks)
-    // WAV-wrap
     const wav = buildWav(pcm)
-    // Base64-encode
-    const audioBase64 = uint8ToBase64(wav)
-    // UUID v4 for client-side dedup (Plan 02 voice_captures composite index)
-    const clientCaptureId = generateUuidV4()
+    wavBytes = wav.length
+    audioBase64 = uint8ToBase64(wav)
+  } catch {
+    // Encode failure — there's nothing to POST. Surface [ERR] and bail. The
+    // raw PCM is not recoverable to a queue entry without WAV-wrap, so we do
+    // NOT enqueue.
+    stateLine = '[ERR]'
+    bodyLine2 = COPY_ERR
+    await onStateChange?.()
+    return
+  }
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    }
-    if (API_KEY) {
-      headers['Authorization'] = `Bearer ${API_KEY}`
-    }
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+  if (API_KEY) {
+    headers['Authorization'] = `Bearer ${API_KEY}`
+  }
 
-    const res = await fetch(`${BASE_URL}/voice/transcribe`, {
+  const stopToHttpStart = Date.now()
+  let res: Response | null = null
+  let networkError = false
+  try {
+    res = await fetch(`${BASE_URL}/voice/transcribe`, {
       method: 'POST',
       headers,
       body: JSON.stringify({ audio: audioBase64, clientCaptureId }),
     })
-
-    if (res.ok) {
-      stateLine = '[DONE]'
-      bodyLine2 = ''
-      // Clear pcmChunks on success so the next recording starts fresh.
-      pcmChunks.length = 0
-      // Schedule auto-clear to [IDLE] after 2 seconds (D-S1).
-      doneTimer = setTimeout(() => {
-        if (stateLine === '[DONE]') {
-          stateLine = '[IDLE]'
-          bodyLine2 = ''
-          void onStateChange?.()
-        }
-        doneTimer = null
-      }, 2000)
-    } else {
-      stateLine = '[ERR]'
-      bodyLine2 = COPY_ERR
-      // Leave pcmChunks in place — Plan 05 offline queue will pick them up
-      // for retry. For Plan 04 the operator just sees [ERR] and the next
-      // recording will overwrite the buffer on the next START.
-    }
   } catch {
-    // Network error / fetch threw / base64 encode threw — same UX: [ERR].
-    stateLine = '[ERR]'
-    bodyLine2 = COPY_ERR
+    networkError = true
   }
+  const stopToHttpMs = Date.now() - stopToHttpStart
+
+  if (!networkError && res && res.ok) {
+    // ── Success path ────────────────────────────────────────────────────
+    let transcriptChars = 0
+    try {
+      const body = (await res.clone().json()) as { content?: string }
+      transcriptChars = body.content?.length ?? 0
+    } catch {
+      // Body unparseable — accept the 2xx and move on with transcript_chars = 0.
+    }
+
+    // D-T1: voice_capture_completed with safe-key set ONLY. The compiler
+    // enforces the contract (VoiceCaptureCompletedProps).
+    emitVoiceCaptureCompleted({
+      stop_to_http_ms: stopToHttpMs,
+      chunks: totalChunks,
+      bytes: wavBytes,
+      retry_count: 0, // online path — no retries
+      transcript_chars: transcriptChars,
+    })
+
+    stateLine = '[DONE]'
+    bodyLine2 = ''
+    pcmChunks.length = 0
+    // Schedule auto-clear to [IDLE] after 2 seconds (D-S1).
+    doneTimer = setTimeout(() => {
+      if (stateLine === '[DONE]') {
+        stateLine = '[IDLE]'
+        bodyLine2 = ''
+        void onStateChange?.()
+      }
+      doneTimer = null
+    }, 2000)
+    await onStateChange?.()
+    return
+  }
+
+  // ── Failure paths ──────────────────────────────────────────────────────
+
+  // 429 DAILY_AI_BUDGET_EXCEEDED — permanent (D-E3 cascade). Do NOT enqueue —
+  // the cap won't reset until midnight UTC, so retrying would only burn
+  // bandwidth. Distinct body-line copy lets the operator tell this apart
+  // from transient failures that the queue is auto-retrying.
+  if (!networkError && res && res.status === 429) {
+    let body: { code?: string } = {}
+    try {
+      body = (await res.clone().json()) as { code?: string }
+    } catch {
+      // Unparseable 429 body — still treat as permanent (the only documented
+      // 429 from /v1/voice/transcribe is DAILY_AI_BUDGET_EXCEEDED).
+    }
+    if (body.code === 'DAILY_AI_BUDGET_EXCEEDED' || !body.code) {
+      stateLine = '[ERR]'
+      bodyLine2 = COPY_BUDGET_CAP
+      pcmChunks.length = 0
+      await onStateChange?.()
+      return
+    }
+  }
+
+  // Transient (5xx / network error / other) — enqueue + show [ERR]. The
+  // queue's drain loop (scheduled cadence handler) will retry per the
+  // [1s, 2s, 4s, 8s, 16s, 30s] backoff and either succeed or evict after 6
+  // retries. enqueue() handles LRU eviction internally if the queue is full.
+  enqueue({
+    clientCaptureId,
+    base64Audio: audioBase64,
+    queuedAt: Date.now(),
+    retryCount: 0,
+  })
+
+  stateLine = '[ERR]'
+  bodyLine2 = COPY_ERR
+  // Clear the in-flight buffer; the next recording starts fresh. The queue
+  // owns the payload now.
+  pcmChunks.length = 0
   await onStateChange?.()
 }
 
@@ -401,5 +581,11 @@ export function __resetVoiceForTesting(): void {
   if (doneTimer) {
     clearTimeout(doneTimer)
     doneTimer = null
+  }
+  dropoutState = {
+    recordingId: null,
+    baselineGaps: [],
+    baselineMs: null,
+    lastChunkAt: null,
   }
 }

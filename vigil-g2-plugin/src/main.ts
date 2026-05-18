@@ -61,7 +61,12 @@ import { pickInitialScreen } from './lib/launch-source-helpers.ts'
 // Phase 129 G2-LIFECYCLE-01: screen state restore module.
 import { registerBackgroundStateHandlers } from './lib/screen-state-restore.ts'
 // Phase 130 Plan 04 (VOICE-02/03/04): production voice capture screen.
-import { toggleVoiceRecording, getVoiceRecording } from './screens/voice.ts'
+// Phase 130 Plan 05 (VOICE-08): per-chunk drop-out detection seam.
+import {
+  toggleVoiceRecording,
+  getVoiceRecording,
+  recordChunkArrival,
+} from './screens/voice.ts'
 
 // Re-export the testable launch-source helpers from main.ts so any future
 // caller importing them via './main.ts' still works (and so the plan's
@@ -358,8 +363,14 @@ async function init(): Promise<void> {
     // statements.
     if (event.audioEvent?.audioPcm && voiceRecording) {
       const chunk = event.audioEvent.audioPcm
+      const t = Date.now()
       pcmChunks.push(chunk)
-      console.log(`[voice] chunk bytes=${chunk.length} t=${Date.now()}`)
+      // Phase 130 Plan 05 (D-T2): record chunk-arrival timestamp for drop-out
+      // detection. voice.ts computes the first-5s baseline + scores
+      // subsequent inter-chunk gaps. Safe-key timestamp only — never log
+      // chunk bytes here.
+      recordChunkArrival(t)
+      console.log(`[voice] chunk bytes=${chunk.length} t=${t}`)
     }
 
     // ── Phase 130 Plan 04: VOICE-screen DOUBLE_CLICK toggle ────────────

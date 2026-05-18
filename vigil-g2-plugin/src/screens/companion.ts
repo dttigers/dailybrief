@@ -34,6 +34,14 @@ import type { AgentSessionRow, AgentEvent, AgentEventType } from '../types.ts'
 import { DISPLAY_WIDTH, ContainerId } from '../constants.ts'
 import { isSessionVisibleInCycle } from '../lib/launch-source-helpers.ts'
 import { buildVigilHeader } from './header.ts'
+// Phase 130 Plan 05 (VOICE-07 / D-O3 / RESEARCH Gray Area #6):
+// Companion HUD body line 3 surfaces the offline voice-queue depth +
+// permission-denied state. Priority ladder (highest first):
+//   1. `[NO MIC] enable mic in Hub` — operator can't record at all
+//   2. `syncing N voice captures…` — queue depth > 0 and mic is OK
+//   3. (fallback to existing line3 — agent event message)
+import { queueDepth } from '../lib/voice-queue.ts'
+import { getVoiceStateLine } from './voice.ts'
 
 const LABEL_MAX = 30
 const MESSAGE_MAX = 32
@@ -366,12 +374,40 @@ function computeBodyLines(): {
   return {
     line1: truncate(session.label, LABEL_MAX),
     line2: STATE_LINE[session.lastEvent.event],
-    line3: truncate(
-      session.lastEvent.message ?? session.lastEvent.event,
-      MESSAGE_MAX,
+    line3: computeBodyLine3(
+      truncate(
+        session.lastEvent.message ?? session.lastEvent.event,
+        MESSAGE_MAX,
+      ),
     ),
     bannerActive: false,
   }
+}
+
+/**
+ * Compute Companion HUD body line 3 with the Phase 130 Plan 05 voice-queue
+ * priority ladder (D-O3 + RESEARCH Gray Area #6). Highest to lowest:
+ *
+ *   1. `enable mic in Hub` — voice screen reports `[NO MIC]` (operator
+ *       cannot capture anything until permission is re-granted)
+ *   2. `syncing N voice captures…` — offline queue has pending entries
+ *   3. `fallback` — caller-provided default (existing agent event message)
+ *
+ * The voice screen state line is read via `getVoiceStateLine()` from
+ * voice.ts module scope (no I/O). The queue depth is read via
+ * `queueDepth()` which does a localStorage read on each call — cheap, and
+ * always returns the freshly-persisted depth so background drain progress
+ * shows up on every Companion rebuild.
+ */
+function computeBodyLine3(fallback: string): string {
+  if (getVoiceStateLine() === '[NO MIC]') {
+    return 'enable mic in Hub'
+  }
+  const depth = queueDepth()
+  if (depth > 0) {
+    return `syncing ${depth} voice captures…`
+  }
+  return fallback
 }
 
 function buildContainers(): TextContainerProperty[] {
