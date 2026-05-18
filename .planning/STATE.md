@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
-stopped_at: Phase 130 context gathered
-last_updated: "2026-05-18T16:29:18.772Z"
-last_activity: 2026-05-18 -- Phase 130 planning complete
+stopped_at: Completed Phase 130 Plan 01 (spike-removal)
+last_updated: "2026-05-18T17:37:42.735Z"
+last_activity: 2026-05-18
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 50
-  completed_plans: 43
+  completed_plans: 44
   percent: 50
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 128b — g2 reply 01 write back path spike
+**Current focus:** Phase 130 — voice-capture-full-implementation-scope-locked-by-128a
 
 ## Current Position
 
-Phase: 128b
-Plan: Not started
+Phase: 130 (voice-capture-full-implementation-scope-locked-by-128a) — EXECUTING
+Plan: 2 of 7
 Status: Ready to execute
-Last activity: 2026-05-18 -- Phase 130 planning complete
+Last activity: 2026-05-18
 
 ## Phase 129 Closure (2026-05-16) — PARTIAL-COMPLETE
 
@@ -156,6 +156,7 @@ Last activity: 2026-05-16
 | Phase 129-lifecycle-restore-servicenow-popup P04 | 25 | 1 tasks | 2 files |
 | Phase 129 P07 | 8 min | 4 tasks | 12 files |
 | Phase 129 P09 | 5 min | 2 tasks | 3 files |
+| Phase 130 P01 | 45 | 2 tasks | 11 files |
 
 ## Deferred Items
 
@@ -436,6 +437,7 @@ Recent (v3.7 closeout):
 - [Phase 128b]: Privilege & portability sketch is REFERENCED in pathE-TRANSCRIPT.md (cites spike 001 README lines 182-218), NOT re-derived; Plan 05 SPIKE-DECISION will cite same source directly per CONTEXT D-A2 + RESEARCH §Criteria Mapping criterion 4
 - [Phase ?]: Total empirical cost ~$0.131 (Plans 01-04 + spike 001) is UNDER RESEARCH §Cost ≤$0.20 ceiling; Path B first-invocation cache cost drove variance, re-runs amortize to ~$0.021 total
 - [Phase ?]: 128b Plan 05: VERDICT PASS computed mechanically per D-V4 max aggregation (Path E PASS dominates A=FAIL, B=DEGRADE, D=DEGRADE, C=INCONCLUSIVE); scope-locks Phase 133 to full G2-REPLY-02..04 reply UX
+- [Phase ?]: Phase 130 Plan 01: atomic spike-removal commit (D-C1+D-C2+D-C4) — 5 files deleted, 5 files reverted, g2-microphone permission preserved
 
 ### Pending Todos
 
@@ -472,9 +474,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-18T15:44:59.520Z
-Stopped at: Phase 130 context gathered
-Resume file: .planning/phases/130-voice-capture-full-implementation-scope-locked-by-128a/130-CONTEXT.md
+Last session: 2026-05-18T17:37:42.724Z
+Stopped at: Completed Phase 130 Plan 01 (spike-removal)
+Resume file: None
 
 ## Operator Next Steps
 
