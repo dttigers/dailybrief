@@ -522,7 +522,7 @@ Plans:
   4. With network disabled, the G2 plugin queues up to 10 utterances (exact `[1s, 2s, 4s, 8s, 16s, 30s]` backoff per Phase 124 D-11) and shows "syncing N voice captures" on the HUD; queue drains when network returns
   5. Drift-detector tests structurally prevent any `audioPcm` reference from reaching `console.log` / `Sentry.captureException` / `posthog.capture`, and prevent any orphaned `audioControl(true)` without a matching `audioControl(false)`
 
-**Plans:** 5/7 plans executed
+**Plans:** 6/7 plans executed
 Plans:
 **Wave 1**
 
@@ -540,7 +540,7 @@ Plans:
 **Wave 4** *(blocked on Wave 3 completion)*
 
 - [x] 130-05-PLAN.md — Offline queue: voice-queue.ts ([1s,2s,4s,8s,16s,30s] backoff + LRU eviction max 10) + Companion HUD body line 3 + PostHog voice_capture_completed/dropout events
-- [ ] 130-06-PLAN.md — Drift detectors: D-D1 WAV header byte-for-byte pin + D-D2 audioPcm log-sink ban extension + D-D3 safeAudioControl pairing parity
+- [x] 130-06-PLAN.md — Drift detectors: D-D1 WAV header byte-for-byte pin + D-D2 audioPcm log-sink ban extension + D-D3 safeAudioControl pairing parity
 
 **Wave 5** *(blocked on Wave 4 completion)*
 
@@ -773,7 +773,7 @@ Plans:
 | 128b. G2-REPLY-01 write-back path spike (gates Phase 133 reply UX scope) | v3.9 | 7/8 | In Progress|  |
 | 129. Lifecycle restore + ServiceNow popup (parallel-safe small wins) | v3.9 | 13/13 | Partial-complete (SVCNOW-01/02/03/05 superseded → 129.1) | 2026-05-16 |
 | 129.1. SVCNOW revert + screenshot pipeline + PWA manual-create | v3.9 | 6/6 | Complete    | 2026-05-17 |
-| 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 5/7 | In Progress|  |
+| 130. Voice capture full implementation (scope-locked by 128a) | v3.9 | 6/7 | In Progress|  |
 | 131. Insights freshness + chat context expansion (one PWA UAT pass) | v3.9 | 0/TBD | Not started | - |
 | 132. Quiet Mode auto-detect via iPhone Focus | v3.9 | 0/TBD | Not started | - |
 | 133. G2 closeout bundle (G2-ACTION + G2-REPLY + WATCH-ENRICH + HUD-CLARITY; hardware UAT) | v3.9 | 0/TBD | Not started | - |
