@@ -27,8 +27,8 @@
 - [x] **VOICE-04**: G2 plugin buffers PCM client-side and POSTs WAV-wrapped audio (16kHz mono 16-bit LE) as a single base64 blob per utterance to `POST /v1/voice/transcribe`.
 - [x] **VOICE-05**: Vigil Core `POST /v1/voice/transcribe` endpoint: bearerAuth + email-verified, accepts base64 WAV, calls selected transcription provider (Anthropic beta.files or OpenAI `gpt-4o-mini-transcribe` — provider locked before phase plan), creates a thought row with `source = 'g2_voice'`, fires fire-and-forget triage (existing path).
 - [x] **VOICE-06**: Transcribed thoughts appear in PWA dashboard within 8s of utterance end (UAT criterion); failure paths surface specific locked-enum error codes (`VOICE_TRANSCRIBE_TIMEOUT`, `VOICE_TRANSCRIBE_PROVIDER_DOWN`, `VOICE_TRANSCRIBE_QUOTA`).
-- [ ] **VOICE-07**: Offline queue — failed POSTs retry with exponential backoff `[1s, 2s, 4s, 8s, 16s, 30s]` (mirror Phase 124 D-11); max 10 queued utterances; visible "syncing N voice captures" indicator on HUD when queue depth > 0.
-- [ ] **VOICE-08**: Drift-detector tests pin: (a) WAV header structure (4-byte boundaries, channel/rate/depth bytes), (b) no `audioPcm` reference in any `console.log`/`Sentry.captureException`/`posthog.capture` call site, (c) `audioControl(false)` paired with every `audioControl(true)`.
+- [x] **VOICE-07**: Offline queue — failed POSTs retry with exponential backoff `[1s, 2s, 4s, 8s, 16s, 30s]` (mirror Phase 124 D-11); max 10 queued utterances; visible "syncing N voice captures" indicator on HUD when queue depth > 0.
+- [x] **VOICE-08**: Drift-detector tests pin: (a) WAV header structure (4-byte boundaries, channel/rate/depth bytes), (b) no `audioPcm` reference in any `console.log`/`Sentry.captureException`/`posthog.capture` call site, (c) `audioControl(false)` paired with every `audioControl(true)`.
 
 ### G2-ACTION — Mark tasks complete from glasses
 
@@ -175,8 +175,8 @@ Empty initially. Populated by roadmapper during phase mapping.
 | VOICE-04 | 130 | Complete |
 | VOICE-05 | 130 | Complete |
 | VOICE-06 | 130 | Complete |
-| VOICE-07 | 130 | Pending |
-| VOICE-08 | 130 | Pending |
+| VOICE-07 | 130 | Complete |
+| VOICE-08 | 130 | Complete |
 | G2-ACTION-01 | 133 | Pending |
 | G2-ACTION-02 | 133 | Pending |
 | G2-ACTION-03 | 133 | Pending |

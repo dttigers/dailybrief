@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
-stopped_at: Completed Phase 130 Plan 01 (spike-removal)
-last_updated: "2026-05-18T18:35:53.054Z"
+stopped_at: Completed 130-05-PLAN.md
+last_updated: "2026-05-18T18:48:45.618Z"
 last_activity: 2026-05-18
 progress:
   total_phases: 12
   completed_phases: 6
   total_plans: 50
-  completed_plans: 47
+  completed_plans: 48
   percent: 50
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 130 (voice-capture-full-implementation-scope-locked-by-128a) — EXECUTING
-Plan: 5 of 7
+Plan: 6 of 7
 Status: Ready to execute
 Last activity: 2026-05-18
 
@@ -160,6 +160,7 @@ Last activity: 2026-05-16
 | Phase 130 P02 | 21min | 3 tasks | 10 files |
 | Phase 130 P03 | 8min | 3 tasks | 8 files |
 | Phase 130 P04 | 25min | 3 tasks | 11 files |
+| Phase 130 P05 | 7 | 2 tasks | 6 files |
 
 ## Deferred Items
 
@@ -447,6 +448,7 @@ Recent (v3.7 closeout):
 - [Phase ?]: [Phase 130 / Plan 02] Rule 2 deviation — extended app-on-error.test.ts drift-detector mirror to cover 4 new branches (AudioSessionTooLongError + 3 VOICE_TRANSCRIBE_*Error) plus 4 new test cases. Maintains regression coverage for the production translation table.
 - [Phase ?]: Plan 03 three-channel joint cleanup gate; fetch-stream SSE subscriber
 - [Phase ?]: Phase 130 Plan 04: production VOICE screen at SCREEN_ORDER slot 2 (after Companion); D-S1 6-state machine; Run 4 safeAudioControl Promise<boolean> with try/catch for false-return + permission throw; wav-encoder buildWav pins D-D1 44-byte RIFF/WAVE/16kHz mono container at producer side
+- [Phase ?]: Phase 130 Plan 05 landed VOICE-07 + telemetry portion of VOICE-08: localStorage voice queue 'vigil:voice-queue:v1' with [1s,2s,4s,8s,16s,30s] backoff + LRU max 10 + D-E3 cascade + voice-telemetry.ts compile-time safe-key contract + Companion HUD body line 3 priority ladder
 
 ### Pending Todos
 
@@ -483,8 +485,8 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-18T18:35:18.634Z
-Stopped at: Completed Phase 130 Plan 01 (spike-removal)
+Last session: 2026-05-18T18:48:33.447Z
+Stopped at: Completed 130-05-PLAN.md
 Resume file: None
 
 ## Operator Next Steps
