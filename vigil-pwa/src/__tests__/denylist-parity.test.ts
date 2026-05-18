@@ -72,6 +72,104 @@ function extractBlockedNames(src: string): string[] {
   return matches.map((m) => m.slice(1, -1)).sort()
 }
 
+// ─── Phase 130 Plan 06 D-D2 PWA-side parity helpers ─────────────────────────
+//
+// Walk vigil-pwa/src/ (excluding tests + analytics/posthog.ts) and assert no
+// log-sink call line contains the three Phase 130 banned key patterns:
+//   /\baudioPcm\b/   /\baudio_pcm\b/   object-key pcm:
+// Phase 127 GUARD-01 enforces this Set-membership side at Rail 1; this rail
+// extends the surface to executable code lines in the PWA workspace.
+
+function walkPwaSrc(dir: string, files: string[] = []): string[] {
+  let entries: string[]
+  try {
+    entries = fs.readdirSync(dir)
+  } catch {
+    return files
+  }
+  for (const entry of entries) {
+    const full = path.join(dir, entry)
+    const stat = fs.statSync(full)
+    if (stat.isDirectory()) {
+      if (entry === '__tests__') continue
+      walkPwaSrc(full, files)
+    } else if (
+      (full.endsWith('.ts') || full.endsWith('.tsx')) &&
+      !full.endsWith('.test.ts') &&
+      !full.endsWith('.test.tsx') &&
+      !full.endsWith('.d.ts')
+    ) {
+      files.push(full)
+    }
+  }
+  return files
+}
+
+function stripPwaComments(src: string): string {
+  const noBlock = src.replace(/\/\*[\s\S]*?\*\//g, '')
+  return noBlock
+    .split('\n')
+    .map((line) => {
+      const trimmed = line.trimStart()
+      if (trimmed.startsWith('//')) return ''
+      const m = line.match(/(^|[^:])\/\/.*$/)
+      if (m && m.index !== undefined) {
+        return line.slice(0, m.index + (m[1]?.length ?? 0))
+      }
+      return line
+    })
+    .join('\n')
+}
+
+const PWA_SINK_REGEX =
+  /(?:console\.(?:log|warn|error|info|debug)|Sentry\.captureException|posthog\.capture)\s*\(/
+const PWA_BANNED_AUDIOPCM = /\baudioPcm\b/
+const PWA_BANNED_AUDIO_PCM = /\baudio_pcm\b/
+const PWA_BANNED_PCM_KEY = /(['"]pcm['"]\s*:|(?<![A-Za-z0-9_])pcm\s*:(?!:))/
+
+interface PwaOffender {
+  file: string
+  lineNumber: number
+  lineText: string
+  pattern: string
+}
+
+function scanPwaForBannedSinkLines(file: string): PwaOffender[] {
+  const raw = fs.readFileSync(file, 'utf8')
+  const stripped = stripPwaComments(raw)
+  const lines = stripped.split('\n')
+  const offenders: PwaOffender[] = []
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
+    if (!PWA_SINK_REGEX.test(line)) continue
+    if (PWA_BANNED_AUDIOPCM.test(line)) {
+      offenders.push({
+        file,
+        lineNumber: i + 1,
+        lineText: line,
+        pattern: 'audioPcm',
+      })
+    }
+    if (PWA_BANNED_AUDIO_PCM.test(line)) {
+      offenders.push({
+        file,
+        lineNumber: i + 1,
+        lineText: line,
+        pattern: 'audio_pcm',
+      })
+    }
+    if (PWA_BANNED_PCM_KEY.test(line)) {
+      offenders.push({
+        file,
+        lineNumber: i + 1,
+        lineText: line,
+        pattern: 'pcm:',
+      })
+    }
+  }
+  return offenders
+}
+
 describe('denylist parity — vigil-core ↔ vigil-pwa (GUARD-01 / T-127-01-C)', () => {
   it('GUARD-127-PARITY-SETS-EQUAL: BLOCKED_PROPERTY_NAMES Sets identical across workspaces', () => {
     const pwaSrc = readOrThrow(pwaPath, 'pwa')
@@ -101,5 +199,79 @@ describe('denylist parity — vigil-core ↔ vigil-pwa (GUARD-01 / T-127-01-C)',
     const coreSrc = readOrThrow(corePath, 'core')
     expect(pwaSrc).toMatch(/['"]audioPcm['"]/)
     expect(coreSrc).toMatch(/['"]audioPcm['"]/)
+  })
+})
+
+// ─── Phase 130 Plan 06 D-D2 — PWA log-sink leak detector ─────────────────────
+describe('D-D2 (Phase 130 Plan 06) — no log-sink call line in vigil-pwa/src/ contains audioPcm/audio_pcm/pcm:', () => {
+  it('D-D2.PWA: walk vigil-pwa/src/ and assert zero log-sink offenders', () => {
+    // here = __tests__ → up one → src
+    const pwaSrcRoot = path.join(here, '..')
+    // Safe-list — analytics/posthog.ts contains the banned keys as denylist
+    // Set entries but never logs them.
+    const safeList = new Set<string>([
+      path.join(pwaSrcRoot, 'analytics', 'posthog.ts'),
+      path.join(pwaSrcRoot, 'lib', 'sentry-redact.ts'),
+    ])
+    const files = walkPwaSrc(pwaSrcRoot).filter((f) => !safeList.has(f))
+    // Guard against silent path-resolution failures (T-127-01-C semantics).
+    expect(
+      files.length,
+      `vigil-pwa/src/ walk returned zero files — path resolution broken at ${pwaSrcRoot}`,
+    ).toBeGreaterThan(0)
+
+    const offenders: PwaOffender[] = []
+    for (const file of files) {
+      offenders.push(...scanPwaForBannedSinkLines(file))
+    }
+    expect(
+      offenders,
+      `D-D2 drift in vigil-pwa/src/: log-sink calls leaking banned key names:\n  ${offenders
+        .map((o) => `${o.file}:${o.lineNumber} [${o.pattern}] ${o.lineText.trim()}`)
+        .join('\n  ')}`,
+    ).toEqual([])
+  })
+
+  it('D-D2.PWA-COMMENT-HYGIENE: JSDoc / inline comments mentioning banned keys must NOT trip the detector', () => {
+    // Anti-trivial-pass smoke: comments-only banned-key references with a
+    // benign log-sink call should scan as zero offenders.
+    const fixture = `
+// audioPcm in a line comment — must NOT trip
+/**
+ * audio_pcm and pcm: in JSDoc — must NOT trip
+ */
+function ok() {
+  console.log('voice processed', { bytes: 100, t: Date.now() }) // trailing comment with pcm:
+  Sentry.captureException(new Error('boom'))
+  posthog.capture('voice_capture_completed', { stop_to_http_ms: 100 })
+}
+`
+    const stripped = stripPwaComments(fixture)
+    const lines = stripped.split('\n')
+    const offenders: string[] = []
+    for (const line of lines) {
+      if (!PWA_SINK_REGEX.test(line)) continue
+      if (
+        PWA_BANNED_AUDIOPCM.test(line) ||
+        PWA_BANNED_AUDIO_PCM.test(line) ||
+        PWA_BANNED_PCM_KEY.test(line)
+      ) {
+        offenders.push(line)
+      }
+    }
+    expect(
+      offenders,
+      `comment-hygiene failure — strip step did not remove JSDoc/line comments containing banned keys:\n  ${offenders.join('\n  ')}`,
+    ).toEqual([])
+  })
+
+  it('D-D2.PWA-PATTERNS-PRESENT: test file references audioPcm AND audio_pcm AND pcm: patterns (anti-trivial-pass)', () => {
+    // Acceptance criterion: the PWA-side test file must reference the three
+    // Phase 130 patterns. This is a self-grep of THIS test file's source.
+    const selfPath = path.join(here, 'denylist-parity.test.ts')
+    const src = fs.readFileSync(selfPath, 'utf8')
+    expect(src).toMatch(/audioPcm/)
+    expect(src).toMatch(/audio_pcm/)
+    expect(src).toMatch(/pcm:/)
   })
 })
