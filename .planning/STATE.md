@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: ready_to_plan
-stopped_at: Phase 128a complete (6/6) — ready to discuss Phase 128b
-last_updated: 2026-05-18T15:04:50.888Z
-last_activity: 2026-05-17 -- Phase 128a execution started
+status: planning
+stopped_at: Phase 130 context gathered
+last_updated: "2026-05-18T15:44:59.532Z"
+last_activity: 2026-05-18
 progress:
   total_phases: 12
-  completed_phases: 5
+  completed_phases: 6
   total_plans: 43
   completed_plans: 43
-  percent: 42
+  percent: 50
 ---
 
 # Project State
@@ -472,9 +472,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-16T21:16:03.058Z
-Stopped at: Phase 129.1 context gathered
-Resume file: .planning/phases/129.1-svcnow-revert-screenshot-pipeline/129.1-CONTEXT.md
+Last session: 2026-05-18T15:44:59.520Z
+Stopped at: Phase 130 context gathered
+Resume file: .planning/phases/130-voice-capture-full-implementation-scope-locked-by-128a/130-CONTEXT.md
 
 ## Operator Next Steps
 
