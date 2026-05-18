@@ -4,7 +4,7 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Completed 130-05-PLAN.md
-last_updated: "2026-05-18T19:00:10.876Z"
+last_updated: "2026-05-18T19:30:00.000Z"
 last_activity: 2026-05-18
 progress:
   total_phases: 12
@@ -487,9 +487,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-18T18:59:53.398Z
-Stopped at: Completed 130-05-PLAN.md
-Resume file: None
+Last session: 2026-05-18T19:30:00.000Z
+Stopped at: Phase 130 Plan 07 scaffold committed (130-HARDWARE-UAT.md); awaiting operator hardware UAT (prod migration 0023 + G2 round-trip / [NO MIC] / airplane-mode queue drain). Plan 07 NOT yet marked complete — operator wallclock + cross-device G2 verification is operator-only per [feedback_wallclock_checkpoint_exempt] + [feedback_loom_waived_g2_not_screen_mirrorable] auto-memories.
+Resume file: .planning/phases/130-voice-capture-full-implementation-scope-locked-by-128a/130-HARDWARE-UAT.md
 
 ## Operator Next Steps
 
