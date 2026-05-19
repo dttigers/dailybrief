@@ -30,6 +30,7 @@ import { execSync } from "node:child_process";
 import {
   mkdtempSync,
   readFileSync,
+  writeFileSync,
   mkdirSync,
   copyFileSync,
   existsSync,
@@ -249,6 +250,55 @@ describe("AGENT-LINUX-05 — installer idempotency", () => {
       existsSync(join(hookDir, "redaction-patterns.json")),
       false,
       "redaction-patterns.json must be removed on uninstall"
+    );
+  });
+
+  it("uninstall: anchored COMMAND_REGEX preserves decoy substring matches (CR-02 / T-134-I2)", () => {
+    // CR-02 regression guard: a hypothetical third-party hook whose command
+    // CONTAINS the substring `vigil-agent-bridge.sh` and `--event=` (e.g.
+    // a wrapper or watchdog) MUST survive uninstall. The previously
+    // unanchored regex would have deleted it; the anchored regex pins to
+    // line-start + literal `bash` + path ending in `/vigil-agent-bridge.sh`
+    // + allowlisted event name + line-end, so the decoy below cannot match.
+    //
+    // Runs after the prior uninstall test, so the fixture is in the
+    // 2-entry seed state. Splice a decoy in, re-install (adds vigil on top
+    // of decoy), then uninstall and assert the decoy SURVIVES.
+    const before = JSON.parse(readFileSync(settingsPath, "utf8"));
+    const decoyCommand =
+      "bash gsd-vigil-agent-bridge.sh-wrapper --event=foo --extra=bar";
+    before.hooks.SessionStart.push({
+      hooks: [{ type: "command", command: decoyCommand }],
+    });
+    writeFileSync(settingsPath, JSON.stringify(before, null, 2));
+
+    execSync(`node ${INSTALLER}`, {
+      env: { ...process.env, HOME: fakeHome },
+      stdio: "pipe",
+    });
+    execSync(`node ${INSTALLER} --uninstall`, {
+      env: { ...process.env, HOME: fakeHome },
+      stdio: "pipe",
+    });
+    const after = JSON.parse(readFileSync(settingsPath, "utf8"));
+    const stillHasDecoy = after.hooks.SessionStart.some(
+      (g: { hooks: Array<{ command: string }> }) =>
+        g.hooks.some((h) => h.command === decoyCommand),
+    );
+    assert.ok(
+      stillHasDecoy,
+      "decoy hook command containing 'vigil-agent-bridge.sh' substring must SURVIVE uninstall — anchored COMMAND_REGEX must not match it",
+    );
+    const hasVigil = after.hooks.SessionStart.some(
+      (g: { hooks: Array<{ command: string }> }) =>
+        g.hooks.some((h) =>
+          /\/vigil-agent-bridge\.sh\s+--event=/.test(h.command),
+        ),
+    );
+    assert.equal(
+      hasVigil,
+      false,
+      "vigil entries must still be removed by uninstall (sanity check the anchor still drops real entries)",
     );
   });
 });

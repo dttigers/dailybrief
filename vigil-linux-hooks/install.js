@@ -44,7 +44,13 @@ const SRC_FILES = [
   "redaction-patterns.json",
 ];
 const EVENTS = ["SessionStart", "UserPromptSubmit", "Stop"];
-const COMMAND_REGEX = /vigil-agent-bridge\.sh.*--event=/;
+// CR-02 fix: anchor to the EXACT command shape install.js writes (line 127:
+// `bash <path>/vigil-agent-bridge.sh --event=<EVENT>`). The previous regex
+// was unanchored and would have deleted any third-party hook whose command
+// merely contained the substring `vigil-agent-bridge.sh ... --event=` on
+// uninstall — a real T-134-I2 risk for operators with custom wrappers.
+const COMMAND_REGEX =
+  /^bash\s+\S+\/vigil-agent-bridge\.sh\s+--event=(SessionStart|UserPromptSubmit|Stop)\s*$/;
 
 const isUninstall = process.argv.includes("--uninstall");
 
