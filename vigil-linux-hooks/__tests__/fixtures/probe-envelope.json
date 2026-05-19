@@ -1,0 +1,18 @@
+{
+  "SessionStart": {
+    "session_id": "abc12345-0000-4000-8000-000000000001",
+    "cwd": "/home/morrillboss/dev/dailybrief",
+    "hook_event_name": "SessionStart"
+  },
+  "UserPromptSubmit": {
+    "session_id": "abc12345-0000-4000-8000-000000000002",
+    "cwd": "/home/morrillboss/dev/dailybrief",
+    "hook_event_name": "UserPromptSubmit",
+    "prompt": "help me refactor this function"
+  },
+  "Stop": {
+    "session_id": "abc12345-0000-4000-8000-000000000003",
+    "cwd": "/home/morrillboss/dev/dailybrief",
+    "hook_event_name": "Stop"
+  }
+}
