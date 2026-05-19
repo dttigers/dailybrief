@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: planning
-stopped_at: Phase 999.2 planning complete — ready to execute
-last_updated: "2026-05-19T21:30:00.000Z"
-last_activity: 2026-05-19
+stopped_at: Phase 999.2 context gathered
+last_updated: "2026-05-19T21:32:21.873Z"
+last_activity: 2026-05-19 — Plan 01 sequential execution completed through T3 checkpoint setup
 progress:
   total_phases: 13
-  completed_phases: 9
+  completed_phases: 10
   total_plans: 62
-  completed_plans: 61
-  percent: 69
+  completed_plans: 62
+  percent: 77
 ---
 
 # Project State
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 ## Current Position
 
-Phase: 999.2
-Plan: 999.2-01-PLAN.md (1/1) — drafted, plan-checker PASS
-Status: Ready to execute (`/gsd:execute-phase 999.2`)
-Last activity: 2026-05-19
+Phase: 999.2 (capturebar-multi-line-input-support) — EXECUTING
+Plan: 999.2-01-PLAN.md (1/1) — T1+T2 commits landed (`8c3992c`, `eb47bda`), T3 UAT runbook authored (`67358d3`)
+Status: Awaiting operator UAT sign-off on 8-vector runbook at `.planning/phases/999.2-capturebar-multi-line-input-support/999.2-UAT.md` (resume signal: `approved`). Vector 1 (Phase 115 UAT 2 paste replay) is the phase success criterion.
+Last activity: 2026-05-19 — Plan 01 sequential execution completed through T3 checkpoint setup
 
 **Plan 06 disposition:** `defer-bake-not-yet` — brctl removal plan parked; 7-day bake precondition unfulfillable until phase merges to main. Re-pickup criteria: merge-to-main + ≥7 days + operator regression confirmation. brctl shim retained as harmless belt-and-suspenders. See `999.1-06-BRCTL-REMOVAL.md` for full disposition log.
 
@@ -466,6 +466,7 @@ Recent (v3.7 closeout):
 - [Phase ?]: Phase 134-03: redaction is truncate-FIRST-then-binary-redact (CONTEXT D-R2); corpus D-R2 it-block pins 4KB-prompt-with-offset-2000-bearer NOT-redacted invariant
 - [Phase ?]: Phase 134 Plan 04: install.js uses async:true + timeout:5 on every spliced settings.json entry (Claude Code v2.1.87+ stdio-stall mitigation, RESEARCH Pitfall 1) — non-negotiable belt-and-suspenders with Plan 01 script-side stdio redirect
 - [Phase ?]: Phase 134 Plan 04: drift detector Rail 0 anti-trivial-pass guard explicitly references the FORBIDDEN literal ey[A-Za-z0-9_-]{20,} in a negative-membership assertion. Plan acceptance criterion line 311 was internally contradictory; resolved per Rule 1 (action body authoritative).
+- [Phase ?]: Phase 999.2 Plan 01: D-01..D-09 + 3 Discretion items honored in CaptureBar.tsx; useLayoutEffect+scrollHeight auto-grow recipe established; CaptureBar.test.tsx pattern adopts userEvent for paste/keyboard simulation per RESEARCH Pitfall 2
 
 ### Pending Todos
 

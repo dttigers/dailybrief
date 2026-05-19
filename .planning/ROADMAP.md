@@ -853,10 +853,10 @@ Plans (6 waves; same-wave plans run in parallel, across-wave plans run sequentia
 - CAP-MULTI-04: Empty-string and whitespace-only guards still apply (don't accept `"\n\n\n"` as a thought)
 - CAP-MULTI-05: Mobile keyboard return-key behavior matches the chosen submit semantic (`enterKeyHint="enter"`)
 
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 999.2-01-PLAN.md — Swap CaptureBar `<input>` → `<textarea>` with auto-grow, Cmd+Enter submit grammar, `enterKeyHint="enter"` mobile hint, and a new `CaptureBar.test.tsx` pinning CAP-MULTI-01..05 + D-04 + D-07.
+- [x] 999.2-01-PLAN.md — Swap CaptureBar `<input>` → `<textarea>` with auto-grow, Cmd+Enter submit grammar, `enterKeyHint="enter"` mobile hint, and a new `CaptureBar.test.tsx` pinning CAP-MULTI-01..05 + D-04 + D-07.
 
 **Context:** Phase 115 plan 115-03 fixed display-side rendering (`whitespace-pre-line` on `ThoughtRow.tsx:399 <p>`). Edit-mode `<textarea>` already preserves newlines (D-16, unchanged in 115). Only the capture entry point lags. Real-world trigger: user attempted to paste a three-line reflection during 115-HUMAN-UAT and the newlines silently disappeared — the `whitespace-pre-line` had nothing to render because the data never had newlines.
 
