@@ -36,10 +36,17 @@ check_ubiq_01_entitlement_embedded() {
 }
 
 # ---------- UBIQ-04: codesign verify ----------
+# Capture into a variable (instead of piping to grep -q) so we avoid SIGPIPE:
+# `grep -q` exits after first match, breaks the pipe, codesign returns
+# non-zero, pipefail flips the whole pipeline to non-zero, and `if !`
+# spuriously triggers FAIL even when the signature is valid on disk.
 check_ubiq_04_codesign_verify() {
   info "Check UBIQ-04: codesign --verify --verbose"
-  if ! codesign --verify --verbose "$MONITOR_APP" 2>&1 | grep -q 'valid on disk'; then
+  local verify_output
+  verify_output="$(codesign --verify --verbose "$MONITOR_APP" 2>&1 || true)"
+  if ! grep -q 'valid on disk' <<< "$verify_output"; then
     red "  FAIL — signature broken — most likely embedded.provisionprofile missing or added after 'codesign --deep'"
+    red "  Raw codesign output: $verify_output"
     FAIL=1
     return
   fi
