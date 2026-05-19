@@ -8,7 +8,7 @@ REPO_ROOT="$( cd "$SCRIPT_DIR/../../../../.." && pwd )"
 MONITOR_APP="$HOME/.local/bin/DailyBriefMonitor.app"
 MONITOR_LABEL="com.jamesonmorrill.dailybriefmonitor"
 MONITOR_LOG="$HOME/Library/Logs/DailyBrief/monitor-stderr.log"
-CONTAINER_ID_LITERAL="iCloud.com.jamesonmorrill.dailybriefmonitor"
+CONTAINER_ID_LITERAL="5H57ADQS8G.iCloud.com.jamesonmorrill.dailybriefmonitor"
 
 MODE="${1:---full}"
 FAIL=0
