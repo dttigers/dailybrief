@@ -825,10 +825,10 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 - UBIQ-05: LaunchAgent loads cleanly post-install; no TCC, keychain, or notarization regressions
 - UBIQ-06 (optional): remove the brctl fallback once UBIQ-01..05 are green
 
-**Plans:** 6 plans
+**Plans:** 1/6 plans executed
 
 Plans (6 waves; same-wave plans run in parallel, across-wave plans run sequentially):
-- [ ] 999.1-01-PLAN.md — Wave 1. Scaffold dry-run branch + verify-ubiquity.sh probe runner (final-success line `verify-ubiquity: all checks passed` locked) + gitignore for provisioning profile
+- [x] 999.1-01-PLAN.md — Wave 1. Scaffold dry-run branch + verify-ubiquity.sh probe runner (final-success line `verify-ubiquity: all checks passed` locked) + gitignore for provisioning profile
 - [ ] 999.1-02-PLAN.md — Wave 2 (depends on 01). Operator portal work (App ID iCloud, container, Developer ID profile) + rollback rehearsal; includes container-fallback handoff procedure if Open Question 4 fires
 - [ ] 999.1-03-PLAN.md — Wave 3 (depends on 02). Entitlements split (.app gets ubiquity, bare binary empty), install.sh profile embed + race-mitigation sleep + anchored bare-binary entitlements rename, UBIQ-02 startup NSLog at top of FolderWatcherService.start()
 - [ ] 999.1-04-PLAN.md — Wave 4 (depends on 03). Install + UBIQ-01/02/04/05 probe sweep on dry-run branch + UpdateService re-sign cross-check
