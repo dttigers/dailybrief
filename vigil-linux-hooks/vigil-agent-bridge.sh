@@ -106,13 +106,20 @@ emit_event() {
   # ── T-134-A2 / RESEARCH Pattern 4: fire-and-forget curl ──────────────────
   # Belt-and-suspenders against Claude Code v2.1.87+ stdio inheritance bug
   # (anthropics/claude-code#43123): nohup + full stdio redirect + disown.
+  #
+  # ── T-134-A1 (CR-01 fix): Authorization header off argv ──────────────────
+  # Passing the bearer via --header on the command line leaks the token to
+  # /proc/<pid>/cmdline for the lifetime of the curl process. We pipe the
+  # Authorization header to curl on stdin via `--config -` instead — argv
+  # remains secret-free while ps/cmdline is inspectable.
   nohup curl \
     --max-time 2 --silent --output /dev/null --fail \
-    --header "Authorization: Bearer $VIGIL_API_KEY" \
+    --config - \
     --header "Content-Type: application/json" \
     --data "$body" \
     "$VIGIL_API_URL/v1/agent-events" \
-    </dev/null >/dev/null 2>&1 &
+    <<< "header = \"Authorization: Bearer $VIGIL_API_KEY\"" \
+    >/dev/null 2>&1 &
   disown
 }
 

@@ -123,6 +123,21 @@ describe("AGENT-LINUX-04 — fail-safe posture (exit 0 + zero stderr)", () => {
     },
   );
 
+  it("hook source must NOT pass VIGIL_API_KEY via curl --header on argv (T-134-A1 / CR-01)", () => {
+    // Regression guard for CR-01: passing Authorization on curl's CLI argv
+    // exposes the bearer token to /proc/<pid>/cmdline for every local user.
+    // The fix routes the header through curl's --config - mechanism on
+    // stdin. This grep catches any future commit that re-introduces an
+    // argv-based --header carrying the API key.
+    const src = readFileSync(HOOK_PATH, "utf8");
+    const argvHeaderRegex = /--header\s+["'][^"']*Authorization[^"']*\$\{?VIGIL_API_KEY\}?/;
+    assert.equal(
+      argvHeaderRegex.test(src),
+      false,
+      "vigil-agent-bridge.sh must NOT pass VIGIL_API_KEY via curl --header on argv — use --config - on stdin instead (CR-01 fix)",
+    );
+  });
+
   it("hook source contains zero unconditional echo/printf to terminal (T-134-A1)", () => {
     // Source-grep AGENT-LINUX-04 / T-134-A1 gate. Scan line-by-line; any
     // `echo` or `printf` invocation that is NOT one of the following is a fail:
