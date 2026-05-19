@@ -2,8 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <!-- CloudKit entitlements removed 2026-04-09 (Phase 58): dead code, -->
-    <!-- incompatible with Developer ID signing. See 58-RESEARCH.md      -->
-    <!-- CRITICAL BLOCKER section for full rationale.                    -->
+    <!-- CloudKit entitlements removed 2026-04-09 (Phase 58): dead code,    -->
+    <!-- incompatible with Developer ID signing without provisioning.       -->
+    <!--                                                                    -->
+    <!-- Ubiquity (iCloud Drive — different entitlement family from         -->
+    <!-- CloudKit) restored 2026-05-19 (Phase 999.1) to enable native       -->
+    <!-- startDownloadingUbiquitousItem on iCloud Notebook HEIC stubs.      -->
+    <!-- Authorized by embedded.provisionprofile. See 999.1-RESEARCH.md.    -->
+    <key>com.apple.developer.ubiquity-container-identifiers</key>
+    <array>
+        <string>iCloud.com.jamesonmorrill.dailybriefmonitor</string>
+    </array>
 </dict>
 </plist>

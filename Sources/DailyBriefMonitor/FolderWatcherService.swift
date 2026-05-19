@@ -92,6 +92,13 @@ public actor FolderWatcherService {
 
     /// Starts directory watching. If `AppConfig.FolderWatchingConfig.enabled` is false this is a no-op.
     public func start() {
+        // Phase 999.1 UBIQ-02: log ubiquity container URL unconditionally at startup,
+        // BEFORE the config.enabled guard, so the entitlement probe fires on every
+        // service start regardless of folder-watching config. Plan 04 verify-ubiquity.sh
+        // check_ubiq_02_startup_log greps for "Vigil: ubiquity container = /Users" to
+        // confirm the entitlement is live. A "nil" result means entitlement is claimed
+        // but not authorized by the provisioning profile.
+        NSLog("Vigil: ubiquity container = %@", FileManager.default.url(forUbiquityContainerIdentifier: nil)?.path ?? "nil")
         guard config.enabled else {
             NSLog("FolderWatcherService: folder watching is disabled in config, skipping start")
             return

@@ -57,6 +57,30 @@ fi
 echo "  Signing identity: $IDENTITY"
 echo ""
 
+# ========================================================================
+# Phase 999.1 — Provisioning profile guard (D-03)
+# ------------------------------------------------------------------------
+# The DailyBriefMonitor.app requires a Developer ID Provisioning Profile to
+# authorize the com.apple.developer.ubiquity-container-identifiers entitlement.
+# Without this profile, amfid will kill the process on launch with -67050.
+# Mirror the cert-guard shape above: hard fail, remediation message, exit 1.
+# ========================================================================
+if [[ ! -f "$REPO_DIR/Entitlements/embedded.provisionprofile" ]]; then
+    echo "ERROR: $REPO_DIR/Entitlements/embedded.provisionprofile missing." >&2
+    echo "" >&2
+    echo "Download from developer.apple.com:" >&2
+    echo "  Certificates, IDs & Profiles → Profiles → +" >&2
+    echo "  Distribution → Developer ID → App ID com.jamesonmorrill.dailybriefmonitor" >&2
+    echo "  Save as: Entitlements/embedded.provisionprofile" >&2
+    echo "" >&2
+    echo "Then re-run: ./Scripts/install.sh" >&2
+    echo "" >&2
+    echo "(This is a hard fail — the ubiquity entitlement requires an embedded" >&2
+    echo " provisioning profile or amfid kills the process on launch. See" >&2
+    echo " Entitlements/embedded.provisionprofile.example.txt for the full flow.)" >&2
+    exit 1
+fi
+
 # 0. Clean up old CLI LaunchAgent (scheduling now built into monitor)
 if [ -f "$OLD_CLI_PLIST" ]; then
     echo "Removing old CLI LaunchAgent..."
@@ -196,6 +220,40 @@ codesign --force \
          --options runtime \
          "$MONITOR_PLUGINS/$SAFARI_APPEX_NAME"
 
+# Phase 999.1: Embed Developer ID Provisioning Profile (authorizes ubiquity entitlement).
+# MUST happen BEFORE outer `codesign --deep` below so the seal covers it.
+# See .planning/phases/999.1-restore-ubiquity-entitlement-for-icloud-download/999.1-RESEARCH.md
+# Pitfall 3 for why order matters.
+PROFILE_SRC="$REPO_DIR/Entitlements/embedded.provisionprofile"
+if [[ ! -f "$PROFILE_SRC" ]]; then
+    echo "ERROR: $PROFILE_SRC missing." >&2
+    echo "" >&2
+    echo "Download from developer.apple.com:" >&2
+    echo "  Certificates, IDs & Profiles → Profiles → +" >&2
+    echo "  Distribution → Developer ID → App ID com.jamesonmorrill.dailybriefmonitor" >&2
+    echo "  Save as: Entitlements/embedded.provisionprofile" >&2
+    echo "" >&2
+    echo "See .planning/phases/999.1-restore-ubiquity-entitlement-for-icloud-download/README" >&2
+    exit 1
+fi
+
+# Sanity-check the profile: CMS-decodable + lists ubiquity entitlement.
+PROFILE_TMP=$(mktemp -t embedded.XXXXXX.plist)
+trap 'rm -f "$PROFILE_TMP"' EXIT
+if ! security cms -D -i "$PROFILE_SRC" > "$PROFILE_TMP" 2>/dev/null; then
+    echo "ERROR: $PROFILE_SRC is not a valid CMS-signed profile." >&2
+    exit 1
+fi
+if ! /usr/libexec/PlistBuddy \
+        -c "Print :Entitlements:com.apple.developer.ubiquity-container-identifiers" \
+        "$PROFILE_TMP" >/dev/null 2>&1; then
+    echo "ERROR: profile does not authorize ubiquity-container-identifiers." >&2
+    exit 1
+fi
+
+cp -f "$PROFILE_SRC" "$MONITOR_APP/Contents/embedded.provisionprofile"
+echo "  Embedded provisioning profile."
+
 # Sign the .app bundle (signs the entire bundle including binary).
 # --deep signs embedded frameworks/helpers if any exist in future.
 # --options runtime enables the hardened runtime — REQUIRED for notarization.
@@ -209,12 +267,26 @@ codesign --deep --force \
          "$MONITOR_APP"
 codesign --verify --verbose "$MONITOR_APP" 2>&1 \
     || { echo "ERROR: DailyBriefMonitor.app signature verification failed." >&2; exit 1; }
+# Phase 999.1: Verify the ubiquity entitlement survived the codesign --deep seal.
+# codesign --deep re-seals nested bundles; if the profile or entitlements file was
+# wrong, the key silently drops. Fail hard here so the operator knows immediately.
+EMBEDDED_ENTITLEMENTS=$(codesign -d --entitlements - "$MONITOR_APP" 2>/dev/null)
+if ! grep -q "com.apple.developer.ubiquity-container-identifiers" <<< "$EMBEDDED_ENTITLEMENTS"; then
+    echo "ERROR: ubiquity entitlement did not survive signing." >&2
+    exit 1
+fi
+echo "  Ubiquity entitlement embedded + verified."
 # Also sign the bare binary copy
+# Phase 999.1 Pitfall 6 Option 1: bare binary at $INSTALL_DIR has no
+# .app/Contents/embedded.provisionprofile neighbor (OS only looks there).
+# Signing with ubiquity entitlement here would cause amfid -67050 kills.
+# UpdateService.installBuiltBinaries() at UpdateService.swift:148 COPIES
+# this binary without re-signing — so this signing sticks on every Update.
 codesign --force \
          --sign "$IDENTITY" \
          --options runtime \
          --identifier "com.jamesonmorrill.dailybriefmonitor" \
-         --entitlements "$REPO_DIR/Entitlements/DailyBriefMonitor.entitlements" \
+         --entitlements "$REPO_DIR/Entitlements/DailyBriefMonitor-bare.entitlements" \
          "$INSTALL_DIR/DailyBriefMonitor"
 echo "  DailyBriefMonitor.app signed + verified."
 
@@ -279,6 +351,8 @@ echo "Loading LaunchAgent..."
 GUI_DOMAIN="gui/$(id -u)"
 # Bootout existing if present (ignore errors if not loaded)
 launchctl bootout "$GUI_DOMAIN/$MONITOR_LABEL" 2>/dev/null || true
+# Phase 999.1: pause for amfid validation of new profile-bearing bundle (RESEARCH Open Question 3 — Phase 134 debug doc one-time I/O 5 error precedent).
+sleep 1
 launchctl bootstrap "$GUI_DOMAIN" "$MONITOR_PLIST"
 
 # 8. Verify LaunchAgent loaded
