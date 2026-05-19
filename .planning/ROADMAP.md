@@ -825,7 +825,15 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 - UBIQ-05: LaunchAgent loads cleanly post-install; no TCC, keychain, or notarization regressions
 - UBIQ-06 (optional): remove the brctl fallback once UBIQ-01..05 are green
 
-**Plans:** 8/10 plans executed
+**Plans:** 6 plans
+
+Plans:
+- [ ] 999.1-01-PLAN.md — Scaffold dry-run branch + verify-ubiquity.sh probe runner + gitignore for provisioning profile
+- [ ] 999.1-02-PLAN.md — Operator portal work (App ID iCloud, container, Developer ID profile) + rollback rehearsal
+- [ ] 999.1-03-PLAN.md — Entitlements split (.app gets ubiquity, bare binary empty), install.sh profile embed + race-mitigation sleep, UBIQ-02 startup NSLog
+- [ ] 999.1-04-PLAN.md — Install + UBIQ-01/02/04/05 probe sweep on dry-run branch
+- [ ] 999.1-05-PLAN.md — Hardware UAT: 2× HEIC drop validating UBIQ-03 native materialization
+- [ ] 999.1-06-PLAN.md — DEFERRED ≥7 days post-merge: optional UBIQ-06 brctl shim removal with go/no-go checkpoint
 
 **Context:** Full empirical diagnosis, Phase 58 rationale, and all five fix options evaluated in `.planning/debug/icloud-photos-never-download.md` (committed in `4f71366`). Key nuance: CloudKit entitlements (`icloud-services`, `icloud-container-identifiers`) that Phase 58 correctly removed are a **different entitlement family** from ubiquity — Phase 58's "dead code, incompatible with Developer ID" rationale applies to CloudKit only, not to ubiquity.
 
