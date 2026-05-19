@@ -149,4 +149,103 @@ describe("AGENT-LINUX-01/02 — emit_event body builder shape", () => {
     assert.equal(stdout, "", "no API key → hook exits 0 with no stdout");
     assert.equal(stderr, "", "no API key → hook exits 0 with no stderr (D-A4)");
   });
+
+  // ── Plan 134-02 Task 2 — per-event probe assertions ──────────────────────────
+  // The two tests below pin the AGENT-LINUX-01 (SessionStart → heartbeat /
+  // "session started") and AGENT-LINUX-02 (Stop → task_complete /
+  // "turn complete") wire-up that Plan 02 Task 1 locked into the case dispatch.
+  // Each test also re-asserts the KNOWN_FIELDS-membership regression and a
+  // dedicated D-P3 guard that `cwd` MUST NOT appear in the body (an unknown
+  // field would 400-reject server-side under Phase 121 strict mode).
+  const KNOWN_FIELDS_LIST = [
+    "session_id",
+    "event",
+    "message",
+    "timestamp",
+    "label",
+    "host",
+    "exit_code",
+    "client_event_id",
+  ];
+
+  it("SessionStart probe — produces heartbeat body with static message", () => {
+    const { body, stdout } = captureBody("SessionStart");
+    assert.ok(
+      body && typeof body === "object",
+      `body must be a JSON object — got stdout=${JSON.stringify(stdout)}`,
+    );
+    // AGENT-LINUX-01: SessionStart → heartbeat with the static message
+    // "session started" per RESEARCH §Open Question 1 + ROADMAP intent.
+    assert.equal(body.event, "heartbeat", "SessionStart event MUST be heartbeat");
+    assert.equal(
+      body.message,
+      "session started",
+      'SessionStart message MUST be the static "session started" literal',
+    );
+    // session_id mirrors the STDIN envelope's session_id field (D-I1).
+    assert.equal(
+      body.session_id,
+      "abc12345-0000-4000-8000-000000000001",
+      "session_id MUST equal the fixture's session_id verbatim",
+    );
+    // label = basename(cwd) per D-P4. Fixture cwd = /home/morrillboss/dev/dailybrief.
+    assert.equal(body.label, "dailybrief", "label MUST be basename(cwd) = 'dailybrief'");
+    // KNOWN_FIELDS membership — no overflow keys outside the Phase 121 Set.
+    for (const k of Object.keys(body)) {
+      assert.ok(
+        KNOWN_FIELDS_LIST.includes(k),
+        `unknown field "${k}" would 400-reject server-side (KNOWN_FIELDS in agent-events.ts:34-43)`,
+      );
+    }
+    // D-P3 regression guard: `cwd` MUST NOT be on the body. Phase 121 strict
+    // mode rejects unknown top-level keys; `cwd` is informational input only.
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(body, "cwd"),
+      false,
+      'body MUST NOT contain key "cwd" — would 400-reject under Phase 121 strict mode',
+    );
+  });
+
+  it("Stop probe — produces task_complete body with static message", () => {
+    const { body, stdout } = captureBody("Stop");
+    assert.ok(
+      body && typeof body === "object",
+      `body must be a JSON object — got stdout=${JSON.stringify(stdout)}`,
+    );
+    // AGENT-LINUX-02: Stop hook fires per assistant turn → emits one
+    // task_complete event with the static message "turn complete" (D-I2 + ROADMAP).
+    assert.equal(
+      body.event,
+      "task_complete",
+      "Stop event MUST be task_complete (Phase 121 VALID_EVENTS)",
+    );
+    assert.equal(
+      body.message,
+      "turn complete",
+      'Stop message MUST be the static "turn complete" literal',
+    );
+    assert.equal(typeof body.session_id, "string");
+    assert.ok(
+      (body.session_id as string).length > 0,
+      "session_id must be non-empty",
+    );
+    assert.match(
+      body.client_event_id,
+      /^[0-9a-f-]{36}$/,
+      "client_event_id MUST be lowercase-hex UUID v4 shape",
+    );
+    // KNOWN_FIELDS membership — no overflow keys.
+    for (const k of Object.keys(body)) {
+      assert.ok(
+        KNOWN_FIELDS_LIST.includes(k),
+        `unknown field "${k}" would 400-reject server-side (KNOWN_FIELDS in agent-events.ts:34-43)`,
+      );
+    }
+    // D-P3 regression guard: no `cwd` on the body.
+    assert.equal(
+      Object.prototype.hasOwnProperty.call(body, "cwd"),
+      false,
+      'body MUST NOT contain key "cwd" — would 400-reject under Phase 121 strict mode',
+    );
+  });
 });
