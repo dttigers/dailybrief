@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: ready_to_plan
-stopped_at: Phase 999.1 complete (6/6) — ready to discuss Phase 999.2
-last_updated: 2026-05-19T20:46:47.782Z
+status: planning
+stopped_at: Phase 999.2 context gathered
+last_updated: "2026-05-19T20:54:58.006Z"
 last_activity: 2026-05-19
 progress:
   total_phases: 13
@@ -502,9 +502,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-19T20:38:21.101Z
-Stopped at: Phase 134 context gathered
-Resume file: None
+Last session: 2026-05-19T20:54:57.994Z
+Stopped at: Phase 999.2 context gathered
+Resume file: .planning/phases/999.2-capturebar-multi-line-input-support/999.2-CONTEXT.md
 
 ## Operator Next Steps
 
