@@ -10,14 +10,20 @@
     <!-- startDownloadingUbiquitousItem on iCloud Notebook HEIC stubs.      -->
     <!-- Authorized by embedded.provisionprofile. See 999.1-RESEARCH.md.    -->
     <!--                                                                    -->
-    <!-- 2026-05-19 hotfix: container ID must be team-prefixed literal      -->
-    <!-- (5H57ADQS8G.iCloud.<bundle>) to match Developer ID profiles'       -->
-    <!-- wildcard ubiquity entitlement (5H57ADQS8G.*). The friendly         -->
-    <!-- iCloud.<bundle> form works for Mac App Store profiles (literal     -->
-    <!-- entries) but not Developer ID (wildcard) — amfid -413 if missing.  -->
-    <!-- See Plan 04 hotfix commit for the failure-mode evidence.           -->
+    <!-- 2026-05-19 hotfix: container array must include BOTH forms.        -->
+    <!-- amfid (Developer ID wildcard match) needs team-prefixed literal    -->
+    <!-- '5H57ADQS8G.iCloud.<bundle>' to match the profile's 5H57ADQS8G.*.  -->
+    <!-- bird/cloudd (iCloud daemon, container lookup for                   -->
+    <!-- FileManager.url(forUbiquityContainerIdentifier:)) needs the        -->
+    <!-- friendly 'iCloud.<bundle>' form so the on-disk container at        -->
+    <!-- ~/Library/Mobile Documents/iCloud~com~jamesonmorrill~dailybriefmonitor -->
+    <!-- resolves. Empirically: team-prefixed-only passes amfid but bird    -->
+    <!-- never registers the app (no entry in System Settings → iCloud     -->
+    <!-- → Apps Syncing to iCloud Drive). Listing both entries satisfies    -->
+    <!-- both gates. See 999.1-04 hotfix evidence.                          -->
     <key>com.apple.developer.ubiquity-container-identifiers</key>
     <array>
+        <string>iCloud.com.jamesonmorrill.dailybriefmonitor</string>
         <string>5H57ADQS8G.iCloud.com.jamesonmorrill.dailybriefmonitor</string>
     </array>
 </dict>
