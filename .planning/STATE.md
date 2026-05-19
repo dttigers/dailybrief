@@ -2,9 +2,9 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: verifying
-stopped_at: Phase 134 context gathered
-last_updated: "2026-05-19T20:38:21.112Z"
+status: ready_to_plan
+stopped_at: Phase 999.1 complete (6/6) — ready to discuss Phase 999.2
+last_updated: 2026-05-19T20:46:47.782Z
 last_activity: 2026-05-19
 progress:
   total_phases: 13
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 999.1 — restore-ubiquity-entitlement-for-icloud-download
+**Current focus:** Phase 999.2 — capturebar multi line input support
 
 ## Current Position
 
-Phase: 999.1 (restore-ubiquity-entitlement-for-icloud-download) — ALL 6 PLANS PROCESSED
-Plan: 6 of 6 (Plan 06 deferred: defer-bake-not-yet)
-Status: Phase complete — all plans accounted for; Phase 999.1 ready to merge to main
+Phase: 999.2
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-05-19
 
 **Plan 06 disposition:** `defer-bake-not-yet` — brctl removal plan parked; 7-day bake precondition unfulfillable until phase merges to main. Re-pickup criteria: merge-to-main + ≥7 days + operator regression confirmation. brctl shim retained as harmless belt-and-suspenders. See `999.1-06-BRCTL-REMOVAL.md` for full disposition log.
