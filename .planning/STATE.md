@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: executing
-stopped_at: Phase 134 context gathered
-last_updated: "2026-05-19T01:23:33.056Z"
+status: ready_to_plan
+stopped_at: Phase 134 complete (5/5) — ready to discuss Phase 999.1
+last_updated: 2026-05-19T16:53:30.690Z
 last_activity: 2026-05-19
 progress:
   total_phases: 13
   completed_phases: 7
   total_plans: 55
-  completed_plans: 54
+  completed_plans: 55
   percent: 54
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 134 — linux-claude-code-vigil-core-agent-events-bridge-new-2026-05
+**Current focus:** Phase 999.1 — restore ubiquity entitlement for icloud download
 
 ## Current Position
 
-Phase: 134 (linux-claude-code-vigil-core-agent-events-bridge-new-2026-05) — EXECUTING
-Plan: 5 of 5
-Status: Ready to execute
+Phase: 999.1
+Plan: Not started
+Status: Ready to plan
 Last activity: 2026-05-19
 
 ## Phase 129 Closure (2026-05-16) — PARTIAL-COMPLETE
