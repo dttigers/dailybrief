@@ -18,6 +18,12 @@
 # ── D-A1: Auth-gate early-exit — silent no-op when VIGIL_API_KEY unset/empty ──
 [ -z "${VIGIL_API_KEY:-}" ] && exit 0
 
+# ── D-R1..D-R3: Source the sourceable redactor (provides redact_prompt) ───────
+# Placed AFTER the auth gate so the source doesn't run on the silent-no-op path
+# but BEFORE case dispatch so UserPromptSubmit can call redact_prompt directly.
+# patterns loaded from: redaction-patterns.json  (Rail 2 drift-detector pin)
+source "$(dirname "$0")/redact.sh"
+
 # ── D-N4: Argument parse (--event=<X> flag) ───────────────────────────────────
 EVENT_TYPE="${1#--event=}"
 case "$EVENT_TYPE" in
@@ -116,9 +122,17 @@ case "$EVENT_TYPE" in
     emit_event "heartbeat" "session started"
     ;;
   UserPromptSubmit)
-    # Wave 1 stub — Plan 02 wires real redacted-prompt message. For now emit
-    # a generic heartbeat (no prompt content) so the scaffold is exercisable.
-    emit_event "heartbeat" "prompt submitted"
+    # AGENT-LINUX-03: redact then emit. redact_prompt truncates to <=80 chars
+    # FIRST and then regex-matches the truncated slice (CONTEXT D-R2 ordering).
+    # Any denylist match -> "[redacted: contains sensitive pattern]" literal;
+    # clean prompts pass through as the truncated content. Empty prompts emit
+    # a bare heartbeat with no message key (per emit_event's empty-arg behavior).
+    if [ -n "$PROMPT" ]; then
+      REDACTED="$(redact_prompt "$PROMPT")"
+      emit_event "heartbeat" "$REDACTED"
+    else
+      emit_event "heartbeat"
+    fi
     ;;
   Stop)
     emit_event "task_complete" "turn complete"
