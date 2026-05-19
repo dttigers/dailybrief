@@ -839,21 +839,24 @@ Plans (6 waves; same-wave plans run in parallel, across-wave plans run sequentia
 
 **Depends on:** Nothing — independent of all server/PWA work.
 
-### Phase 999.2: CaptureBar — support multi-line input (BACKLOG)
+### Phase 999.2: CaptureBar — support multi-line input
 
 **Goal:** Pasting or typing multi-line text into the Thoughts capture bar preserves newlines instead of collapsing to a single line. Display side already supports multi-line via Phase 115 POLISH-01 (`whitespace-pre-line` on `ThoughtRow.tsx <p>`); this phase fixes the capture side so the data actually carries `\n` chars into the DB.
 
-**Why it's in backlog (not active):** Surfaced as a real user-visible gap during Phase 115 UAT 2 (2026-04-28) — pasting `line one\nline two\nline three` into [CaptureBar.tsx:57](../../vigil-pwa/src/components/CaptureBar.tsx#L57) collapsed to one line because the element is `<input>`, which strips newlines on paste by HTML spec. Phase 115 POLISH-01 D-16 explicitly left capture-side untouched. Not blocking — `<textarea>` edit-mode already produces real multi-line thoughts that render correctly via 115-03 — so capture-side parity can wait.
+**Promoted from backlog:** 2026-05-19 — surfaced as a real user-visible gap during Phase 115 UAT 2 (2026-04-28); pasting `line one\nline two\nline three` into [CaptureBar.tsx:57](../../vigil-pwa/src/components/CaptureBar.tsx#L57) collapsed to one line because the element is `<input>`, which strips newlines on paste by HTML spec. Phase 115 POLISH-01 D-16 explicitly left capture-side untouched. Now active because `<textarea>` edit-mode is fully validated in production and capture-side parity is the natural next move.
 
-**Requirements:** TBD — candidates:
+**Requirements:** CAP-MULTI-01, CAP-MULTI-02, CAP-MULTI-03, CAP-MULTI-04, CAP-MULTI-05
 
-- CAP-MULTI-01: CaptureBar element accepts multi-line input (likely swap `<input>` → `<textarea>` with auto-grow + Enter-vs-Cmd+Enter submit semantics)
+- CAP-MULTI-01: CaptureBar element accepts multi-line input (swap `<input>` → `<textarea>` with auto-grow + plain-Enter newline / Cmd+Enter submit semantics)
 - CAP-MULTI-02: Pasted multi-line text preserves newlines into the persisted thought body
-- CAP-MULTI-03: Submit affordance unambiguous (Enter inserts newline OR submits — not both; pick one and document)
+- CAP-MULTI-03: Submit affordance unambiguous (Save button + Cmd/Ctrl+Enter; plain Enter inserts newline)
 - CAP-MULTI-04: Empty-string and whitespace-only guards still apply (don't accept `"\n\n\n"` as a thought)
-- CAP-MULTI-05: Mobile keyboard return-key behavior matches the chosen submit semantic
+- CAP-MULTI-05: Mobile keyboard return-key behavior matches the chosen submit semantic (`enterKeyHint="enter"`)
 
-**Plans:** 0 plans — promote with `/gsd-review-backlog` when ready to plan.
+**Plans:** 1 plan
+
+Plans:
+- [ ] 999.2-01-PLAN.md — Swap CaptureBar `<input>` → `<textarea>` with auto-grow, Cmd+Enter submit grammar, `enterKeyHint="enter"` mobile hint, and a new `CaptureBar.test.tsx` pinning CAP-MULTI-01..05 + D-04 + D-07.
 
 **Context:** Phase 115 plan 115-03 fixed display-side rendering (`whitespace-pre-line` on `ThoughtRow.tsx:399 <p>`). Edit-mode `<textarea>` already preserves newlines (D-16, unchanged in 115). Only the capture entry point lags. Real-world trigger: user attempted to paste a three-line reflection during 115-HUMAN-UAT and the newlines silently disappeared — the `whitespace-pre-line` had nothing to render because the data never had newlines.
 
