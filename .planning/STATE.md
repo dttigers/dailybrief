@@ -4,13 +4,13 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Phase 134 context gathered
-last_updated: "2026-05-19T01:15:17.387Z"
+last_updated: "2026-05-19T01:23:33.056Z"
 last_activity: 2026-05-19
 progress:
   total_phases: 13
   completed_phases: 7
   total_plans: 55
-  completed_plans: 53
+  completed_plans: 54
   percent: 54
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 134 (linux-claude-code-vigil-core-agent-events-bridge-new-2026-05) — EXECUTING
-Plan: 4 of 5
+Plan: 5 of 5
 Status: Ready to execute
 Last activity: 2026-05-19
 
@@ -165,6 +165,7 @@ Last activity: 2026-05-16
 | Phase 134 P01 | 12min | 2 tasks | 6 files |
 | Phase 134 P02 | 3min | 2 tasks | 1 files |
 | Phase 134 P03 | 10min | 2 tasks | 3 files |
+| Phase 134 P04 | 15min | 2 tasks | 6 files |
 
 ## Deferred Items
 
@@ -459,6 +460,8 @@ Recent (v3.7 closeout):
 - [Phase ?]: Plan 134-02 Task 1 was a no-op in source — Plan 01 over-delivered on the case-dispatch wiring; Plan 02 work was purely test-side contract pinning via 2 new probe it-blocks in body-builder.test.ts.
 - [Phase ?]: Phase 134-03: JWT regex threshold authoritatively {10,} per RESEARCH Pitfall 4 — corpus pins offset-68 boundary as regression guard
 - [Phase ?]: Phase 134-03: redaction is truncate-FIRST-then-binary-redact (CONTEXT D-R2); corpus D-R2 it-block pins 4KB-prompt-with-offset-2000-bearer NOT-redacted invariant
+- [Phase ?]: Phase 134 Plan 04: install.js uses async:true + timeout:5 on every spliced settings.json entry (Claude Code v2.1.87+ stdio-stall mitigation, RESEARCH Pitfall 1) — non-negotiable belt-and-suspenders with Plan 01 script-side stdio redirect
+- [Phase ?]: Phase 134 Plan 04: drift detector Rail 0 anti-trivial-pass guard explicitly references the FORBIDDEN literal ey[A-Za-z0-9_-]{20,} in a negative-membership assertion. Plan acceptance criterion line 311 was internally contradictory; resolved per Rule 1 (action body authoritative).
 
 ### Pending Todos
 
@@ -495,7 +498,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-19T01:14:58.192Z
+Last session: 2026-05-19T01:23:27.135Z
 Stopped at: Phase 134 context gathered
 Resume file: None
 
