@@ -162,6 +162,18 @@ cat > "$MONITOR_APP/Contents/Info.plist" <<INFOPLIST
     <true/>
     <key>NSSpeechRecognitionUsageDescription</key>
     <string>Vigil transcribes voice notes you drop into the watched folder so they can be captured as thoughts.</string>
+    <key>NSUbiquitousContainers</key>
+    <dict>
+        <key>iCloud.com.jamesonmorrill.dailybriefmonitor</key>
+        <dict>
+            <key>NSUbiquitousContainerIsDocumentScopePublic</key>
+            <true/>
+            <key>NSUbiquitousContainerName</key>
+            <string>DailyBriefMonitor</string>
+            <key>NSUbiquitousContainerSupportedFolderLevels</key>
+            <string>Any</string>
+        </dict>
+    </dict>
 </dict>
 </plist>
 INFOPLIST
