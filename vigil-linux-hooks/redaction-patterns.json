@@ -1,0 +1,11 @@
+{
+  "patterns": [
+    "api[_-]?key",
+    "bearer",
+    "password",
+    "vk_",
+    "ey[A-Za-z0-9_-]{10,}",
+    "[A-Za-z0-9+/]{40,}={0,2}"
+  ],
+  "max_length": 80
+}
