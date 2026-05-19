@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: planning
-stopped_at: Phase 999.2 context gathered
-last_updated: "2026-05-19T20:54:58.006Z"
+stopped_at: Phase 999.2 planning complete — ready to execute
+last_updated: "2026-05-19T21:30:00.000Z"
 last_activity: 2026-05-19
 progress:
   total_phases: 13
   completed_phases: 9
-  total_plans: 61
+  total_plans: 62
   completed_plans: 61
   percent: 69
 ---
@@ -26,8 +26,8 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 999.2
-Plan: Not started
-Status: Ready to plan
+Plan: 999.2-01-PLAN.md (1/1) — drafted, plan-checker PASS
+Status: Ready to execute (`/gsd:execute-phase 999.2`)
 Last activity: 2026-05-19
 
 **Plan 06 disposition:** `defer-bake-not-yet` — brctl removal plan parked; 7-day bake precondition unfulfillable until phase merges to main. Re-pickup criteria: merge-to-main + ≥7 days + operator regression confirmation. brctl shim retained as harmless belt-and-suspenders. See `999.1-06-BRCTL-REMOVAL.md` for full disposition log.
