@@ -839,7 +839,7 @@ Plans (6 waves; same-wave plans run in parallel, across-wave plans run sequentia
 
 **Depends on:** Nothing — independent of all server/PWA work.
 
-### Phase 999.2: CaptureBar — support multi-line input
+### Phase 999.2: CaptureBar — support multi-line input ✅ COMPLETE (2026-05-19)
 
 **Goal:** Pasting or typing multi-line text into the Thoughts capture bar preserves newlines instead of collapsing to a single line. Display side already supports multi-line via Phase 115 POLISH-01 (`whitespace-pre-line` on `ThoughtRow.tsx <p>`); this phase fixes the capture side so the data actually carries `\n` chars into the DB.
 

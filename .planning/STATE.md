@@ -2,10 +2,10 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: planning
-stopped_at: Phase 999.2 context gathered
-last_updated: "2026-05-19T21:32:21.873Z"
-last_activity: 2026-05-19 — Plan 01 sequential execution completed through T3 checkpoint setup
+status: phase-complete
+stopped_at: Phase 999.2 closed — verifier PASS
+last_updated: "2026-05-19T23:30:00.000Z"
+last_activity: 2026-05-19 — Phase 999.2 closed (UAT 7/8 PASS, V7 n/a, verifier PASS)
 progress:
   total_phases: 13
   completed_phases: 10
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 ## Current Position
 
-Phase: 999.2 (capturebar-multi-line-input-support) — EXECUTING
-Plan: 999.2-01-PLAN.md (1/1) — T1+T2 commits landed (`8c3992c`, `eb47bda`), T3 UAT runbook authored (`67358d3`)
-Status: Awaiting operator UAT sign-off on 8-vector runbook at `.planning/phases/999.2-capturebar-multi-line-input-support/999.2-UAT.md` (resume signal: `approved`). Vector 1 (Phase 115 UAT 2 paste replay) is the phase success criterion.
-Last activity: 2026-05-19 — Plan 01 sequential execution completed through T3 checkpoint setup
+Phase: 999.2 (capturebar-multi-line-input-support) — COMPLETE
+Plan: 999.2-01-PLAN.md (1/1) — all tasks closed; UAT 7/8 PASS (V7 n/a — no Android device); verifier PASS
+Status: Phase complete. Verification at `999.2-VERIFICATION.md` (status: passed). Ready for next phase or PR.
+Last activity: 2026-05-19 — Phase 999.2 closed
 
 **Plan 06 disposition:** `defer-bake-not-yet` — brctl removal plan parked; 7-day bake precondition unfulfillable until phase merges to main. Re-pickup criteria: merge-to-main + ≥7 days + operator regression confirmation. brctl shim retained as harmless belt-and-suspenders. See `999.1-06-BRCTL-REMOVAL.md` for full disposition log.
 
