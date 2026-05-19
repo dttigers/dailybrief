@@ -4,13 +4,13 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Phase 134 context gathered
-last_updated: "2026-05-19T18:45:09.307Z"
+last_updated: "2026-05-19T18:57:21.640Z"
 last_activity: 2026-05-19
 progress:
   total_phases: 13
   completed_phases: 8
   total_plans: 61
-  completed_plans: 57
+  completed_plans: 58
   percent: 62
 ---
 
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 ## Current Position
 
 Phase: 999.1 (restore-ubiquity-entitlement-for-icloud-download) — EXECUTING
-Plan: 3 of 6
+Plan: 4 of 6
 Status: Ready to execute
 Last activity: 2026-05-19
 
@@ -166,6 +166,7 @@ Last activity: 2026-05-16
 | Phase 134 P02 | 3min | 2 tasks | 1 files |
 | Phase 134 P03 | 10min | 2 tasks | 3 files |
 | Phase 134 P04 | 15min | 2 tasks | 6 files |
+| Phase 999.1 P03 | cross-session | 4 tasks | 5 files |
 
 ## Deferred Items
 
@@ -498,7 +499,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-19T18:45:09.297Z
+Last session: 2026-05-19T18:57:21.629Z
 Stopped at: Phase 134 context gathered
 Resume file: None
 
