@@ -4,13 +4,13 @@ milestone: v3.9
 milestone_name: Voice & Companion Polish
 status: executing
 stopped_at: Phase 134 context gathered
-last_updated: "2026-05-19T00:51:37.303Z"
-last_activity: 2026-05-19 -- Phase 134 planning complete
+last_updated: "2026-05-19T01:03:06.335Z"
+last_activity: 2026-05-19
 progress:
   total_phases: 13
   completed_phases: 7
   total_plans: 55
-  completed_plans: 50
+  completed_plans: 51
   percent: 54
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 999.1 — restore ubiquity entitlement for icloud download
+**Current focus:** Phase 134 — linux-claude-code-vigil-core-agent-events-bridge-new-2026-05
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
+Phase: 134 (linux-claude-code-vigil-core-agent-events-bridge-new-2026-05) — EXECUTING
+Plan: 2 of 5
 Status: Ready to execute
-Last activity: 2026-05-19 -- Phase 134 planning complete
+Last activity: 2026-05-19
 
 ## Phase 129 Closure (2026-05-16) — PARTIAL-COMPLETE
 
@@ -162,6 +162,7 @@ Last activity: 2026-05-16
 | Phase 130 P04 | 25min | 3 tasks | 11 files |
 | Phase 130 P05 | 7 | 2 tasks | 6 files |
 | Phase 130 P06 | 18 | 3 tasks | 4 files |
+| Phase 134 P01 | 12min | 2 tasks | 6 files |
 
 ## Deferred Items
 
@@ -451,6 +452,8 @@ Recent (v3.7 closeout):
 - [Phase ?]: Phase 130 Plan 04: production VOICE screen at SCREEN_ORDER slot 2 (after Companion); D-S1 6-state machine; Run 4 safeAudioControl Promise<boolean> with try/catch for false-return + permission throw; wav-encoder buildWav pins D-D1 44-byte RIFF/WAVE/16kHz mono container at producer side
 - [Phase ?]: Phase 130 Plan 05 landed VOICE-07 + telemetry portion of VOICE-08: localStorage voice queue 'vigil:voice-queue:v1' with [1s,2s,4s,8s,16s,30s] backoff + LRU max 10 + D-E3 cascade + voice-telemetry.ts compile-time safe-key contract + Companion HUD body line 3 priority ladder
 - [Phase ?]: Plan 06: D-D1 byte-for-byte WAV header pin + D-D2 audioPcm-in-logs ban extended to plugin + voice-transcribe.ts + D-D3 safeAudioControl pairing source-grep parity
+- [Phase ?]: Phase 134-01: locked VIGIL_AGENT_BRIDGE_EMIT_ONLY=1 as the test-capture escape hatch for body-builder tests
+- [Phase ?]: Phase 134-01: emit_event signature locked at 'emit_event <event_type> [message]' — Plans 02-03 extend per-event handlers using this signature
 
 ### Pending Todos
 
@@ -487,9 +490,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-18T23:36:02.424Z
+Last session: 2026-05-19T01:03:01.684Z
 Stopped at: Phase 134 context gathered
-Resume file: .planning/phases/134-linux-claude-code-vigil-core-agent-events-bridge-new-2026-05/134-CONTEXT.md
+Resume file: None
 
 ## Operator Next Steps
 
