@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: executing
+status: verifying
 stopped_at: Phase 134 context gathered
-last_updated: "2026-05-19T20:32:23.845Z"
+last_updated: "2026-05-19T20:38:21.112Z"
 last_activity: 2026-05-19
 progress:
   total_phases: 13
-  completed_phases: 8
+  completed_phases: 9
   total_plans: 61
-  completed_plans: 60
-  percent: 62
+  completed_plans: 61
+  percent: 69
 ---
 
 # Project State
@@ -25,10 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 ## Current Position
 
-Phase: 999.1 (restore-ubiquity-entitlement-for-icloud-download) — EXECUTING
-Plan: 6 of 6
-Status: Ready to execute
+Phase: 999.1 (restore-ubiquity-entitlement-for-icloud-download) — ALL 6 PLANS PROCESSED
+Plan: 6 of 6 (Plan 06 deferred: defer-bake-not-yet)
+Status: Phase complete — all plans accounted for; Phase 999.1 ready to merge to main
 Last activity: 2026-05-19
+
+**Plan 06 disposition:** `defer-bake-not-yet` — brctl removal plan parked; 7-day bake precondition unfulfillable until phase merges to main. Re-pickup criteria: merge-to-main + ≥7 days + operator regression confirmation. brctl shim retained as harmless belt-and-suspenders. See `999.1-06-BRCTL-REMOVAL.md` for full disposition log.
 
 ## Phase 129 Closure (2026-05-16) — PARTIAL-COMPLETE
 
@@ -500,7 +502,7 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-19T20:32:23.832Z
+Last session: 2026-05-19T20:38:21.101Z
 Stopped at: Phase 134 context gathered
 Resume file: None
 
