@@ -73,9 +73,24 @@ try {
 settings.hooks ??= {};
 
 // ── Atomic-write helper (RESEARCH Pattern 5 + Pitfall 2) ─────────────────
+// CR-03 fix: preserve the original file's mode bits across the write. The
+// previous helper let Node's default umask (typically 0644) widen any
+// operator-hardened 0600 settings.json on every install/uninstall round-
+// trip — silent permission widening on a file that may carry MCP keys or
+// other sensitive operator data. We stat the original, chmod the tmp to
+// match before rename, and fall back to a RESTRICTIVE 0600 on first-time
+// creation (rather than the umask-derived default).
 function atomicWriteSettings() {
   const tmp = settingsPath + ".tmp";
+  let mode = 0o600;
+  try {
+    mode = fs.statSync(settingsPath).mode & 0o777;
+  } catch (e) {
+    if (e.code !== "ENOENT") throw e;
+    // First-time install: settings.json didn't exist; keep the 0o600 default.
+  }
   fs.writeFileSync(tmp, JSON.stringify(settings, null, 2));
+  fs.chmodSync(tmp, mode);
   fs.renameSync(tmp, settingsPath);
 }
 

@@ -33,6 +33,7 @@ import {
   writeFileSync,
   mkdirSync,
   copyFileSync,
+  chmodSync,
   existsSync,
   statSync,
   rmSync,
@@ -251,6 +252,56 @@ describe("AGENT-LINUX-05 — installer idempotency", () => {
       false,
       "redaction-patterns.json must be removed on uninstall"
     );
+  });
+
+  it("install: preserves settings.json mode bits (CR-03 / T-134-I1)", () => {
+    // CR-03 regression guard: install.js's atomic-write helper must preserve
+    // the existing settings.json mode bits across rename. The previous
+    // implementation wrote the tmp file with Node's default umask (typically
+    // 0644) and renamed over the original — silently widening an operator-
+    // hardened 0600 file to world-readable on every install/uninstall round-
+    // trip.
+    //
+    // Strategy: chmod the fixture to 0600, run install, assert the mode
+    // survives. Uses a fresh temp HOME so this test is independent of the
+    // describe-block lifecycle.
+    const isolatedHome = mkdtempSync(join(tmpdir(), "vigil-mode-"));
+    try {
+      mkdirSync(join(isolatedHome, ".claude"), { recursive: true });
+      const isolatedSettings = join(isolatedHome, ".claude", "settings.json");
+      copyFileSync(FIXTURE_PATH, isolatedSettings);
+      chmodSync(isolatedSettings, 0o600);
+      const beforeMode = statSync(isolatedSettings).mode & 0o777;
+      assert.equal(beforeMode, 0o600, "pre-install mode should be 0o600");
+
+      execSync(`node ${INSTALLER}`, {
+        env: { ...process.env, HOME: isolatedHome },
+        stdio: "pipe",
+      });
+      const afterMode = statSync(isolatedSettings).mode & 0o777;
+      assert.equal(
+        afterMode,
+        0o600,
+        `install must preserve settings.json mode bits — pre-install 0o600 widened to 0o${afterMode.toString(8)} (CR-03 regression)`,
+      );
+
+      execSync(`node ${INSTALLER} --uninstall`, {
+        env: { ...process.env, HOME: isolatedHome },
+        stdio: "pipe",
+      });
+      const uninstallMode = statSync(isolatedSettings).mode & 0o777;
+      assert.equal(
+        uninstallMode,
+        0o600,
+        `uninstall must preserve settings.json mode bits — post-uninstall mode is 0o${uninstallMode.toString(8)}`,
+      );
+    } finally {
+      try {
+        rmSync(isolatedHome, { recursive: true, force: true });
+      } catch {
+        /* tempdir cleanup best-effort */
+      }
+    }
   });
 
   it("uninstall: anchored COMMAND_REGEX preserves decoy substring matches (CR-02 / T-134-I2)", () => {
