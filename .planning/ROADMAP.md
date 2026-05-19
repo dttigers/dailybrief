@@ -640,13 +640,13 @@ Plans:
   4. Fail-safe: hook MUST NOT block the Claude Code session. Network failure / missing env var / vigil-core 5xx → hook exits 0 silently with no stderr noise. Verified by toggling iPhone airplane mode mid-session and confirming Claude Code continues to function normally.
   5. Once installed, an `~/.claude/hooks/vigil-agent-bridge.sh --uninstall` flag removes the hook entries from settings.json cleanly (matches the install pattern used by other GSD hooks).
 
-**Plans (placeholder — finalize in discuss-phase):**
+**Plans:** 5 plans across 4 waves (W1: 134-01; W2: 134-02 + 134-03 parallel; W3: 134-04; W4: 134-05 operator UAT)
 
-- [ ] 134-01-PLAN.md — Hook script shell scaffold + auth (read `$VIGIL_API_KEY`, fail-safe 2s curl timeout, exit-0-on-failure invariant) — AGENT-LINUX-04
-- [ ] 134-02-PLAN.md — `SessionStart` + `Stop` event POST paths (heartbeat + task_complete) — AGENT-LINUX-01, AGENT-LINUX-02
-- [ ] 134-03-PLAN.md — `UserPromptSubmit` event with privacy-redacted prompt preview (≤80 chars, denylist parity with WATCH-ENRICH-03) — AGENT-LINUX-03
-- [ ] 134-04-PLAN.md — `install.sh` / `uninstall.sh` scaffold + idempotency test + drift-detector for denylist parity — AGENT-LINUX-05, AGENT-LINUX-06
-- [ ] 134-05-PLAN.md — Operator hardware UAT (Linux dev box → Railway prod → G2 Companion HUD round-trip)
+- [ ] 134-01-PLAN.md — Wave 1. Hook script shell scaffold (`vigil-agent-bridge.sh`) + `emit_event` body builder + auth gate + fail-safe curl POST + Wave-0 mini-package scaffold (package.json, tsconfig.json, body-builder.test.ts, fail-safe.test.ts, probe-envelope fixture) — AGENT-LINUX-04
+- [ ] 134-02-PLAN.md — Wave 2. Wire `SessionStart` (`heartbeat` + "session started") and `Stop` (`task_complete` + "turn complete") branches in the runtime hook; extend body-builder tests — AGENT-LINUX-01, AGENT-LINUX-02
+- [ ] 134-03-PLAN.md — Wave 2 (parallel with 134-02). `redaction-patterns.json` + `redact.sh` (truncate-≤80-then-binary-redact, JWT threshold `{10,}` per RESEARCH Pitfall 4) + wire `UserPromptSubmit` branch + 27-case redaction corpus — AGENT-LINUX-03
+- [ ] 134-04-PLAN.md — Wave 3. `install.js` ESM installer (atomic JSON splice + `async:true`/`timeout:5` per RESEARCH Pitfall 1) + `install.sh` wrapper + `redaction-drift.test.ts` (Rails 0/1/2 hard + Rail 3 soft-skip for Phase 133) + `installer-idempotency.test.ts` + operator `README.md` — AGENT-LINUX-05, AGENT-LINUX-06
+- [ ] 134-05-PLAN.md — Wave 4 (NOT autonomous). Operator hardware UAT — first task `/gsd:code-review` per Phase 130 memory; then Linux box → Railway prod → G2 HUD round-trip + iPhone airplane-mode fail-safe + clean uninstall with GSD coexistence diff
 
 **UI hint**: yes (Companion HUD surfaces the new Linux sessions)
 
