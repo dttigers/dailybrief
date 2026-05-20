@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v3.9
 milestone_name: Voice & Companion Polish
-status: ready_to_plan
-stopped_at: Phase 130 complete (7/7) — ready to discuss Phase 999.1
-last_updated: 2026-05-18T23:19:54.174Z
-last_activity: 2026-05-18
+status: phase-complete
+stopped_at: Phase 999.2 closed — verifier PASS
+last_updated: "2026-05-19T23:30:00.000Z"
+last_activity: 2026-05-19 — Phase 999.2 closed (UAT 7/8 PASS, V7 n/a, verifier PASS)
 progress:
   total_phases: 13
-  completed_phases: 6
-  total_plans: 55
-  completed_plans: 50
-  percent: 46
+  completed_phases: 10
+  total_plans: 62
+  completed_plans: 62
+  percent: 77
 ---
 
 # Project State
@@ -21,14 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 **Core value:** Capture every thought with zero friction and have the system organize it for you — so nothing falls through the cracks and your brain can let go.
-**Current focus:** Phase 999.1 — restore ubiquity entitlement for icloud download
+**Current focus:** Phase 999.2 — capturebar multi line input support
 
 ## Current Position
 
-Phase: 999.1
-Plan: Not started
-Status: Ready to plan
-Last activity: 2026-05-18
+Phase: 999.2 (capturebar-multi-line-input-support) — SHIPPED
+Plan: 999.2-01-PLAN.md (1/1) — all tasks closed; UAT 7/8 PASS (V7 n/a — no Android device); verifier PASS
+Status: PR #2 open at https://github.com/dttigers/dailybrief/pull/2 — ships 999.1 + 999.2 together off `999.1-ubiquity-dry-run` → `main`. Awaiting CI + merge.
+Last activity: 2026-05-20 — Phase 999.2 shipped (PR #2)
+
+**Plan 06 disposition:** `defer-bake-not-yet` — brctl removal plan parked; 7-day bake precondition unfulfillable until phase merges to main. Re-pickup criteria: merge-to-main + ≥7 days + operator regression confirmation. brctl shim retained as harmless belt-and-suspenders. See `999.1-06-BRCTL-REMOVAL.md` for full disposition log.
 
 ## Phase 129 Closure (2026-05-16) — PARTIAL-COMPLETE
 
@@ -162,6 +164,12 @@ Last activity: 2026-05-16
 | Phase 130 P04 | 25min | 3 tasks | 11 files |
 | Phase 130 P05 | 7 | 2 tasks | 6 files |
 | Phase 130 P06 | 18 | 3 tasks | 4 files |
+| Phase 134 P01 | 12min | 2 tasks | 6 files |
+| Phase 134 P02 | 3min | 2 tasks | 1 files |
+| Phase 134 P03 | 10min | 2 tasks | 3 files |
+| Phase 134 P04 | 15min | 2 tasks | 6 files |
+| Phase 999.1 P03 | cross-session | 4 tasks | 5 files |
+| Phase 999.1 P04 | multi-session | 3 tasks | 5 files |
 
 ## Deferred Items
 
@@ -451,6 +459,14 @@ Recent (v3.7 closeout):
 - [Phase ?]: Phase 130 Plan 04: production VOICE screen at SCREEN_ORDER slot 2 (after Companion); D-S1 6-state machine; Run 4 safeAudioControl Promise<boolean> with try/catch for false-return + permission throw; wav-encoder buildWav pins D-D1 44-byte RIFF/WAVE/16kHz mono container at producer side
 - [Phase ?]: Phase 130 Plan 05 landed VOICE-07 + telemetry portion of VOICE-08: localStorage voice queue 'vigil:voice-queue:v1' with [1s,2s,4s,8s,16s,30s] backoff + LRU max 10 + D-E3 cascade + voice-telemetry.ts compile-time safe-key contract + Companion HUD body line 3 priority ladder
 - [Phase ?]: Plan 06: D-D1 byte-for-byte WAV header pin + D-D2 audioPcm-in-logs ban extended to plugin + voice-transcribe.ts + D-D3 safeAudioControl pairing source-grep parity
+- [Phase ?]: Phase 134-01: locked VIGIL_AGENT_BRIDGE_EMIT_ONLY=1 as the test-capture escape hatch for body-builder tests
+- [Phase ?]: Phase 134-01: emit_event signature locked at 'emit_event <event_type> [message]' — Plans 02-03 extend per-event handlers using this signature
+- [Phase ?]: Plan 134-02 Task 1 was a no-op in source — Plan 01 over-delivered on the case-dispatch wiring; Plan 02 work was purely test-side contract pinning via 2 new probe it-blocks in body-builder.test.ts.
+- [Phase ?]: Phase 134-03: JWT regex threshold authoritatively {10,} per RESEARCH Pitfall 4 — corpus pins offset-68 boundary as regression guard
+- [Phase ?]: Phase 134-03: redaction is truncate-FIRST-then-binary-redact (CONTEXT D-R2); corpus D-R2 it-block pins 4KB-prompt-with-offset-2000-bearer NOT-redacted invariant
+- [Phase ?]: Phase 134 Plan 04: install.js uses async:true + timeout:5 on every spliced settings.json entry (Claude Code v2.1.87+ stdio-stall mitigation, RESEARCH Pitfall 1) — non-negotiable belt-and-suspenders with Plan 01 script-side stdio redirect
+- [Phase ?]: Phase 134 Plan 04: drift detector Rail 0 anti-trivial-pass guard explicitly references the FORBIDDEN literal ey[A-Za-z0-9_-]{20,} in a negative-membership assertion. Plan acceptance criterion line 311 was internally contradictory; resolved per Rule 1 (action body authoritative).
+- [Phase ?]: Phase 999.2 Plan 01: D-01..D-09 + 3 Discretion items honored in CaptureBar.tsx; useLayoutEffect+scrollHeight auto-grow recipe established; CaptureBar.test.tsx pattern adopts userEvent for paste/keyboard simulation per RESEARCH Pitfall 2
 
 ### Pending Todos
 
@@ -487,9 +503,9 @@ Ops follow-ups (defense-in-depth, not milestone-blocking):
 
 ## Session Continuity
 
-Last session: 2026-05-18T19:30:00.000Z
-Stopped at: Phase 130 Plan 07 scaffold committed (130-HARDWARE-UAT.md); awaiting operator hardware UAT (prod migration 0023 + G2 round-trip / [NO MIC] / airplane-mode queue drain). Plan 07 NOT yet marked complete — operator wallclock + cross-device G2 verification is operator-only per [feedback_wallclock_checkpoint_exempt] + [feedback_loom_waived_g2_not_screen_mirrorable] auto-memories.
-Resume file: .planning/phases/130-voice-capture-full-implementation-scope-locked-by-128a/130-HARDWARE-UAT.md
+Last session: 2026-05-19T20:54:57.994Z
+Stopped at: Phase 999.2 context gathered
+Resume file: .planning/phases/999.2-capturebar-multi-line-input-support/999.2-CONTEXT.md
 
 ## Operator Next Steps
 

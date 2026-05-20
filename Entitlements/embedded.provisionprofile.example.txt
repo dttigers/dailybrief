@@ -1,0 +1,51 @@
+Phase 999.1 — Developer ID Provisioning Profile for ubiquity-container-identifiers entitlement.
+
+This file documents the provisioning profile that must be placed at:
+
+    Entitlements/embedded.provisionprofile
+
+That file is gitignored (Entitlements/*.provisionprofile) because it binds to one
+developer account + embeds Team ID 5H57ADQS8G. Never commit the actual profile.
+
+-------------------------------------------------------------------------------
+HOW TO OBTAIN: developer.apple.com portal flow
+-------------------------------------------------------------------------------
+
+1. Log in to developer.apple.com/account → Certificates, IDs & Profiles
+
+2. Identifiers → "+" → iCloud Containers → register:
+       iCloud.com.jamesonmorrill.dailybriefmonitor
+
+3. Identifiers → find App ID "com.jamesonmorrill.dailybriefmonitor" → Edit →
+   iCloud capability → check "Compatible with Xcode 5"
+   (NOT "Include CloudKit support") → Edit containers → assign the new container
+
+4. Profiles → "+" → Distribution → Developer ID → select App ID
+   "com.jamesonmorrill.dailybriefmonitor" → select Developer ID Application cert →
+   name: "DailyBriefMonitor Developer ID Profile" → Download
+
+5. Copy the downloaded file into the repo:
+       cp ~/Downloads/<profile-name>.provisionprofile Entitlements/embedded.provisionprofile
+
+Expected file location after download: Entitlements/embedded.provisionprofile
+
+-------------------------------------------------------------------------------
+SANITY CHECK
+-------------------------------------------------------------------------------
+
+After placing the file, verify it contains the ubiquity entitlement:
+
+    security cms -D -i Entitlements/embedded.provisionprofile | plutil -p - | grep ubiquity
+
+You should see a line referencing "com.apple.developer.ubiquity-container-identifiers".
+
+-------------------------------------------------------------------------------
+ROLLBACK
+-------------------------------------------------------------------------------
+
+If anything breaks after installing with this profile, run:
+
+    git checkout main && ./Scripts/install.sh
+
+This restores the brctl-only working state (Phase 58 rollback lesson). Do not
+attempt forward fixes on the dry-run branch.

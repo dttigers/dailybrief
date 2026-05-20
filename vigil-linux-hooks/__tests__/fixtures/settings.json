@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "SessionStart": [
+      { "hooks": [{ "type": "command", "command": "node gsd-check-update.js" }] },
+      { "hooks": [{ "type": "command", "command": "bash gsd-session-state.sh" }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Write|Edit", "hooks": [{ "type": "command", "command": "node gsd-context-monitor.js" }] },
+      { "matcher": "Write|Edit", "hooks": [{ "type": "command", "command": "bash gsd-phase-boundary.sh" }] },
+      { "matcher": "Read", "hooks": [{ "type": "command", "command": "node gsd-read-injection-scanner.js" }] }
+    ],
+    "PreToolUse": [
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "node gsd-prompt-guard.js" }] },
+      { "matcher": "Read", "hooks": [{ "type": "command", "command": "node gsd-read-guard.js" }] },
+      { "matcher": "Write|Edit", "hooks": [{ "type": "command", "command": "node gsd-workflow-guard.js" }] },
+      { "matcher": "Bash", "hooks": [{ "type": "command", "command": "bash gsd-validate-commit.sh" }] }
+    ]
+  }
+}

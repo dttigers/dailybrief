@@ -353,7 +353,7 @@ Full milestone scope archived to [milestones/v3.8-ROADMAP.md](milestones/v3.8-RO
 - [ ] **Phase 131: Insights freshness + chat context expansion** — INSIGHTS-FRESH-01/02/03 + CHAT-CTX-01..05 bundled for one PWA UAT pass
 - [ ] **Phase 132: Quiet Mode auto-detect** — iOS Focus → webhook → existing `/v1/quiet-mode` (QUIET-AUTO-01..04)
 - [ ] **Phase 133: G2 closeout bundle** — G2-ACTION-01..06 + G2-REPLY-02..05 (gated on 128b PASS) + WATCH-ENRICH-01..04 + HUD-CLARITY-01..05 (hardware UAT close-out)
-- [ ] **Phase 134: Linux Claude Code agent-events bridge** — Linux-side `~/.claude/hooks/` shim that POSTs to `/v1/agent-events` so Linux Claude Code sessions appear in the Companion HUD (parity with macOS vigil-watch); AGENT-LINUX-01..06
+- [x] **Phase 134: Linux Claude Code agent-events bridge** — Linux-side `~/.claude/hooks/` shim that POSTs to `/v1/agent-events` so Linux Claude Code sessions appear in the Companion HUD (parity with macOS vigil-watch); AGENT-LINUX-01..06 (completed 2026-05-19)
 
 ### Phase Details
 
@@ -640,13 +640,13 @@ Plans:
   4. Fail-safe: hook MUST NOT block the Claude Code session. Network failure / missing env var / vigil-core 5xx → hook exits 0 silently with no stderr noise. Verified by toggling iPhone airplane mode mid-session and confirming Claude Code continues to function normally.
   5. Once installed, an `~/.claude/hooks/vigil-agent-bridge.sh --uninstall` flag removes the hook entries from settings.json cleanly (matches the install pattern used by other GSD hooks).
 
-**Plans (placeholder — finalize in discuss-phase):**
+**Plans:** 5/5 plans complete
 
-- [ ] 134-01-PLAN.md — Hook script shell scaffold + auth (read `$VIGIL_API_KEY`, fail-safe 2s curl timeout, exit-0-on-failure invariant) — AGENT-LINUX-04
-- [ ] 134-02-PLAN.md — `SessionStart` + `Stop` event POST paths (heartbeat + task_complete) — AGENT-LINUX-01, AGENT-LINUX-02
-- [ ] 134-03-PLAN.md — `UserPromptSubmit` event with privacy-redacted prompt preview (≤80 chars, denylist parity with WATCH-ENRICH-03) — AGENT-LINUX-03
-- [ ] 134-04-PLAN.md — `install.sh` / `uninstall.sh` scaffold + idempotency test + drift-detector for denylist parity — AGENT-LINUX-05, AGENT-LINUX-06
-- [ ] 134-05-PLAN.md — Operator hardware UAT (Linux dev box → Railway prod → G2 Companion HUD round-trip)
+- [x] 134-01-PLAN.md — Wave 1. Hook script shell scaffold (`vigil-agent-bridge.sh`) + `emit_event` body builder + auth gate + fail-safe curl POST + Wave-0 mini-package scaffold (package.json, tsconfig.json, body-builder.test.ts, fail-safe.test.ts, probe-envelope fixture) — AGENT-LINUX-04
+- [x] 134-02-PLAN.md — Wave 2. Wire `SessionStart` (`heartbeat` + "session started") and `Stop` (`task_complete` + "turn complete") branches in the runtime hook; extend body-builder tests — AGENT-LINUX-01, AGENT-LINUX-02
+- [x] 134-03-PLAN.md — Wave 2 (parallel with 134-02). `redaction-patterns.json` + `redact.sh` (truncate-≤80-then-binary-redact, JWT threshold `{10,}` per RESEARCH Pitfall 4) + wire `UserPromptSubmit` branch + 27-case redaction corpus — AGENT-LINUX-03
+- [x] 134-04-PLAN.md — Wave 3. `install.js` ESM installer (atomic JSON splice + `async:true`/`timeout:5` per RESEARCH Pitfall 1) + `install.sh` wrapper + `redaction-drift.test.ts` (Rails 0/1/2 hard + Rail 3 soft-skip for Phase 133) + `installer-idempotency.test.ts` + operator `README.md` — AGENT-LINUX-05, AGENT-LINUX-06
+- [x] 134-05-PLAN.md — Wave 4 (NOT autonomous). Operator hardware UAT — first task `/gsd:code-review` per Phase 130 memory; then Linux box → Railway prod → G2 HUD round-trip + iPhone airplane-mode fail-safe + clean uninstall with GSD coexistence diff
 
 **UI hint**: yes (Companion HUD surfaces the new Linux sessions)
 
@@ -802,7 +802,7 @@ Plans:
 | 131. Insights freshness + chat context expansion (one PWA UAT pass) | v3.9 | 0/TBD | Not started | - |
 | 132. Quiet Mode auto-detect via iPhone Focus | v3.9 | 0/TBD | Not started | - |
 | 133. G2 closeout bundle (G2-ACTION + G2-REPLY + WATCH-ENRICH + HUD-CLARITY; hardware UAT) | v3.9 | 0/TBD | Not started | - |
-| 134. Linux Claude Code → vigil-core agent-events bridge | v3.9 | 0/5 | Not started | - |
+| 134. Linux Claude Code → vigil-core agent-events bridge | v3.9 | 5/5 | Complete    | 2026-05-19 |
 
 ## Backlog
 
@@ -825,27 +825,38 @@ Unsequenced ideas captured for future planning. Promote with `/gsd-add-backlog`.
 - UBIQ-05: LaunchAgent loads cleanly post-install; no TCC, keychain, or notarization regressions
 - UBIQ-06 (optional): remove the brctl fallback once UBIQ-01..05 are green
 
-**Plans:** 8/10 plans executed
+**Plans:** 6/6 plans complete
+
+Plans (6 waves; same-wave plans run in parallel, across-wave plans run sequentially):
+- [x] 999.1-01-PLAN.md — Wave 1. Scaffold dry-run branch + verify-ubiquity.sh probe runner (final-success line `verify-ubiquity: all checks passed` locked) + gitignore for provisioning profile
+- [x] 999.1-02-PLAN.md — Wave 2 (depends on 01). Operator portal work (App ID iCloud, container, Developer ID profile) + rollback rehearsal; includes container-fallback handoff procedure if Open Question 4 fires
+- [x] 999.1-03-PLAN.md — Wave 3 (depends on 02). Entitlements split (.app gets ubiquity, bare binary empty), install.sh profile embed + race-mitigation sleep + anchored bare-binary entitlements rename, UBIQ-02 startup NSLog at top of FolderWatcherService.start()
+- [x] 999.1-04-PLAN.md — Wave 4 (depends on 03). Install + UBIQ-01/02/04/05 probe sweep on dry-run branch + UpdateService re-sign cross-check
+- [x] 999.1-05-PLAN.md — Wave 5 (depends on 04). Hardware UAT: 2× HEIC drop validating UBIQ-03 native-API attributed materialization (the `triggered iCloud download for` log line is the PASS gate, not just materialization)
+- [x] 999.1-06-PLAN.md — Wave 6 (depends on 05). DEFERRED ≥7 days post-merge: optional UBIQ-06 brctl shim removal with go/no-go checkpoint and skip-guard-aware verify blocks
 
 **Context:** Full empirical diagnosis, Phase 58 rationale, and all five fix options evaluated in `.planning/debug/icloud-photos-never-download.md` (committed in `4f71366`). Key nuance: CloudKit entitlements (`icloud-services`, `icloud-container-identifiers`) that Phase 58 correctly removed are a **different entitlement family** from ubiquity — Phase 58's "dead code, incompatible with Developer ID" rationale applies to CloudKit only, not to ubiquity.
 
 **Depends on:** Nothing — independent of all server/PWA work.
 
-### Phase 999.2: CaptureBar — support multi-line input (BACKLOG)
+### Phase 999.2: CaptureBar — support multi-line input ✅ COMPLETE (2026-05-19)
 
 **Goal:** Pasting or typing multi-line text into the Thoughts capture bar preserves newlines instead of collapsing to a single line. Display side already supports multi-line via Phase 115 POLISH-01 (`whitespace-pre-line` on `ThoughtRow.tsx <p>`); this phase fixes the capture side so the data actually carries `\n` chars into the DB.
 
-**Why it's in backlog (not active):** Surfaced as a real user-visible gap during Phase 115 UAT 2 (2026-04-28) — pasting `line one\nline two\nline three` into [CaptureBar.tsx:57](../../vigil-pwa/src/components/CaptureBar.tsx#L57) collapsed to one line because the element is `<input>`, which strips newlines on paste by HTML spec. Phase 115 POLISH-01 D-16 explicitly left capture-side untouched. Not blocking — `<textarea>` edit-mode already produces real multi-line thoughts that render correctly via 115-03 — so capture-side parity can wait.
+**Promoted from backlog:** 2026-05-19 — surfaced as a real user-visible gap during Phase 115 UAT 2 (2026-04-28); pasting `line one\nline two\nline three` into [CaptureBar.tsx:57](../../vigil-pwa/src/components/CaptureBar.tsx#L57) collapsed to one line because the element is `<input>`, which strips newlines on paste by HTML spec. Phase 115 POLISH-01 D-16 explicitly left capture-side untouched. Now active because `<textarea>` edit-mode is fully validated in production and capture-side parity is the natural next move.
 
-**Requirements:** TBD — candidates:
+**Requirements:** CAP-MULTI-01, CAP-MULTI-02, CAP-MULTI-03, CAP-MULTI-04, CAP-MULTI-05
 
-- CAP-MULTI-01: CaptureBar element accepts multi-line input (likely swap `<input>` → `<textarea>` with auto-grow + Enter-vs-Cmd+Enter submit semantics)
+- CAP-MULTI-01: CaptureBar element accepts multi-line input (swap `<input>` → `<textarea>` with auto-grow + plain-Enter newline / Cmd+Enter submit semantics)
 - CAP-MULTI-02: Pasted multi-line text preserves newlines into the persisted thought body
-- CAP-MULTI-03: Submit affordance unambiguous (Enter inserts newline OR submits — not both; pick one and document)
+- CAP-MULTI-03: Submit affordance unambiguous (Save button + Cmd/Ctrl+Enter; plain Enter inserts newline)
 - CAP-MULTI-04: Empty-string and whitespace-only guards still apply (don't accept `"\n\n\n"` as a thought)
-- CAP-MULTI-05: Mobile keyboard return-key behavior matches the chosen submit semantic
+- CAP-MULTI-05: Mobile keyboard return-key behavior matches the chosen submit semantic (`enterKeyHint="enter"`)
 
-**Plans:** 0 plans — promote with `/gsd-review-backlog` when ready to plan.
+**Plans:** 1/1 plans complete
+
+Plans:
+- [x] 999.2-01-PLAN.md — Swap CaptureBar `<input>` → `<textarea>` with auto-grow, Cmd+Enter submit grammar, `enterKeyHint="enter"` mobile hint, and a new `CaptureBar.test.tsx` pinning CAP-MULTI-01..05 + D-04 + D-07.
 
 **Context:** Phase 115 plan 115-03 fixed display-side rendering (`whitespace-pre-line` on `ThoughtRow.tsx:399 <p>`). Edit-mode `<textarea>` already preserves newlines (D-16, unchanged in 115). Only the capture entry point lags. Real-world trigger: user attempted to paste a three-line reflection during 115-HUMAN-UAT and the newlines silently disappeared — the `whitespace-pre-line` had nothing to render because the data never had newlines.
 

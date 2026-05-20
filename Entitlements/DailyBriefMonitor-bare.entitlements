@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Empty entitlements for the bare-binary copy at $INSTALL_DIR/DailyBriefMonitor. -->
+    <!--                                                                                  -->
+    <!-- Why two entitlement files? The .app bundle (Contents/MacOS/DailyBriefMonitor)   -->
+    <!-- carries com.apple.developer.ubiquity-container-identifiers AND ships with an    -->
+    <!-- embedded.provisionprofile that authorizes it. The bare binary at                -->
+    <!-- ~/.local/bin/DailyBriefMonitor (copied by install.sh line 109 AND by            -->
+    <!-- UpdateService.installBuiltBinaries() at UpdateService.swift:148) cannot carry   -->
+    <!-- a provisioning profile (the OS only looks for it at .app/Contents/), so it      -->
+    <!-- MUST sign with empty entitlements or amfid will kill it on launch (-67050).     -->
+    <!--                                                                                  -->
+    <!-- See 999.1-RESEARCH.md Pitfall 6 for the full reasoning.                          -->
+</dict>
+</plist>
