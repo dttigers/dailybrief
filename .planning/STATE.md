@@ -25,12 +25,12 @@ See: .planning/PROJECT.md (updated 2026-05-11 after v3.8 milestone close)
 
 ## Current Position
 
-Phase: 999.2 (capturebar-multi-line-input-support) — SHIPPED
+Phase: 999.2 (capturebar-multi-line-input-support) — MERGED
 Plan: 999.2-01-PLAN.md (1/1) — all tasks closed; UAT 7/8 PASS (V7 n/a — no Android device); verifier PASS
-Status: PR #2 open at https://github.com/dttigers/dailybrief/pull/2 — ships 999.1 + 999.2 together off `999.1-ubiquity-dry-run` → `main`. Awaiting CI + merge.
-Last activity: 2026-05-20 — Phase 999.2 shipped (PR #2)
+Status: PR #2 MERGED 2026-05-20T00:32Z (merge commit `553bc0d`). Local `999.1-ubiquity-dry-run` deleted. main is current.
+Last activity: 2026-05-20 — PR #2 merged
 
-**Plan 06 disposition:** `defer-bake-not-yet` — brctl removal plan parked; 7-day bake precondition unfulfillable until phase merges to main. Re-pickup criteria: merge-to-main + ≥7 days + operator regression confirmation. brctl shim retained as harmless belt-and-suspenders. See `999.1-06-BRCTL-REMOVAL.md` for full disposition log.
+**Plan 06 disposition:** `defer-bake-not-yet` — brctl removal plan parked; merged to main 2026-05-20, **7-day bake clock starts**. Re-pickup criteria: 2026-05-27 onward + operator regression confirmation (no iCloud download regressions during the bake window). brctl shim retained as harmless belt-and-suspenders. See `999.1-06-BRCTL-REMOVAL.md` for full disposition log.
 
 ## Phase 129 Closure (2026-05-16) — PARTIAL-COMPLETE
 
